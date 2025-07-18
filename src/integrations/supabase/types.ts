@@ -263,6 +263,51 @@ export type Database = {
           },
         ]
       }
+      code_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          code_id: string
+          entity_id: string
+          entity_type: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          code_id: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          code_id?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "code_assignments_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "internal_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           active: boolean | null
@@ -302,6 +347,50 @@ export type Database = {
           {
             foreignKeyName: "employees_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internal_codes: {
+        Row: {
+          category: string
+          code: string
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          code: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_codes_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -538,6 +627,40 @@ export type Database = {
           staff_email: string
         }[]
       }
+      get_code_assignments_with_details: {
+        Args: { target_entity_type?: string; target_entity_id?: string }
+        Returns: {
+          id: string
+          code_id: string
+          entity_type: string
+          entity_id: string
+          assigned_at: string
+          assigned_by: string
+          notes: string
+          code: string
+          code_name: string
+          code_color: string
+          code_category: string
+          assigner_name: string
+        }[]
+      }
+      get_codes_with_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          code: string
+          name: string
+          description: string
+          color: string
+          category: string
+          created_at: string
+          updated_at: string
+          created_by: string
+          creator_name: string
+          usage_count: number
+          last_used: string
+        }[]
+      }
       get_expiring_packages: {
         Args: { days_ahead?: number }
         Returns: {
@@ -558,6 +681,14 @@ export type Database = {
           _role: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      search_entities_by_codes: {
+        Args: { codes: string[] }
+        Returns: {
+          entity_type: string
+          entity_id: string
+          codes_assigned: string[]
+        }[]
       }
       toggle_note_alert: {
         Args: { note_id: string; is_alert_value: boolean }
