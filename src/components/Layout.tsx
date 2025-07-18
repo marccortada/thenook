@@ -6,6 +6,7 @@ import { LogOut, User, Calendar, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import ChatBot from "@/components/ChatBot";
 
 interface LayoutProps {
   children: ReactNode;
@@ -134,6 +135,9 @@ const Layout = ({ children }: LayoutProps) => {
       <main className="container mx-auto px-4 py-8">
         {children}
       </main>
+      
+      {/* ChatBot */}
+      <ChatBot />
     </div>
   );
 };
