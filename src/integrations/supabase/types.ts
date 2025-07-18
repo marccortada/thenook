@@ -140,6 +140,66 @@ export type Database = {
         }
         Relationships: []
       }
+      client_notes: {
+        Row: {
+          category: string
+          client_id: string
+          content: string
+          created_at: string
+          id: string
+          is_alert: boolean
+          is_private: boolean
+          priority: string
+          search_vector: unknown | null
+          staff_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          client_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_alert?: boolean
+          is_private?: boolean
+          priority?: string
+          search_vector?: unknown | null
+          staff_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          client_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_alert?: boolean
+          is_private?: boolean
+          priority?: string
+          search_vector?: unknown | null
+          staff_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notes_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_packages: {
         Row: {
           client_id: string
@@ -438,6 +498,46 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_active_client_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          client_id: string
+          client_name: string
+          client_email: string
+          title: string
+          content: string
+          category: string
+          priority: string
+          created_at: string
+          staff_name: string
+        }[]
+      }
+      get_client_notes_with_details: {
+        Args: {
+          target_client_id?: string
+          category_filter?: string
+          search_query?: string
+          limit_count?: number
+        }
+        Returns: {
+          id: string
+          client_id: string
+          staff_id: string
+          title: string
+          content: string
+          category: string
+          priority: string
+          is_private: boolean
+          is_alert: boolean
+          created_at: string
+          updated_at: string
+          client_name: string
+          client_email: string
+          staff_name: string
+          staff_email: string
+        }[]
+      }
       get_expiring_packages: {
         Args: { days_ahead?: number }
         Returns: {
@@ -457,6 +557,10 @@ export type Database = {
           _user_id: string
           _role: Database["public"]["Enums"]["user_role"]
         }
+        Returns: boolean
+      }
+      toggle_note_alert: {
+        Args: { note_id: string; is_alert_value: boolean }
         Returns: boolean
       }
       use_client_package_session: {

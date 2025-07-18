@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote } from "lucide-react";
 import Layout from "@/components/Layout";
 import Dashboard from "@/components/Dashboard";
 import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
 import PackageManagement from "@/components/PackageManagement";
+import ClientNotes from "@/components/ClientNotes";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
@@ -93,7 +94,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-4' : 'grid-cols-1'}`}>
+          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-5' : 'grid-cols-1'}`}>
             <TabsTrigger value="reservations" className="flex items-center space-x-2">
               <CalendarDays className="h-4 w-4" />
               <span>Reservas</span>
@@ -114,6 +115,12 @@ const Index = () => {
               <TabsTrigger value="packages" className="flex items-center space-x-2">
                 <Gift className="h-4 w-4" />
                 <span>Bonos</span>
+              </TabsTrigger>
+            )}
+            {isAdmin() && (
+              <TabsTrigger value="notes" className="flex items-center space-x-2">
+                <StickyNote className="h-4 w-4" />
+                <span>Notas</span>
               </TabsTrigger>
             )}
           </TabsList>
@@ -137,6 +144,12 @@ const Index = () => {
           {isAdmin() && (
             <TabsContent value="packages" className="mt-6">
               <PackageManagement />
+            </TabsContent>
+          )}
+
+          {isAdmin() && (
+            <TabsContent value="notes" className="mt-6">
+              <ClientNotes />
             </TabsContent>
           )}
         </Tabs>
