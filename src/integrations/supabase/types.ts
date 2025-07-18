@@ -140,6 +140,69 @@ export type Database = {
         }
         Relationships: []
       }
+      client_packages: {
+        Row: {
+          client_id: string
+          created_at: string
+          expiry_date: string
+          id: string
+          notes: string | null
+          package_id: string
+          purchase_date: string
+          purchase_price_cents: number
+          status: string
+          total_sessions: number
+          updated_at: string
+          used_sessions: number
+          voucher_code: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          expiry_date: string
+          id?: string
+          notes?: string | null
+          package_id: string
+          purchase_date?: string
+          purchase_price_cents: number
+          status?: string
+          total_sessions: number
+          updated_at?: string
+          used_sessions?: number
+          voucher_code: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          expiry_date?: string
+          id?: string
+          notes?: string | null
+          package_id?: string
+          purchase_date?: string
+          purchase_price_cents?: number
+          status?: string
+          total_sessions?: number
+          updated_at?: string
+          used_sessions?: number
+          voucher_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_packages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_packages_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           active: boolean | null
@@ -371,11 +434,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_voucher_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_expiring_packages: {
+        Args: { days_ahead?: number }
+        Returns: {
+          id: string
+          client_id: string
+          client_name: string
+          client_email: string
+          package_name: string
+          voucher_code: string
+          expiry_date: string
+          remaining_sessions: number
+          days_to_expiry: number
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string
           _role: Database["public"]["Enums"]["user_role"]
         }
+        Returns: boolean
+      }
+      use_client_package_session: {
+        Args: { package_id: string; booking_id?: string }
         Returns: boolean
       }
     }
