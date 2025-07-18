@@ -38,7 +38,7 @@ const EmployeeManagement = () => {
     "Masaje de Parejas"
   ];
 
-  const filteredEmployees = selectedCenter 
+  const filteredEmployees = selectedCenter && selectedCenter !== "all"
     ? employees.filter(emp => emp.center_id === selectedCenter)
     : employees;
 
@@ -257,7 +257,7 @@ const EmployeeManagement = () => {
             <SelectValue placeholder="Todos los centros" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos los centros</SelectItem>
+            <SelectItem value="all">Todos los centros</SelectItem>
             {centers.map((center) => (
               <SelectItem key={center.id} value={center.id}>
                 {center.name}
