@@ -7,8 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { useEmployees, useCenters } from "@/hooks/useDatabase";
-import { Plus, MapPin, Phone, Mail, Calendar, Users, Clock } from "lucide-react";
+import { useEmployeeManagement, WorkingHours, EmployeeDetails } from "@/hooks/useEmployeeManagement";
+import { Plus, MapPin, Phone, Mail, Calendar, Users, Clock, Edit, TrendingUp, DollarSign, Star, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +22,7 @@ const EmployeeManagement = () => {
   const { employees, loading, refetch } = useEmployees();
   const [selectedCenter, setSelectedCenter] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     firstName: "",
     lastName: "",
@@ -26,6 +31,19 @@ const EmployeeManagement = () => {
     centerId: "",
     specialties: [] as string[],
   });
+  
+  const {
+    selectedEmployee,
+    setSelectedEmployee,
+    getEmployeeMetrics,
+    updateEmployeeWorkingHours,
+    updateEmployeeStatus,
+    updateEmployeeSpecialties,
+    isEmployeeAvailable,
+    getEmployeeStatusText,
+    defaultWorkingHours,
+    loading: managementLoading
+  } = useEmployeeManagement();
 
   const availableSpecialties = [
     "Masaje Relajante",
@@ -128,6 +146,35 @@ const EmployeeManagement = () => {
   const getCenterName = (centerId: string) => {
     const center = centers.find(c => c.id === centerId);
     return center?.name || "Centro no encontrado";
+  };
+
+  const handleViewEmployee = (employee: any) => {
+    const employeeDetails: EmployeeDetails = {
+      ...employee,
+      working_hours: defaultWorkingHours, // Por ahora usamos horarios por defecto
+      hire_date: employee.created_at || new Date().toISOString(),
+      notes: "" // Por ahora sin notas
+    };
+    setSelectedEmployee(employeeDetails);
+    setIsDetailDialogOpen(true);
+  };
+
+  const handleUpdateWorkingHours = async (workingHours: WorkingHours) => {
+    if (selectedEmployee) {
+      await updateEmployeeWorkingHours(selectedEmployee.id, workingHours);
+    }
+  };
+
+  const handleUpdateSpecialties = async (specialties: string[]) => {
+    if (selectedEmployee) {
+      await updateEmployeeSpecialties(selectedEmployee.id, specialties);
+    }
+  };
+
+  const handleToggleEmployeeStatus = async (active: boolean) => {
+    if (selectedEmployee) {
+      await updateEmployeeStatus(selectedEmployee.id, active);
+    }
   };
 
   if (loading) {
@@ -308,70 +355,84 @@ const EmployeeManagement = () => {
 
       {/* Employee Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredEmployees.map((employee) => (
-          <Card key={employee.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start space-x-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {getEmployeeInitials(employee)}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">
-                    {getEmployeeFullName(employee)}
-                  </h3>
+        {filteredEmployees.map((employee) => {
+          const employeeDetails: EmployeeDetails = {
+            ...employee,
+            working_hours: defaultWorkingHours, // Por ahora usamos horarios por defecto
+            hire_date: employee.created_at || new Date().toISOString(),
+            notes: "" // Por ahora sin notas
+          };
+          
+          return (
+            <Card key={employee.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewEmployee(employee)}>
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {getEmployeeInitials(employee)}
+                    </AvatarFallback>
+                  </Avatar>
                   
-                  <div className="mt-1 space-y-1">
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      <span className="truncate">{getCenterName(employee.center_id)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium truncate">
+                        {getEmployeeFullName(employee)}
+                      </h3>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Edit className="h-4 w-4" />
+                      </Button>
                     </div>
                     
-                    {employee.profiles?.email && (
+                    <div className="mt-1 space-y-1">
                       <div className="flex items-center text-sm text-muted-foreground">
-                        <Mail className="h-3 w-3 mr-1" />
-                        <span className="truncate">{employee.profiles.email}</span>
+                        <MapPin className="h-3 w-3 mr-1" />
+                        <span className="truncate">{getCenterName(employee.center_id)}</span>
                       </div>
-                    )}
-                    
-                    {employee.profiles?.phone && (
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Phone className="h-3 w-3 mr-1" />
-                        <span>{employee.profiles.phone}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {employee.specialties && employee.specialties.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {employee.specialties.slice(0, 2).map((specialty) => (
-                        <Badge key={specialty} variant="secondary" className="text-xs">
-                          {specialty}
-                        </Badge>
-                      ))}
-                      {employee.specialties.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{employee.specialties.length - 2}
-                        </Badge>
+                      
+                      {employee.profiles?.email && (
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Mail className="h-3 w-3 mr-1" />
+                          <span className="truncate">{employee.profiles.email}</span>
+                        </div>
+                      )}
+                      
+                      {employee.profiles?.phone && (
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Phone className="h-3 w-3 mr-1" />
+                          <span>{employee.profiles.phone}</span>
+                        </div>
                       )}
                     </div>
-                  )}
-                  
-                  <div className="mt-3 flex items-center justify-between">
-                    <Badge 
-                      variant={employee.active ? "default" : "secondary"}
-                      className="text-xs"
-                    >
-                      {employee.active ? "Disponible" : "No disponible"}
-                    </Badge>
+                    
+                    {employee.specialties && employee.specialties.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {employee.specialties.slice(0, 2).map((specialty) => (
+                          <Badge key={specialty} variant="secondary" className="text-xs">
+                            {specialty}
+                          </Badge>
+                        ))}
+                        {employee.specialties.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{employee.specialties.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="mt-3 flex items-center justify-between">
+                      <Badge 
+                        variant={employee.active ? "default" : "secondary"}
+                        className="text-xs"
+                      >
+                        {employee.active ? "Disponible" : "No disponible"}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {filteredEmployees.length === 0 && (
@@ -387,6 +448,348 @@ const EmployeeManagement = () => {
           </Button>
         </div>
       )}
+
+      {/* Employee Detail Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {selectedEmployee && getEmployeeInitials(selectedEmployee)}
+                </AvatarFallback>
+              </Avatar>
+              {selectedEmployee && getEmployeeFullName(selectedEmployee)}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedEmployee && (
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="overview">Resumen</TabsTrigger>
+                <TabsTrigger value="schedule">Horarios</TabsTrigger>
+                <TabsTrigger value="specialties">Especialidades</TabsTrigger>
+                <TabsTrigger value="metrics">Métricas</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="overview" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">Información Personal</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{selectedEmployee.profiles?.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{selectedEmployee.profiles?.phone || "No especificado"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{getCenterName(selectedEmployee.center_id)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          Desde: {new Date(selectedEmployee.hire_date).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">Estado Actual</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Estado:</span>
+                        <div className="flex items-center gap-2">
+                          <Switch 
+                            checked={selectedEmployee.active}
+                            onCheckedChange={handleToggleEmployeeStatus}
+                            disabled={managementLoading}
+                          />
+                          <Badge variant={selectedEmployee.active ? "default" : "secondary"}>
+                            {selectedEmployee.active ? "Activo" : "Inactivo"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Disponibilidad:</span>
+                        <Badge variant={isEmployeeAvailable(selectedEmployee) ? "default" : "secondary"}>
+                          {getEmployeeStatusText(selectedEmployee)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Especialidades:</span>
+                        <span className="text-sm">{selectedEmployee.specialties.length}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="schedule" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Horarios de Trabajo</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <WorkingHoursEditor
+                      workingHours={selectedEmployee.working_hours}
+                      onUpdate={handleUpdateWorkingHours}
+                      loading={managementLoading}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="specialties" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Especialidades</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <SpecialtiesEditor
+                      specialties={selectedEmployee.specialties}
+                      availableSpecialties={availableSpecialties}
+                      onUpdate={handleUpdateSpecialties}
+                      loading={managementLoading}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="metrics" className="space-y-4">
+                <EmployeeMetricsView
+                  employeeId={selectedEmployee.id}
+                  getEmployeeMetrics={getEmployeeMetrics}
+                />
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+// Working Hours Editor Component
+const WorkingHoursEditor = ({ workingHours, onUpdate, loading }: {
+  workingHours: WorkingHours;
+  onUpdate: (hours: WorkingHours) => void;
+  loading: boolean;
+}) => {
+  const [localHours, setLocalHours] = useState(workingHours);
+  
+  const days = [
+    { key: 'monday', label: 'Lunes' },
+    { key: 'tuesday', label: 'Martes' },
+    { key: 'wednesday', label: 'Miércoles' },
+    { key: 'thursday', label: 'Jueves' },
+    { key: 'friday', label: 'Viernes' },
+    { key: 'saturday', label: 'Sábado' },
+    { key: 'sunday', label: 'Domingo' }
+  ];
+
+  const handleSave = () => {
+    onUpdate(localHours);
+  };
+
+  return (
+    <div className="space-y-4">
+      {days.map(day => (
+        <div key={day.key} className="flex items-center justify-between p-3 border rounded-lg">
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={localHours[day.key]?.enabled || false}
+              onCheckedChange={(enabled) => 
+                setLocalHours(prev => ({
+                  ...prev,
+                  [day.key]: { ...prev[day.key], enabled }
+                }))
+              }
+            />
+            <Label className="w-20">{day.label}</Label>
+          </div>
+          
+          {localHours[day.key]?.enabled && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="time"
+                value={localHours[day.key]?.start || '09:00'}
+                onChange={(e) => 
+                  setLocalHours(prev => ({
+                    ...prev,
+                    [day.key]: { ...prev[day.key], start: e.target.value }
+                  }))
+                }
+                className="w-24"
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="time"
+                value={localHours[day.key]?.end || '18:00'}
+                onChange={(e) => 
+                  setLocalHours(prev => ({
+                    ...prev,
+                    [day.key]: { ...prev[day.key], end: e.target.value }
+                  }))
+                }
+                className="w-24"
+              />
+            </div>
+          )}
+        </div>
+      ))}
+      
+      <Button onClick={handleSave} disabled={loading} className="w-full">
+        {loading ? "Guardando..." : "Guardar Horarios"}
+      </Button>
+    </div>
+  );
+};
+
+// Specialties Editor Component
+const SpecialtiesEditor = ({ specialties, availableSpecialties, onUpdate, loading }: {
+  specialties: string[];
+  availableSpecialties: string[];
+  onUpdate: (specialties: string[]) => void;
+  loading: boolean;
+}) => {
+  const [localSpecialties, setLocalSpecialties] = useState(specialties);
+
+  const toggleSpecialty = (specialty: string) => {
+    setLocalSpecialties(prev => 
+      prev.includes(specialty) 
+        ? prev.filter(s => s !== specialty)
+        : [...prev, specialty]
+    );
+  };
+
+  const handleSave = () => {
+    onUpdate(localSpecialties);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2">
+        {availableSpecialties.map(specialty => (
+          <Button
+            key={specialty}
+            variant={localSpecialties.includes(specialty) ? "default" : "outline"}
+            size="sm"
+            onClick={() => toggleSpecialty(specialty)}
+            className="justify-start"
+          >
+            {specialty}
+          </Button>
+        ))}
+      </div>
+      
+      <Button onClick={handleSave} disabled={loading} className="w-full">
+        {loading ? "Guardando..." : "Guardar Especialidades"}
+      </Button>
+    </div>
+  );
+};
+
+// Employee Metrics View Component
+const EmployeeMetricsView = ({ employeeId, getEmployeeMetrics }: {
+  employeeId: string;
+  getEmployeeMetrics: (id: string) => any;
+}) => {
+  const metrics = getEmployeeMetrics(employeeId);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <TrendingUp className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Reservas Totales</p>
+              <p className="text-2xl font-bold">{metrics.totalBookings}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-500/10 rounded-lg">
+              <Activity className="h-5 w-5 text-green-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Completadas</p>
+              <p className="text-2xl font-bold">{metrics.completedBookings}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500/10 rounded-lg">
+              <DollarSign className="h-5 w-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Ingresos</p>
+              <p className="text-2xl font-bold">{metrics.revenue}€</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-yellow-500/10 rounded-lg">
+              <Star className="h-5 w-5 text-yellow-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Valoración</p>
+              <p className="text-2xl font-bold">{metrics.averageRating}/5</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-500/10 rounded-lg">
+              <Calendar className="h-5 w-5 text-purple-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Esta Semana</p>
+              <p className="text-2xl font-bold">{metrics.thisWeekBookings}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-500/10 rounded-lg">
+              <Clock className="h-5 w-5 text-orange-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Este Mes</p>
+              <p className="text-2xl font-bold">{metrics.thisMonthBookings}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
