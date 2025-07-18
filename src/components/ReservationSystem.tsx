@@ -54,6 +54,24 @@ const ReservationSystem = () => {
     lane.center_id === formData.center && lane.active
   );
 
+  // Group services by name to avoid duplicates
+  const uniqueServices = services.reduce((acc, service) => {
+    const existingService = acc.find(s => s.name === service.name);
+    if (!existingService) {
+      acc.push(service);
+    }
+    return acc;
+  }, [] as typeof services);
+
+  // Group packages by name to avoid duplicates
+  const uniquePackages = packages.reduce((acc, pkg) => {
+    const existingPackage = acc.find(p => p.name === pkg.name);
+    if (!existingPackage) {
+      acc.push(pkg);
+    }
+    return acc;
+  }, [] as typeof packages);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -248,13 +266,13 @@ const ReservationSystem = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {formData.serviceType === "individual" ? (
-                      services.map((service) => (
+                      uniqueServices.map((service) => (
                         <SelectItem key={service.id} value={service.id}>
                           {service.name} - {service.duration_minutes}min - €{(service.price_cents / 100).toFixed(2)}
                         </SelectItem>
                       ))
                     ) : (
-                      packages.map((packageItem) => (
+                      uniquePackages.map((packageItem) => (
                         <SelectItem key={packageItem.id} value={packageItem.id}>
                           <div className="flex flex-col">
                             <span>{packageItem.name}</span>
