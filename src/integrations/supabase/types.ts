@@ -226,6 +226,63 @@ export type Database = {
           },
         ]
       }
+      packages: {
+        Row: {
+          active: boolean | null
+          center_id: string | null
+          created_at: string
+          description: string | null
+          discount_percentage: number | null
+          id: string
+          name: string
+          price_cents: number
+          service_id: string | null
+          sessions_count: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          center_id?: string | null
+          created_at?: string
+          description?: string | null
+          discount_percentage?: number | null
+          id?: string
+          name: string
+          price_cents: number
+          service_id?: string | null
+          sessions_count?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          center_id?: string | null
+          created_at?: string
+          description?: string | null
+          discount_percentage?: number | null
+          id?: string
+          name?: string
+          price_cents?: number
+          service_id?: string | null
+          sessions_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packages_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

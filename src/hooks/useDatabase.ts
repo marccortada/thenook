@@ -72,6 +72,21 @@ export interface Booking {
   updated_at: string;
 }
 
+export interface Package {
+  id: string;
+  name: string;
+  description?: string;
+  center_id?: string;
+  service_id?: string;
+  sessions_count: number;
+  price_cents: number;
+  discount_percentage?: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  services?: Service;
+}
+
 export const useCenters = () => {
   const [centers, setCenters] = useState<Center[]>([]);
   const [loading, setLoading] = useState(true);
@@ -281,4 +296,47 @@ export const useBookings = () => {
     createBooking, 
     updateBookingStatus 
   };
+};
+
+export const usePackages = (centerId?: string) => {
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPackages();
+  }, [centerId]);
+
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
+      let query = (supabase as any)
+        .from('packages')
+        .select(`
+          *,
+          services (
+            name,
+            description,
+            duration_minutes,
+            type
+          )
+        `)
+        .eq('active', true);
+
+      if (centerId) {
+        query = query.eq('center_id', centerId);
+      }
+
+      const { data, error } = await query.order('sessions_count').order('name');
+
+      if (error) throw error;
+      setPackages(data || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error fetching packages');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { packages, loading, error, refetch: fetchPackages };
 };

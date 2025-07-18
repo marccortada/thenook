@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CalendarDays, Clock, MapPin, User, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useCenters, useServices, useEmployees, useLanes, useBookings } from "@/hooks/useDatabase";
+import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -37,6 +38,7 @@ const ReservationSystem = () => {
   });
 
   const { services } = useServices(formData.center);
+  const { packages } = usePackages(formData.center);
 
   const timeSlots = [
     "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
@@ -81,9 +83,20 @@ const ReservationSystem = () => {
 
       if (profileError) throw profileError;
 
-      // Get service details for pricing
-      const selectedService = services.find(s => s.id === formData.service);
-      if (!selectedService) throw new Error('Servicio no encontrado');
+      // Get service or package details for pricing
+      let selectedItem, duration_minutes, price_cents;
+      
+      if (formData.serviceType === 'individual') {
+        selectedItem = services.find(s => s.id === formData.service);
+        if (!selectedItem) throw new Error('Servicio no encontrado');
+        duration_minutes = selectedItem.duration_minutes;
+        price_cents = selectedItem.price_cents;
+      } else {
+        selectedItem = packages.find(p => p.id === formData.service);
+        if (!selectedItem) throw new Error('Bono no encontrado');
+        duration_minutes = selectedItem.services?.duration_minutes || 60;
+        price_cents = selectedItem.price_cents;
+      }
 
       // Create the booking datetime
       const bookingDate = new Date(formData.date!);
@@ -92,14 +105,14 @@ const ReservationSystem = () => {
 
       const bookingData = {
         client_id: profile?.id,
-        service_id: formData.service,
-        package_id: null,
+        service_id: formData.serviceType === 'individual' ? formData.service : null,
+        package_id: formData.serviceType === 'voucher' ? formData.service : null,
         center_id: formData.center,
         lane_id: formData.lane || availableLanes[0]?.id,
         employee_id: formData.employee || availableEmployees[0]?.id,
         booking_datetime: bookingDate.toISOString(),
-        duration_minutes: selectedService.duration_minutes,
-        total_price_cents: selectedService.price_cents,
+        duration_minutes,
+        total_price_cents: price_cents,
         status: 'pending' as const,
         channel: 'web' as const,
         notes: formData.notes || null,
@@ -139,7 +152,18 @@ const ReservationSystem = () => {
   };
 
   const selectedService = services.find(s => s.id === formData.service);
+  const selectedPackage = packages.find(p => p.id === formData.service);
   const selectedCenter = centers.find(c => c.id === formData.center);
+  
+  const getSelectedItem = () => {
+    if (formData.serviceType === "individual") {
+      return selectedService;
+    } else {
+      return selectedPackage;
+    }
+  };
+  
+  const selectedItem = getSelectedItem();
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -197,17 +221,55 @@ const ReservationSystem = () => {
               <h3 className="font-medium">Selección de Servicio</h3>
               
               <div>
-                <Label htmlFor="service">Servicio *</Label>
+                <Label>Tipo de Servicio</Label>
+                <RadioGroup
+                  value={formData.serviceType}
+                  onValueChange={(value) => setFormData({ ...formData, serviceType: value as "individual" | "voucher", service: "" })}
+                  className="flex space-x-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="individual" id="individual" />
+                    <Label htmlFor="individual">Sesión Individual</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="voucher" id="voucher" />
+                    <Label htmlFor="voucher">Bono/Paquete</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div>
+                <Label htmlFor="service">
+                  {formData.serviceType === "individual" ? "Servicio" : "Bono/Paquete"} *
+                </Label>
                 <Select value={formData.service} onValueChange={(value) => setFormData({ ...formData, service: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un servicio" />
+                    <SelectValue placeholder={formData.serviceType === "individual" ? "Selecciona un servicio" : "Selecciona un bono"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {services.map((service) => (
-                      <SelectItem key={service.id} value={service.id}>
-                        {service.name} - {service.duration_minutes}min - €{(service.price_cents / 100).toFixed(2)}
-                      </SelectItem>
-                    ))}
+                    {formData.serviceType === "individual" ? (
+                      services.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name} - {service.duration_minutes}min - €{(service.price_cents / 100).toFixed(2)}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      packages.map((packageItem) => (
+                        <SelectItem key={packageItem.id} value={packageItem.id}>
+                          <div className="flex flex-col">
+                            <span>{packageItem.name}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {packageItem.sessions_count} sesiones - €{(packageItem.price_cents / 100).toFixed(2)}
+                              {packageItem.discount_percentage && (
+                                <span className="text-green-600 ml-1">
+                                  ({packageItem.discount_percentage}% descuento)
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -299,17 +361,34 @@ const ReservationSystem = () => {
             </div>
 
             {/* Summary */}
-            {selectedService && (
+            {selectedItem && (
               <div className="p-4 bg-accent/20 rounded-lg">
                 <h4 className="font-medium mb-2">Resumen de la Reserva</h4>
                 <div className="text-sm space-y-1">
-                  <p><strong>Servicio:</strong> {selectedService.name}</p>
-                  <p><strong>Duración:</strong> {selectedService.duration_minutes} minutos</p>
-                   <p><strong>Precio:</strong> €{(selectedService.price_cents / 100).toFixed(2)}</p>
-                   {formData.date && formData.time && (
-                     <p><strong>Fecha:</strong> {format(formData.date, "PPP", { locale: es })} a las {formData.time}</p>
-                   )}
-                 </div>
+                  {formData.serviceType === "individual" && selectedService ? (
+                    <>
+                      <p><strong>Servicio:</strong> {selectedService.name}</p>
+                      <p><strong>Duración:</strong> {selectedService.duration_minutes} minutos</p>
+                      <p><strong>Precio:</strong> €{(selectedService.price_cents / 100).toFixed(2)}</p>
+                    </>
+                  ) : selectedPackage && (
+                    <>
+                      <p><strong>Bono:</strong> {selectedPackage.name}</p>
+                      <p><strong>Sesiones:</strong> {selectedPackage.sessions_count} sesiones</p>
+                      <p><strong>Servicio:</strong> {selectedPackage.services?.name || 'No especificado'}</p>
+                      <p><strong>Duración por sesión:</strong> {selectedPackage.services?.duration_minutes || 60} minutos</p>
+                      <p><strong>Precio total:</strong> €{(selectedPackage.price_cents / 100).toFixed(2)}</p>
+                      {selectedPackage.discount_percentage && (
+                        <p><strong>Descuento:</strong> {selectedPackage.discount_percentage}%</p>
+                      )}
+                    </>
+                  )}
+                  {formData.date && formData.time && (
+                    <p><strong>Fecha:</strong> {format(formData.date, "PPP", { locale: es })} a las {formData.time}</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Employee and Lane Selection */}
             {formData.center && (
@@ -349,8 +428,6 @@ const ReservationSystem = () => {
                     </Select>
                   </div>
                 </div>
-              </div>
-            )}
               </div>
             )}
 
