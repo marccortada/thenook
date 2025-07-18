@@ -112,7 +112,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-3' : 'grid-cols-1'}`}>
             <TabsTrigger value="reservations" className="flex items-center space-x-2">
               <CalendarDays className="h-4 w-4" />
               <span>Reservas</span>

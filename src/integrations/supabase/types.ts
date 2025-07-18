@@ -14,16 +14,330 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          booking_datetime: string
+          center_id: string | null
+          channel: Database["public"]["Enums"]["booking_channel"]
+          client_id: string | null
+          created_at: string
+          duration_minutes: number
+          employee_id: string | null
+          id: string
+          lane_id: string | null
+          notes: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"] | null
+          service_id: string | null
+          status: Database["public"]["Enums"]["booking_status"] | null
+          stripe_session_id: string | null
+          total_price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          booking_datetime: string
+          center_id?: string | null
+          channel: Database["public"]["Enums"]["booking_channel"]
+          client_id?: string | null
+          created_at?: string
+          duration_minutes: number
+          employee_id?: string | null
+          id?: string
+          lane_id?: string | null
+          notes?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"] | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["booking_status"] | null
+          stripe_session_id?: string | null
+          total_price_cents: number
+          updated_at?: string
+        }
+        Update: {
+          booking_datetime?: string
+          center_id?: string | null
+          channel?: Database["public"]["Enums"]["booking_channel"]
+          client_id?: string | null
+          created_at?: string
+          duration_minutes?: number
+          employee_id?: string | null
+          id?: string
+          lane_id?: string | null
+          notes?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"] | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["booking_status"] | null
+          stripe_session_id?: string | null
+          total_price_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_lane_id_fkey"
+            columns: ["lane_id"]
+            isOneToOne: false
+            referencedRelation: "lanes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      centers: {
+        Row: {
+          active: boolean | null
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employees: {
+        Row: {
+          active: boolean | null
+          center_id: string | null
+          created_at: string
+          id: string
+          profile_id: string | null
+          specialties: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          center_id?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string | null
+          specialties?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          center_id?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string | null
+          specialties?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lanes: {
+        Row: {
+          active: boolean | null
+          blocked_until: string | null
+          capacity: number | null
+          center_id: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          blocked_until?: string | null
+          capacity?: number | null
+          center_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          blocked_until?: string | null
+          capacity?: number | null
+          center_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lanes_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          active: boolean | null
+          center_id: string | null
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          name: string
+          price_cents: number
+          type: Database["public"]["Enums"]["service_type"]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          center_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes: number
+          id?: string
+          name: string
+          price_cents: number
+          type: Database["public"]["Enums"]["service_type"]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          center_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          name?: string
+          price_cents?: number
+          type?: Database["public"]["Enums"]["service_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      booking_channel: "web" | "whatsapp" | "email" | "phone"
+      booking_status:
+        | "pending"
+        | "confirmed"
+        | "completed"
+        | "cancelled"
+        | "no_show"
+      payment_status:
+        | "pending"
+        | "paid"
+        | "failed"
+        | "refunded"
+        | "partial_refund"
+      service_type: "massage" | "treatment" | "package"
+      user_role: "admin" | "employee" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +464,24 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      booking_channel: ["web", "whatsapp", "email", "phone"],
+      booking_status: [
+        "pending",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
+      payment_status: [
+        "pending",
+        "paid",
+        "failed",
+        "refunded",
+        "partial_refund",
+      ],
+      service_type: ["massage", "treatment", "package"],
+      user_role: ["admin", "employee", "client"],
+    },
   },
 } as const
