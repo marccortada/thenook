@@ -54,7 +54,7 @@ const EmployeeManagement = () => {
       }
 
       // First create the profile
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await (supabase as any)
         .from('profiles')
         .insert([{
           email: newEmployee.email,
@@ -69,10 +69,10 @@ const EmployeeManagement = () => {
       if (profileError) throw profileError;
 
       // Then create the employee record
-      const { error: employeeError } = await supabase
+      const { error: employeeError } = await (supabase as any)
         .from('employees')
         .insert([{
-          profile_id: profile.id,
+          profile_id: profile?.id,
           center_id: newEmployee.centerId,
           specialties: newEmployee.specialties,
           active: true

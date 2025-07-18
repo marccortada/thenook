@@ -65,7 +65,7 @@ const ReservationSystem = () => {
 
     try {
       // First create a client profile
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await (supabase as any)
         .from('profiles')
         .insert([{
           email: formData.clientEmail || `cliente_${Date.now()}@temp.com`,
@@ -89,7 +89,7 @@ const ReservationSystem = () => {
       bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
       const bookingData = {
-        client_id: profile.id,
+        client_id: profile?.id,
         service_id: formData.service,
         package_id: null,
         center_id: formData.center,

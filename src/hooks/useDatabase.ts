@@ -84,7 +84,7 @@ export const useCenters = () => {
   const fetchCenters = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('centers')
         .select('*')
         .eq('active', true)
@@ -114,7 +114,7 @@ export const useServices = (centerId?: string) => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      let query = supabase
+      let query = (supabase as any)
         .from('services')
         .select('*')
         .eq('active', true);
@@ -149,7 +149,7 @@ export const useEmployees = (centerId?: string) => {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      let query = supabase
+      let query = (supabase as any)
         .from('employees')
         .select(`
           *,
@@ -192,7 +192,7 @@ export const useLanes = (centerId?: string) => {
   const fetchLanes = async () => {
     try {
       setLoading(true);
-      let query = supabase
+      let query = (supabase as any)
         .from('lanes')
         .select('*')
         .eq('active', true);
@@ -227,7 +227,7 @@ export const useBookings = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bookings')
         .select('*')
         .order('booking_datetime', { ascending: true });
@@ -243,7 +243,7 @@ export const useBookings = () => {
 
   const createBooking = async (bookingData: Omit<Booking, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bookings')
         .insert([bookingData])
         .select()
@@ -260,7 +260,7 @@ export const useBookings = () => {
 
   const updateBookingStatus = async (id: string, status: Booking['status']) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('bookings')
         .update({ status })
         .eq('id', id);
