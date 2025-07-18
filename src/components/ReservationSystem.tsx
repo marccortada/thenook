@@ -84,7 +84,7 @@ const ReservationSystem = () => {
       if (!selectedService) throw new Error('Servicio no encontrado');
 
       // Create the booking datetime
-      const bookingDate = new Date(formData.date);
+      const bookingDate = new Date(formData.date!);
       const [hours, minutes] = formData.time.split(':');
       bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
@@ -252,16 +252,16 @@ const ReservationSystem = () => {
                         {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={formData.date}
-                        onSelect={(date) => setFormData({ ...formData, date })}
-                        disabled={(date) => date < new Date()}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
+                     <PopoverContent className="w-auto p-0" align="start">
+                       <Calendar
+                         mode="single"
+                         selected={formData.date}
+                         onSelect={(date) => setFormData({ ...formData, date })}
+                         disabled={(date) => date < new Date()}
+                         initialFocus
+                         className="p-3 pointer-events-auto"
+                       />
+                     </PopoverContent>
                   </Popover>
                 </div>
                 
@@ -302,11 +302,11 @@ const ReservationSystem = () => {
                 <div className="text-sm space-y-1">
                   <p><strong>Servicio:</strong> {selectedService.name}</p>
                   <p><strong>Duración:</strong> {selectedService.duration_minutes} minutos</p>
-                  <p><strong>Precio:</strong> €{(selectedService.price_cents / 100).toFixed(2)}</p>
-                  {formData.date && formData.time && (
-                    <p><strong>Fecha:</strong> {new Date(formData.date).toLocaleDateString('es-ES')} a las {formData.time}</p>
-                  )}
-            </div>
+                   <p><strong>Precio:</strong> €{(selectedService.price_cents / 100).toFixed(2)}</p>
+                   {formData.date && formData.time && (
+                     <p><strong>Fecha:</strong> {format(formData.date, "PPP", { locale: es })} a las {formData.time}</p>
+                   )}
+                 </div>
 
             {/* Employee and Lane Selection */}
             {formData.center && (
