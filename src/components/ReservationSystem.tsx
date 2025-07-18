@@ -18,7 +18,6 @@ import { cn } from "@/lib/utils";
 const ReservationSystem = () => {
   const { toast } = useToast();
   const { centers } = useCenters();
-  const { services } = useServices();
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
@@ -34,7 +33,10 @@ const ReservationSystem = () => {
     employee: "",
     lane: "",
     notes: "",
+    serviceType: "individual" as "individual" | "voucher",
   });
+
+  const { services } = useServices(formData.center);
 
   const timeSlots = [
     "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
@@ -124,6 +126,7 @@ const ReservationSystem = () => {
         employee: "",
         lane: "",
         notes: "",
+        serviceType: "individual",
       });
     } catch (error) {
       console.error('Error creating booking:', error);
