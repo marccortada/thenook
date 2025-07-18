@@ -9,14 +9,13 @@ import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { useCenters, useServices } from "@/hooks/useDatabase";
+import { useCenters } from "@/hooks/useDatabase";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("reservations");
   const { isAuthenticated, isAdmin, profile } = useAuth();
   const navigate = useNavigate();
   const { centers } = useCenters();
-  const { services } = useServices();
 
   // If not authenticated, show landing page
   if (!isAuthenticated) {
@@ -75,25 +74,6 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Services Preview */}
-          <div className="py-16">
-            <h2 className="text-3xl font-bold text-center mb-12">Nuestros Servicios</h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              {services.slice(0, 6).map((service) => (
-                <Card key={service.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{service.name}</CardTitle>
-                    <CardDescription className="text-sm">
-                      {service.duration_minutes} min - €{(service.price_cents / 100).toFixed(2)}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{service.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
         </div>
       </Layout>
     );
