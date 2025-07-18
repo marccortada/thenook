@@ -12,7 +12,7 @@ const Layout = ({ children, activeTab = "home", onTabChange }: LayoutProps) => {
   const navItems = [
     { id: "home", label: "Inicio", icon: Home },
     { id: "reservations", label: "Reservas", icon: Calendar },
-    { id: "clients", label: "Clientes", icon: Users },
+    { id: "employees", label: "Empleados", icon: Users },
     { id: "settings", label: "Configuración", icon: Settings },
   ];
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import Layout from "@/components/Layout";
 import Dashboard from "@/components/Dashboard";
 import ReservationSystem from "@/components/ReservationSystem";
+import EmployeeManagement from "@/components/EmployeeManagement";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -12,6 +13,8 @@ const Index = () => {
         return <Dashboard />;
       case "reservations":
         return <ReservationSystem />;
+      case "employees":
+        return <EmployeeManagement />;
       case "clients":
         return (
           <div className="text-center py-12">
