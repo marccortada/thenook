@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import CustomReportBuilder from '@/components/CustomReportBuilder';
 import { 
   Table, 
   TableBody, 
@@ -100,7 +101,7 @@ const ReportsCenter = () => {
   const [generatedReports, setGeneratedReports] = useState<ReportData[]>([]);
   const [viewingReport, setViewingReport] = useState<ReportData | null>(null);
 
-  const { generateReport, exportToCSV, loading } = useReports();
+  const { generateReport, generateCustomReport, exportToCSV, loading } = useReports();
   const { centers } = useCenters();
   const { services } = useServices();
   const { employees } = useEmployees();
@@ -358,29 +359,21 @@ const ReportsCenter = () => {
           </TabsContent>
 
           <TabsContent value="custom">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-12">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Reportes Personalizados</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Próximamente: Constructor de reportes con campos personalizables
-                  </p>
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      toast({
-                        title: "Funcionalidad solicitada",
-                        description: "Hemos registrado tu interés en reportes personalizados. Te notificaremos cuando esté disponible.",
-                      });
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Solicitar Funcionalidad
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <CustomReportBuilder 
+              onGenerate={async (config) => {
+                try {
+                  const reportData = await generateCustomReport(config);
+                  setGeneratedReports(prev => [reportData, ...prev]);
+                  toast({
+                    title: "Reporte personalizado generado",
+                    description: `${config.name} ha sido generado exitosamente`,
+                  });
+                } catch (error) {
+                  console.error('Error generating custom report:', error);
+                }
+              }}
+              loading={loading}
+            />
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">

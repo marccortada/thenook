@@ -19,6 +19,7 @@ export interface ReportFilter {
   serviceId?: string;
   status?: string;
   employeeId?: string;
+  customConfig?: any;
 }
 
 export const useReports = () => {
@@ -300,6 +301,237 @@ export const useReports = () => {
     }
   };
 
+  // Generar reporte personalizado
+  const generateCustomReport = async (config: any): Promise<ReportData> => {
+    setLoading(true);
+    try {
+      const data = await executeCustomQuery(config);
+      
+      const reportData: ReportData = {
+        id: `custom-${Date.now()}`,
+        name: config.name,
+        description: config.description || '',
+        type: 'bookings', // Default type for custom reports
+        data: data,
+        generatedAt: new Date().toISOString(),
+        filters: config.filters || {},
+      };
+
+      toast({
+        title: "Reporte generado",
+        description: `Reporte "${config.name}" generado exitosamente con ${data.length} registros`,
+      });
+
+      return reportData;
+    } catch (error) {
+      console.error('Error generating custom report:', error);
+      toast({
+        title: "Error",
+        description: "Error al generar el reporte personalizado",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const executeCustomQuery = async (config: any): Promise<any[]> => {
+    try {
+      // Build dynamic query based on selected fields
+      const selectedTables = new Set<string>();
+      const fieldMappings: Record<string, string> = {};
+      
+      // Map fields to their actual column names and determine required tables
+      config.selectedFields.forEach((fieldId: string) => {
+        const fieldDef = getFieldDefinition(fieldId);
+        if (fieldDef) {
+          selectedTables.add(fieldDef.table);
+          fieldMappings[fieldId] = fieldDef.column;
+        }
+      });
+
+      // Start with bookings as base table (most common scenario)
+      let query = supabase.from('bookings').select(`
+        *,
+        profiles!inner(id, first_name, last_name, email, phone, role),
+        services!inner(id, name, type, price_cents, duration_minutes),
+        centers!inner(id, name, address),
+        employees(id, profile_id, profiles!inner(first_name, last_name))
+      `);
+
+      // Apply filters
+      for (const filter of config.filters) {
+        if (!filter.field || !filter.value) continue;
+        
+        const columnPath = getColumnPath(filter.field);
+        
+        switch (filter.operator) {
+          case 'equals':
+            // Skip this filter to avoid recursion
+            break;
+          case 'contains':
+            query = query.ilike(columnPath, `%${filter.value}%`);
+            break;
+          case 'greater':
+            query = query.gt(columnPath, filter.value);
+            break;
+          case 'less':
+            query = query.lt(columnPath, filter.value);
+            break;
+        }
+      }
+
+      // Apply ordering
+      if (config.orderBy) {
+        const orderColumn = getColumnPath(config.orderBy);
+        query = query.order(orderColumn, { ascending: config.orderDirection === 'asc' });
+      } else {
+        query = query.order('booking_datetime', { ascending: config.orderDirection === 'asc' });
+      }
+
+      const { data, error } = await query.limit(1000); // Limit for performance
+
+      if (error) throw error;
+
+      // Transform data to match selected fields
+      return data?.map(row => transformRowData(row, config.selectedFields)) || [];
+      
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+      throw error;
+    }
+  };
+
+  const getFieldDefinition = (fieldId: string) => {
+    const fieldMap: Record<string, { table: string; column: string; }> = {
+      'booking_datetime': { table: 'bookings', column: 'booking_datetime' },
+      'booking_status': { table: 'bookings', column: 'status' },
+      'booking_duration': { table: 'bookings', column: 'duration_minutes' },
+      'booking_price': { table: 'bookings', column: 'total_price_cents' },
+      'booking_payment_status': { table: 'bookings', column: 'payment_status' },
+      'booking_channel': { table: 'bookings', column: 'channel' },
+      'booking_notes': { table: 'bookings', column: 'notes' },
+      'client_name': { table: 'profiles', column: 'first_name,last_name' },
+      'client_email': { table: 'profiles', column: 'email' },
+      'client_phone': { table: 'profiles', column: 'phone' },
+      'client_role': { table: 'profiles', column: 'role' },
+      'service_name': { table: 'services', column: 'name' },
+      'service_type': { table: 'services', column: 'type' },
+      'service_price': { table: 'services', column: 'price_cents' },
+      'service_duration': { table: 'services', column: 'duration_minutes' },
+      'center_name': { table: 'centers', column: 'name' },
+      'center_address': { table: 'centers', column: 'address' },
+      'employee_name': { table: 'employees', column: 'first_name,last_name' },
+    };
+    
+    return fieldMap[fieldId];
+  };
+
+  const getColumnPath = (fieldId: string): string => {
+    // Map field IDs to their Supabase query paths
+    const pathMap: Record<string, string> = {
+      'booking_datetime': 'booking_datetime',
+      'booking_status': 'status',
+      'booking_duration': 'duration_minutes',
+      'booking_price': 'total_price_cents',
+      'booking_payment_status': 'payment_status',
+      'booking_channel': 'channel',
+      'booking_notes': 'notes',
+      'client_email': 'profiles.email',
+      'client_phone': 'profiles.phone',
+      'client_role': 'profiles.role',
+      'service_name': 'services.name',
+      'service_type': 'services.type',
+      'service_price': 'services.price_cents',
+      'service_duration': 'services.duration_minutes',
+      'center_name': 'centers.name',
+      'center_address': 'centers.address',
+    };
+    
+    return pathMap[fieldId] || fieldId;
+  };
+
+  const transformRowData = (row: any, selectedFields: string[]): Record<string, any> => {
+    const transformed: Record<string, any> = {};
+    
+    selectedFields.forEach(fieldId => {
+      const fieldValue = getTransformedValue(row, fieldId);
+      const fieldLabel = getFieldLabel(fieldId);
+      transformed[fieldLabel] = fieldValue;
+    });
+    
+    return transformed;
+  };
+
+  const getFieldLabel = (fieldId: string): string => {
+    const labelMap: Record<string, string> = {
+      'booking_datetime': 'Fecha y Hora',
+      'booking_status': 'Estado',
+      'booking_duration': 'Duración (min)',
+      'booking_price': 'Precio Total',
+      'booking_payment_status': 'Estado de Pago',
+      'booking_channel': 'Canal de Reserva',
+      'booking_notes': 'Notas',
+      'client_name': 'Nombre del Cliente',
+      'client_email': 'Email del Cliente',
+      'client_phone': 'Teléfono del Cliente',
+      'client_role': 'Tipo de Cliente',
+      'service_name': 'Nombre del Servicio',
+      'service_type': 'Tipo de Servicio',
+      'service_price': 'Precio del Servicio',
+      'service_duration': 'Duración del Servicio',
+      'center_name': 'Nombre del Centro',
+      'center_address': 'Dirección del Centro',
+      'employee_name': 'Nombre del Empleado',
+    };
+    return labelMap[fieldId] || fieldId;
+  };
+
+  const getTransformedValue = (row: any, fieldId: string): any => {
+    switch (fieldId) {
+      case 'booking_datetime':
+        return new Date(row.booking_datetime).toLocaleString('es-ES');
+      case 'booking_status':
+        return row.status;
+      case 'booking_duration':
+        return row.duration_minutes;
+      case 'booking_price':
+        return (row.total_price_cents / 100).toFixed(2) + '€';
+      case 'booking_payment_status':
+        return row.payment_status;
+      case 'booking_channel':
+        return row.channel;
+      case 'booking_notes':
+        return row.notes || '';
+      case 'client_name':
+        return `${row.profiles?.first_name || ''} ${row.profiles?.last_name || ''}`.trim();
+      case 'client_email':
+        return row.profiles?.email || '';
+      case 'client_phone':
+        return row.profiles?.phone || '';
+      case 'client_role':
+        return row.profiles?.role || '';
+      case 'service_name':
+        return row.services?.name || '';
+      case 'service_type':
+        return row.services?.type || '';
+      case 'service_price':
+        return row.services ? (row.services.price_cents / 100).toFixed(2) + '€' : '';
+      case 'service_duration':
+        return row.services?.duration_minutes ? `${row.services.duration_minutes} min` : '';
+      case 'center_name':
+        return row.centers?.name || '';
+      case 'center_address':
+        return row.centers?.address || '';
+      case 'employee_name':
+        const employee = row.employees?.profiles;
+        return employee ? `${employee.first_name || ''} ${employee.last_name || ''}`.trim() : '';
+      default:
+        return row[fieldId] || '';
+    }
+  };
+
   // Exportar a CSV
   const exportToCSV = (report: ReportData): void => {
     if (!report.data || report.data.length === 0) {
@@ -343,7 +575,8 @@ export const useReports = () => {
 
   return {
     generateReport,
+    generateCustomReport,
     exportToCSV,
-    loading,
+    loading
   };
 };
