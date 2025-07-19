@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useReports, ReportData, ReportFilter } from "@/hooks/useReports";
 import { useCenters, useServices, useEmployees } from "@/hooks/useDatabase";
+import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -91,6 +92,7 @@ const reportTemplates: ReportTemplate[] = [
 
 const ReportsCenter = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState<ReportTemplate | null>(null);
   const [customFilters, setCustomFilters] = useState<ReportFilter>({});
   const [reportName, setReportName] = useState('');
@@ -364,7 +366,15 @@ const ReportsCenter = () => {
                   <p className="text-muted-foreground mb-4">
                     Próximamente: Constructor de reportes con campos personalizables
                   </p>
-                  <Button variant="outline">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      toast({
+                        title: "Funcionalidad solicitada",
+                        description: "Hemos registrado tu interés en reportes personalizados. Te notificaremos cuando esté disponible.",
+                      });
+                    }}
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Solicitar Funcionalidad
                   </Button>
