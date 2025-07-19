@@ -15,6 +15,7 @@ import Analytics from "@/components/Analytics";
 const Dashboard = () => {
   const [startDate, setStartDate] = useState(() => {
     const today = new Date();
+    today.setDate(today.getDate() - 30); // 30 días atrás
     return today.toISOString().split('T')[0];
   });
   const [endDate, setEndDate] = useState(() => {
