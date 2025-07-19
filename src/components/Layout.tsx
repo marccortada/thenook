@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ChatBot from "@/components/ChatBot";
+import NotificationCenter from "@/components/NotificationCenter";
 
 interface LayoutProps {
   children: ReactNode;
@@ -68,6 +69,7 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
 
             <div className="flex items-center space-x-4">
+              {isAuthenticated && <NotificationCenter />}
               {isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
