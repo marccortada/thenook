@@ -15,18 +15,14 @@ import {
   Percent,
   Star,
   BarChart3,
-  PieChart,
   Activity,
   MapPin,
   RefreshCw
 } from "lucide-react";
 import { useAdvancedAnalytics } from "@/hooks/useAdvancedAnalytics";
 import { cn } from "@/lib/utils";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year';
-
-
 
 const AdvancedDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
@@ -93,6 +89,45 @@ const AdvancedDashboard = () => {
       </CardContent>
     </Card>
   );
+
+  // Simple chart component using CSS bars
+  const SimpleBarChart = ({ data, valueKey, labelKey, title }: {
+    data: any[];
+    valueKey: string;
+    labelKey: string;
+    title: string;
+  }) => {
+    const maxValue = Math.max(...data.map(item => item[valueKey] || 0));
+    
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {data.slice(0, 8).map((item, index) => (
+              <div key={index} className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium truncate">{item[labelKey]}</span>
+                  <span>{valueKey === 'totalRevenue' ? formatCurrency(item[valueKey]) : item[valueKey]}</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                    style={{ width: `${maxValue > 0 ? (item[valueKey] / maxValue) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (loading && !kpiMetrics) {
     return (
@@ -216,111 +251,34 @@ const AdvancedDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Evolución de Reservas
+                  <Calendar className="h-5 w-5" />
+                  Evolución Diaria - Últimos 7 días
                 </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={timeSeriesData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="bookings" stroke="#8884d8" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Evolución de Ingresos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={timeSeriesData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Ingresos']} />
-                    <Line type="monotone" dataKey="revenue" stroke="#82ca9d" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Nuevos Clientes por Día
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={timeSeriesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="newClients" fill="#ffc658" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="therapists" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Rendimiento por Terapeuta</CardTitle>
-              <CardDescription>Métricas individuales del período seleccionado</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {therapistMetrics.map((therapist) => (
-                  <div key={therapist.therapistId} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">{therapist.therapistName}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {therapist.totalBookings} reservas • {formatPercentage(therapist.attendanceRate)} asistencia
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold">{formatCurrency(therapist.totalRevenue)}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Ticket: {formatCurrency(therapist.averageTicket)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="services" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Servicios Más Populares</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {serviceMetrics.slice(0, 5).map((service, index) => (
-                    <div key={service.serviceId} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Badge variant="outline">#{index + 1}</Badge>
-                        <span className="font-medium">{service.serviceName}</span>
+                  {timeSeriesData.slice(-7).map((day, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="text-sm font-medium">
+                        {new Date(day.date).toLocaleDateString('es-ES', { 
+                          weekday: 'short', 
+                          day: 'numeric', 
+                          month: 'short' 
+                        })}
                       </div>
-                      <div className="text-right text-sm">
-                        <div>{service.totalBookings} reservas</div>
-                        <div className="text-muted-foreground">{formatCurrency(service.totalRevenue)}</div>
+                      <div className="flex items-center space-x-4 text-sm">
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="h-3 w-3 text-blue-500" />
+                          <span>{day.bookings}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <DollarSign className="h-3 w-3 text-green-500" />
+                          <span>{formatCurrency(day.revenue)}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Users className="h-3 w-3 text-purple-500" />
+                          <span>{day.newClients}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -330,63 +288,76 @@ const AdvancedDashboard = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Distribución de Ingresos por Servicio</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Resumen del Período
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={serviceMetrics.slice(0, 5)}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="serviceName" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                    <Bar dataKey="totalRevenue" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {kpiMetrics?.totalBookings || 0}
+                    </div>
+                    <div className="text-sm text-blue-600">Total Reservas</div>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(kpiMetrics?.totalRevenue || 0)}
+                    </div>
+                    <div className="text-sm text-green-600">Ingresos</div>
+                  </div>
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {kpiMetrics?.newClients || 0}
+                    </div>
+                    <div className="text-sm text-purple-600">Nuevos Clientes</div>
+                  </div>
+                  <div className="text-center p-4 bg-orange-50 rounded-lg">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {formatPercentage(kpiMetrics?.attendanceRate || 0)}
+                    </div>
+                    <div className="text-sm text-orange-600">Asistencia</div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
+        <TabsContent value="therapists" className="space-y-4">
+          <SimpleBarChart 
+            data={therapistMetrics} 
+            valueKey="totalRevenue" 
+            labelKey="therapistName" 
+            title="Ingresos por Terapeuta" 
+          />
+        </TabsContent>
+
+        <TabsContent value="services" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <SimpleBarChart 
+              data={serviceMetrics} 
+              valueKey="totalBookings" 
+              labelKey="serviceName" 
+              title="Servicios Más Populares" 
+            />
+            <SimpleBarChart 
+              data={serviceMetrics} 
+              valueKey="totalRevenue" 
+              labelKey="serviceName" 
+              title="Servicios Más Rentables" 
+            />
+          </div>
+        </TabsContent>
+
         <TabsContent value="centers" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Rendimiento por Centro
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {centerMetrics.map((center) => (
-                  <Card key={center.centerId}>
-                    <CardHeader>
-                      <CardTitle className="text-lg">{center.centerName}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Reservas:</span>
-                          <span className="font-medium">{center.totalBookings}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Ingresos:</span>
-                          <span className="font-medium">{formatCurrency(center.totalRevenue)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Ocupación:</span>
-                          <span className="font-medium">{formatPercentage(center.occupancyRate)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Terapeutas:</span>
-                          <span className="font-medium">{center.therapistCount}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <SimpleBarChart 
+            data={centerMetrics} 
+            valueKey="totalRevenue" 
+            labelKey="centerName" 
+            title="Rendimiento por Centro" 
+          />
         </TabsContent>
 
         <TabsContent value="clients" className="space-y-4">
@@ -426,7 +397,7 @@ const AdvancedDashboard = () => {
               <CardContent>
                 <div className="text-3xl font-bold text-purple-600">
                   {kpiMetrics ? formatPercentage(
-                    (kpiMetrics.recurringClients / (kpiMetrics.newClients + kpiMetrics.recurringClients)) * 100
+                    ((kpiMetrics.recurringClients / Math.max(kpiMetrics.newClients + kpiMetrics.recurringClients, 1)) * 100)
                   ) : "0%"}
                 </div>
                 <p className="text-sm text-muted-foreground">
