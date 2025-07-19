@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, Workflow } from "lucide-react";
 import Layout from "@/components/Layout";
 import Dashboard from "@/components/Dashboard";
 import ReservationSystem from "@/components/ReservationSystem";
@@ -10,6 +10,7 @@ import EmployeeManagement from "@/components/EmployeeManagement";
 import PackageManagement from "@/components/PackageManagement";
 import ClientNotes from "@/components/ClientNotes";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
+import WorkflowBuilder from "@/components/WorkflowBuilder";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
@@ -95,7 +96,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-6' : 'grid-cols-1'}`}>
+          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-7' : 'grid-cols-1'}`}>
             <TabsTrigger value="reservations" className="flex items-center space-x-2">
               <CalendarDays className="h-4 w-4" />
               <span>Reservas</span>
@@ -110,6 +111,12 @@ const Index = () => {
               <TabsTrigger value="dashboard" className="flex items-center space-x-2">
                 <BarChart3 className="h-4 w-4" />
                 <span>Dashboard</span>
+              </TabsTrigger>
+            )}
+            {isAdmin() && (
+              <TabsTrigger value="workflow" className="flex items-center space-x-2">
+                <Workflow className="h-4 w-4" />
+                <span>Workflows</span>
               </TabsTrigger>
             )}
             {isAdmin() && (
@@ -145,6 +152,12 @@ const Index = () => {
           {isAdmin() && (
             <TabsContent value="dashboard" className="mt-6">
               <Dashboard />
+            </TabsContent>
+          )}
+
+          {isAdmin() && (
+            <TabsContent value="workflow" className="mt-6">
+              <WorkflowBuilder />
             </TabsContent>
           )}
 
