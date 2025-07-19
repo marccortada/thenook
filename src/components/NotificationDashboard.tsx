@@ -192,7 +192,7 @@ const NotificationDashboard = () => {
                     rows={4}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Variables disponibles: {{client_name}}, {{date}}, {{time}}
+                    Variables disponibles: client_name, date, time
                   </p>
                 </div>
 
@@ -263,9 +263,9 @@ const NotificationDashboard = () => {
                     <Label>Vista Previa</Label>
                     <div className="p-3 bg-muted rounded text-sm">
                       {getNotificationPreview(quickSendData.message, {
-                        'client_name': 'Juan Pérez',
-                        'date': new Date().toLocaleDateString('es-ES'),
-                        'time': new Date().toLocaleTimeString('es-ES')
+                        client_name: 'Juan Pérez',
+                        date: new Date().toLocaleDateString('es-ES'),
+                        time: new Date().toLocaleTimeString('es-ES')
                       })}
                     </div>
                   </div>

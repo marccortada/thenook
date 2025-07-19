@@ -43,7 +43,7 @@ const ClientNotes = () => {
 
   const { notes, loading, error, refetch, createNote, updateNote, deleteNote, toggleAlert } = useClientNotes(
     selectedClient || undefined,
-    selectedCategory || undefined,
+    selectedCategory === 'all' ? undefined : selectedCategory || undefined,
     searchQuery || undefined
   );
   
@@ -356,7 +356,7 @@ const ClientNotes = () => {
                     <SelectValue placeholder="Todas las categorías" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las categorías</SelectItem>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
                         {cat.label}

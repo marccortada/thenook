@@ -34,7 +34,7 @@ const Dashboard = () => {
     loading, 
     error, 
     refetch 
-  } = useDashboard(startDate, endDate, selectedCenterId || undefined);
+  } = useDashboard(startDate, endDate, selectedCenterId === 'all' ? undefined : selectedCenterId || undefined);
 
   const statusColors = {
     confirmed: "bg-accent text-accent-foreground",
@@ -161,7 +161,7 @@ const Dashboard = () => {
                     <SelectValue placeholder="Todos los centros" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los centros</SelectItem>
+                    <SelectItem value="all">Todos los centros</SelectItem>
                     {centers.map((center) => (
                       <SelectItem key={center.id} value={center.id}>
                         {center.name}

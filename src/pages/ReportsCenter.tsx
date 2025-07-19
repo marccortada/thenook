@@ -312,15 +312,15 @@ const ReportsCenter = () => {
 
                     <div className="space-y-2">
                       <Label htmlFor="center">Centro</Label>
-                      <Select 
-                        value={customFilters.centerId || ''} 
-                        onValueChange={(value) => setCustomFilters(prev => ({ ...prev, centerId: value || undefined }))}
+                       <Select 
+                        value={customFilters.centerId || 'all'} 
+                        onValueChange={(value) => setCustomFilters(prev => ({ ...prev, centerId: value === 'all' ? undefined : value }))}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Todos los centros" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todos los centros</SelectItem>
+                          <SelectItem value="all">Todos los centros</SelectItem>
                           {centers.map((center) => (
                             <SelectItem key={center.id} value={center.id}>
                               {center.name}
