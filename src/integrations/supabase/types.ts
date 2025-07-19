@@ -438,6 +438,81 @@ export type Database = {
           },
         ]
       }
+      notification_rules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          message_template: string
+          name: string
+          segment_criteria: Json | null
+          send_via: string[]
+          target_audience: string
+          trigger_days_before: number | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message_template: string
+          name: string
+          segment_criteria?: Json | null
+          send_via?: string[]
+          target_audience?: string
+          trigger_days_before?: number | null
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message_template?: string
+          name?: string
+          segment_criteria?: Json | null
+          send_via?: string[]
+          target_audience?: string
+          trigger_days_before?: number | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notification_templates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          name: string
+          subject: string | null
+          type: string
+          updated_at: string
+          variables: string[] | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          name: string
+          subject?: string | null
+          type: string
+          updated_at?: string
+          variables?: string[] | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          name?: string
+          subject?: string | null
+          type?: string
+          updated_at?: string
+          variables?: string[] | null
+        }
+        Relationships: []
+      }
       packages: {
         Row: {
           active: boolean | null
@@ -530,6 +605,83 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      scheduled_notifications: {
+        Row: {
+          client_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          message_content: string
+          related_booking_id: string | null
+          related_package_id: string | null
+          rule_id: string | null
+          scheduled_for: string
+          send_via: string[]
+          sent_at: string | null
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_content: string
+          related_booking_id?: string | null
+          related_package_id?: string | null
+          rule_id?: string | null
+          scheduled_for: string
+          send_via?: string[]
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_content?: string
+          related_booking_id?: string | null
+          related_package_id?: string | null
+          rule_id?: string | null
+          scheduled_for?: string
+          send_via?: string[]
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_notifications_related_booking_id_fkey"
+            columns: ["related_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_notifications_related_package_id_fkey"
+            columns: ["related_package_id"]
+            isOneToOne: false
+            referencedRelation: "client_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_notifications_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "notification_rules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {

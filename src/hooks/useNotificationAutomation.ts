@@ -9,41 +9,41 @@ export interface NotificationRule {
   trigger_days_before?: number;
   is_active: boolean;
   message_template: string;
-  send_via: ('email' | 'sms' | 'in_app')[];
+  send_via: string[];
   target_audience: 'all_clients' | 'specific_segments';
-  segment_criteria?: {
-    service_types?: string[];
-    package_holders?: boolean;
-    vip_clients?: boolean;
-  };
+  segment_criteria?: any;
   created_at: string;
   updated_at: string;
 }
 
 export interface ScheduledNotification {
   id: string;
-  rule_id: string;
+  rule_id?: string;
   client_id: string;
   client_name: string;
   client_email: string;
   client_phone?: string;
   scheduled_for: string;
   message_content: string;
+  subject?: string;
   send_via: string[];
   status: 'pending' | 'sent' | 'failed' | 'cancelled';
   sent_at?: string;
   error_message?: string;
   related_booking_id?: string;
   related_package_id?: string;
+  created_at: string;
 }
 
 export interface NotificationTemplate {
   id: string;
   name: string;
-  subject: string;
+  subject?: string;
   content: string;
   variables: string[];
   type: 'email' | 'sms';
+  created_at: string;
+  updated_at: string;
 }
 
 export const useNotificationAutomation = () => {
@@ -64,7 +64,7 @@ export const useNotificationAutomation = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRules(data || []);
+      setRules((data || []) as NotificationRule[]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error fetching rules';
       setError(errorMessage);
@@ -84,11 +84,7 @@ export const useNotificationAutomation = () => {
     try {
       let query = supabase
         .from('scheduled_notifications')
-        .select(`
-          *,
-          client:profiles!client_id(first_name, last_name, email, phone),
-          rule:notification_rules!rule_id(name, trigger_type)
-        `)
+        .select('*')
         .order('scheduled_for', { ascending: true })
         .limit(limit);
 
@@ -99,14 +95,25 @@ export const useNotificationAutomation = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      const formattedData = data?.map(item => ({
-        ...item,
-        client_name: `${item.client?.first_name || ''} ${item.client?.last_name || ''}`.trim(),
-        client_email: item.client?.email || '',
-        client_phone: item.client?.phone || '',
-      })) || [];
+      // Get client info separately
+      const notificationsWithClients = await Promise.all(
+        (data || []).map(async (notification) => {
+          const { data: client } = await supabase
+            .from('profiles')
+            .select('first_name, last_name, email, phone')
+            .eq('id', notification.client_id)
+            .single();
 
-      setScheduledNotifications(formattedData);
+          return {
+            ...notification,
+            client_name: client ? `${client.first_name || ''} ${client.last_name || ''}`.trim() : '',
+            client_email: client?.email || '',
+            client_phone: client?.phone || '',
+          };
+        })
+      );
+
+      setScheduledNotifications(notificationsWithClients as ScheduledNotification[]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error fetching notifications';
       setError(errorMessage);
@@ -117,6 +124,27 @@ export const useNotificationAutomation = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch templates
+  const fetchTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notification_templates')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTemplates((data || []) as NotificationTemplate[]);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error fetching templates';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -131,7 +159,7 @@ export const useNotificationAutomation = () => {
 
       if (error) throw error;
 
-      setRules(prev => [data, ...prev]);
+      setRules(prev => [data as NotificationRule, ...prev]);
       toast({
         title: "Regla creada",
         description: "La regla de notificación se ha creado exitosamente",
@@ -162,7 +190,7 @@ export const useNotificationAutomation = () => {
 
       if (error) throw error;
 
-      setRules(prev => prev.map(rule => rule.id === id ? data : rule));
+      setRules(prev => prev.map(rule => rule.id === id ? data as NotificationRule : rule));
       toast({
         title: "Regla actualizada",
         description: "La regla de notificación se ha actualizado exitosamente",
@@ -247,7 +275,7 @@ export const useNotificationAutomation = () => {
   const sendImmediateNotification = async (
     clientIds: string[],
     message: string,
-    sendVia: ('email' | 'sms' | 'in_app')[],
+    sendVia: string[],
     subject?: string
   ) => {
     try {
@@ -322,6 +350,7 @@ export const useNotificationAutomation = () => {
   useEffect(() => {
     fetchRules();
     fetchScheduledNotifications('pending');
+    fetchTemplates();
   }, []);
 
   return {
@@ -332,6 +361,7 @@ export const useNotificationAutomation = () => {
     error,
     fetchRules,
     fetchScheduledNotifications,
+    fetchTemplates,
     createRule,
     updateRule,
     deleteRule,
