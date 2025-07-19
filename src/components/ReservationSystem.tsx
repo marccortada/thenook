@@ -86,20 +86,36 @@ const ReservationSystem = () => {
     }
 
     try {
-      // First create a client profile
-      const { data: profile, error: profileError } = await (supabase as any)
+      // Check if client already exists by email
+      const clientEmail = formData.clientEmail || `cliente_${Date.now()}@temp.com`;
+      
+      let profile;
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .insert([{
-          email: formData.clientEmail || `cliente_${Date.now()}@temp.com`,
-          first_name: formData.clientName.split(' ')[0],
-          last_name: formData.clientName.split(' ').slice(1).join(' ') || '',
-          phone: formData.clientPhone,
-          role: 'client'
-        }])
-        .select()
+        .select('*')
+        .eq('email', clientEmail)
         .single();
 
-      if (profileError) throw profileError;
+      if (existingProfile) {
+        // Use existing profile
+        profile = existingProfile;
+      } else {
+        // Create new client profile
+        const { data: newProfile, error: profileError } = await supabase
+          .from('profiles')
+          .insert([{
+            email: clientEmail,
+            first_name: formData.clientName.split(' ')[0],
+            last_name: formData.clientName.split(' ').slice(1).join(' ') || '',
+            phone: formData.clientPhone,
+            role: 'client'
+          }])
+          .select()
+          .single();
+
+        if (profileError) throw profileError;
+        profile = newProfile;
+      }
 
       // Get service or package details for pricing
       let selectedItem, duration_minutes, price_cents;
