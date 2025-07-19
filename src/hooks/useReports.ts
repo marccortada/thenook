@@ -338,64 +338,23 @@ export const useReports = () => {
 
   const executeCustomQuery = async (config: any): Promise<any[]> => {
     try {
-      // Build dynamic query based on selected fields
-      const selectedTables = new Set<string>();
-      const fieldMappings: Record<string, string> = {};
-      
-      // Map fields to their actual column names and determine required tables
-      config.selectedFields.forEach((fieldId: string) => {
-        const fieldDef = getFieldDefinition(fieldId);
-        if (fieldDef) {
-          selectedTables.add(fieldDef.table);
-          fieldMappings[fieldId] = fieldDef.column;
-        }
-      });
-
-      // Start with bookings as base table (most common scenario)
-      let query = supabase.from('bookings').select(`
-        *,
-        profiles!inner(id, first_name, last_name, email, phone, role),
-        services!inner(id, name, type, price_cents, duration_minutes),
-        centers!inner(id, name, address),
-        employees(id, profile_id, profiles!inner(first_name, last_name))
-      `);
-
-      // Apply filters
-      for (const filter of config.filters) {
-        if (!filter.field || !filter.value) continue;
-        
-        const columnPath = getColumnPath(filter.field);
-        
-        switch (filter.operator) {
-          case 'equals':
-            // Skip this filter to avoid recursion
-            break;
-          case 'contains':
-            query = query.ilike(columnPath, `%${filter.value}%`);
-            break;
-          case 'greater':
-            query = query.gt(columnPath, filter.value);
-            break;
-          case 'less':
-            query = query.lt(columnPath, filter.value);
-            break;
-        }
-      }
-
-      // Apply ordering
-      if (config.orderBy) {
-        const orderColumn = getColumnPath(config.orderBy);
-        query = query.order(orderColumn, { ascending: config.orderDirection === 'asc' });
-      } else {
-        query = query.order('booking_datetime', { ascending: config.orderDirection === 'asc' });
-      }
-
-      const { data, error } = await query.limit(1000); // Limit for performance
+      // Simple query to avoid type recursion issues
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          profiles!inner(id, first_name, last_name, email, phone, role),
+          services!inner(id, name, type, price_cents, duration_minutes),
+          centers!inner(id, name, address),
+          employees(id, profile_id, profiles!inner(first_name, last_name))
+        `)
+        .order('booking_datetime', { ascending: false })
+        .limit(1000);
 
       if (error) throw error;
 
       // Transform data to match selected fields
-      return data?.map(row => transformRowData(row, config.selectedFields)) || [];
+      return data?.map(row => transformRowData(row, config.selectedFields || [])) || [];
       
     } catch (error) {
       console.error('Error executing custom query:', error);
