@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, Workflow } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, Workflow, FileText } from "lucide-react";
 import Layout from "@/components/Layout";
 import Dashboard from "@/components/Dashboard";
 import ReservationSystem from "@/components/ReservationSystem";
@@ -96,7 +96,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-7' : 'grid-cols-1'}`}>
+          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-8' : 'grid-cols-1'}`}>
             <TabsTrigger value="reservations" className="flex items-center space-x-2">
               <CalendarDays className="h-4 w-4" />
               <span>Reservas</span>
@@ -117,6 +117,12 @@ const Index = () => {
               <TabsTrigger value="workflow" className="flex items-center space-x-2">
                 <Workflow className="h-4 w-4" />
                 <span>Workflows</span>
+              </TabsTrigger>
+            )}
+            {isAdmin() && (
+              <TabsTrigger value="reports" className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span>Reportes</span>
               </TabsTrigger>
             )}
             {isAdmin() && (
@@ -152,6 +158,25 @@ const Index = () => {
           {isAdmin() && (
             <TabsContent value="dashboard" className="mt-6">
               <Dashboard />
+            </TabsContent>
+          )}
+
+          {isAdmin() && (
+            <TabsContent value="reports" className="mt-6">
+              <div className="text-center py-12">
+                <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-medium mb-2">Centro de Reportes</h3>
+                <p className="text-muted-foreground mb-6">
+                  Genera reportes detallados y analiza el rendimiento de tu negocio
+                </p>
+                <Button 
+                  onClick={() => window.location.href = '/reports'}
+                  size="lg"
+                >
+                  <FileText className="mr-2 h-5 w-5" />
+                  Ir al Centro de Reportes
+                </Button>
+              </div>
             </TabsContent>
           )}
 
