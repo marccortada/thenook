@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, Users, TrendingUp, Euro, RefreshCw, Filter } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, TrendingUp, Euro, RefreshCw, Filter, BarChart3 } from "lucide-react";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useCenters } from "@/hooks/useDatabase";
 import { Skeleton } from "@/components/ui/skeleton";
+import Analytics from "@/components/Analytics";
 
 const Dashboard = () => {
   const [startDate, setStartDate] = useState(() => {
@@ -232,12 +233,24 @@ const Dashboard = () => {
       </div>
 
       {/* Tabs for different views */}
-      <Tabs defaultValue="bookings" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="analytics" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="analytics">
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Analytics
+          </TabsTrigger>
           <TabsTrigger value="bookings">Reservas Recientes</TabsTrigger>
           <TabsTrigger value="services">Servicios</TabsTrigger>
           <TabsTrigger value="centers">Centros</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="analytics">
+          <Analytics 
+            startDate={startDate} 
+            endDate={endDate} 
+            centerId={selectedCenterId || undefined} 
+          />
+        </TabsContent>
 
         <TabsContent value="bookings">
           <Card>
