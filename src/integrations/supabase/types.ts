@@ -107,6 +107,50 @@ export type Database = {
           },
         ]
       }
+      business_metrics: {
+        Row: {
+          calculated_at: string
+          center_id: string | null
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          period_end: string
+          period_start: string
+        }
+        Insert: {
+          calculated_at?: string
+          center_id?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          period_end: string
+          period_start: string
+        }
+        Update: {
+          calculated_at?: string
+          center_id?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_type?: string
+          metric_value?: number
+          period_end?: string
+          period_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_metrics_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       centers: {
         Row: {
           active: boolean | null
@@ -308,6 +352,59 @@ export type Database = {
           },
         ]
       }
+      dashboard_widgets: {
+        Row: {
+          config: Json
+          created_at: string
+          height: number
+          id: string
+          is_visible: boolean
+          position_x: number
+          position_y: number
+          title: string
+          updated_at: string
+          user_id: string | null
+          widget_type: string
+          width: number
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          height?: number
+          id?: string
+          is_visible?: boolean
+          position_x?: number
+          position_y?: number
+          title: string
+          updated_at?: string
+          user_id?: string | null
+          widget_type: string
+          width?: number
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          height?: number
+          id?: string
+          is_visible?: boolean
+          position_x?: number
+          position_y?: number
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+          widget_type?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_widgets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           active: boolean | null
@@ -349,6 +446,66 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_reports: {
+        Row: {
+          data: Json
+          error_message: string | null
+          expires_at: string | null
+          file_url: string | null
+          format: string
+          generated_at: string
+          generated_by: string | null
+          id: string
+          name: string
+          parameters: Json
+          status: string
+          template_id: string | null
+        }
+        Insert: {
+          data: Json
+          error_message?: string | null
+          expires_at?: string | null
+          file_url?: string | null
+          format?: string
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          name: string
+          parameters?: Json
+          status?: string
+          template_id?: string | null
+        }
+        Update: {
+          data?: Json
+          error_message?: string | null
+          expires_at?: string | null
+          file_url?: string | null
+          format?: string
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          name?: string
+          parameters?: Json
+          status?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_reports_generated_by_fkey"
+            columns: ["generated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_reports_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "report_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -563,6 +720,60 @@ export type Database = {
           {
             foreignKeyName: "inventory_movements_performed_by_fkey"
             columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpi_targets: {
+        Row: {
+          center_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          metric_name: string
+          period_end: string
+          period_start: string
+          target_type: string
+          target_value: number
+          updated_at: string
+        }
+        Insert: {
+          center_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metric_name: string
+          period_end: string
+          period_start: string
+          target_type: string
+          target_value: number
+          updated_at?: string
+        }
+        Update: {
+          center_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metric_name?: string
+          period_end?: string
+          period_start?: string
+          target_type?: string
+          target_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_targets_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_targets_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -937,6 +1148,59 @@ export type Database = {
           },
         ]
       }
+      report_templates: {
+        Row: {
+          chart_config: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_public: boolean
+          name: string
+          parameters: Json
+          query_definition: Json
+          report_type: string
+          updated_at: string
+        }
+        Insert: {
+          chart_config?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_public?: boolean
+          name: string
+          parameters?: Json
+          query_definition: Json
+          report_type: string
+          updated_at?: string
+        }
+        Update: {
+          chart_config?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_public?: boolean
+          name?: string
+          parameters?: Json
+          query_definition?: Json
+          report_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_notifications: {
         Row: {
           client_id: string
@@ -1108,6 +1372,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_operational_metrics: {
+        Args: { start_date: string; end_date: string; center_id_param?: string }
+        Returns: {
+          total_clients: number
+          new_clients: number
+          returning_clients: number
+          occupancy_rate: number
+          no_show_rate: number
+          avg_session_duration: number
+        }[]
+      }
+      calculate_revenue_metrics: {
+        Args: { start_date: string; end_date: string; center_id_param?: string }
+        Returns: {
+          total_revenue: number
+          average_ticket: number
+          total_bookings: number
+          revenue_by_service: Json
+          revenue_by_day: Json
+        }[]
+      }
       generate_po_number: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1130,6 +1415,14 @@ export type Database = {
           created_at: string
           staff_name: string
         }[]
+      }
+      get_business_intelligence: {
+        Args: {
+          start_date?: string
+          end_date?: string
+          center_id_param?: string
+        }
+        Returns: Json
       }
       get_client_notes_with_details: {
         Args: {
