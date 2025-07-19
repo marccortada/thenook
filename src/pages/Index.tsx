@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, Workflow, FileText, Percent } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, Workflow, FileText, Percent, TrendingUp } from "lucide-react";
 import Layout from "@/components/Layout";
 import Dashboard from "@/components/Dashboard";
 import ReservationSystem from "@/components/ReservationSystem";
@@ -12,6 +12,7 @@ import ClientNotes from "@/components/ClientNotes";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
 import WorkflowBuilder from "@/components/WorkflowBuilder";
 import HappyHourManagement from "@/components/HappyHourManagement";
+import AdvancedDashboard from "@/components/AdvancedDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
@@ -97,7 +98,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-9' : 'grid-cols-1'}`}>
+          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-10' : 'grid-cols-1'}`}>
             <TabsTrigger value="reservations" className="flex items-center space-x-2">
               <CalendarDays className="h-4 w-4" />
               <span>Reservas</span>
@@ -112,6 +113,12 @@ const Index = () => {
               <TabsTrigger value="dashboard" className="flex items-center space-x-2">
                 <BarChart3 className="h-4 w-4" />
                 <span>Dashboard</span>
+              </TabsTrigger>
+            )}
+            {isAdmin() && (
+              <TabsTrigger value="analytics" className="flex items-center space-x-2">
+                <TrendingUp className="h-4 w-4" />
+                <span>Analytics</span>
               </TabsTrigger>
             )}
             {isAdmin() && (
@@ -165,6 +172,12 @@ const Index = () => {
           {isAdmin() && (
             <TabsContent value="dashboard" className="mt-6">
               <Dashboard />
+            </TabsContent>
+          )}
+
+          {isAdmin() && (
+            <TabsContent value="analytics" className="mt-6">
+              <AdvancedDashboard />
             </TabsContent>
           )}
 
