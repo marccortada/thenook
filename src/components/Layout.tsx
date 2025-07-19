@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { LogOut, User, Calendar, Settings } from "lucide-react";
+import { LogOut, User, Calendar, Settings, Menu, Home, BarChart3, Bell, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -66,6 +66,36 @@ const Layout = ({ children }: LayoutProps) => {
                   The Nook Madrid
                 </span>
               </Button>
+              
+              {/* Menú de navegación principal */}
+              {isAuthenticated && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <Menu className="h-4 w-4 mr-2" />
+                      Menú
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-48">
+                    <DropdownMenuItem onClick={() => navigate("/")}>
+                      <Home className="mr-2 h-4 w-4" />
+                      <span>Inicio</span>
+                    </DropdownMenuItem>
+                    {isAdmin() && (
+                      <>
+                        <DropdownMenuItem onClick={() => navigate("/reports")}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>Centro de Reportes</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                          <Bell className="mr-2 h-4 w-4" />
+                          <span>Notificaciones</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
 
             <div className="flex items-center space-x-4">

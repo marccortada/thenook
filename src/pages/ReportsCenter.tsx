@@ -18,11 +18,13 @@ import {
   Eye,
   Plus,
   Clock,
-  DollarSign
+  DollarSign,
+  ArrowLeft
 } from "lucide-react";
 import { useReports, ReportData, ReportFilter } from "@/hooks/useReports";
 import { useCenters, useServices, useEmployees } from "@/hooks/useDatabase";
 import Layout from "@/components/Layout";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   Table, 
@@ -88,6 +90,7 @@ const reportTemplates: ReportTemplate[] = [
 ];
 
 const ReportsCenter = () => {
+  const navigate = useNavigate();
   const [selectedTemplate, setSelectedTemplate] = useState<ReportTemplate | null>(null);
   const [customFilters, setCustomFilters] = useState<ReportFilter>({});
   const [reportName, setReportName] = useState('');
@@ -211,13 +214,23 @@ const ReportsCenter = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
+        {/* Header con navegación */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Centro de Reportes</h1>
-            <p className="text-muted-foreground">
-              Genera reportes personalizados y analiza el rendimiento de tu negocio
-            </p>
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="flex items-center space-x-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Volver al Inicio</span>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Centro de Reportes</h1>
+              <p className="text-muted-foreground">
+                Genera reportes detallados y analiza el rendimiento de tu negocio
+              </p>
+            </div>
           </div>
         </div>
 
