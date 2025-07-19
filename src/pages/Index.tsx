@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, Workflow, FileText } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, Workflow, FileText, Percent } from "lucide-react";
 import Layout from "@/components/Layout";
 import Dashboard from "@/components/Dashboard";
 import ReservationSystem from "@/components/ReservationSystem";
@@ -11,6 +11,7 @@ import PackageManagement from "@/components/PackageManagement";
 import ClientNotes from "@/components/ClientNotes";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
 import WorkflowBuilder from "@/components/WorkflowBuilder";
+import HappyHourManagement from "@/components/HappyHourManagement";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
@@ -96,7 +97,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-8' : 'grid-cols-1'}`}>
+          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-9' : 'grid-cols-1'}`}>
             <TabsTrigger value="reservations" className="flex items-center space-x-2">
               <CalendarDays className="h-4 w-4" />
               <span>Reservas</span>
@@ -143,6 +144,12 @@ const Index = () => {
                 <span>Códigos</span>
               </TabsTrigger>
             )}
+            {isAdmin() && (
+              <TabsTrigger value="happyhour" className="flex items-center space-x-2">
+                <Percent className="h-4 w-4" />
+                <span>Happy Hour</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="reservations" className="mt-6">
@@ -170,7 +177,7 @@ const Index = () => {
                   Genera reportes detallados y analiza el rendimiento de tu negocio
                 </p>
                 <Button 
-                  onClick={() => window.location.href = '/reports'}
+                  onClick={() => navigate('/reports')}
                   size="lg"
                 >
                   <FileText className="mr-2 h-5 w-5" />
@@ -201,6 +208,12 @@ const Index = () => {
           {isAdmin() && (
             <TabsContent value="codes" className="mt-6">
               <InternalCodesManagement />
+            </TabsContent>
+          )}
+
+          {isAdmin() && (
+            <TabsContent value="happyhour" className="mt-6">
+              <HappyHourManagement />
             </TabsContent>
           )}
         </Tabs>

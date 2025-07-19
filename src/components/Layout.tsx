@@ -106,10 +106,16 @@ const Layout = ({ children }: LayoutProps) => {
                       <span>Mis reservas</span>
                     </DropdownMenuItem>
                     {isAdmin() && (
-                      <DropdownMenuItem onClick={() => navigate("/admin")}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Administración</span>
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem onClick={() => navigate("/reports")}>
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Centro de Reportes</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Notificaciones</span>
+                        </DropdownMenuItem>
+                      </>
                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
