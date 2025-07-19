@@ -139,8 +139,7 @@ const ReservationSystem = () => {
 
       const bookingData = {
         client_id: profile?.id,
-        service_id: formData.serviceType === 'individual' ? formData.service : null,
-        package_id: formData.serviceType === 'voucher' ? formData.service : null,
+        service_id: formData.service,
         center_id: formData.center,
         lane_id: formData.lane || availableLanes[0]?.id,
         employee_id: formData.employee || availableEmployees[0]?.id,

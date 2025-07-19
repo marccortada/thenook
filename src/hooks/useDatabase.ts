@@ -56,7 +56,6 @@ export interface Booking {
   id: string;
   client_id: string;
   service_id: string;
-  package_id: string | null;
   center_id: string;
   lane_id: string;
   employee_id: string;
