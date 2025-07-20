@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, Workflow, FileText, Percent, TrendingUp } from "lucide-react";
 import Layout from "@/components/Layout";
-import Dashboard from "@/components/Dashboard";
 import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
 import PackageManagement from "@/components/PackageManagement";
@@ -98,7 +97,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-10' : 'grid-cols-1'}`}>
+          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-9' : 'grid-cols-1'}`}>
             <TabsTrigger value="reservations" className="flex items-center space-x-2">
               <CalendarDays className="h-4 w-4" />
               <span>Reservas</span>
@@ -107,12 +106,6 @@ const Index = () => {
               <TabsTrigger value="employees" className="flex items-center space-x-2">
                 <Users className="h-4 w-4" />
                 <span>Empleados</span>
-              </TabsTrigger>
-            )}
-            {isAdmin() && (
-              <TabsTrigger value="dashboard" className="flex items-center space-x-2">
-                <BarChart3 className="h-4 w-4" />
-                <span>Dashboard</span>
               </TabsTrigger>
             )}
             {isAdmin() && (
@@ -166,12 +159,6 @@ const Index = () => {
           {isAdmin() && (
             <TabsContent value="employees" className="mt-6">
               <EmployeeManagement />
-            </TabsContent>
-          )}
-
-          {isAdmin() && (
-            <TabsContent value="dashboard" className="mt-6">
-              <Dashboard />
             </TabsContent>
           )}
 
