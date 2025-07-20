@@ -44,14 +44,16 @@ const nodeTypes = {
 // Plantillas de workflow predefinidas
 const workflowTemplates = {
   reservationFlow: {
-    name: "Flujo de Reserva",
+    name: "Flujo de Reserva Completo",
+    description: "Proceso completo desde la solicitud hasta la confirmación de reserva",
+    category: "Cliente",
     nodes: [
       {
         id: '1',
         type: 'startEnd',
         position: { x: 100, y: 50 },
         data: { 
-          label: 'Inicio',
+          label: 'Solicitud de Reserva',
           type: 'start',
           status: 'active'
         },
@@ -61,8 +63,8 @@ const workflowTemplates = {
         type: 'process',
         position: { x: 100, y: 150 },
         data: { 
-          label: 'Seleccionar Servicio',
-          description: 'Cliente elige el servicio deseado',
+          label: 'Verificar Centro',
+          description: 'Confirmar disponibilidad en Zurbarán o Concha Espina',
           status: 'pending'
         },
       },
@@ -71,8 +73,8 @@ const workflowTemplates = {
         type: 'decision',
         position: { x: 100, y: 250 },
         data: { 
-          label: 'Disponibilidad?',
-          question: '¿Hay horarios disponibles?',
+          label: 'Centro Disponible?',
+          question: '¿Hay disponibilidad en el centro solicitado?',
           status: 'pending'
         },
       },
@@ -81,8 +83,8 @@ const workflowTemplates = {
         type: 'process',
         position: { x: 300, y: 200 },
         data: { 
-          label: 'Sugerir Alternativas',
-          description: 'Mostrar horarios alternativos',
+          label: 'Sugerir Centro Alternativo',
+          description: 'Ofrecer el otro centro o horarios diferentes',
           status: 'pending'
         },
       },
@@ -91,17 +93,27 @@ const workflowTemplates = {
         type: 'process',
         position: { x: 100, y: 350 },
         data: { 
-          label: 'Confirmar Reserva',
-          description: 'Procesar el pago y confirmar',
+          label: 'Asignar Terapeuta',
+          description: 'Seleccionar especialista según servicio',
           status: 'pending'
         },
       },
       {
         id: '6',
-        type: 'startEnd',
+        type: 'process',
         position: { x: 100, y: 450 },
         data: { 
-          label: 'Fin',
+          label: 'Enviar Confirmación',
+          description: 'Email + SMS con detalles de la cita',
+          status: 'pending'
+        },
+      },
+      {
+        id: '7',
+        type: 'startEnd',
+        position: { x: 100, y: 550 },
+        data: { 
+          label: 'Reserva Confirmada',
           type: 'end',
           status: 'pending'
         },
@@ -110,21 +122,24 @@ const workflowTemplates = {
     edges: [
       { id: 'e1-2', source: '1', target: '2', animated: true },
       { id: 'e2-3', source: '2', target: '3' },
-      { id: 'e3-4', source: '3', target: '4', label: 'No', style: { stroke: '#ef4444' } },
+      { id: 'e3-4', source: '3', target: '4', label: 'No Disponible', style: { stroke: '#ef4444' } },
       { id: 'e4-2', source: '4', target: '2', label: 'Reintentar' },
-      { id: 'e3-5', source: '3', target: '5', label: 'Sí', style: { stroke: '#22c55e' } },
+      { id: 'e3-5', source: '3', target: '5', label: 'Disponible', style: { stroke: '#22c55e' } },
       { id: 'e5-6', source: '5', target: '6' },
+      { id: 'e6-7', source: '6', target: '7' },
     ],
   },
-  employeeOnboarding: {
-    name: "Onboarding Empleado",
+  clientNoShow: {
+    name: "Gestión de No Show",
+    description: "Protocolo cuando un cliente no se presenta a su cita",
+    category: "Operaciones",
     nodes: [
       {
         id: '1',
         type: 'startEnd',
         position: { x: 100, y: 50 },
         data: { 
-          label: 'Nuevo Empleado',
+          label: 'Cliente No Se Presenta',
           type: 'start',
           status: 'active'
         },
@@ -134,8 +149,8 @@ const workflowTemplates = {
         type: 'process',
         position: { x: 100, y: 150 },
         data: { 
-          label: 'Crear Perfil',
-          description: 'Registrar datos del empleado',
+          label: 'Marcar como No Show',
+          description: 'Actualizar estado en el sistema',
           status: 'pending'
         },
       },
@@ -144,27 +159,47 @@ const workflowTemplates = {
         type: 'process',
         position: { x: 100, y: 250 },
         data: { 
-          label: 'Asignar Centro',
-          description: 'Vincular con centro de trabajo',
+          label: 'Liberar Horario',
+          description: 'Hacer disponible para otros clientes',
           status: 'pending'
         },
       },
       {
         id: '4',
-        type: 'process',
+        type: 'decision',
         position: { x: 100, y: 350 },
         data: { 
-          label: 'Configurar Permisos',
-          description: 'Establecer rol y accesos',
+          label: 'Es Cliente Frecuente?',
+          question: '¿Tiene más de 5 reservas previas?',
           status: 'pending'
         },
       },
       {
         id: '5',
-        type: 'startEnd',
+        type: 'process',
+        position: { x: 300, y: 300 },
+        data: { 
+          label: 'Llamada de Seguimiento',
+          description: 'Contactar para reagendar',
+          status: 'pending'
+        },
+      },
+      {
+        id: '6',
+        type: 'process',
         position: { x: 100, y: 450 },
         data: { 
-          label: 'Empleado Activo',
+          label: 'Aplicar Política',
+          description: 'Cobro de penalización o bloqueo temporal',
+          status: 'pending'
+        },
+      },
+      {
+        id: '7',
+        type: 'startEnd',
+        position: { x: 200, y: 550 },
+        data: { 
+          label: 'Proceso Completado',
           type: 'end',
           status: 'pending'
         },
@@ -174,7 +209,386 @@ const workflowTemplates = {
       { id: 'e1-2', source: '1', target: '2', animated: true },
       { id: 'e2-3', source: '2', target: '3' },
       { id: 'e3-4', source: '3', target: '4' },
+      { id: 'e4-5', source: '4', target: '5', label: 'Sí', style: { stroke: '#22c55e' } },
+      { id: 'e4-6', source: '4', target: '6', label: 'No', style: { stroke: '#ef4444' } },
+      { id: 'e5-7', source: '5', target: '7' },
+      { id: 'e6-7', source: '6', target: '7' },
+    ],
+  },
+  bonusExpiry: {
+    name: "Gestión de Bonos por Vencer",
+    description: "Automatización de notificaciones de bonos próximos a vencer",
+    category: "Marketing",
+    nodes: [
+      {
+        id: '1',
+        type: 'startEnd',
+        position: { x: 100, y: 50 },
+        data: { 
+          label: 'Revisión Diaria Bonos',
+          type: 'start',
+          status: 'active'
+        },
+      },
+      {
+        id: '2',
+        type: 'process',
+        position: { x: 100, y: 150 },
+        data: { 
+          label: 'Identificar Bonos',
+          description: 'Buscar bonos que vencen en 7 días',
+          status: 'pending'
+        },
+      },
+      {
+        id: '3',
+        type: 'decision',
+        position: { x: 100, y: 250 },
+        data: { 
+          label: 'Hay Bonos por Vencer?',
+          question: '¿Se encontraron bonos próximos a vencer?',
+          status: 'pending'
+        },
+      },
+      {
+        id: '4',
+        type: 'process',
+        position: { x: 100, y: 350 },
+        data: { 
+          label: 'Enviar WhatsApp',
+          description: 'Notificar al cliente sobre vencimiento',
+          status: 'pending'
+        },
+      },
+      {
+        id: '5',
+        type: 'process',
+        position: { x: 100, y: 450 },
+        data: { 
+          label: 'Programar Seguimiento',
+          description: 'Recordatorio en 3 días si no reserva',
+          status: 'pending'
+        },
+      },
+      {
+        id: '6',
+        type: 'startEnd',
+        position: { x: 100, y: 550 },
+        data: { 
+          label: 'Proceso Completado',
+          type: 'end',
+          status: 'pending'
+        },
+      },
+      {
+        id: '7',
+        type: 'startEnd',
+        position: { x: 300, y: 250 },
+        data: { 
+          label: 'Sin Bonos por Vencer',
+          type: 'end',
+          status: 'pending'
+        },
+      },
+    ],
+    edges: [
+      { id: 'e1-2', source: '1', target: '2', animated: true },
+      { id: 'e2-3', source: '2', target: '3' },
+      { id: 'e3-4', source: '3', target: '4', label: 'Sí', style: { stroke: '#22c55e' } },
+      { id: 'e3-7', source: '3', target: '7', label: 'No', style: { stroke: '#ef4444' } },
       { id: 'e4-5', source: '4', target: '5' },
+      { id: 'e5-6', source: '5', target: '6' },
+    ],
+  },
+  qualityControl: {
+    name: "Control de Calidad Post-Servicio",
+    description: "Seguimiento de satisfacción del cliente después del servicio",
+    category: "Calidad",
+    nodes: [
+      {
+        id: '1',
+        type: 'startEnd',
+        position: { x: 100, y: 50 },
+        data: { 
+          label: 'Servicio Completado',
+          type: 'start',
+          status: 'active'
+        },
+      },
+      {
+        id: '2',
+        type: 'process',
+        position: { x: 100, y: 150 },
+        data: { 
+          label: 'Esperar 2 Horas',
+          description: 'Tiempo para que el cliente complete el servicio',
+          status: 'pending'
+        },
+      },
+      {
+        id: '3',
+        type: 'process',
+        position: { x: 100, y: 250 },
+        data: { 
+          label: 'Enviar Encuesta',
+          description: 'WhatsApp con link de satisfacción',
+          status: 'pending'
+        },
+      },
+      {
+        id: '4',
+        type: 'decision',
+        position: { x: 100, y: 350 },
+        data: { 
+          label: 'Respuesta en 24h?',
+          question: '¿El cliente respondió la encuesta?',
+          status: 'pending'
+        },
+      },
+      {
+        id: '5',
+        type: 'process',
+        position: { x: 300, y: 300 },
+        data: { 
+          label: 'Recordatorio Suave',
+          description: 'Segundo mensaje más personalizado',
+          status: 'pending'
+        },
+      },
+      {
+        id: '6',
+        type: 'decision',
+        position: { x: 100, y: 450 },
+        data: { 
+          label: 'Puntuación Alta?',
+          question: '¿Calificación 4-5 estrellas?',
+          status: 'pending'
+        },
+      },
+      {
+        id: '7',
+        type: 'process',
+        position: { x: 300, y: 450 },
+        data: { 
+          label: 'Solicitar Reseña Google',
+          description: 'Pedir reseña pública para fortalecer reputación',
+          status: 'pending'
+        },
+      },
+      {
+        id: '8',
+        type: 'process',
+        position: { x: 100, y: 550 },
+        data: { 
+          label: 'Alerta al Manager',
+          description: 'Notificar baja calificación para seguimiento',
+          status: 'pending'
+        },
+      },
+      {
+        id: '9',
+        type: 'startEnd',
+        position: { x: 200, y: 650 },
+        data: { 
+          label: 'Proceso Completado',
+          type: 'end',
+          status: 'pending'
+        },
+      },
+    ],
+    edges: [
+      { id: 'e1-2', source: '1', target: '2', animated: true },
+      { id: 'e2-3', source: '2', target: '3' },
+      { id: 'e3-4', source: '3', target: '4' },
+      { id: 'e4-5', source: '4', target: '5', label: 'No', style: { stroke: '#ef4444' } },
+      { id: 'e4-6', source: '4', target: '6', label: 'Sí', style: { stroke: '#22c55e' } },
+      { id: 'e5-4', source: '5', target: '4', label: 'Reintentar' },
+      { id: 'e6-7', source: '6', target: '7', label: 'Alta (4-5)', style: { stroke: '#22c55e' } },
+      { id: 'e6-8', source: '6', target: '8', label: 'Baja (1-3)', style: { stroke: '#ef4444' } },
+      { id: 'e7-9', source: '7', target: '9' },
+      { id: 'e8-9', source: '8', target: '9' },
+    ],
+  },
+  pregnantClientFlow: {
+    name: "Protocolo Cliente Embarazada",
+    description: "Proceso especial para servicios a embarazadas",
+    category: "Especializado",
+    nodes: [
+      {
+        id: '1',
+        type: 'startEnd',
+        position: { x: 100, y: 50 },
+        data: { 
+          label: 'Reserva Embarazada',
+          type: 'start',
+          status: 'active'
+        },
+      },
+      {
+        id: '2',
+        type: 'process',
+        position: { x: 100, y: 150 },
+        data: { 
+          label: 'Verificar Semanas',
+          description: 'Confirmar que esté después de la semana 12',
+          status: 'pending'
+        },
+      },
+      {
+        id: '3',
+        type: 'decision',
+        position: { x: 100, y: 250 },
+        data: { 
+          label: 'Semanas OK?',
+          question: '¿Más de 12 semanas de gestación?',
+          status: 'pending'
+        },
+      },
+      {
+        id: '4',
+        type: 'process',
+        position: { x: 300, y: 200 },
+        data: { 
+          label: 'Declinar Servicio',
+          description: 'Explicar política y sugerir esperar',
+          status: 'pending'
+        },
+      },
+      {
+        id: '5',
+        type: 'process',
+        position: { x: 100, y: 350 },
+        data: { 
+          label: 'Asignar Especialista',
+          description: 'Terapeuta certificado en embarazo',
+          status: 'pending'
+        },
+      },
+      {
+        id: '6',
+        type: 'process',
+        position: { x: 100, y: 450 },
+        data: { 
+          label: 'Nota Especial',
+          description: 'Agregar alerta en perfil del cliente',
+          status: 'pending'
+        },
+      },
+      {
+        id: '7',
+        type: 'process',
+        position: { x: 100, y: 550 },
+        data: { 
+          label: 'Confirmar con Protocolo',
+          description: 'Email específico con instrucciones especiales',
+          status: 'pending'
+        },
+      },
+      {
+        id: '8',
+        type: 'startEnd',
+        position: { x: 200, y: 650 },
+        data: { 
+          label: 'Reserva Confirmada',
+          type: 'end',
+          status: 'pending'
+        },
+      },
+    ],
+    edges: [
+      { id: 'e1-2', source: '1', target: '2', animated: true },
+      { id: 'e2-3', source: '2', target: '3' },
+      { id: 'e3-4', source: '3', target: '4', label: 'No (< 12 sem)', style: { stroke: '#ef4444' } },
+      { id: 'e3-5', source: '3', target: '5', label: 'Sí (> 12 sem)', style: { stroke: '#22c55e' } },
+      { id: 'e5-6', source: '5', target: '6' },
+      { id: 'e6-7', source: '6', target: '7' },
+      { id: 'e7-8', source: '7', target: '8' },
+    ],
+  },
+  inventoryRestock: {
+    name: "Reposición de Inventario",
+    description: "Automatización de compras cuando stock está bajo",
+    category: "Inventario",
+    nodes: [
+      {
+        id: '1',
+        type: 'startEnd',
+        position: { x: 100, y: 50 },
+        data: { 
+          label: 'Stock Bajo Detectado',
+          type: 'start',
+          status: 'active'
+        },
+      },
+      {
+        id: '2',
+        type: 'process',
+        position: { x: 100, y: 150 },
+        data: { 
+          label: 'Verificar Proveedor',
+          description: 'Comprobar datos del proveedor habitual',
+          status: 'pending'
+        },
+      },
+      {
+        id: '3',
+        type: 'decision',
+        position: { x: 100, y: 250 },
+        data: { 
+          label: 'Proveedor Activo?',
+          question: '¿El proveedor está disponible?',
+          status: 'pending'
+        },
+      },
+      {
+        id: '4',
+        type: 'process',
+        position: { x: 300, y: 200 },
+        data: { 
+          label: 'Buscar Alternativo',
+          description: 'Activar proveedor de respaldo',
+          status: 'pending'
+        },
+      },
+      {
+        id: '5',
+        type: 'process',
+        position: { x: 100, y: 350 },
+        data: { 
+          label: 'Crear Orden Compra',
+          description: 'Generar PO automáticamente',
+          status: 'pending'
+        },
+      },
+      {
+        id: '6',
+        type: 'process',
+        position: { x: 100, y: 450 },
+        data: { 
+          label: 'Notificar Manager',
+          description: 'Alertar sobre orden generada',
+          status: 'pending'
+        },
+      },
+      {
+        id: '7',
+        type: 'startEnd',
+        position: { x: 100, y: 550 },
+        data: { 
+          label: 'Orden Enviada',
+          type: 'end',
+          status: 'pending'
+        },
+      },
+    ],
+    edges: [
+      { id: 'e1-2', source: '1', target: '2', animated: true },
+      { id: 'e2-3', source: '2', target: '3' },
+      { id: 'e3-4', source: '3', target: '4', label: 'No', style: { stroke: '#ef4444' } },
+      { id: 'e3-5', source: '3', target: '5', label: 'Sí', style: { stroke: '#22c55e' } },
+      { id: 'e4-5', source: '4', target: '5' },
+      { id: 'e5-6', source: '5', target: '6' },
+      { id: 'e6-7', source: '6', target: '7' },
     ],
   },
 };
@@ -399,17 +813,25 @@ const WorkflowBuilder = () => {
               <CardTitle>Plantillas de Workflow</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.entries(workflowTemplates).map(([key, template]) => (
-                  <Card key={key} className="hover-scale cursor-pointer" onClick={() => loadTemplate(key)}>
+                  <Card key={key} className="hover-scale cursor-pointer hover:shadow-lg transition-all" onClick={() => loadTemplate(key)}>
                     <CardHeader>
-                      <CardTitle className="text-lg">{template.name}</CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                        <Badge variant="secondary" className="text-xs">
+                          {template.category}
+                        </Badge>
+                      </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <p className="text-sm text-muted-foreground">
-                          {template.nodes.length} pasos • {template.edges.length} conexiones
+                          {template.description}
                         </p>
+                        <div className="text-xs text-muted-foreground">
+                          {template.nodes.length} pasos • {template.edges.length} conexiones
+                        </div>
                         <div className="flex flex-wrap gap-1">
                           <Badge variant="outline" className="text-xs">
                             {template.nodes.filter(n => n.type === 'process').length} Procesos
