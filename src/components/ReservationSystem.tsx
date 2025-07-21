@@ -37,8 +37,8 @@ const ReservationSystem = () => {
     serviceType: "individual" as "individual" | "voucher",
   });
 
-  const { services } = useServices(formData.center);
-  const { packages } = usePackages(formData.center);
+  const { services, loading: servicesLoading } = useServices(formData.center);
+  const { packages, loading: packagesLoading } = usePackages(formData.center);
 
   const timeSlots = [
     "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
@@ -47,11 +47,11 @@ const ReservationSystem = () => {
 
   // Filter employees and lanes based on selected center
   const availableEmployees = employees.filter(emp => 
-    emp.center_id === formData.center && emp.active
+    formData.center ? emp.center_id === formData.center && emp.active : emp.active
   );
   
   const availableLanes = lanes.filter(lane => 
-    lane.center_id === formData.center && lane.active
+    formData.center ? lane.center_id === formData.center && lane.active : lane.active
   );
 
   // Group services by name to avoid duplicates
@@ -199,7 +199,7 @@ const ReservationSystem = () => {
   const selectedItem = getSelectedItem();
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -275,19 +275,29 @@ const ReservationSystem = () => {
                 <Label htmlFor="service">
                   {formData.serviceType === "individual" ? "Servicio" : "Bono/Paquete"} *
                 </Label>
-                <Select value={formData.service} onValueChange={(value) => setFormData({ ...formData, service: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={formData.serviceType === "individual" ? "Selecciona un servicio" : "Selecciona un bono"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formData.serviceType === "individual" ? (
-                      uniqueServices.map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.name} - {service.duration_minutes}min - €{(service.price_cents / 100).toFixed(2)}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      uniquePackages.map((packageItem) => (
+                {servicesLoading || packagesLoading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    <span className="ml-2">Cargando servicios...</span>
+                  </div>
+                ) : (
+                  <Select value={formData.service} onValueChange={(value) => setFormData({ ...formData, service: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={formData.serviceType === "individual" ? "Selecciona un servicio" : "Selecciona un bono"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formData.serviceType === "individual" ? (
+                        uniqueServices.length > 0 ? uniqueServices.map((service) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            {service.name} - {service.duration_minutes}min - €{(service.price_cents / 100).toFixed(2)}
+                          </SelectItem>
+                        )) : (
+                          <SelectItem value="" disabled>
+                            {formData.center ? "No hay servicios disponibles" : "Selecciona primero un centro"}
+                          </SelectItem>
+                        )
+                      ) : (
+                        uniquePackages.length > 0 ? uniquePackages.map((packageItem) => (
                         <SelectItem key={packageItem.id} value={packageItem.id}>
                           <div className="flex flex-col">
                             <span>{packageItem.name}</span>
@@ -301,19 +311,24 @@ const ReservationSystem = () => {
                             </span>
                           </div>
                         </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                        )) : (
+                          <SelectItem value="" disabled>
+                            {formData.center ? "No hay bonos disponibles" : "Selecciona primero un centro"}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div>
                 <Label htmlFor="center">Centro *</Label>
-                <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value })}>
+                <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value, service: "", employee: "", lane: "" })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un centro" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50 bg-background border shadow-md">
                     {centers.map((center) => (
                       <SelectItem key={center.id} value={center.id}>
                         <div className="flex items-center space-x-2">
@@ -350,16 +365,16 @@ const ReservationSystem = () => {
                         {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                       </Button>
                     </PopoverTrigger>
-                     <PopoverContent className="w-auto p-0" align="start">
-                       <Calendar
-                         mode="single"
-                         selected={formData.date}
-                         onSelect={(date) => setFormData({ ...formData, date })}
-                         disabled={(date) => date < new Date()}
-                         initialFocus
-                         className="p-3 pointer-events-auto"
-                       />
-                     </PopoverContent>
+                    <PopoverContent className="w-auto p-0 z-50 bg-background border shadow-md" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.date}
+                        onSelect={(date) => setFormData({ ...formData, date })}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                        className="p-3"
+                      />
+                    </PopoverContent>
                   </Popover>
                 </div>
                 
@@ -369,7 +384,7 @@ const ReservationSystem = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona una hora" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-50 bg-background border shadow-md">
                       {timeSlots.map((time) => (
                         <SelectItem key={time} value={time}>
                           {time}
@@ -435,7 +450,7 @@ const ReservationSystem = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona un terapeuta" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-50 bg-background border shadow-md">
                         <SelectItem value="">Cualquier especialista disponible</SelectItem>
                         {availableEmployees.map((employee) => (
                           <SelectItem key={employee.id} value={employee.id}>
@@ -457,10 +472,16 @@ const ReservationSystem = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona una sala" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-50 bg-background border shadow-md">
+                        <SelectItem value="">Cualquier sala disponible</SelectItem>
                         {availableLanes.map((lane) => (
                           <SelectItem key={lane.id} value={lane.id}>
                             {lane.name}
+                            {lane.capacity && (
+                              <span className="text-sm text-muted-foreground ml-1">
+                                - Capacidad: {lane.capacity}
+                              </span>
+                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -8,6 +8,7 @@ import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
 import PackageManagement from "@/components/PackageManagement";
 import ClientNotes from "@/components/ClientNotes";
+import BookingsList from "@/components/BookingsList";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
 import HappyHourManagement from "@/components/HappyHourManagement";
 import AdvancedDashboard from "@/components/AdvancedDashboard";
@@ -96,7 +97,26 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-8' : 'grid-cols-1'}`}>
+          {/* Mobile Menu */}
+          <div className="md:hidden mb-4">
+            <select 
+              value={activeTab} 
+              onChange={(e) => setActiveTab(e.target.value)}
+              className="w-full p-2 border rounded-lg bg-background"
+            >
+              <option value="reservations">📅 Reservas</option>
+              {isAdmin() && <option value="employees">👥 Empleados</option>}
+              {isAdmin() && <option value="analytics">📊 Analytics</option>}
+              {isAdmin() && <option value="reports">📋 Reportes</option>}
+              {isAdmin() && <option value="packages">🎁 Bonos</option>}
+              {isAdmin() && <option value="notes">📝 Notas</option>}
+              {isAdmin() && <option value="codes"># Códigos</option>}
+              {isAdmin() && <option value="happyhour">% Happy Hour</option>}
+            </select>
+          </div>
+
+          {/* Desktop Tabs */}
+          <TabsList className="hidden md:grid w-full grid-cols-8">
             <TabsTrigger value="reservations" className="flex items-center space-x-2">
               <CalendarDays className="h-4 w-4" />
               <span>Reservas</span>
@@ -145,8 +165,9 @@ const Index = () => {
             )}
           </TabsList>
 
-          <TabsContent value="reservations" className="mt-6">
+          <TabsContent value="reservations" className="mt-6 space-y-6">
             <ReservationSystem />
+            <BookingsList />
           </TabsContent>
 
           {isAdmin() && (
