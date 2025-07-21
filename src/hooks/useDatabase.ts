@@ -257,17 +257,24 @@ export const useBookings = () => {
 
   const createBooking = async (bookingData: Omit<Booking, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { data, error } = await (supabase as any)
+      console.log('Creating booking with data:', bookingData);
+      
+      const { data, error } = await supabase
         .from('bookings')
         .insert([bookingData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Booking creation error:', error);
+        throw error;
+      }
       
+      console.log('Booking created successfully:', data);
       await fetchBookings(); // Refresh the list
       return data;
     } catch (err) {
+      console.error('Error in createBooking:', err);
       throw new Error(err instanceof Error ? err.message : 'Error creating booking');
     }
   };

@@ -1,11 +1,13 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { LogOut, User, Calendar, Settings, Menu, Home, BarChart3, Bell, FileText } from "lucide-react";
+import { LogOut, User, Calendar, Settings, Menu, Home, BarChart3, Bell, FileText, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ChatBot from "@/components/ChatBot";
 import NotificationCenter from "@/components/NotificationCenter";
 
@@ -17,6 +19,8 @@ const Layout = ({ children }: LayoutProps) => {
   const { user, profile, signOut, isAdmin, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -69,32 +73,86 @@ const Layout = ({ children }: LayoutProps) => {
               
               {/* Menú de navegación principal */}
               {isAuthenticated && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <Menu className="h-4 w-4 mr-2" />
-                      Menú
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-48">
-                    <DropdownMenuItem onClick={() => navigate("/")}>
-                      <Home className="mr-2 h-4 w-4" />
-                      <span>Inicio</span>
-                    </DropdownMenuItem>
-                    {isAdmin() && (
-                      <>
-                        <DropdownMenuItem onClick={() => navigate("/reports")}>
-                          <FileText className="mr-2 h-4 w-4" />
-                          <span>Centro de Reportes</span>
+                <>
+                  {isMobile ? (
+                    <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                      <SheetTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Menu className="h-4 w-4 mr-2" />
+                          Menú
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent side="left" className="w-64">
+                        <div className="flex flex-col space-y-4 mt-8">
+                          <Button 
+                            variant="ghost" 
+                            className="justify-start" 
+                            onClick={() => {
+                              navigate("/");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            <Home className="mr-2 h-4 w-4" />
+                            <span>Inicio</span>
+                          </Button>
+                          {isAdmin() && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                className="justify-start"
+                                onClick={() => {
+                                  navigate("/reports");
+                                  setMobileMenuOpen(false);
+                                }}
+                              >
+                                <FileText className="mr-2 h-4 w-4" />
+                                <span>Centro de Reportes</span>
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                className="justify-start"
+                                onClick={() => {
+                                  navigate("/notifications");
+                                  setMobileMenuOpen(false);
+                                }}
+                              >
+                                <Bell className="mr-2 h-4 w-4" />
+                                <span>Notificaciones</span>
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Menu className="h-4 w-4 mr-2" />
+                          Menú
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-48">
+                        <DropdownMenuItem onClick={() => navigate("/")}>
+                          <Home className="mr-2 h-4 w-4" />
+                          <span>Inicio</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate("/notifications")}>
-                          <Bell className="mr-2 h-4 w-4" />
-                          <span>Notificaciones</span>
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        {isAdmin() && (
+                          <>
+                            <DropdownMenuItem onClick={() => navigate("/reports")}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              <span>Centro de Reportes</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                              <Bell className="mr-2 h-4 w-4" />
+                              <span>Notificaciones</span>
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </>
               )}
             </div>
 

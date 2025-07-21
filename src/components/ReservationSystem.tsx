@@ -436,9 +436,15 @@ const ReservationSystem = () => {
                         <SelectValue placeholder="Selecciona un terapeuta" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="">Cualquier especialista disponible</SelectItem>
                         {availableEmployees.map((employee) => (
                           <SelectItem key={employee.id} value={employee.id}>
                             {employee.profiles?.first_name} {employee.profiles?.last_name}
+                            {employee.specialties && employee.specialties.length > 0 && (
+                              <span className="text-sm text-muted-foreground ml-1">
+                                - {employee.specialties.join(', ')}
+                              </span>
+                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>
