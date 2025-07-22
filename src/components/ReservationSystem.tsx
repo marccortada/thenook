@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CalendarDays, Clock, MapPin, User, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 const ReservationSystem = () => {
   const { toast } = useToast();
+  const { user, profile, isAuthenticated } = useAuth();
   const { centers } = useCenters();
   const { employees } = useEmployees();
   const { lanes } = useLanes();
@@ -76,7 +78,7 @@ const ReservationSystem = () => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.clientName || !formData.service || !formData.center || !formData.date || !formData.time) {
+    if ((!isAuthenticated && !formData.clientName) || !formData.service || !formData.center || !formData.date || !formData.time) {
       toast({
         title: "Error",
         description: "Por favor completa todos los campos obligatorios",
@@ -86,35 +88,44 @@ const ReservationSystem = () => {
     }
 
     try {
-      // Check if client already exists by email
-      const clientEmail = formData.clientEmail || `cliente_${Date.now()}@temp.com`;
+      // Use authenticated user's email if logged in, otherwise use form email
+      let clientEmail;
+      let profileToUse;
       
-      let profile;
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('email', clientEmail)
-        .single();
-
-      if (existingProfile) {
-        // Use existing profile
-        profile = existingProfile;
+      if (isAuthenticated && profile) {
+        // User is logged in, use their profile
+        clientEmail = profile.email;
+        profileToUse = profile;
       } else {
-        // Create new client profile
-        const { data: newProfile, error: profileError } = await supabase
+        // User not logged in, check if client already exists by email
+        clientEmail = formData.clientEmail || `cliente_${Date.now()}@temp.com`;
+        
+        const { data: existingProfile } = await supabase
           .from('profiles')
-          .insert([{
-            email: clientEmail,
-            first_name: formData.clientName.split(' ')[0],
-            last_name: formData.clientName.split(' ').slice(1).join(' ') || '',
-            phone: formData.clientPhone,
-            role: 'client'
-          }])
-          .select()
-          .single();
+          .select('*')
+          .eq('email', clientEmail)
+          .maybeSingle();
 
-        if (profileError) throw profileError;
-        profile = newProfile;
+        if (existingProfile) {
+          // Use existing profile
+          profileToUse = existingProfile;
+        } else {
+          // Create new client profile
+          const { data: newProfile, error: profileError } = await supabase
+            .from('profiles')
+            .insert([{
+              email: clientEmail,
+              first_name: formData.clientName.split(' ')[0],
+              last_name: formData.clientName.split(' ').slice(1).join(' ') || '',
+              phone: formData.clientPhone,
+              role: 'client'
+            }])
+            .select()
+            .single();
+
+          if (profileError) throw profileError;
+          profileToUse = newProfile;
+        }
       }
 
       // Get service or package details for pricing
@@ -137,8 +148,28 @@ const ReservationSystem = () => {
       const [hours, minutes] = formData.time.split(':');
       bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
+      // Check employee availability before creating booking
+      if (formData.employee && formData.employee !== "any") {
+        const bookingDateTime = bookingDate.toISOString();
+        const { data: conflictingBookings } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('employee_id', formData.employee)
+          .eq('booking_datetime', bookingDateTime)
+          .neq('status', 'cancelled');
+
+        if (conflictingBookings && conflictingBookings.length > 0) {
+          toast({
+            title: "Especialista no disponible",
+            description: "El especialista seleccionado no está disponible en ese horario. Por favor, selecciona otro especialista o horario.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const bookingData = {
-        client_id: profile?.id,
+        client_id: profileToUse?.id,
         service_id: formData.service,
         center_id: formData.center,
         lane_id: formData.lane && formData.lane !== "any" ? formData.lane : availableLanes[0]?.id,
@@ -158,7 +189,7 @@ const ReservationSystem = () => {
 
       toast({
         title: "✅ Reserva Creada",
-        description: `Reserva para ${formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
+        description: `Reserva para ${isAuthenticated && profile ? `${profile.first_name} ${profile.last_name}` : formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
       });
 
       // Reset form
@@ -210,45 +241,66 @@ const ReservationSystem = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Client Information */}
-            <div className="space-y-4">
-              <h3 className="font-medium flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <span>Información del Cliente</span>
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="clientName">Nombre Completo *</Label>
-                  <Input
-                    id="clientName"
-                    value={formData.clientName}
-                    onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                    placeholder="Nombre y apellidos"
-                  />
+            {/* Client Information - Only show if user is not authenticated */}
+            {!isAuthenticated && (
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center space-x-2">
+                  <User className="h-4 w-4" />
+                  <span>Información del Cliente</span>
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="clientName">Nombre Completo *</Label>
+                    <Input
+                      id="clientName"
+                      value={formData.clientName}
+                      onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                      placeholder="Nombre y apellidos"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="clientPhone">Teléfono</Label>
+                    <Input
+                      id="clientPhone"
+                      value={formData.clientPhone}
+                      onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+                      placeholder="+34 600 000 000"
+                    />
+                  </div>
                 </div>
+                
                 <div>
-                  <Label htmlFor="clientPhone">Teléfono</Label>
+                  <Label htmlFor="clientEmail">Email</Label>
                   <Input
-                    id="clientPhone"
-                    value={formData.clientPhone}
-                    onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-                    placeholder="+34 600 000 000"
+                    id="clientEmail"
+                    type="email"
+                    value={formData.clientEmail}
+                    onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+                    placeholder="cliente@email.com"
                   />
                 </div>
               </div>
-              
-              <div>
-                <Label htmlFor="clientEmail">Email</Label>
-                <Input
-                  id="clientEmail"
-                  type="email"
-                  value={formData.clientEmail}
-                  onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
-                  placeholder="cliente@email.com"
-                />
+            )}
+
+            {/* Show logged in user info */}
+            {isAuthenticated && profile && (
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center space-x-2">
+                  <User className="h-4 w-4" />
+                  <span>Reserva para:</span>
+                </h3>
+                <div className="p-4 bg-accent/20 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">
+                      {profile.first_name} {profile.last_name}
+                    </span>
+                    <span className="text-muted-foreground">({profile.email})</span>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Service Selection */}
             <div className="space-y-4">
