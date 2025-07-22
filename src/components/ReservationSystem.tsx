@@ -416,14 +416,7 @@ const ReservationSystem = () => {
                         <SelectItem value="any">Cualquier especialista disponible</SelectItem>
                         {availableEmployees.map((employee) => (
                           <SelectItem key={employee.id} value={employee.id}>
-                            <div className="flex flex-col">
-                              <span>{employee.profiles?.first_name} {employee.profiles?.last_name}</span>
-                              {employee.specialties?.length > 0 && (
-                                <span className="text-xs text-muted-foreground">
-                                  {employee.specialties.join(', ')}
-                                </span>
-                              )}
-                            </div>
+                            {employee.profiles?.first_name} {employee.profiles?.last_name}
                           </SelectItem>
                         ))}
                       </SelectContent>

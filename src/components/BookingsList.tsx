@@ -129,7 +129,7 @@ const BookingsList = () => {
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span>
@@ -142,7 +142,34 @@ const BookingsList = () => {
                           {format(new Date(booking.booking_datetime), "HH:mm")} ({booking.duration_minutes} min)
                         </span>
                       </div>
+                      {booking.services?.name && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Servicio:</span>
+                          <span>{booking.services.name}</span>
+                        </div>
+                      )}
                     </div>
+                    
+                    {booking.profiles && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm mt-2 p-2 bg-gray-50 rounded">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span>
+                            {booking.profiles.first_name} {booking.profiles.last_name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span>{booking.profiles.email}</span>
+                        </div>
+                        {booking.profiles.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <span>{booking.profiles.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     
                     {booking.notes && (
                       <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded">

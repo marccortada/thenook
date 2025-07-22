@@ -69,6 +69,18 @@ export interface Booking {
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded' | 'partial_refund';
   created_at: string;
   updated_at: string;
+  profiles?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+  };
+  services?: {
+    name: string;
+  };
+  centers?: {
+    name: string;
+  };
 }
 
 export interface Package {
@@ -243,7 +255,21 @@ export const useBookings = () => {
       setLoading(true);
       const { data, error } = await (supabase as any)
         .from('bookings')
-        .select('*')
+        .select(`
+          *,
+          profiles!client_id (
+            first_name,
+            last_name,
+            email,
+            phone
+          ),
+          services (
+            name
+          ),
+          centers (
+            name
+          )
+        `)
         .order('booking_datetime', { ascending: true });
 
       if (error) throw error;

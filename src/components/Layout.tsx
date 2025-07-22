@@ -157,7 +157,7 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
 
             <div className="flex items-center space-x-4">
-              {isAuthenticated && <NotificationCenter />}
+              {isAuthenticated && isAdmin() && <NotificationCenter />}
               {isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
