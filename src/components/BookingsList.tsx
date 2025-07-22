@@ -7,11 +7,35 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar, Clock, MapPin, User, Phone, Mail, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const BookingsList = () => {
   const { bookings, loading, refetch, updateBookingStatus } = useBookings();
   const { toast } = useToast();
   const [updating, setUpdating] = useState<string | null>(null);
+
+  // Set up real-time subscription for bookings
+  useEffect(() => {
+    const channel = supabase
+      .channel('bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        (payload) => {
+          console.log('Booking change detected:', payload);
+          refetch(); // Refetch bookings when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
 
   const handleStatusUpdate = async (bookingId: string, newStatus: any) => {
     try {

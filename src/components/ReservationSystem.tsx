@@ -153,11 +153,12 @@ const ReservationSystem = () => {
         payment_status: 'pending' as const,
       };
 
-      await createBooking(bookingData);
+      const newBooking = await createBooking(bookingData);
+      console.log('Booking successfully created:', newBooking);
 
       toast({
-        title: "Reserva Creada",
-        description: `Reserva para ${formData.clientName} confirmada exitosamente`,
+        title: "✅ Reserva Creada",
+        description: `Reserva para ${formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
       });
 
       // Reset form
@@ -285,7 +286,7 @@ const ReservationSystem = () => {
                     <SelectTrigger>
                       <SelectValue placeholder={formData.serviceType === "individual" ? "Selecciona un servicio" : "Selecciona un bono"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100] bg-background border shadow-lg">
                       {formData.serviceType === "individual" ? (
                         uniqueServices.length > 0 ? uniqueServices.map((service) => (
                           <SelectItem key={service.id} value={service.id}>
@@ -328,7 +329,7 @@ const ReservationSystem = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un centro" />
                   </SelectTrigger>
-                  <SelectContent className="z-50 bg-background border shadow-md">
+                  <SelectContent className="z-[100] bg-background border shadow-lg">
                     {centers.map((center) => (
                       <SelectItem key={center.id} value={center.id}>
                         <div className="flex items-center space-x-2">
@@ -365,7 +366,7 @@ const ReservationSystem = () => {
                         {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-50 bg-background border shadow-md" align="start">
+                    <PopoverContent className="w-auto p-0 z-[100] bg-background border shadow-lg" align="start">
                       <Calendar
                         mode="single"
                         selected={formData.date}
@@ -384,7 +385,7 @@ const ReservationSystem = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona una hora" />
                     </SelectTrigger>
-                    <SelectContent className="z-50 bg-background border shadow-md">
+                    <SelectContent className="z-[100] bg-background border shadow-lg">
                       {timeSlots.map((time) => (
                         <SelectItem key={time} value={time}>
                           {time}
@@ -395,6 +396,59 @@ const ReservationSystem = () => {
                 </div>
               </div>
             </div>
+
+            {/* Staff Selection */}
+            {formData.center && (
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center space-x-2">
+                  <User className="h-4 w-4" />
+                  <span>Asignación de Personal</span>
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="employee">Especialista</Label>
+                    <Select value={formData.employee} onValueChange={(value) => setFormData({ ...formData, employee: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona especialista" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100] bg-background border shadow-lg">
+                        <SelectItem value="">Cualquier especialista disponible</SelectItem>
+                        {availableEmployees.map((employee) => (
+                          <SelectItem key={employee.id} value={employee.id}>
+                            <div className="flex flex-col">
+                              <span>{employee.profiles?.first_name} {employee.profiles?.last_name}</span>
+                              {employee.specialties?.length > 0 && (
+                                <span className="text-xs text-muted-foreground">
+                                  {employee.specialties.join(', ')}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="lane">Sala/Espacio</Label>
+                    <Select value={formData.lane} onValueChange={(value) => setFormData({ ...formData, lane: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona sala" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100] bg-background border shadow-lg">
+                        <SelectItem value="">Cualquier sala disponible</SelectItem>
+                        {availableLanes.map((lane) => (
+                          <SelectItem key={lane.id} value={lane.id}>
+                            {lane.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Notes */}
             <div>
@@ -434,59 +488,6 @@ const ReservationSystem = () => {
                   {formData.date && formData.time && (
                     <p><strong>Fecha:</strong> {format(formData.date, "PPP", { locale: es })} a las {formData.time}</p>
                   )}
-                </div>
-              </div>
-            )}
-
-            {/* Employee and Lane Selection */}
-            {formData.center && (
-              <div className="space-y-4">
-                <h3 className="font-medium">Asignación</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="employee">Terapeuta</Label>
-                    <Select value={formData.employee} onValueChange={(value) => setFormData({ ...formData, employee: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un terapeuta" />
-                      </SelectTrigger>
-                      <SelectContent className="z-50 bg-background border shadow-md">
-                        <SelectItem value="">Cualquier especialista disponible</SelectItem>
-                        {availableEmployees.map((employee) => (
-                          <SelectItem key={employee.id} value={employee.id}>
-                            {employee.profiles?.first_name} {employee.profiles?.last_name}
-                            {employee.specialties && employee.specialties.length > 0 && (
-                              <span className="text-sm text-muted-foreground ml-1">
-                                - {employee.specialties.join(', ')}
-                              </span>
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="lane">Sala</Label>
-                    <Select value={formData.lane} onValueChange={(value) => setFormData({ ...formData, lane: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona una sala" />
-                      </SelectTrigger>
-                      <SelectContent className="z-50 bg-background border shadow-md">
-                        <SelectItem value="">Cualquier sala disponible</SelectItem>
-                        {availableLanes.map((lane) => (
-                          <SelectItem key={lane.id} value={lane.id}>
-                            {lane.name}
-                            {lane.capacity && (
-                              <span className="text-sm text-muted-foreground ml-1">
-                                - Capacidad: {lane.capacity}
-                              </span>
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
               </div>
             )}
