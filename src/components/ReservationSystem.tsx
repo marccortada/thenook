@@ -141,8 +141,8 @@ const ReservationSystem = () => {
         client_id: profile?.id,
         service_id: formData.service,
         center_id: formData.center,
-        lane_id: formData.lane || availableLanes[0]?.id,
-        employee_id: formData.employee || availableEmployees[0]?.id,
+        lane_id: formData.lane && formData.lane !== "any" ? formData.lane : availableLanes[0]?.id,
+        employee_id: formData.employee && formData.employee !== "any" ? formData.employee : availableEmployees[0]?.id,
         booking_datetime: bookingDate.toISOString(),
         duration_minutes,
         total_price_cents: price_cents,
@@ -293,9 +293,9 @@ const ReservationSystem = () => {
                             {service.name} - {service.duration_minutes}min - €{(service.price_cents / 100).toFixed(2)}
                           </SelectItem>
                         )) : (
-                          <SelectItem value="" disabled>
+                          <div className="p-2 text-sm text-muted-foreground text-center">
                             {formData.center ? "No hay servicios disponibles" : "Selecciona primero un centro"}
-                          </SelectItem>
+                          </div>
                         )
                       ) : (
                         uniquePackages.length > 0 ? uniquePackages.map((packageItem) => (
@@ -313,9 +313,9 @@ const ReservationSystem = () => {
                           </div>
                         </SelectItem>
                         )) : (
-                          <SelectItem value="" disabled>
+                          <div className="p-2 text-sm text-muted-foreground text-center">
                             {formData.center ? "No hay bonos disponibles" : "Selecciona primero un centro"}
-                          </SelectItem>
+                          </div>
                         )
                       )}
                     </SelectContent>
@@ -413,7 +413,7 @@ const ReservationSystem = () => {
                         <SelectValue placeholder="Selecciona especialista" />
                       </SelectTrigger>
                       <SelectContent className="z-[100] bg-background border shadow-lg">
-                        <SelectItem value="">Cualquier especialista disponible</SelectItem>
+                        <SelectItem value="any">Cualquier especialista disponible</SelectItem>
                         {availableEmployees.map((employee) => (
                           <SelectItem key={employee.id} value={employee.id}>
                             <div className="flex flex-col">
@@ -437,7 +437,7 @@ const ReservationSystem = () => {
                         <SelectValue placeholder="Selecciona sala" />
                       </SelectTrigger>
                       <SelectContent className="z-[100] bg-background border shadow-lg">
-                        <SelectItem value="">Cualquier sala disponible</SelectItem>
+                        <SelectItem value="any">Cualquier sala disponible</SelectItem>
                         {availableLanes.map((lane) => (
                           <SelectItem key={lane.id} value={lane.id}>
                             {lane.name}
