@@ -15,16 +15,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import Layout from "@/components/Layout";
-// Direct booking system without authentication
-
 const ClientReservation = () => {
   const { toast } = useToast();
   const { centers } = useCenters();
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
-  // Removed authentication dependencies for direct client booking
   
   const [formData, setFormData] = useState({
     clientName: "",
@@ -310,8 +306,23 @@ const ClientReservation = () => {
   };
 
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-xl font-bold text-foreground">
+                The Nook Madrid
+              </h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -611,8 +622,9 @@ const ClientReservation = () => {
             </form>
           </CardContent>
         </Card>
-      </div>
-    </Layout>
+        </div>
+      </main>
+    </div>
   );
 };
 

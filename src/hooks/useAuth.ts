@@ -35,21 +35,23 @@ export const useAuth = () => {
 
         if (error) {
           console.error('Error fetching profile:', error);
-          // Si no encuentra el perfil, creamos uno básico
           if (error.code === 'PGRST116') {
+            // Si no encuentra el perfil, creamos uno básico
             const { data: { user: currentUser } } = await supabase.auth.getUser();
-            const { data: newProfile, error: createError } = await supabase
-              .from('profiles')
-              .insert([{
-                user_id: userId,
-                email: currentUser?.email || '',
-                role: 'client'
-              }])
-              .select()
-              .single();
-            
-            if (!createError && mounted) {
-              setProfile(newProfile);
+            if (currentUser) {
+              const { data: newProfile, error: createError } = await supabase
+                .from('profiles')
+                .insert([{
+                  user_id: userId,
+                  email: currentUser.email || '',
+                  role: 'client'
+                }])
+                .select()
+                .single();
+              
+              if (!createError && mounted) {
+                setProfile(newProfile);
+              }
             }
           }
           return;
@@ -71,14 +73,9 @@ export const useAuth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Solo fetch profile si hay un usuario y no tenemos profile ya
-        if (session?.user && (!profile || profile.user_id !== session.user.id)) {
-          setTimeout(() => {
-            if (mounted) {
-              fetchUserProfile(session.user.id);
-            }
-          }, 0);
-        } else if (!session?.user) {
+        if (session?.user) {
+          fetchUserProfile(session.user.id);
+        } else {
           setProfile(null);
         }
         setLoading(false);
@@ -92,12 +89,8 @@ export const useAuth = () => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user && (!profile || profile.user_id !== session.user.id)) {
-        setTimeout(() => {
-          if (mounted) {
-            fetchUserProfile(session.user.id);
-          }
-        }, 0);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
       }
       setLoading(false);
     });
@@ -106,7 +99,7 @@ export const useAuth = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []); // Sin dependencias para evitar bucles
+  }, []);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
