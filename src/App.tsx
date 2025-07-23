@@ -23,17 +23,17 @@ const App = () => (
           <Route path="/" element={<ClientReservation />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin" element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin={true}>
               <Index />
             </ProtectedRoute>
           } />
           <Route path="/notifications" element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin={true}>
               <NotificationDashboard />
             </ProtectedRoute>
           } />
           <Route path="/reports" element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin={true}>
               <ReportsCenter />
             </ProtectedRoute>
           } />

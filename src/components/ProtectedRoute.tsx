@@ -22,7 +22,7 @@ const ProtectedRoute = ({
   useEffect(() => {
     if (!loading) {
       if (requireAuth && !isAuthenticated) {
-        navigate('/auth');
+        navigate('/admin-login');
         return;
       }
       

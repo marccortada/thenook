@@ -18,20 +18,8 @@ import { useCenters } from "@/hooks/useDatabase";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("reservations");
-  const { isAuthenticated, isAdmin, profile } = useAuth();
+  const { profile } = useAuth();
   const navigate = useNavigate();
-
-  // Redirect non-authenticated users to main page
-  if (!isAuthenticated) {
-    navigate("/");
-    return null;
-  }
-
-  // Only show admin dashboard for authenticated admins
-  if (!isAdmin()) {
-    navigate("/");
-    return null;
-  }
 
   return (
     <Layout>
