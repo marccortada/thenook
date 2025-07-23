@@ -25,15 +25,15 @@ const ClientReservation = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
-  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { isAuthenticated, isAdmin, loading, profile } = useAuth();
   const navigate = useNavigate();
 
   // Redirect authenticated admins to admin panel
   useEffect(() => {
-    if (!loading && isAuthenticated && isAdmin()) {
+    if (!loading && isAuthenticated && profile?.role === 'admin') {
       navigate('/admin');
     }
-  }, [loading, isAuthenticated, isAdmin, navigate]);
+  }, [loading, isAuthenticated, profile, navigate]);
   
   const [formData, setFormData] = useState({
     clientName: "",
@@ -92,13 +92,13 @@ const ClientReservation = () => {
     if (!formData.clientEmail && !formData.clientPhone) return;
 
     try {
-      const { data: profile } = await supabase
+      const { data: existingProfile } = await supabase
         .from('profiles')
         .select('*')
         .or(`email.eq.${formData.clientEmail},phone.eq.${formData.clientPhone}`)
         .maybeSingle();
 
-      if (profile) {
+      if (existingProfile) {
         const { data: bookings } = await supabase
           .from('bookings')
           .select(`
@@ -107,7 +107,7 @@ const ClientReservation = () => {
             centers(name),
             employees(profiles(first_name, last_name))
           `)
-          .eq('client_id', profile.id)
+          .eq('client_id', existingProfile.id)
           .gte('booking_datetime', new Date().toISOString())
           .order('booking_datetime', { ascending: true });
 

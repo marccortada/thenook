@@ -57,7 +57,7 @@ export const useAuth = () => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
@@ -65,10 +65,29 @@ export const useAuth = () => {
 
       if (error) {
         console.error('Error fetching profile:', error);
+        // Si no encuentra el perfil, creamos uno básico
+        if (error.code === 'PGRST116') {
+          // Obtener email del usuario actual
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([{
+              user_id: userId,
+              email: currentUser?.email || '',
+              role: 'client'
+            }])
+            .select()
+            .single();
+          
+          if (!createError) {
+            setProfile(newProfile);
+          }
+        }
         return;
       }
 
       setProfile(data);
+      console.log('Profile loaded:', data);
     } catch (error) {
       console.error('Error fetching profile:', error);
     }

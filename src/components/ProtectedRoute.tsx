@@ -27,12 +27,12 @@ const ProtectedRoute = ({
       }
       
       if (requireAdmin && !isAdmin()) {
-        navigate('/');
+        navigate('/admin-login');
         return;
       }
       
       if (requireEmployee && !isEmployee() && !isAdmin()) {
-        navigate('/');
+        navigate('/admin-login');
         return;
       }
     }
