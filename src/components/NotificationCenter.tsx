@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 
 const NotificationCenter = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const {
     notifications,
@@ -225,7 +227,7 @@ const NotificationCenter = () => {
                 className="w-full text-sm"
                 onClick={() => {
                   setIsOpen(false);
-                  window.location.href = '/notifications';
+                  navigate('/notifications');
                 }}
               >
                 Ver todas las notificaciones

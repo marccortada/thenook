@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const NotificationDashboard = () => {
+  const navigate = useNavigate();
   const {
     metrics,
     loading,
@@ -442,7 +444,7 @@ const NotificationDashboard = () => {
               <Button 
                 variant="outline" 
                 className="w-full justify-start"
-                onClick={() => window.location.href = '/notifications'}
+                onClick={() => navigate('/notifications')}
               >
                 <Bell className="h-4 w-4 mr-2" />
                 Configurar Reglas
