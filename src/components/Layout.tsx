@@ -66,7 +66,7 @@ const Layout = ({ children }: LayoutProps) => {
                 onClick={() => navigate("/")}
                 className="text-xl font-bold hover:bg-transparent"
               >
-                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <span className="text-foreground">
                   The Nook Madrid
                 </span>
               </Button>
