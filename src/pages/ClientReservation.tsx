@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/Layout";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const ClientReservation = () => {
   const { toast } = useToast();
@@ -23,6 +25,15 @@ const ClientReservation = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect authenticated admins to admin panel
+  useEffect(() => {
+    if (!loading && isAuthenticated && isAdmin()) {
+      navigate('/admin');
+    }
+  }, [loading, isAuthenticated, isAdmin, navigate]);
   
   const [formData, setFormData] = useState({
     clientName: "",
