@@ -16,8 +16,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/Layout";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+// Direct booking system without authentication
 
 const ClientReservation = () => {
   const { toast } = useToast();
@@ -25,15 +24,7 @@ const ClientReservation = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
-  const { isAuthenticated, isAdmin, loading, profile } = useAuth();
-  const navigate = useNavigate();
-
-  // Redirect authenticated admins to admin panel
-  useEffect(() => {
-    if (!loading && isAuthenticated && profile?.role === 'admin') {
-      navigate('/admin');
-    }
-  }, [loading, isAuthenticated, profile, navigate]);
+  // Removed authentication dependencies for direct client booking
   
   const [formData, setFormData] = useState({
     clientName: "",
@@ -87,7 +78,7 @@ const ClientReservation = () => {
     return acc;
   }, [] as typeof packages);
 
-  // Check for existing bookings when email/phone changes
+  // Check for existing bookings and packages when email/phone changes
   const checkExistingBookings = async () => {
     if (!formData.clientEmail && !formData.clientPhone) return;
 
@@ -99,6 +90,7 @@ const ClientReservation = () => {
         .maybeSingle();
 
       if (existingProfile) {
+        // Get future bookings
         const { data: bookings } = await supabase
           .from('bookings')
           .select(`
@@ -111,8 +103,32 @@ const ClientReservation = () => {
           .gte('booking_datetime', new Date().toISOString())
           .order('booking_datetime', { ascending: true });
 
-        if (bookings && bookings.length > 0) {
-          setExistingBookings(bookings);
+        // Get active packages/vouchers
+        const { data: clientPackages } = await supabase
+          .from('client_packages')
+          .select(`
+            *,
+            packages(name, services(name))
+          `)
+          .eq('client_id', existingProfile.id)
+          .eq('status', 'active')
+          .gt('expiry_date', new Date().toISOString())
+          .order('expiry_date', { ascending: true });
+
+        const combinedBookings = [
+          ...(bookings || []),
+          ...(clientPackages || []).map(pkg => ({
+            ...pkg,
+            type: 'package',
+            booking_datetime: pkg.expiry_date,
+            services: { name: `Bono: ${pkg.packages?.name}` },
+            centers: { name: 'Válido en todos los centros' },
+            remaining_sessions: pkg.total_sessions - pkg.used_sessions
+          }))
+        ];
+
+        if (combinedBookings.length > 0) {
+          setExistingBookings(combinedBookings);
           setShowExistingBookings(true);
         }
       }
@@ -334,59 +350,77 @@ const ClientReservation = () => {
                   </div>
                 </div>
                 
-                <div>
-                  <Label htmlFor="clientEmail">Email</Label>
-                  <Input
-                    id="clientEmail"
-                    type="email"
-                    value={formData.clientEmail}
-                    onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
-                    onBlur={checkExistingBookings}
-                    placeholder="cliente@email.com"
-                  />
-                </div>
+                 <div>
+                   <Label htmlFor="clientEmail">Email</Label>
+                   <Input
+                     id="clientEmail"
+                     type="email"
+                     value={formData.clientEmail}
+                     onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+                     onBlur={checkExistingBookings}
+                     placeholder="cliente@email.com"
+                   />
+                   <p className="text-xs text-muted-foreground mt-1">
+                     Introduce tu email o teléfono para ver tus reservas anteriores y bonos
+                   </p>
+                 </div>
               </div>
 
               {/* Existing Bookings */}
               {showExistingBookings && existingBookings.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium">Tus Reservas Actuales</h3>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowExistingBookings(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    {existingBookings.map((booking) => (
-                      <Card key={booking.id} className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">{booking.services?.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {format(new Date(booking.booking_datetime), "PPP 'a las' HH:mm", { locale: es })}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{booking.centers?.name}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => cancelBooking(booking.id)}
-                            >
-                              Cancelar
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
+                 <div className="space-y-4">
+                   <div className="flex items-center justify-between">
+                     <h3 className="font-medium">Tus Reservas y Bonos</h3>
+                     <Button
+                       type="button"
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => setShowExistingBookings(false)}
+                     >
+                       <X className="h-4 w-4" />
+                     </Button>
+                   </div>
+                   <div className="space-y-2">
+                     {existingBookings.map((booking) => (
+                       <Card key={booking.id} className="p-4">
+                         <div className="flex justify-between items-start">
+                           <div>
+                             <p className="font-medium">{booking.services?.name}</p>
+                             {booking.type === 'package' ? (
+                               <>
+                                 <p className="text-sm text-muted-foreground">
+                                   {booking.remaining_sessions} sesiones restantes
+                                 </p>
+                                 <p className="text-sm text-orange-600">
+                                   Caduca: {format(new Date(booking.expiry_date), "PPP", { locale: es })}
+                                 </p>
+                               </>
+                             ) : (
+                               <>
+                                 <p className="text-sm text-muted-foreground">
+                                   {format(new Date(booking.booking_datetime), "PPP 'a las' HH:mm", { locale: es })}
+                                 </p>
+                                 <p className="text-sm text-muted-foreground">{booking.centers?.name}</p>
+                               </>
+                             )}
+                           </div>
+                           <div className="flex gap-2">
+                             {booking.type !== 'package' && (
+                               <Button
+                                 type="button"
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={() => cancelBooking(booking.id)}
+                               >
+                                 Cancelar
+                               </Button>
+                             )}
+                           </div>
+                         </div>
+                       </Card>
+                     ))}
+                   </div>
+                 </div>
               )}
 
               {/* Service Selection */}

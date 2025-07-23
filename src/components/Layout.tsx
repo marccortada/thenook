@@ -147,17 +147,7 @@ const Layout = ({ children }: LayoutProps) => {
                 </>
               )}
               
-              {/* Enlace discreto para acceso admin */}
-              {!isAuthenticated && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/admin-login")}
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Admin
-                </Button>
-              )}
+              {/* Admin access completamente oculto - solo accesible via URL directa /admin-login */}
             </div>
 
             <div className="flex items-center space-x-4">
