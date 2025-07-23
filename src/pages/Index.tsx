@@ -20,68 +20,17 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("reservations");
   const { isAuthenticated, isAdmin, profile } = useAuth();
   const navigate = useNavigate();
-  const { centers } = useCenters();
 
-  // If not authenticated, show landing page
+  // Redirect non-authenticated users to main page
   if (!isAuthenticated) {
-    return (
-      <Layout>
-        <div className="max-w-7xl mx-auto">
-          {/* Hero Section */}
-          <div className="text-center py-16">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Bienestar y Relajación
-              </span>
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Descubre nuestros centros de masajes y terapias en el corazón de Madrid. 
-              Reserva tu sesión de relajación y bienestar.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate("/auth")}>
-                <CalendarDays className="mr-2 h-5 w-5" />
-                Reservar Cita
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/auth")}>
-                Iniciar Sesión
-              </Button>
-            </div>
-          </div>
+    navigate("/");
+    return null;
+  }
 
-          {/* Centers */}
-          <div className="py-16">
-            <h2 className="text-3xl font-bold text-center mb-12">Nuestros Centros</h2>
-            <div className="grid md:grid-cols-2 gap-8">
-              {centers.map((center) => (
-                <Card key={center.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MapPin className="h-5 w-5" />
-                      {center.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-4">{center.address}</p>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm">Lun-Sab: 9:00 - 21:00</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-yellow-500" />
-                        <span className="text-sm">Servicios de alta calidad</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </Layout>
-    );
+  // Only show admin dashboard for authenticated admins
+  if (!isAdmin()) {
+    navigate("/");
+    return null;
   }
 
   return (

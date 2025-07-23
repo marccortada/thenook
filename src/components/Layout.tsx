@@ -71,15 +71,15 @@ const Layout = ({ children }: LayoutProps) => {
                 </span>
               </Button>
               
-              {/* Menú de navegación principal */}
-              {isAuthenticated && (
+              {/* Menú de navegación principal - Solo para admins */}
+              {isAuthenticated && isAdmin() && (
                 <>
                   {isMobile ? (
                     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                       <SheetTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <Menu className="h-4 w-4 mr-2" />
-                          Menú
+                          Admin
                         </Button>
                       </SheetTrigger>
                       <SheetContent side="left" className="w-64">
@@ -88,39 +88,35 @@ const Layout = ({ children }: LayoutProps) => {
                             variant="ghost" 
                             className="justify-start" 
                             onClick={() => {
-                              navigate("/");
+                              navigate("/admin");
                               setMobileMenuOpen(false);
                             }}
                           >
                             <Home className="mr-2 h-4 w-4" />
-                            <span>Inicio</span>
+                            <span>Panel Admin</span>
                           </Button>
-                          {isAdmin() && (
-                            <>
-                              <Button 
-                                variant="ghost" 
-                                className="justify-start"
-                                onClick={() => {
-                                  navigate("/reports");
-                                  setMobileMenuOpen(false);
-                                }}
-                              >
-                                <FileText className="mr-2 h-4 w-4" />
-                                <span>Centro de Reportes</span>
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                className="justify-start"
-                                onClick={() => {
-                                  navigate("/notifications");
-                                  setMobileMenuOpen(false);
-                                }}
-                              >
-                                <Bell className="mr-2 h-4 w-4" />
-                                <span>Notificaciones</span>
-                              </Button>
-                            </>
-                          )}
+                          <Button 
+                            variant="ghost" 
+                            className="justify-start"
+                            onClick={() => {
+                              navigate("/reports");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            <span>Centro de Reportes</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="justify-start"
+                            onClick={() => {
+                              navigate("/notifications");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            <Bell className="mr-2 h-4 w-4" />
+                            <span>Notificaciones</span>
+                          </Button>
                         </div>
                       </SheetContent>
                     </Sheet>
@@ -129,36 +125,44 @@ const Layout = ({ children }: LayoutProps) => {
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <Menu className="h-4 w-4 mr-2" />
-                          Menú
+                          Admin
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-48">
-                        <DropdownMenuItem onClick={() => navigate("/")}>
+                        <DropdownMenuItem onClick={() => navigate("/admin")}>
                           <Home className="mr-2 h-4 w-4" />
-                          <span>Inicio</span>
+                          <span>Panel Admin</span>
                         </DropdownMenuItem>
-                        {isAdmin() && (
-                          <>
-                            <DropdownMenuItem onClick={() => navigate("/reports")}>
-                              <FileText className="mr-2 h-4 w-4" />
-                              <span>Centro de Reportes</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => navigate("/notifications")}>
-                              <Bell className="mr-2 h-4 w-4" />
-                              <span>Notificaciones</span>
-                            </DropdownMenuItem>
-                          </>
-                        )}
+                        <DropdownMenuItem onClick={() => navigate("/reports")}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>Centro de Reportes</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                          <Bell className="mr-2 h-4 w-4" />
+                          <span>Notificaciones</span>
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
                 </>
               )}
+              
+              {/* Enlace discreto para acceso admin */}
+              {!isAuthenticated && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/admin-login")}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Admin
+                </Button>
+              )}
             </div>
 
             <div className="flex items-center space-x-4">
               {isAuthenticated && isAdmin() && <NotificationCenter />}
-              {isAuthenticated ? (
+              {isAuthenticated && isAdmin() ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -178,33 +182,26 @@ const Layout = ({ children }: LayoutProps) => {
                         <p className="text-xs leading-none text-muted-foreground">
                           {user?.email}
                         </p>
-                        {profile?.role && (
-                          <div className="pt-1">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                              {profile.role === 'admin' ? 'Administrador' : 
-                               profile.role === 'employee' ? 'Empleado' : 'Cliente'}
-                            </span>
-                          </div>
-                        )}
+                        <div className="pt-1">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                            Administrador
+                          </span>
+                        </div>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/")}>
+                    <DropdownMenuItem onClick={() => navigate("/admin")}>
                       <Calendar className="mr-2 h-4 w-4" />
-                      <span>Mis reservas</span>
+                      <span>Panel Admin</span>
                     </DropdownMenuItem>
-                    {isAdmin() && (
-                      <>
-                        <DropdownMenuItem onClick={() => navigate("/reports")}>
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Centro de Reportes</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate("/notifications")}>
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Notificaciones</span>
-                        </DropdownMenuItem>
-                      </>
-                    )}
+                    <DropdownMenuItem onClick={() => navigate("/reports")}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Centro de Reportes</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Notificaciones</span>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 h-4 w-4" />
@@ -212,16 +209,7 @@ const Layout = ({ children }: LayoutProps) => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <Button
-                  variant="default"
-                  onClick={() => navigate("/auth")}
-                  className="flex items-center space-x-2"
-                >
-                  <User className="h-4 w-4" />
-                  <span>Iniciar sesión</span>
-                </Button>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
