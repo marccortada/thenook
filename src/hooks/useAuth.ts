@@ -108,9 +108,9 @@ export const useAuth = () => {
     }
   };
 
-  const isAdmin = () => profile?.role === 'admin';
-  const isEmployee = () => profile?.role === 'employee';
-  const isClient = () => profile?.role === 'client';
+  const isAdmin = profile?.role === 'admin';
+  const isEmployee = profile?.role === 'employee';
+  const isClient = profile?.role === 'client';
 
   return {
     user,
