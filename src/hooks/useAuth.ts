@@ -21,67 +21,45 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
-    // Function to load profile - only call when needed
-    const loadProfile = async (userId: string) => {
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
-        
-        if (mounted) {
-          setProfile(data);
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error);
-        if (mounted) {
-          setProfile(null);
-        }
-      }
-    };
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single()
+          .then(({ data }) => setProfile(data));
+      }
+      
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          loadProfile(session.user.id);
+        if (session?.user && event === 'SIGNED_IN') {
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single()
+            .then(({ data }) => setProfile(data));
+        } else if (event === 'SIGNED_OUT') {
+          setProfile(null);
         }
         
         setLoading(false);
       }
-    });
-
-    // Listen for auth changes - NO async operations here
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (session?.user) {
-            // Use setTimeout to defer this call and avoid the loop
-            setTimeout(() => {
-              if (mounted) loadProfile(session.user!.id);
-            }, 0);
-          } else {
-            setProfile(null);
-          }
-          
-          setLoading(false);
-        }
-      }
     );
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
