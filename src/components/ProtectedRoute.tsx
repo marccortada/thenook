@@ -16,8 +16,11 @@ const ProtectedRoute = ({
   requireAdmin = false, 
   requireEmployee = false 
 }: ProtectedRouteProps) => {
-  const { isAuthenticated, loading, isAdmin, isEmployee } = useAuth();
+  const { isAuthenticated, loading, profile } = useAuth();
   const navigate = useNavigate();
+
+  const isAdmin = profile?.role === 'admin';
+  const isEmployee = profile?.role === 'employee';
 
   useEffect(() => {
     if (!loading) {
@@ -26,12 +29,12 @@ const ProtectedRoute = ({
         return;
       }
       
-      if (requireAdmin && !isAdmin()) {
+      if (requireAdmin && !isAdmin) {
         navigate('/admin-login');
         return;
       }
       
-      if (requireEmployee && !isEmployee() && !isAdmin()) {
+      if (requireEmployee && !isEmployee && !isAdmin) {
         navigate('/admin-login');
         return;
       }
@@ -53,7 +56,7 @@ const ProtectedRoute = ({
     return null;
   }
 
-  if (requireAdmin && !isAdmin()) {
+  if (requireAdmin && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -64,7 +67,7 @@ const ProtectedRoute = ({
     );
   }
 
-  if (requireEmployee && !isEmployee() && !isAdmin()) {
+  if (requireEmployee && !isEmployee && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
