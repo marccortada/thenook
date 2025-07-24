@@ -25,16 +25,6 @@ export const useAuth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single()
-          .then(({ data }) => setProfile(data));
-      }
-      
       setLoading(false);
     });
 
@@ -43,24 +33,26 @@ export const useAuth = () => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
-        if (session?.user && event === 'SIGNED_IN') {
-          supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single()
-            .then(({ data }) => setProfile(data));
-        } else if (event === 'SIGNED_OUT') {
-          setProfile(null);
-        }
-        
         setLoading(false);
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Load profile separately when user changes
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => setProfile(data));
+    } else {
+      setProfile(null);
+    }
+  }, [user]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
