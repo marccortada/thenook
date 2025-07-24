@@ -19,7 +19,7 @@ const ProtectedRoute = ({
   const { isAuthenticated, loading, profile, isAdmin, isEmployee } = useAuth();
   const navigate = useNavigate();
 
-  console.log('ProtectedRoute - isAuthenticated:', isAuthenticated, 'isAdmin:', isAdmin, 'profile:', profile);
+  
 
   useEffect(() => {
     if (!loading) {

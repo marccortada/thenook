@@ -25,7 +25,6 @@ export const useAuth = () => {
 
     const fetchUserProfile = async (userId: string) => {
       try {
-        console.log('Fetching profile for user:', userId);
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -34,36 +33,25 @@ export const useAuth = () => {
 
         if (!mounted) return;
 
-        if (error) {
-          console.error('Error fetching profile:', error);
-          if (error.code === 'PGRST116') {
-            // Si no encuentra el perfil, creamos uno básico
-            const { data: { user: currentUser } } = await supabase.auth.getUser();
-            if (currentUser) {
-              console.log('Creating profile for user:', currentUser.id);
-              const { data: newProfile, error: createError } = await supabase
-                .from('profiles')
-                .insert([{
-                  user_id: userId,
-                  email: currentUser.email || '',
-                  role: 'client'
-                }])
-                .select()
-                .single();
-              
-              if (!createError && mounted) {
-                console.log('Profile created:', newProfile);
-                setProfile(newProfile);
-              } else {
-                console.error('Error creating profile:', createError);
-              }
+        if (error && error.code === 'PGRST116') {
+          // Si no encuentra el perfil, creamos uno básico
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (currentUser && mounted) {
+            const { data: newProfile } = await supabase
+              .from('profiles')
+              .insert([{
+                user_id: userId,
+                email: currentUser.email || '',
+                role: 'admin' // Temporal para testing
+              }])
+              .select()
+              .single();
+            
+            if (newProfile && mounted) {
+              setProfile(newProfile);
             }
           }
-          return;
-        }
-
-        if (mounted) {
-          console.log('Profile loaded:', data);
+        } else if (data && mounted) {
           setProfile(data);
         }
       } catch (error) {
@@ -71,37 +59,20 @@ export const useAuth = () => {
       }
     };
 
-    // Obtener sesión actual primero
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('Initial session:', session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    });
-
-    // Configurar listener de cambios de auth
+    // Solo configurar el listener una vez
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (!mounted) return;
         
-        console.log('Auth state change:', event, session);
-        setSession(session);
         setUser(session?.user ?? null);
+        setSession(session);
+        setLoading(false);
         
         if (session?.user) {
-          fetchUserProfile(session.user.id);
+          await fetchUserProfile(session.user.id);
         } else {
           setProfile(null);
         }
-        setLoading(false);
       }
     );
 
