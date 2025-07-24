@@ -52,9 +52,9 @@ const InventoryManagement = () => {
 
   const [movementForm, setMovementForm] = useState({
     item_id: '',
-    movement_type: 'in' as 'in' | 'out' | 'adjustment',
+    movement_type: 'purchase' as 'adjustment' | 'transfer' | 'purchase' | 'sale' | 'expired' | 'damaged' | 'service_use',
     quantity: 0,
-    reason: '',
+    reason: 'purchase' as 'adjustment' | 'transfer' | 'purchase' | 'sale' | 'expired' | 'damaged' | 'service_use',
     unit_cost: 0,
     notes: ''
   });
@@ -101,7 +101,8 @@ const InventoryManagement = () => {
       unit_cost: 0,
       selling_price: 0,
       location: '',
-      center_id: null
+      center_id: null,
+      is_active: true
     });
   };
 

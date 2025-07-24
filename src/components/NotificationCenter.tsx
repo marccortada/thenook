@@ -47,7 +47,7 @@ const NotificationCenter = () => {
 
   const [ruleForm, setRuleForm] = useState({
     name: '',
-    trigger_type: 'booking_reminder',
+    trigger_type: 'booking_reminder' as 'booking_reminder' | 'birthday' | 'package_expiry' | 'appointment_confirmation' | 'no_show_follow_up',
     trigger_days_before: 1,
     message_template: '',
     send_via: ['email'],
