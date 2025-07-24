@@ -22,7 +22,7 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (isAuthenticated && isAdmin()) {
-      navigate("/");
+      navigate("/admin");
     }
   }, [isAuthenticated, isAdmin, navigate]);
 
@@ -58,7 +58,7 @@ const AdminLogin = () => {
         description: "Bienvenido al panel de administración",
       });
 
-      navigate("/");
+      navigate("/admin");
     } catch (error) {
       console.error("Error during login:", error);
       toast({
