@@ -9,6 +9,7 @@ import EmployeeManagement from "@/components/EmployeeManagement";
 import PackageManagement from "@/components/PackageManagement";
 import ClientNotes from "@/components/ClientNotes";
 import BookingsList from "@/components/BookingsList";
+import SpecialistClients from "@/components/SpecialistClients";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
 import HappyHourManagement from "@/components/HappyHourManagement";
 import AdvancedDashboard from "@/components/AdvancedDashboard";
@@ -93,6 +94,7 @@ const Index = () => {
           <TabsContent value="reservations" className="mt-6 space-y-6">
             <ReservationSystem />
             <BookingsList />
+            <SpecialistClients />
           </TabsContent>
 
           <TabsContent value="employees" className="mt-6">
