@@ -306,6 +306,37 @@ const ClientReservation = () => {
     }
   };
 
+  const handleEmailChange = async (email: string) => {
+    setFormData(prev => ({ ...prev, clientEmail: email }));
+    
+    if (email && email.includes('@')) {
+      try {
+        // Buscar cliente existente por email
+        const { data: existingClient } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', email.toLowerCase())
+          .single();
+          
+        if (existingClient) {
+          setFormData(prev => ({
+            ...prev,
+            clientName: `${existingClient.first_name || ''} ${existingClient.last_name || ''}`.trim() || prev.clientName,
+            clientPhone: existingClient.phone || prev.clientPhone
+          }));
+          
+          toast({
+            title: "Cliente encontrado",
+            description: "Datos del cliente cargados automáticamente",
+          });
+        }
+      } catch (error) {
+        // Cliente no encontrado, continuar normal
+        console.log('Cliente no encontrado, continuar con nuevo cliente');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -317,12 +348,42 @@ const ClientReservation = () => {
                 The Nook Madrid
               </h1>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/admin-login'}
+              className="text-xs"
+            >
+              Admin
+            </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
+        {/* Mensaje informativo sobre gestión de reservas */}
+        <div className="max-w-4xl mx-auto mb-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-blue-800">
+                  ¿Ya tienes una reserva?
+                </h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  Si deseas gestionar, cambiar o cancelar una reserva existente, utiliza nuestro asistente virtual en la esquina inferior derecha. 
+                  Solo proporciona tu email y podrás acceder a todas tus reservas.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <div className="max-w-4xl mx-auto px-4">
         <Card>
           <CardHeader>
@@ -368,7 +429,7 @@ const ClientReservation = () => {
                      id="clientEmail"
                      type="email"
                      value={formData.clientEmail}
-                     onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+                     onChange={(e) => handleEmailChange(e.target.value)}
                      onBlur={checkExistingBookings}
                      placeholder="cliente@email.com"
                    />

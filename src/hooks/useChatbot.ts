@@ -32,7 +32,15 @@ export const useChatbot = () => {
       const { data, error } = await supabase.functions.invoke('chatbot', {
         body: { 
           message: content,
-          context: messages.slice(-5) // Últimos 5 mensajes para contexto
+          context: messages.slice(-5), // Últimos 5 mensajes para contexto
+          capabilities: [
+            'gestionar_reservas', 
+            'buscar_por_email', 
+            'cancelar_reservas', 
+            'modificar_reservas',
+            'consultar_bonos',
+            'informacion_servicios'
+          ]
         }
       });
 
