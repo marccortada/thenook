@@ -88,7 +88,7 @@ const Layout = ({ children }: LayoutProps) => {
                             variant="ghost" 
                             className="justify-start" 
                             onClick={() => {
-                              navigate("/admin");
+                              navigate("/panel-gestion-nook-madrid-2024");
                               setMobileMenuOpen(false);
                             }}
                           >
@@ -99,7 +99,7 @@ const Layout = ({ children }: LayoutProps) => {
                             variant="ghost" 
                             className="justify-start"
                             onClick={() => {
-                              navigate("/reports");
+                              navigate("/panel-gestion-nook-madrid-2024/reports");
                               setMobileMenuOpen(false);
                             }}
                           >
@@ -110,7 +110,7 @@ const Layout = ({ children }: LayoutProps) => {
                             variant="ghost" 
                             className="justify-start"
                             onClick={() => {
-                              navigate("/notifications");
+                              navigate("/panel-gestion-nook-madrid-2024/notifications");
                               setMobileMenuOpen(false);
                             }}
                           >
@@ -129,15 +129,15 @@ const Layout = ({ children }: LayoutProps) => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-48">
-                        <DropdownMenuItem onClick={() => navigate("/admin")}>
+                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024")}>
                           <Home className="mr-2 h-4 w-4" />
                           <span>Panel Admin</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate("/reports")}>
+                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/reports")}>
                           <FileText className="mr-2 h-4 w-4" />
                           <span>Centro de Reportes</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/notifications")}>
                           <Bell className="mr-2 h-4 w-4" />
                           <span>Notificaciones</span>
                         </DropdownMenuItem>
@@ -147,7 +147,7 @@ const Layout = ({ children }: LayoutProps) => {
                 </>
               )}
               
-              {/* Admin access completamente oculto - solo accesible via URL directa /admin-login */}
+              {/* Panel de administración accesible vía URL secreta */}
             </div>
 
             <div className="flex items-center space-x-4">
@@ -180,15 +180,15 @@ const Layout = ({ children }: LayoutProps) => {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/admin")}>
+                    <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024")}>
                       <Calendar className="mr-2 h-4 w-4" />
                       <span>Panel Admin</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/reports")}>
+                    <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/reports")}>
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Centro de Reportes</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                    <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/notifications")}>
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Notificaciones</span>
                     </DropdownMenuItem>

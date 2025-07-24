@@ -21,22 +21,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<ClientReservation />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
-          <Route path="/admin" element={
-            <ProtectedRoute requireAdmin={true}>
-              <Index />
-            </ProtectedRoute>
-          } />
-          <Route path="/notifications" element={
-            <ProtectedRoute requireAdmin={true}>
-              <NotificationDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/reports" element={
-            <ProtectedRoute requireAdmin={true}>
-              <ReportsCenter />
-            </ProtectedRoute>
-          } />
+          <Route path="/panel-gestion-nook-madrid-2024" element={<Index />} />
+          <Route path="/panel-gestion-nook-madrid-2024/notifications" element={<NotificationDashboard />} />
+          <Route path="/panel-gestion-nook-madrid-2024/reports" element={<ReportsCenter />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

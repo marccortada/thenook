@@ -351,7 +351,7 @@ const ClientReservation = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.location.href = '/admin-login'}
+              onClick={() => window.location.href = '/panel-gestion-nook-madrid-2024'}
               className="text-xs"
             >
               Admin

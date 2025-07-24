@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 
 export interface UserProfile {
   id: string;
@@ -15,65 +13,38 @@ export interface UserProfile {
 }
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Load profile separately when user changes
-  useEffect(() => {
-    if (user) {
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-        .then(({ data }) => setProfile(data));
-    } else {
-      setProfile(null);
-    }
-  }, [user]);
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
-    }
+  // Mock admin user for panel access
+  const mockAdmin = {
+    id: 'admin',
+    email: 'admin@thenookmadrid.com',
+    user_metadata: { first_name: 'Admin', last_name: 'Panel' }
   };
 
-  const isAdmin = profile?.role === 'admin';
-  const isEmployee = profile?.role === 'employee';
-  const isClient = profile?.role === 'client';
+  const mockProfile = {
+    id: 'admin-profile',
+    user_id: 'admin',
+    email: 'admin@thenookmadrid.com',
+    first_name: 'Admin',
+    last_name: 'Panel',
+    phone: null,
+    role: 'admin' as const,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const signOut = async () => {
+    // No-op for mock implementation
+  };
 
   return {
-    user,
-    session,
-    profile,
-    loading,
+    user: mockAdmin,
+    session: { user: mockAdmin },
+    profile: mockProfile,
+    loading: false,
     signOut,
-    isAdmin,
-    isEmployee,
-    isClient,
-    isAuthenticated: !!user,
+    isAdmin: true,
+    isEmployee: false,
+    isClient: false,
+    isAuthenticated: true,
   };
 };
