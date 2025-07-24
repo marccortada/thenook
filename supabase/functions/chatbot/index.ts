@@ -26,11 +26,25 @@ serve(async (req) => {
       throw new Error('No message provided');
     }
 
-    // Detectar si el mensaje contiene intención de crear reserva
+    // Detectar diferentes tipos de intenciones
     const isBookingRequest = message.toLowerCase().includes('reservar') || 
                             message.toLowerCase().includes('reserva') ||
                             message.toLowerCase().includes('cita') ||
                             message.toLowerCase().includes('agendar');
+
+    const isCancelRequest = message.toLowerCase().includes('cancelar') ||
+                           message.toLowerCase().includes('anular') ||
+                           message.toLowerCase().includes('eliminar reserva');
+
+    const isModifyRequest = message.toLowerCase().includes('modificar') ||
+                           message.toLowerCase().includes('cambiar') ||
+                           message.toLowerCase().includes('reprogramar') ||
+                           message.toLowerCase().includes('mover');
+
+    const isSearchRequest = message.toLowerCase().includes('ver mis reservas') ||
+                           message.toLowerCase().includes('consultar') ||
+                           message.toLowerCase().includes('buscar reservas') ||
+                           (message.includes('@') && (message.toLowerCase().includes('reservas') || message.toLowerCase().includes('citas')));
 
     // Sistema de prompt con funciones para crear reservas
     const systemPrompt = `Eres un asistente virtual especializado para THE NOOK MADRID, centros de masajes y wellness en Madrid.
@@ -232,6 +246,202 @@ Devuelve SOLO un JSON válido con la siguiente estructura (deja null si no está
             console.error('Error creating booking:', error);
           }
         }
+      }
+    }
+
+    // Función para buscar reservas por email
+    if (isSearchRequest || isCancelRequest || isModifyRequest) {
+      // Extraer email del mensaje
+      const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      
+      if (emailMatch) {
+        const email = emailMatch[0];
+        
+        try {
+          // Buscar cliente por email
+          const { data: clientProfile } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name')
+            .eq('email', email)
+            .single();
+
+          if (clientProfile) {
+            // Buscar reservas futuras del cliente
+            const { data: bookings } = await supabase
+              .from('bookings')
+              .select(`
+                id,
+                booking_datetime,
+                status,
+                services (name, price_cents),
+                notes
+              `)
+              .eq('client_id', clientProfile.id)
+              .gte('booking_datetime', new Date().toISOString())
+              .in('status', ['confirmed', 'pending'])
+              .order('booking_datetime', { ascending: true });
+
+            if (bookings && bookings.length > 0) {
+              const bookingsList = bookings.map((booking: any, index: number) => {
+                const date = new Date(booking.booking_datetime);
+                return `${index + 1}. ${booking.services?.name || 'Servicio'} - ${date.toLocaleDateString('es-ES')} a las ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} (ID: ${booking.id.slice(0, 8)})`;
+              }).join('\n');
+
+              if (isSearchRequest) {
+                // Solo mostrar reservas
+                const searchMessage = `📅 **RESERVAS DE ${clientProfile.first_name} ${clientProfile.last_name}**
+
+Reservas próximas encontradas:
+${bookingsList}
+
+¿Necesitas cancelar o modificar alguna de estas reservas? Solo dime el número o menciona "cancelar" o "modificar" junto con el número de la reserva.`;
+
+                return new Response(JSON.stringify({ reply: searchMessage }), {
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+              }
+
+              if (isCancelRequest) {
+                // Buscar número de reserva a cancelar
+                const numberMatch = message.match(/\b(\d+)\b/);
+                if (numberMatch) {
+                  const bookingIndex = parseInt(numberMatch[0]) - 1;
+                  if (bookingIndex >= 0 && bookingIndex < bookings.length) {
+                    const bookingToCancel = bookings[bookingIndex];
+                    
+                    // Cancelar la reserva
+                    const { error: cancelError } = await supabase
+                      .from('bookings')
+                      .update({ 
+                        status: 'cancelled',
+                        notes: (bookingToCancel.notes || '') + ' | Cancelada por chatbot'
+                      })
+                      .eq('id', bookingToCancel.id);
+
+                    if (!cancelError) {
+                      const date = new Date(bookingToCancel.booking_datetime);
+                      const cancelMessage = `❌ **RESERVA CANCELADA EXITOSAMENTE**
+
+✅ Reserva cancelada:
+🎯 Servicio: ${bookingToCancel.services?.name}
+📅 Fecha: ${date.toLocaleDateString('es-ES')}
+⏰ Hora: ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+
+Tu reserva ha sido cancelada. Si era dentro de las próximas 24 horas, es posible que apliquen cargos según nuestras políticas.
+
+¿Necesitas ayuda con algo más?`;
+
+                      return new Response(JSON.stringify({ reply: cancelMessage }), {
+                        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                      });
+                    }
+                  }
+                } else {
+                  // Mostrar lista para cancelar
+                  const cancelListMessage = `❌ **CANCELAR RESERVA**
+
+Reservas disponibles para cancelar:
+${bookingsList}
+
+Para cancelar, responde con el número de la reserva que quieres cancelar (ejemplo: "cancelar 1").`;
+
+                  return new Response(JSON.stringify({ reply: cancelListMessage }), {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                  });
+                }
+              }
+
+              if (isModifyRequest) {
+                // Detectar nueva fecha/hora en el mensaje
+                const dateMatch = message.match(/(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/);
+                const timeMatch = message.match(/(\d{1,2}[:]\d{2})/);
+                const numberMatch = message.match(/\b(\d+)\b/);
+
+                if (numberMatch && dateMatch && timeMatch) {
+                  const bookingIndex = parseInt(numberMatch[0]) - 1;
+                  if (bookingIndex >= 0 && bookingIndex < bookings.length) {
+                    const bookingToModify = bookings[bookingIndex];
+                    
+                    // Construir nueva fecha
+                    const newDateTime = new Date(`${dateMatch[0].replace(/[-\/]/g, '/')} ${timeMatch[0]}`);
+                    
+                    // Modificar la reserva
+                    const { error: modifyError } = await supabase
+                      .from('bookings')
+                      .update({ 
+                        booking_datetime: newDateTime.toISOString(),
+                        notes: (bookingToModify.notes || '') + ' | Modificada por chatbot'
+                      })
+                      .eq('id', bookingToModify.id);
+
+                    if (!modifyError) {
+                      const modifyMessage = `✏️ **RESERVA MODIFICADA EXITOSAMENTE**
+
+✅ Reserva actualizada:
+🎯 Servicio: ${bookingToModify.services?.name}
+📅 Nueva fecha: ${newDateTime.toLocaleDateString('es-ES')}
+⏰ Nueva hora: ${newDateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+
+Tu reserva ha sido reprogramada. Recibirás confirmación por email.
+
+¿Necesitas ayuda con algo más?`;
+
+                      return new Response(JSON.stringify({ reply: modifyMessage }), {
+                        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                      });
+                    }
+                  }
+                } else {
+                  // Mostrar lista para modificar
+                  const modifyListMessage = `✏️ **MODIFICAR RESERVA**
+
+Reservas disponibles para modificar:
+${bookingsList}
+
+Para modificar, indica el número de la reserva y la nueva fecha/hora.
+Ejemplo: "modificar 1 para el 25/12/2024 a las 15:30"`;
+
+                  return new Response(JSON.stringify({ reply: modifyListMessage }), {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                  });
+                }
+              }
+            } else {
+              const noBookingsMessage = `🔍 **BÚSQUEDA COMPLETADA**
+
+No se encontraron reservas futuras para ${email}.
+
+¿Te gustaría hacer una nueva reserva?`;
+
+              return new Response(JSON.stringify({ reply: noBookingsMessage }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+          } else {
+            const noClientMessage = `❓ **CLIENTE NO ENCONTRADO**
+
+No se encontró ningún cliente con el email ${email} en nuestro sistema.
+
+¿Te gustaría hacer una nueva reserva?`;
+
+            return new Response(JSON.stringify({ reply: noClientMessage }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        } catch (error) {
+          console.error('Error searching bookings:', error);
+        }
+      } else {
+        // Solicitar email si no se proporciona
+        const emailRequestMessage = `📧 **EMAIL REQUERIDO**
+
+Para ${isCancelRequest ? 'cancelar' : isModifyRequest ? 'modificar' : 'buscar'} tus reservas, necesito tu email.
+
+Por favor, proporciona tu email registrado.`;
+
+        return new Response(JSON.stringify({ reply: emailRequestMessage }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     }
 
