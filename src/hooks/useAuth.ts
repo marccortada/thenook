@@ -25,6 +25,7 @@ export const useAuth = () => {
 
     const fetchUserProfile = async (userId: string) => {
       try {
+        console.log('Fetching profile for user:', userId);
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -39,6 +40,7 @@ export const useAuth = () => {
             // Si no encuentra el perfil, creamos uno básico
             const { data: { user: currentUser } } = await supabase.auth.getUser();
             if (currentUser) {
+              console.log('Creating profile for user:', currentUser.id);
               const { data: newProfile, error: createError } = await supabase
                 .from('profiles')
                 .insert([{
@@ -50,7 +52,10 @@ export const useAuth = () => {
                 .single();
               
               if (!createError && mounted) {
+                console.log('Profile created:', newProfile);
                 setProfile(newProfile);
+              } else {
+                console.error('Error creating profile:', createError);
               }
             }
           }
@@ -58,6 +63,7 @@ export const useAuth = () => {
         }
 
         if (mounted) {
+          console.log('Profile loaded:', data);
           setProfile(data);
         }
       } catch (error) {
@@ -65,11 +71,28 @@ export const useAuth = () => {
       }
     };
 
-    // Set up auth state listener FIRST
+    // Obtener sesión actual primero
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
+      console.log('Initial session:', session);
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
+      setLoading(false);
+    });
+
+    // Configurar listener de cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
         
+        console.log('Auth state change:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -81,19 +104,6 @@ export const useAuth = () => {
         setLoading(false);
       }
     );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      }
-      setLoading(false);
-    });
 
     return () => {
       mounted = false;
