@@ -354,7 +354,7 @@ const EmployeeManagement = () => {
       </div>
 
       {/* Employee Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         {filteredEmployees.map((employee) => {
           const employeeDetails: EmployeeDetails = {
             ...employee,
@@ -365,47 +365,47 @@ const EmployeeManagement = () => {
           
           return (
             <Card key={employee.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewEmployee(employee)}>
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-primary text-primary-foreground">
+              <CardContent className="p-3 sm:p-4 lg:p-6">
+                <div className="flex items-start space-x-3 sm:space-x-4">
+                  <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                       {getEmployeeInitials(employee)}
                     </AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium truncate">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-medium text-sm sm:text-base truncate">
                         {getEmployeeFullName(employee)}
                       </h3>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Edit className="h-4 w-4" />
+                      <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0 flex-shrink-0">
+                        <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </div>
                     
                     <div className="mt-1 space-y-1">
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <MapPin className="h-3 w-3 mr-1" />
+                      <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
+                        <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
                         <span className="truncate">{getCenterName(employee.center_id)}</span>
                       </div>
                       
                       {employee.profiles?.email && (
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Mail className="h-3 w-3 mr-1" />
+                        <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
+                          <Mail className="h-3 w-3 mr-1 flex-shrink-0" />
                           <span className="truncate">{employee.profiles.email}</span>
                         </div>
                       )}
                       
                       {employee.profiles?.phone && (
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Phone className="h-3 w-3 mr-1" />
-                          <span>{employee.profiles.phone}</span>
+                        <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
+                          <Phone className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">{employee.profiles.phone}</span>
                         </div>
                       )}
                     </div>
                     
                     {employee.specialties && employee.specialties.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1">
+                      <div className="mt-2 sm:mt-3 flex flex-wrap gap-1">
                         {employee.specialties.slice(0, 2).map((specialty) => (
                           <Badge key={specialty} variant="secondary" className="text-xs">
                             {specialty}
@@ -419,7 +419,7 @@ const EmployeeManagement = () => {
                       </div>
                     )}
                     
-                    <div className="mt-3 flex items-center justify-between">
+                    <div className="mt-2 sm:mt-3 flex items-center justify-between">
                       <Badge 
                         variant={employee.active ? "default" : "secondary"}
                         className="text-xs"

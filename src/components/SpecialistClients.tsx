@@ -198,60 +198,60 @@ const SpecialistClients = () => {
             <p>No hay especialistas registrados</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {employeesWithBookings.map((employee) => (
-              <div key={employee.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
+              <div key={employee.id} className="border rounded-lg p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <User className="h-5 w-5 text-primary" />
+                    <div className="bg-primary/10 p-2 rounded-full flex-shrink-0">
+                      <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-base sm:text-lg truncate">
                         {employee.profiles?.first_name} {employee.profiles?.last_name}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
                         {employee.profiles?.email}
                       </p>
                     </div>
                   </div>
-                  <Badge variant="outline">
+                  <Badge variant="outline" className="text-xs sm:text-sm self-start sm:self-center">
                     {employee.bookings.length} {employee.bookings.length === 1 ? 'cliente' : 'clientes'}
                   </Badge>
                 </div>
 
                 {employee.bookings.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground bg-gray-50 rounded">
-                    <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Sin clientes asignados próximamente</p>
+                  <div className="text-center py-4 sm:py-6 text-muted-foreground bg-gray-50 rounded">
+                    <Calendar className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Sin clientes asignados próximamente</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {employee.bookings.map((booking) => (
                       <div 
                         key={booking.id} 
-                        className="bg-gray-50 p-3 rounded border-l-4 border-l-primary/20"
+                        className="bg-gray-50 p-2 sm:p-3 rounded border-l-4 border-l-primary/20"
                       >
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
                           <div className="flex-1 space-y-2">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Badge className={getStatusColor(booking.status)}>
                                 {getStatusText(booking.status)}
                               </Badge>
-                              <Badge variant="outline">
+                              <Badge variant="outline" className="text-xs">
                                 €{(booking.total_price_cents / 100).toFixed(2)}
                               </Badge>
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                               <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                <span>
+                                <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <span className="truncate">
                                   {format(new Date(booking.booking_datetime), "PPP", { locale: es })}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                 <span>
                                   {format(new Date(booking.booking_datetime), "HH:mm")} ({booking.duration_minutes} min)
                                 </span>
@@ -266,20 +266,20 @@ const SpecialistClients = () => {
                             )}
                             
                             {booking.profiles && (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mt-2 p-2 bg-white rounded border">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mt-2 p-2 bg-white rounded border">
                                 <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-muted-foreground" />
-                                  <span>
+                                  <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <span className="truncate">
                                     {booking.profiles.first_name} {booking.profiles.last_name}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Mail className="h-4 w-4 text-muted-foreground" />
-                                  <span>{booking.profiles.email}</span>
+                                  <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <span className="truncate">{booking.profiles.email}</span>
                                 </div>
                                 {booking.profiles.phone && (
-                                  <div className="flex items-center gap-2">
-                                    <Phone className="h-4 w-4 text-muted-foreground" />
+                                  <div className="flex items-center gap-2 col-span-full sm:col-span-1">
+                                    <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                     <span>{booking.profiles.phone}</span>
                                   </div>
                                 )}
@@ -288,7 +288,7 @@ const SpecialistClients = () => {
                             
                             {booking.notes && (
                               <div className="text-sm text-muted-foreground bg-white p-2 rounded border">
-                                <strong>Notas:</strong> {booking.notes}
+                                <strong>Notas:</strong> <span className="break-words">{booking.notes}</span>
                               </div>
                             )}
                           </div>

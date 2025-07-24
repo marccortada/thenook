@@ -116,11 +116,11 @@ const BookingsList = () => {
               .map((booking) => (
               <div 
                 key={booking.id} 
-                className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow"
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge className={getStatusColor(booking.status)}>
                         {getStatusText(booking.status)}
                       </Badge>
@@ -129,15 +129,15 @@ const BookingsList = () => {
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>
+                        <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">
                           {format(new Date(booking.booking_datetime), "PPP", { locale: es })}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <span>
                           {format(new Date(booking.booking_datetime), "HH:mm")} ({booking.duration_minutes} min)
                         </span>
@@ -145,26 +145,26 @@ const BookingsList = () => {
                       {booking.services?.name && (
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">Servicio:</span>
-                          <span>{booking.services.name}</span>
+                          <span className="truncate">{booking.services.name}</span>
                         </div>
                       )}
                     </div>
                     
                     {booking.profiles && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm mt-2 p-2 bg-gray-50 rounded">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm mt-2 p-2 sm:p-3 bg-gray-50 rounded">
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span>
+                          <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="truncate">
                             {booking.profiles.first_name} {booking.profiles.last_name}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span>{booking.profiles.email}</span>
+                          <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="truncate">{booking.profiles.email}</span>
                         </div>
                         {booking.profiles.phone && (
                           <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             <span>{booking.profiles.phone}</span>
                           </div>
                         )}
@@ -172,19 +172,20 @@ const BookingsList = () => {
                     )}
                     
                     {booking.notes && (
-                      <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded">
+                      <div className="text-sm text-muted-foreground bg-gray-50 p-2 sm:p-3 rounded">
                         <strong>Notas:</strong> {booking.notes}
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex flex-col md:flex-row gap-2">
+                  <div className="flex flex-row lg:flex-col gap-2">
                     {booking.status === 'pending' && (
                       <>
                         <Button
                           size="sm"
                           onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
                           disabled={updating === booking.id}
+                          className="flex-1 lg:flex-none text-xs"
                         >
                           Confirmar
                         </Button>
@@ -193,6 +194,7 @@ const BookingsList = () => {
                           variant="outline"
                           onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
                           disabled={updating === booking.id}
+                          className="flex-1 lg:flex-none text-xs"
                         >
                           Cancelar
                         </Button>
@@ -204,6 +206,7 @@ const BookingsList = () => {
                           size="sm"
                           onClick={() => handleStatusUpdate(booking.id, 'completed')}
                           disabled={updating === booking.id}
+                          className="flex-1 lg:flex-none text-xs"
                         >
                           Completar
                         </Button>
@@ -212,6 +215,7 @@ const BookingsList = () => {
                           variant="outline"
                           onClick={() => handleStatusUpdate(booking.id, 'no_show')}
                           disabled={updating === booking.id}
+                          className="flex-1 lg:flex-none text-xs"
                         >
                           No Show
                         </Button>

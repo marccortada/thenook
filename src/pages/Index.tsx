@@ -38,11 +38,11 @@ const Index = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Mobile Menu */}
-          <div className="md:hidden mb-4">
+          <div className="lg:hidden mb-4">
             <select 
               value={activeTab} 
               onChange={(e) => setActiveTab(e.target.value)}
-              className="w-full p-2 border rounded-lg bg-background"
+              className="w-full p-3 border rounded-lg bg-background text-sm"
             >
               <option value="reservations">📅 Reservas</option>
               <option value="employees">👥 Empleados</option>
@@ -56,38 +56,38 @@ const Index = () => {
           </div>
 
           {/* Desktop Tabs */}
-          <TabsList className="hidden md:grid w-full grid-cols-8">
-            <TabsTrigger value="reservations" className="flex items-center space-x-2">
-              <CalendarDays className="h-4 w-4" />
-              <span>Reservas</span>
+          <TabsList className="hidden lg:grid w-full grid-cols-8">
+            <TabsTrigger value="reservations" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Reservas</span>
             </TabsTrigger>
-            <TabsTrigger value="employees" className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
-              <span>Empleados</span>
+            <TabsTrigger value="employees" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Empleados</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4" />
-              <span>Analytics</span>
+            <TabsTrigger value="analytics" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
-              <span>Reportes</span>
+            <TabsTrigger value="reports" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Reportes</span>
             </TabsTrigger>
-            <TabsTrigger value="packages" className="flex items-center space-x-2">
-              <Gift className="h-4 w-4" />
-              <span>Bonos</span>
+            <TabsTrigger value="packages" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Gift className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Bonos</span>
             </TabsTrigger>
-            <TabsTrigger value="notes" className="flex items-center space-x-2">
-              <StickyNote className="h-4 w-4" />
-              <span>Notas</span>
+            <TabsTrigger value="notes" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <StickyNote className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Notas</span>
             </TabsTrigger>
-            <TabsTrigger value="codes" className="flex items-center space-x-2">
-              <Hash className="h-4 w-4" />
-              <span>Códigos</span>
+            <TabsTrigger value="codes" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Hash className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Códigos</span>
             </TabsTrigger>
-            <TabsTrigger value="happyhour" className="flex items-center space-x-2">
-              <Percent className="h-4 w-4" />
-              <span>Happy Hour</span>
+            <TabsTrigger value="happyhour" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Percent className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Happy Hour</span>
             </TabsTrigger>
           </TabsList>
 

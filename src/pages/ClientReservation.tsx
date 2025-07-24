@@ -281,6 +281,20 @@ const ClientReservation = () => {
     }
   };
 
+  const selectedService = services.find(s => s.id === formData.service);
+  const selectedPackage = packages.find(p => p.id === formData.service);
+  const selectedCenter = centers.find(c => c.id === formData.center);
+  
+  const getSelectedItem = () => {
+    if (formData.serviceType === "individual") {
+      return selectedService;
+    } else {
+      return selectedPackage;
+    }
+  };
+  
+  const selectedItem = getSelectedItem();
+
   const cancelBooking = async (bookingId: string) => {
     try {
       const { error } = await supabase
@@ -340,11 +354,11 @@ const ClientReservation = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-        <div className="container mx-auto px-4 py-4">
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-foreground">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">
                 The Nook Madrid
               </h1>
             </div>
@@ -352,7 +366,7 @@ const ClientReservation = () => {
               variant="outline"
               size="sm"
               onClick={() => window.location.href = '/panel-gestion-nook-madrid-2024'}
-              className="text-xs"
+              className="text-xs sm:text-sm"
             >
               Admin
             </Button>
@@ -361,23 +375,23 @@ const ClientReservation = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
         {/* Mensaje informativo sobre gestión de reservas */}
-        <div className="max-w-4xl mx-auto mb-6">
-          <div className="glass-effect rounded-xl p-6 mb-6 border border-primary/20">
-            <div className="flex items-start space-x-4">
+        <div className="max-w-4xl mx-auto mb-4 sm:mb-6">
+          <div className="glass-effect rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-primary/20">
+            <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
               <div className="flex-shrink-0">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-primary mb-2">
+                <h3 className="text-base sm:text-lg font-semibold text-primary mb-2">
                   ¿Ya tienes una reserva?
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                   Si deseas gestionar, cambiar o cancelar una reserva existente, utiliza nuestro asistente virtual en la esquina inferior derecha. 
                   Solo proporciona tu email y podrás acceder a todas tus reservas y bonos.
                 </p>
@@ -386,47 +400,49 @@ const ClientReservation = () => {
           </div>
         </div>
         
-        <div className="max-w-4xl mx-auto px-4">
+        <div className="max-w-4xl mx-auto">
         <Card className="hover-lift glass-effect border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CalendarDays className="h-5 w-5" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
+              <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>Reservar Cita</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="p-4 sm:p-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               {/* Client Information */}
-              <div className="space-y-4">
-                <h3 className="font-medium flex items-center space-x-2">
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
                   <User className="h-4 w-4" />
                   <span>Información Personal</span>
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="clientName">Nombre Completo *</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="col-span-full sm:col-span-1">
+                    <Label htmlFor="clientName" className="text-sm">Nombre Completo *</Label>
                     <Input
                       id="clientName"
                       value={formData.clientName}
                       onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
                       placeholder="Nombre y apellidos"
+                      className="mt-1"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="clientPhone">Teléfono</Label>
+                  <div className="col-span-full sm:col-span-1">
+                    <Label htmlFor="clientPhone" className="text-sm">Teléfono</Label>
                     <Input
                       id="clientPhone"
                       value={formData.clientPhone}
                       onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
                       onBlur={checkExistingBookings}
                       placeholder="+34 600 000 000"
+                      className="mt-1"
                     />
                   </div>
                 </div>
                 
                  <div>
-                   <Label htmlFor="clientEmail">Email</Label>
+                   <Label htmlFor="clientEmail" className="text-sm">Email</Label>
                    <Input
                      id="clientEmail"
                      type="email"
@@ -434,6 +450,7 @@ const ClientReservation = () => {
                      onChange={(e) => handleEmailChange(e.target.value)}
                      onBlur={checkExistingBookings}
                      placeholder="cliente@email.com"
+                     className="mt-1"
                    />
                    <p className="text-xs text-muted-foreground mt-1">
                      Introduce tu email o teléfono para ver tus reservas anteriores y bonos
@@ -443,9 +460,9 @@ const ClientReservation = () => {
 
               {/* Existing Bookings */}
               {showExistingBookings && existingBookings.length > 0 && (
-                 <div className="space-y-4">
+                 <div className="space-y-3 sm:space-y-4">
                    <div className="flex items-center justify-between">
-                     <h3 className="font-medium">Tus Reservas y Bonos</h3>
+                     <h3 className="font-medium text-sm sm:text-base">Tus Reservas y Bonos</h3>
                      <Button
                        type="button"
                        variant="ghost"
@@ -457,40 +474,41 @@ const ClientReservation = () => {
                    </div>
                    <div className="space-y-2">
                      {existingBookings.map((booking) => (
-                       <Card key={booking.id} className="p-4">
-                         <div className="flex justify-between items-start">
-                           <div>
-                             <p className="font-medium">{booking.services?.name}</p>
+                       <Card key={booking.id} className="p-3 sm:p-4">
+                         <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                           <div className="flex-1">
+                             <p className="font-medium text-sm sm:text-base">{booking.services?.name}</p>
                              {booking.type === 'package' ? (
                                <>
-                                 <p className="text-sm text-muted-foreground">
+                                 <p className="text-xs sm:text-sm text-muted-foreground">
                                    {booking.remaining_sessions} sesiones restantes
                                  </p>
-                                 <p className="text-sm text-orange-600">
-                                   Caduca: {format(new Date(booking.expiry_date), "PPP", { locale: es })}
+                                 <p className="text-xs sm:text-sm text-orange-600">
+                                   Vence: {format(new Date(booking.booking_datetime), "PPP", { locale: es })}
                                  </p>
                                </>
                              ) : (
                                <>
-                                 <p className="text-sm text-muted-foreground">
+                                 <p className="text-xs sm:text-sm text-muted-foreground">
                                    {format(new Date(booking.booking_datetime), "PPP 'a las' HH:mm", { locale: es })}
                                  </p>
-                                 <p className="text-sm text-muted-foreground">{booking.centers?.name}</p>
+                                 <p className="text-xs sm:text-sm text-muted-foreground">
+                                   {booking.centers?.name}
+                                 </p>
                                </>
                              )}
                            </div>
-                           <div className="flex gap-2">
-                             {booking.type !== 'package' && (
-                               <Button
-                                 type="button"
-                                 variant="outline"
-                                 size="sm"
-                                 onClick={() => cancelBooking(booking.id)}
-                               >
-                                 Cancelar
-                               </Button>
-                             )}
-                           </div>
+                           {booking.type !== 'package' && booking.status === 'pending' && (
+                             <Button
+                               type="button"
+                               variant="outline"
+                               size="sm"
+                               onClick={() => cancelBooking(booking.id)}
+                               className="text-xs"
+                             >
+                               Cancelar
+                             </Button>
+                           )}
                          </div>
                        </Card>
                      ))}
@@ -499,65 +517,51 @@ const ClientReservation = () => {
               )}
 
               {/* Service Selection */}
-              <div className="space-y-4">
-                <h3 className="font-medium">Selección de Servicio</h3>
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="font-medium text-sm sm:text-base">Selección de Servicio</h3>
                 
                 <div>
-                  <Label>Tipo de Servicio</Label>
+                  <Label className="text-sm">Tipo de Servicio</Label>
                   <RadioGroup
                     value={formData.serviceType}
                     onValueChange={(value) => setFormData({ ...formData, serviceType: value as "individual" | "voucher", service: "" })}
-                    className="flex space-x-4"
+                    className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mt-2"
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="individual" id="individual" />
-                      <Label htmlFor="individual">Sesión Individual</Label>
+                      <Label htmlFor="individual" className="text-sm">Sesión Individual</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="voucher" id="voucher" />
-                      <Label htmlFor="voucher">Bono/Paquete</Label>
+                      <Label htmlFor="voucher" className="text-sm">Bono/Paquete</Label>
                     </div>
                   </RadioGroup>
                 </div>
 
                 <div>
-                  <Label htmlFor="center">Centro *</Label>
-                  <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value, service: "", employee: "", lane: "" })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un centro" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100] bg-background border shadow-lg">
-                      {centers.map((center) => (
-                        <SelectItem key={center.id} value={center.id}>
-                          <div className="flex items-center space-x-2">
-                            <MapPin className="h-3 w-3" />
-                            <span>{center.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="service">
+                  <Label htmlFor="service" className="text-sm">
                     {formData.serviceType === "individual" ? "Servicio" : "Bono/Paquete"} *
                   </Label>
                   {servicesLoading || packagesLoading ? (
                     <div className="flex items-center justify-center p-4">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      <span className="ml-2">Cargando servicios...</span>
+                      <span className="ml-2 text-sm">Cargando servicios...</span>
                     </div>
                   ) : (
                     <Select value={formData.service} onValueChange={(value) => setFormData({ ...formData, service: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger className="mt-1">
                         <SelectValue placeholder={formData.serviceType === "individual" ? "Selecciona un servicio" : "Selecciona un bono"} />
                       </SelectTrigger>
-                      <SelectContent className="z-[100] bg-background border shadow-lg">
+                      <SelectContent className="z-[100] bg-background border shadow-lg max-h-60 overflow-y-auto">
                         {formData.serviceType === "individual" ? (
                           uniqueServices.length > 0 ? uniqueServices.map((service) => (
                             <SelectItem key={service.id} value={service.id}>
-                              {service.name} - {service.duration_minutes}min - €{(service.price_cents / 100).toFixed(2)}
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <span>{service.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {service.duration_minutes}min - €{(service.price_cents / 100).toFixed(2)}
+                                </span>
+                              </div>
                             </SelectItem>
                           )) : (
                             <div className="p-2 text-sm text-muted-foreground text-center">
@@ -568,8 +572,8 @@ const ClientReservation = () => {
                           uniquePackages.length > 0 ? uniquePackages.map((packageItem) => (
                           <SelectItem key={packageItem.id} value={packageItem.id}>
                             <div className="flex flex-col">
-                              <span>{packageItem.name}</span>
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-sm">{packageItem.name}</span>
+                              <span className="text-xs text-muted-foreground">
                                 {packageItem.sessions_count} sesiones - €{(packageItem.price_cents / 100).toFixed(2)}
                                 {packageItem.discount_percentage && (
                                   <span className="text-green-600 ml-1">
@@ -589,24 +593,43 @@ const ClientReservation = () => {
                     </Select>
                   )}
                 </div>
+
+                <div>
+                  <Label htmlFor="center" className="text-sm">Centro *</Label>
+                  <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value, service: "", employee: "", lane: "" })}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Selecciona un centro" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[100] bg-background border shadow-lg">
+                      {centers.map((center) => (
+                        <SelectItem key={center.id} value={center.id}>
+                          <div className="flex items-center space-x-2">
+                            <MapPin className="h-3 w-3" />
+                            <span>{center.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Date & Time */}
-              <div className="space-y-4">
-                <h3 className="font-medium flex items-center space-x-2">
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
                   <Clock className="h-4 w-4" />
                   <span>Fecha y Hora</span>
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <Label htmlFor="date">Fecha *</Label>
+                    <Label htmlFor="date" className="text-sm">Fecha *</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left font-normal",
+                            "w-full justify-start text-left font-normal mt-1",
                             !formData.date && "text-muted-foreground"
                           )}
                         >
@@ -626,17 +649,20 @@ const ClientReservation = () => {
                       </PopoverContent>
                     </Popover>
                   </div>
-
+                  
                   <div>
-                    <Label htmlFor="time">Hora *</Label>
+                    <Label htmlFor="time" className="text-sm">Hora *</Label>
                     <Select value={formData.time} onValueChange={(value) => setFormData({ ...formData, time: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Selecciona una hora" />
                       </SelectTrigger>
-                      <SelectContent className="z-[100] bg-background border shadow-lg">
+                      <SelectContent className="z-[100] bg-background border shadow-lg max-h-60 overflow-y-auto">
                         {timeSlots.map((time) => (
                           <SelectItem key={time} value={time}>
-                            {time}
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-3 w-3" />
+                              <span>{time}</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -645,42 +671,105 @@ const ClientReservation = () => {
                 </div>
               </div>
 
-              {/* Specialist Selection */}
-              <div className="space-y-4">
-                <h3 className="font-medium">Preferencias de Especialista</h3>
+              {/* Specialist & Lane Selection */}
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="font-medium text-sm sm:text-base">Preferencias (Opcional)</h3>
                 
-                <div>
-                  <Label htmlFor="employee">Especialista</Label>
-                  <Select value={formData.employee} onValueChange={(value) => setFormData({ ...formData, employee: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un especialista" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100] bg-background border shadow-lg">
-                      <SelectItem value="any">Cualquier especialista disponible</SelectItem>
-                      {availableEmployees.map((employee) => (
-                        <SelectItem key={employee.id} value={employee.id}>
-                          {employee.profiles?.first_name} {employee.profiles?.last_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <Label htmlFor="employee" className="text-sm">Especialista</Label>
+                    <Select value={formData.employee} onValueChange={(value) => setFormData({ ...formData, employee: value })}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Cualquier especialista" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100] bg-background border shadow-lg max-h-60 overflow-y-auto">
+                        <SelectItem value="any">Cualquier especialista</SelectItem>
+                        {availableEmployees.map((employee) => (
+                          <SelectItem key={employee.id} value={employee.id}>
+                            <div className="flex items-center space-x-2">
+                              <User className="h-3 w-3" />
+                              <span>
+                                {employee.profiles?.first_name} {employee.profiles?.last_name}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="lane" className="text-sm">Sala</Label>
+                    <Select value={formData.lane} onValueChange={(value) => setFormData({ ...formData, lane: value })}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Cualquier sala" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100] bg-background border shadow-lg max-h-60 overflow-y-auto">
+                        <SelectItem value="any">Cualquier sala</SelectItem>
+                        {availableLanes.map((lane) => (
+                          <SelectItem key={lane.id} value={lane.id}>
+                            <div className="flex items-center space-x-2">
+                              <MapPin className="h-3 w-3" />
+                              <span>{lane.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
               {/* Notes */}
               <div>
-                <Label htmlFor="notes">Notas Adicionales</Label>
+                <Label htmlFor="notes" className="text-sm">Notas Adicionales</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Alguna preferencia especial o información adicional..."
-                  rows={3}
+                  placeholder="Cualquier información adicional que consideres importante..."
+                  className="mt-1 min-h-[80px] resize-none"
                 />
               </div>
 
-              <Button type="submit" className="w-full" size="lg">
-                <CalendarDays className="mr-2 h-5 w-5" />
+              {/* Summary */}
+              {formData.service && formData.center && formData.date && formData.time && (
+                <div className="bg-accent/20 rounded-lg p-3 sm:p-4 space-y-2">
+                  <h4 className="font-medium text-sm sm:text-base">Resumen de la Reserva</h4>
+                  <div className="space-y-1 text-xs sm:text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Servicio:</span>
+                      <span className="font-medium">
+                        {formData.serviceType === "individual" 
+                          ? selectedService?.name 
+                          : selectedPackage?.name
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Centro:</span>
+                      <span>{selectedCenter?.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Fecha:</span>
+                      <span>{format(formData.date, "PPP", { locale: es })}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Hora:</span>
+                      <span>{formData.time}</span>
+                    </div>
+                    {selectedItem && (
+                      <div className="flex justify-between font-medium">
+                        <span>Precio:</span>
+                        <span>€{(selectedItem.price_cents / 100).toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <Button type="submit" className="w-full h-11 text-sm sm:text-base font-medium">
                 Confirmar Reserva
               </Button>
             </form>
@@ -689,7 +778,7 @@ const ClientReservation = () => {
         </div>
       </main>
       
-      {/* ChatBot para Clientes */}
+      {/* ChatBot para clientes */}
       <ChatBot />
     </div>
   );
