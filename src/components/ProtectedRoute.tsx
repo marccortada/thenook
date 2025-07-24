@@ -16,11 +16,10 @@ const ProtectedRoute = ({
   requireAdmin = false, 
   requireEmployee = false 
 }: ProtectedRouteProps) => {
-  const { isAuthenticated, loading, profile } = useAuth();
+  const { isAuthenticated, loading, profile, isAdmin, isEmployee } = useAuth();
   const navigate = useNavigate();
 
-  const isAdmin = profile?.role === 'admin';
-  const isEmployee = profile?.role === 'employee';
+  console.log('ProtectedRoute - isAuthenticated:', isAuthenticated, 'isAdmin:', isAdmin, 'profile:', profile);
 
   useEffect(() => {
     if (!loading) {
