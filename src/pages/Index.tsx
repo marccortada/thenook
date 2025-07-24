@@ -12,6 +12,8 @@ import BookingsList from "@/components/BookingsList";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
 import HappyHourManagement from "@/components/HappyHourManagement";
 import AdvancedDashboard from "@/components/AdvancedDashboard";
+import ReportsCenter from "@/components/ReportsCenter";
+import ChatBot from "@/components/ChatBot";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
@@ -102,20 +104,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="reports" className="mt-6">
-            <div className="text-center py-12">
-              <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-medium mb-2">Centro de Reportes</h3>
-              <p className="text-muted-foreground mb-6">
-                Genera reportes detallados y analiza el rendimiento de tu negocio
-              </p>
-              <Button 
-                onClick={() => navigate('/reports')}
-                size="lg"
-              >
-                <FileText className="mr-2 h-5 w-5" />
-                Ir al Centro de Reportes
-              </Button>
-            </div>
+            <ReportsCenter />
           </TabsContent>
 
           <TabsContent value="packages" className="mt-6">
@@ -135,6 +124,9 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* ChatBot para Admin */}
+      <ChatBot />
     </Layout>
   );
 };

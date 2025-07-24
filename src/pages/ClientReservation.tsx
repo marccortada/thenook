@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import ChatBot from "@/components/ChatBot";
 const ClientReservation = () => {
   const { toast } = useToast();
   const { centers } = useCenters();
@@ -624,6 +625,9 @@ const ClientReservation = () => {
         </Card>
         </div>
       </main>
+      
+      {/* ChatBot para Clientes */}
+      <ChatBot />
     </div>
   );
 };
