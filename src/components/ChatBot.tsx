@@ -45,7 +45,7 @@ const ChatBot = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="w-96 h-[500px] shadow-xl border-2 border-primary/20">
+        <Card className="w-80 sm:w-96 h-[450px] sm:h-[500px] shadow-xl border-2 border-primary/20 mx-2 sm:mx-0">
           <CardHeader className="bg-primary text-white rounded-t-lg">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Asistente Virtual</CardTitle>
@@ -73,7 +73,7 @@ const ChatBot = () => {
           <CardContent className="p-0">
             <ScrollArea 
               ref={scrollAreaRef} 
-              className="h-[340px] p-4"
+              className="h-[290px] sm:h-[340px] p-2 sm:p-4"
             >
               {messages.length === 0 && (
                 <div className="text-center text-muted-foreground py-8">
@@ -94,7 +94,7 @@ const ChatBot = () => {
                   }`}
                 >
                   <div
-                    className={`inline-block max-w-[80%] p-3 rounded-lg ${
+                    className={`inline-block max-w-[90%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg ${
                       message.role === 'user'
                         ? 'bg-primary text-white'
                         : 'bg-muted text-foreground'
@@ -124,8 +124,8 @@ const ChatBot = () => {
             </ScrollArea>
           </CardContent>
 
-          <CardFooter className="p-4 border-t">
-            <div className="flex w-full gap-2">
+          <CardFooter className="p-2 sm:p-4 border-t">
+            <div className="flex w-full gap-1 sm:gap-2">
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
