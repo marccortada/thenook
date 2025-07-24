@@ -21,80 +21,46 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
-    const fetchUserProfile = async (userId: string) => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
-
-        if (!mounted) return;
-
-        if (error && error.code === 'PGRST116') {
-          // Si no encuentra el perfil, creamos uno básico
-          const { data: { user: currentUser } } = await supabase.auth.getUser();
-          if (currentUser && mounted) {
-            const { data: newProfile } = await supabase
-              .from('profiles')
-              .insert([{
-                user_id: userId,
-                email: currentUser.email || '',
-                role: 'admin'
-              }])
-              .select()
-              .single();
-            
-            if (newProfile && mounted) {
-              setProfile(newProfile);
-            }
-          }
-        } else if (data && mounted) {
-          setProfile(data);
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      }
+    // Función para cargar perfil
+    const loadProfile = async (userId: string) => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      setProfile(data);
     };
 
-    // Obtener sesión existente primero
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      setUser(session?.user ?? null);
-      setSession(session);
-      setLoading(false);
-      
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-    });
-
-    // Configurar listener para cambios
+    // Listener de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return;
-        
-        setUser(session?.user ?? null);
         setSession(session);
-        setLoading(false);
+        setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchUserProfile(session.user.id);
+          await loadProfile(session.user.id);
         } else {
           setProfile(null);
         }
+        
+        setLoading(false);
       }
     );
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    // Cargar sesión inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        loadProfile(session.user.id);
+      }
+      
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
