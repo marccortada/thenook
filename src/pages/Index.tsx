@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Package2, Bell } from "lucide-react";
 import Layout from "@/components/Layout";
 import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
@@ -14,6 +14,9 @@ import InternalCodesManagement from "@/components/InternalCodesManagement";
 import HappyHourManagement from "@/components/HappyHourManagement";
 import AdvancedDashboard from "@/components/AdvancedDashboard";
 import ReportsCenter from "@/components/ReportsCenter";
+import InventoryManagement from "@/components/InventoryManagement";
+import AdvancedReports from "@/components/AdvancedReports";
+import NotificationCenter from "@/components/NotificationCenter";
 import ChatBot from "@/components/ChatBot";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -52,11 +55,14 @@ const Index = () => {
               <option value="notes">📝 Notas</option>
               <option value="codes"># Códigos</option>
               <option value="happyhour">% Happy Hour</option>
+              <option value="inventory">📦 Inventario</option>
+              <option value="advreports">📈 Reportes Avanzados</option>
+              <option value="notifications">🔔 Notificaciones</option>
             </select>
           </div>
 
           {/* Desktop Tabs */}
-          <TabsList className="hidden lg:grid w-full grid-cols-8">
+          <TabsList className="hidden lg:grid w-full grid-cols-11">
             <TabsTrigger value="reservations" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
               <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Reservas</span>
@@ -88,6 +94,18 @@ const Index = () => {
             <TabsTrigger value="happyhour" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
               <Percent className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Happy Hour</span>
+            </TabsTrigger>
+            <TabsTrigger value="inventory" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Package2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Inventario</span>
+            </TabsTrigger>
+            <TabsTrigger value="advreports" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Rep. Avanz.</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Notific.</span>
             </TabsTrigger>
           </TabsList>
 
@@ -123,6 +141,18 @@ const Index = () => {
 
           <TabsContent value="happyhour" className="mt-6">
             <HappyHourManagement />
+          </TabsContent>
+
+          <TabsContent value="inventory" className="mt-6">
+            <InventoryManagement />
+          </TabsContent>
+
+          <TabsContent value="advreports" className="mt-6">
+            <AdvancedReports />
+          </TabsContent>
+
+          <TabsContent value="notifications" className="mt-6">
+            <NotificationCenter />
           </TabsContent>
         </Tabs>
       </div>
