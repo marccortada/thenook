@@ -32,7 +32,22 @@ export const useAuth = () => {
       setProfile(data);
     };
 
-    // Listener de auth
+    // Obtener sesión inicial
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        await loadProfile(session.user.id);
+      }
+      
+      setLoading(false);
+    };
+
+    getInitialSession();
+
+    // Listener de cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
@@ -47,18 +62,6 @@ export const useAuth = () => {
         setLoading(false);
       }
     );
-
-    // Cargar sesión inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        loadProfile(session.user.id);
-      }
-      
-      setLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
