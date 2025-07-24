@@ -23,6 +23,7 @@ export const useAuth = () => {
   useEffect(() => {
     let mounted = true;
 
+    // Function to load profile - only call when needed
     const loadProfile = async (userId: string) => {
       try {
         const { data } = await supabase
@@ -42,32 +43,21 @@ export const useAuth = () => {
       }
     };
 
-    const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
         
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (session?.user) {
-            await loadProfile(session.user.id);
-          }
-          
-          setLoading(false);
+        if (session?.user) {
+          loadProfile(session.user.id);
         }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        if (mounted) {
-          setLoading(false);
-        }
+        
+        setLoading(false);
       }
-    };
+    });
 
-    // Initialize auth
-    initializeAuth();
-
-    // Listen for auth changes
+    // Listen for auth changes - NO async operations here
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (mounted) {
@@ -75,7 +65,10 @@ export const useAuth = () => {
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            loadProfile(session.user.id);
+            // Use setTimeout to defer this call and avoid the loop
+            setTimeout(() => {
+              if (mounted) loadProfile(session.user!.id);
+            }, 0);
           } else {
             setProfile(null);
           }
