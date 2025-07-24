@@ -42,7 +42,7 @@ export const useAuth = () => {
               .insert([{
                 user_id: userId,
                 email: currentUser.email || '',
-                role: 'admin' // Temporal para testing
+                role: 'admin'
               }])
               .select()
               .single();
@@ -59,7 +59,22 @@ export const useAuth = () => {
       }
     };
 
-    // Solo configurar el listener una vez
+    // Obtener sesión existente primero
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
+      setUser(session?.user ?? null);
+      setSession(session);
+      setLoading(false);
+      
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    // Configurar listener para cambios
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
