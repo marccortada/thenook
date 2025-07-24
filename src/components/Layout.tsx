@@ -72,7 +72,7 @@ const Layout = ({ children }: LayoutProps) => {
               </Button>
               
               {/* Menú de navegación principal - Solo para admins */}
-              {isAuthenticated && isAdmin() && (
+              {isAuthenticated && isAdmin && (
                 <>
                   {isMobile ? (
                     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -151,8 +151,8 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
 
             <div className="flex items-center space-x-4">
-              {isAuthenticated && isAdmin() && <NotificationCenter />}
-              {isAuthenticated && isAdmin() ? (
+              {isAuthenticated && isAdmin && <NotificationCenter />}
+              {isAuthenticated && isAdmin ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">

@@ -21,7 +21,7 @@ const AdminLogin = () => {
   const { isAuthenticated, isAdmin } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated && isAdmin()) {
+    if (isAuthenticated && isAdmin) {
       navigate("/admin");
     }
   }, [isAuthenticated, isAdmin, navigate]);
