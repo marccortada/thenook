@@ -51,7 +51,7 @@ const NotificationCenter = () => {
     trigger_days_before: 1,
     message_template: '',
     send_via: ['email'],
-    target_audience: 'all_clients',
+    target_audience: 'all_clients' as 'all_clients' | 'specific_segments',
     is_active: true
   });
 
@@ -168,7 +168,7 @@ const NotificationCenter = () => {
                     <Label htmlFor="triggerType">Tipo de Activador</Label>
                     <Select 
                       value={ruleForm.trigger_type} 
-                      onValueChange={(value) => setRuleForm({ ...ruleForm, trigger_type: value })}
+                      onValueChange={(value) => setRuleForm({ ...ruleForm, trigger_type: value as 'booking_reminder' | 'birthday' | 'package_expiry' | 'appointment_confirmation' | 'no_show_follow_up' })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -409,13 +409,13 @@ const NotificationCenter = () => {
                           <div>
                             <p className="font-medium">{notification.client_name}</p>
                             <p className="text-sm text-muted-foreground sm:hidden">
-                              {notification.message_preview}
+                              {notification.message_content.slice(0, 50)}...
                             </p>
                           </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           <p className="text-sm max-w-xs truncate">
-                            {notification.message_preview}
+                            {notification.message_content.slice(0, 100)}...
                           </p>
                         </TableCell>
                         <TableCell>

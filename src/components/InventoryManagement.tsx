@@ -52,9 +52,9 @@ const InventoryManagement = () => {
 
   const [movementForm, setMovementForm] = useState({
     item_id: '',
-    movement_type: 'purchase' as 'adjustment' | 'transfer' | 'purchase' | 'sale' | 'expired' | 'damaged' | 'service_use',
+    movement_type: 'in' as 'in' | 'out' | 'adjustment' | 'transfer',
     quantity: 0,
-    reason: 'purchase' as 'adjustment' | 'transfer' | 'purchase' | 'sale' | 'expired' | 'damaged' | 'service_use',
+    reason: 'purchase' as 'purchase' | 'sale' | 'adjustment' | 'transfer' | 'expired' | 'damaged' | 'service_use',
     unit_cost: 0,
     notes: ''
   });
@@ -109,9 +109,9 @@ const InventoryManagement = () => {
   const resetMovementForm = () => {
     setMovementForm({
       item_id: '',
-      movement_type: 'in',
+      movement_type: 'in' as 'in' | 'out' | 'adjustment' | 'transfer',
       quantity: 0,
-      reason: '',
+      reason: 'purchase' as 'purchase' | 'sale' | 'adjustment' | 'transfer' | 'expired' | 'damaged' | 'service_use',
       unit_cost: 0,
       notes: ''
     });
@@ -282,7 +282,7 @@ const InventoryManagement = () => {
                     <Label htmlFor="movementType">Tipo de Movimiento</Label>
                     <Select 
                       value={movementForm.movement_type} 
-                      onValueChange={(value) => setMovementForm({ ...movementForm, movement_type: value })}
+                      onValueChange={(value) => setMovementForm({ ...movementForm, movement_type: value as 'in' | 'out' | 'adjustment' | 'transfer' })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -308,12 +308,23 @@ const InventoryManagement = () => {
 
                 <div>
                   <Label htmlFor="reason">Motivo</Label>
-                  <Input
-                    id="reason"
-                    value={movementForm.reason}
-                    onChange={(e) => setMovementForm({ ...movementForm, reason: e.target.value })}
-                    placeholder="Compra, venta, ajuste, etc."
-                  />
+                  <Select 
+                    value={movementForm.reason} 
+                    onValueChange={(value) => setMovementForm({ ...movementForm, reason: value as 'purchase' | 'sale' | 'adjustment' | 'transfer' | 'expired' | 'damaged' | 'service_use' })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar motivo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="purchase">Compra</SelectItem>
+                      <SelectItem value="sale">Venta</SelectItem>
+                      <SelectItem value="adjustment">Ajuste</SelectItem>
+                      <SelectItem value="transfer">Transferencia</SelectItem>
+                      <SelectItem value="expired">Vencido</SelectItem>
+                      <SelectItem value="damaged">Dañado</SelectItem>
+                      <SelectItem value="service_use">Uso en servicio</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -472,7 +483,7 @@ const InventoryManagement = () => {
                     {movements.map((movement) => (
                       <TableRow key={movement.id}>
                         <TableCell>
-                          <p className="font-medium">{movement.inventory_items?.name}</p>
+                          <p className="font-medium">{movement.item?.name || movement.item_id}</p>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -506,10 +517,10 @@ const InventoryManagement = () => {
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
                       <AlertTriangle className="w-5 h-5 text-warning" />
                       <div>
-                        <p className="font-medium">{alert.inventory_items?.name}</p>
+                        <p className="font-medium">{alert.item?.name || alert.item_id}</p>
                         <p className="text-sm text-muted-foreground">
-                          Stock actual: {alert.inventory_items?.current_stock} | 
-                          Mínimo: {alert.inventory_items?.min_stock}
+                          Stock actual: {alert.item?.current_stock} | 
+                          Mínimo: {alert.item?.min_stock}
                         </p>
                       </div>
                     </div>
