@@ -184,6 +184,57 @@ export type Database = {
         }
         Relationships: []
       }
+      client_alerts: {
+        Row: {
+          alert_type: string
+          client_id: string
+          created_at: string
+          id: string
+          message: string
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          risk_level: number
+        }
+        Insert: {
+          alert_type: string
+          client_id: string
+          created_at?: string
+          id?: string
+          message: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          risk_level?: number
+        }
+        Update: {
+          alert_type?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          risk_level?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_alerts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_alerts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_notes: {
         Row: {
           category: string
@@ -307,6 +358,78 @@ export type Database = {
           },
         ]
       }
+      client_profiles: {
+        Row: {
+          allergies: string[] | null
+          anniversary: string | null
+          birthday: string | null
+          client_id: string
+          communication_preferences: Json | null
+          created_at: string
+          id: string
+          last_visit_date: string | null
+          loyalty_points: number | null
+          medical_conditions: string[] | null
+          notes: string | null
+          preferences: Json | null
+          preferred_employee_id: string | null
+          preferred_services: string[] | null
+          preferred_time_slots: string[] | null
+          referral_source: string | null
+          satisfaction_score: number | null
+          total_spent_cents: number | null
+          total_visits: number | null
+          updated_at: string
+          vip_status: boolean | null
+        }
+        Insert: {
+          allergies?: string[] | null
+          anniversary?: string | null
+          birthday?: string | null
+          client_id: string
+          communication_preferences?: Json | null
+          created_at?: string
+          id?: string
+          last_visit_date?: string | null
+          loyalty_points?: number | null
+          medical_conditions?: string[] | null
+          notes?: string | null
+          preferences?: Json | null
+          preferred_employee_id?: string | null
+          preferred_services?: string[] | null
+          preferred_time_slots?: string[] | null
+          referral_source?: string | null
+          satisfaction_score?: number | null
+          total_spent_cents?: number | null
+          total_visits?: number | null
+          updated_at?: string
+          vip_status?: boolean | null
+        }
+        Update: {
+          allergies?: string[] | null
+          anniversary?: string | null
+          birthday?: string | null
+          client_id?: string
+          communication_preferences?: Json | null
+          created_at?: string
+          id?: string
+          last_visit_date?: string | null
+          loyalty_points?: number | null
+          medical_conditions?: string[] | null
+          notes?: string | null
+          preferences?: Json | null
+          preferred_employee_id?: string | null
+          preferred_services?: string[] | null
+          preferred_time_slots?: string[] | null
+          referral_source?: string | null
+          satisfaction_score?: number | null
+          total_spent_cents?: number | null
+          total_visits?: number | null
+          updated_at?: string
+          vip_status?: boolean | null
+        }
+        Relationships: []
+      }
       code_assignments: {
         Row: {
           assigned_at: string
@@ -404,6 +527,120 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      employee_absences: {
+        Row: {
+          absence_type: string
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          employee_id: string
+          end_date: string
+          id: string
+          reason: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          absence_type: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          employee_id: string
+          end_date: string
+          id?: string
+          reason?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          absence_type?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          id?: string
+          reason?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employee_availability: {
+        Row: {
+          available_from: string | null
+          available_until: string | null
+          created_at: string
+          date: string
+          employee_id: string
+          id: string
+          is_available: boolean
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          available_from?: string | null
+          available_until?: string | null
+          created_at?: string
+          date: string
+          employee_id: string
+          id?: string
+          is_available?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          available_from?: string | null
+          available_until?: string | null
+          created_at?: string
+          date?: string
+          employee_id?: string
+          id?: string
+          is_available?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employee_shifts: {
+        Row: {
+          center_id: string | null
+          created_at: string
+          day_of_week: number
+          employee_id: string
+          end_time: string
+          id: string
+          is_active: boolean
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          center_id?: string | null
+          created_at?: string
+          day_of_week: number
+          employee_id: string
+          end_time: string
+          id?: string
+          is_active?: boolean
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          center_id?: string | null
+          created_at?: string
+          day_of_week?: number
+          employee_id?: string
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       employees: {
         Row: {
@@ -856,6 +1093,83 @@ export type Database = {
           },
         ]
       }
+      loyalty_transactions: {
+        Row: {
+          booking_id: string | null
+          client_id: string
+          created_at: string
+          description: string | null
+          id: string
+          points_amount: number
+          transaction_type: string
+        }
+        Insert: {
+          booking_id?: string | null
+          client_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          points_amount: number
+          transaction_type: string
+        }
+        Update: {
+          booking_id?: string | null
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          points_amount?: number
+          transaction_type?: string
+        }
+        Relationships: []
+      }
+      note_analysis: {
+        Row: {
+          analyzed_at: string
+          created_at: string
+          id: string
+          note_id: string
+          risk_level: number
+          sentiment: string
+          suggested_actions: string[] | null
+          summary: string | null
+          themes: string[] | null
+          urgency: string
+        }
+        Insert: {
+          analyzed_at?: string
+          created_at?: string
+          id?: string
+          note_id: string
+          risk_level?: number
+          sentiment: string
+          suggested_actions?: string[] | null
+          summary?: string | null
+          themes?: string[] | null
+          urgency: string
+        }
+        Update: {
+          analyzed_at?: string
+          created_at?: string
+          id?: string
+          note_id?: string
+          risk_level?: number
+          sentiment?: string
+          suggested_actions?: string[] | null
+          summary?: string | null
+          themes?: string[] | null
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_analysis_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "client_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_rules: {
         Row: {
           created_at: string
@@ -1201,6 +1515,48 @@ export type Database = {
           },
         ]
       }
+      satisfaction_surveys: {
+        Row: {
+          booking_id: string | null
+          client_id: string
+          created_at: string
+          facility_rating: number | null
+          feedback: string | null
+          id: string
+          overall_rating: number
+          service_rating: number | null
+          staff_rating: number | null
+          survey_date: string
+          would_recommend: boolean | null
+        }
+        Insert: {
+          booking_id?: string | null
+          client_id: string
+          created_at?: string
+          facility_rating?: number | null
+          feedback?: string | null
+          id?: string
+          overall_rating: number
+          service_rating?: number | null
+          staff_rating?: number | null
+          survey_date?: string
+          would_recommend?: boolean | null
+        }
+        Update: {
+          booking_id?: string | null
+          client_id?: string
+          created_at?: string
+          facility_rating?: number | null
+          feedback?: string | null
+          id?: string
+          overall_rating?: number
+          service_rating?: number | null
+          staff_rating?: number | null
+          survey_date?: string
+          would_recommend?: boolean | null
+        }
+        Relationships: []
+      }
       scheduled_notifications: {
         Row: {
           client_id: string
@@ -1416,6 +1772,22 @@ export type Database = {
           staff_name: string
         }[]
       }
+      get_analysis_stats: {
+        Args: { days_back?: number }
+        Returns: {
+          total_notes: number
+          analyzed_notes: number
+          positive_sentiment: number
+          negative_sentiment: number
+          neutral_sentiment: number
+          critical_urgency: number
+          high_urgency: number
+          medium_urgency: number
+          low_urgency: number
+          avg_risk_level: number
+          active_alerts: number
+        }[]
+      }
       get_business_intelligence: {
         Args: {
           start_date?: string
@@ -1495,6 +1867,51 @@ export type Database = {
           expiry_date: string
           remaining_sessions: number
           days_to_expiry: number
+        }[]
+      }
+      get_inventory_movements_with_details: {
+        Args: {
+          item_id_param?: string
+          movement_type_param?: string
+          limit_count?: number
+        }
+        Returns: {
+          id: string
+          item_id: string
+          item_name: string
+          item_sku: string
+          movement_type: string
+          quantity: number
+          unit_cost: number
+          total_cost: number
+          reason: string
+          notes: string
+          performed_by: string
+          performer_name: string
+          created_at: string
+        }[]
+      }
+      get_inventory_stats: {
+        Args: { center_id_param?: string }
+        Returns: {
+          total_items: number
+          low_stock_items: number
+          out_of_stock_items: number
+          total_value: number
+          average_stock: number
+        }[]
+      }
+      get_low_stock_alerts_with_details: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          item_id: string
+          item_name: string
+          item_sku: string
+          current_stock: number
+          min_stock: number
+          alert_level: string
+          created_at: string
         }[]
       }
       has_role: {

@@ -13,7 +13,8 @@ import {
   Activity,
   Settings,
   Send,
-  Plus
+  Plus,
+  Clock
 } from 'lucide-react';
 
 // Import existing components
@@ -21,11 +22,24 @@ import NotificationCenter from './NotificationCenter';
 import ReportsCenter from './ReportsCenter';
 import AdvancedReports from './AdvancedReports';
 import IntelligentAnalytics from './IntelligentAnalytics';
+import AdvancedScheduleManagement from './AdvancedScheduleManagement';
+import AdvancedCRM from './AdvancedCRM';
 
 const UnifiedDashboard = () => {
-  const [activeSection, setActiveSection] = useState('notifications');
+  const [activeSection, setActiveSection] = useState('schedule');
 
   const sections = [
+    {
+      id: 'schedule',
+      title: 'Gestión de Horarios',
+      description: 'Turnos, ausencias y disponibilidad del personal',
+      icon: Clock,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      components: [
+        { id: 'management', title: 'Gestión Avanzada', component: AdvancedScheduleManagement },
+      ]
+    },
     {
       id: 'notifications',
       title: 'Centro de Notificaciones',
@@ -50,6 +64,17 @@ const UnifiedDashboard = () => {
       ]
     },
     {
+      id: 'crm',
+      title: 'CRM Avanzado',
+      description: 'Gestión completa de relaciones con clientes',
+      icon: Users,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+      components: [
+        { id: 'profiles', title: 'Perfiles y Fidelización', component: AdvancedCRM },
+      ]
+    },
+    {
       id: 'analytics',
       title: 'Analytics Inteligente',
       description: 'Análisis avanzado con IA',
@@ -62,7 +87,7 @@ const UnifiedDashboard = () => {
     }
   ];
 
-  const currentSection = sections.find(s => s.id === activeSection);
+  const currentSection = sections.find(s => s.id === activeSection) || sections[0];
 
   return (
     <div className="space-y-6">
@@ -76,7 +101,7 @@ const UnifiedDashboard = () => {
         </div>
 
         {/* Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {sections.map((section) => {
             const Icon = section.icon;
             const isActive = activeSection === section.id;
