@@ -217,26 +217,26 @@ const InventoryManagement = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="unitCost">Costo Unitario</Label>
-                    <Input
-                      id="unitCost"
-                      type="number"
-                      step="0.01"
-                      value={itemForm.unit_cost}
-                      onChange={(e) => setItemForm({ ...itemForm, unit_cost: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="sellingPrice">Precio de Venta</Label>
-                    <Input
-                      id="sellingPrice"
-                      type="number"
-                      step="0.01"
-                      value={itemForm.selling_price}
-                      onChange={(e) => setItemForm({ ...itemForm, selling_price: Number(e.target.value) })}
-                    />
-                  </div>
+                    <div>
+                      <Label htmlFor="unitCost">Costo Unitario (€)</Label>
+                      <Input
+                        id="unitCost"
+                        type="number"
+                        step="0.01"
+                        value={itemForm.unit_cost}
+                        onChange={(e) => setItemForm({ ...itemForm, unit_cost: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sellingPrice">Precio de Venta (€)</Label>
+                      <Input
+                        id="sellingPrice"
+                        type="number"
+                        step="0.01"
+                        value={itemForm.selling_price}
+                        onChange={(e) => setItemForm({ ...itemForm, selling_price: Number(e.target.value) })}
+                      />
+                    </div>
                 </div>
 
                 <Button onClick={handleCreateItem} className="w-full">
@@ -377,7 +377,7 @@ const InventoryManagement = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Valor Total</p>
-                  <p className="text-2xl font-bold">${stats.totalValue?.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">€{stats.totalValue?.toFixed(2)}</p>
                 </div>
                 <TrendingUp className="w-8 h-8 text-success" />
               </div>
@@ -445,7 +445,7 @@ const InventoryManagement = () => {
                           </span>
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
-                          ${item.selling_price?.toFixed(2)}
+                          €{item.selling_price?.toFixed(2)}
                         </TableCell>
                         <TableCell>
                           <Badge variant={item.current_stock <= item.min_stock ? 'destructive' : 'default'}>
