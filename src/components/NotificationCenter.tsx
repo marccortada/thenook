@@ -335,49 +335,45 @@ const NotificationCenter = () => {
         </TabsList>
 
         <TabsContent value="rules">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                {rules.map((rule) => (
-                  <div key={rule.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1 mb-2 sm:mb-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium">{rule.name}</h3>
-                        <Badge variant={rule.is_active ? 'default' : 'secondary'}>
-                          {rule.is_active ? 'Activa' : 'Inactiva'}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {triggerTypes.find(t => t.value === rule.trigger_type)?.label}
-                        {rule.trigger_days_before && ` - ${rule.trigger_days_before} días antes`}
-                      </p>
-                      <div className="flex items-center gap-1">
-                        {rule.send_via.map((channel) => (
-                          <div key={channel} className="flex items-center gap-1">
-                            {getChannelIcon(channel)}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <Switch
-                        checked={rule.is_active}
-                        onCheckedChange={(checked) => toggleRule(rule.id, checked)}
-                      />
-                      <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
-                        Editar
-                      </Button>
-                    </div>
+          <div className="space-y-4">
+            {rules.map((rule) => (
+              <div key={rule.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg">
+                <div className="flex-1 mb-2 sm:mb-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-medium">{rule.name}</h3>
+                    <Badge variant={rule.is_active ? 'default' : 'secondary'}>
+                      {rule.is_active ? 'Activa' : 'Inactiva'}
+                    </Badge>
                   </div>
-                ))}
-                {rules.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">
-                    No hay reglas de notificación configuradas. Crea tu primera regla usando el botón "Nueva Regla".
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {triggerTypes.find(t => t.value === rule.trigger_type)?.label}
+                    {rule.trigger_days_before && ` - ${rule.trigger_days_before} días antes`}
                   </p>
-                )}
+                  <div className="flex items-center gap-1">
+                    {rule.send_via.map((channel) => (
+                      <div key={channel} className="flex items-center gap-1">
+                        {getChannelIcon(channel)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Switch
+                    checked={rule.is_active}
+                    onCheckedChange={(checked) => toggleRule(rule.id, checked)}
+                  />
+                  <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
+                    Editar
+                  </Button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            ))}
+            {rules.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">
+                No hay reglas de notificación configuradas. Crea tu primera regla usando el botón "Nueva Regla".
+              </p>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="scheduled">
