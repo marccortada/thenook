@@ -64,49 +64,98 @@ const Index = () => {
             </select>
           </div>
 
-          {/* Desktop Tabs */}
-          <TabsList className="hidden lg:grid w-full grid-cols-8">
-            <TabsTrigger value="reservations" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Reservas</span>
-            </TabsTrigger>
-            <TabsTrigger value="employees" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Empleados</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Reportes</span>
-            </TabsTrigger>
-            <TabsTrigger value="packages" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <Gift className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Bonos</span>
-            </TabsTrigger>
-            <TabsTrigger value="notes" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <StickyNote className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Notas</span>
-            </TabsTrigger>
-            <TabsTrigger value="codes" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <Hash className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Códigos</span>
-            </TabsTrigger>
-            <TabsTrigger value="happyhour" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <Percent className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Happy Hour</span>
-            </TabsTrigger>
-            <TabsTrigger value="inventory" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <Package2 className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Inventario</span>
-            </TabsTrigger>
-            <TabsTrigger value="control" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Centro Control</span>
-            </TabsTrigger>
-          </TabsList>
+          {/* Desktop Grid */}
+          <div className="hidden lg:grid grid-cols-5 gap-3 mb-6">
+            <Button
+              variant={activeTab === "reservations" ? "default" : "outline"}
+              onClick={() => setActiveTab("reservations")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <CalendarDays className="h-5 w-5" />
+              <span className="text-sm font-medium">Reservas</span>
+            </Button>
+            
+            <Button
+              variant={activeTab === "employees" ? "default" : "outline"}
+              onClick={() => setActiveTab("employees")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <Users className="h-5 w-5" />
+              <span className="text-sm font-medium">Empleados</span>
+            </Button>
+            
+            <Button
+              variant={activeTab === "analytics" ? "default" : "outline"}
+              onClick={() => setActiveTab("analytics")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <TrendingUp className="h-5 w-5" />
+              <span className="text-sm font-medium">Analytics</span>
+            </Button>
+            
+            <Button
+              variant={activeTab === "reports" ? "default" : "outline"}
+              onClick={() => setActiveTab("reports")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <FileText className="h-5 w-5" />
+              <span className="text-sm font-medium">Reportes</span>
+            </Button>
+            
+            <Button
+              variant={activeTab === "packages" ? "default" : "outline"}
+              onClick={() => setActiveTab("packages")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <Gift className="h-5 w-5" />
+              <span className="text-sm font-medium">Bonos</span>
+            </Button>
+            
+            <Button
+              variant={activeTab === "notes" ? "default" : "outline"}
+              onClick={() => setActiveTab("notes")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <StickyNote className="h-5 w-5" />
+              <span className="text-sm font-medium">Notas</span>
+            </Button>
+            
+            <Button
+              variant={activeTab === "codes" ? "default" : "outline"}
+              onClick={() => setActiveTab("codes")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <Hash className="h-5 w-5" />
+              <span className="text-sm font-medium">Códigos</span>
+            </Button>
+            
+            <Button
+              variant={activeTab === "happyhour" ? "default" : "outline"}
+              onClick={() => setActiveTab("happyhour")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <Percent className="h-5 w-5" />
+              <span className="text-sm font-medium">Happy Hour</span>
+            </Button>
+            
+            <Button
+              variant={activeTab === "inventory" ? "default" : "outline"}
+              onClick={() => setActiveTab("inventory")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <Package2 className="h-5 w-5" />
+              <span className="text-sm font-medium">Inventario</span>
+            </Button>
+            
+            <Button
+              variant={activeTab === "control" ? "default" : "outline"}
+              onClick={() => setActiveTab("control")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <BarChart3 className="h-5 w-5" />
+              <span className="text-sm font-medium">Centro Control</span>
+            </Button>
+          </div>
 
           <TabsContent value="reservations" className="mt-6 space-y-6">
             <ReservationSystem />
