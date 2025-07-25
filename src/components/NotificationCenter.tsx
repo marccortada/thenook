@@ -337,7 +337,7 @@ const NotificationCenter = () => {
         <TabsContent value="rules">
           <Card>
             <CardHeader>
-              <CardTitle>Reglas de Notificación Automática</CardTitle>
+              <CardTitle>Gestión de Reglas</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
