@@ -24,6 +24,7 @@ import AdvancedReports from './AdvancedReports';
 import IntelligentAnalytics from './IntelligentAnalytics';
 import AdvancedScheduleManagement from './AdvancedScheduleManagement';
 import AdvancedCRM from './AdvancedCRM';
+import EmployeeManagement from './EmployeeManagement';
 
 const UnifiedDashboard = () => {
   const [activeSection, setActiveSection] = useState('schedule');
@@ -38,6 +39,17 @@ const UnifiedDashboard = () => {
       bgColor: 'bg-orange-50',
       components: [
         { id: 'management', title: 'Gestión Avanzada', component: AdvancedScheduleManagement },
+      ]
+    },
+    {
+      id: 'employees',
+      title: 'Gestión de Empleados',
+      description: 'Administra tu equipo de trabajo',
+      icon: Users,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      components: [
+        { id: 'employee-management', title: 'Gestión de Empleados', component: EmployeeManagement },
       ]
     },
     {

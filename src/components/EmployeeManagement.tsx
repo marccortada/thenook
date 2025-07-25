@@ -72,7 +72,7 @@ const EmployeeManagement = () => {
       }
 
       // First create the profile
-      const { data: profile, error: profileError } = await (supabase as any)
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .insert([{
           email: newEmployee.email,
@@ -84,10 +84,13 @@ const EmployeeManagement = () => {
         .select()
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        throw profileError;
+      }
 
       // Then create the employee record
-      const { error: employeeError } = await (supabase as any)
+      const { error: employeeError } = await supabase
         .from('employees')
         .insert([{
           profile_id: profile?.id,
@@ -96,7 +99,28 @@ const EmployeeManagement = () => {
           active: true
         }]);
 
-      if (employeeError) throw employeeError;
+      if (employeeError) {
+        console.error('Error creating employee:', employeeError);
+        throw employeeError;
+      }
+
+      // Log the activity
+      try {
+        await supabase.rpc('log_activity', {
+          p_user_id: null, // Will be handled by the function
+          p_action: 'create',
+          p_entity_type: 'employee',
+          p_entity_id: profile?.id,
+          p_new_values: {
+            name: `${newEmployee.firstName} ${newEmployee.lastName}`,
+            email: newEmployee.email,
+            center_id: newEmployee.centerId,
+            specialties: newEmployee.specialties
+          }
+        });
+      } catch (logError) {
+        console.warn('Could not log activity:', logError);
+      }
 
       toast({
         title: "Empleado Creado",
@@ -114,9 +138,10 @@ const EmployeeManagement = () => {
       setIsDialogOpen(false);
       refetch();
     } catch (error) {
+      console.error('Error creating employee:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el empleado. Inténtalo de nuevo.",
+        description: `No se pudo crear el empleado: ${error?.message || 'Error desconocido'}`,
         variant: "destructive",
       });
     }
