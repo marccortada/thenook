@@ -144,7 +144,7 @@ const Index = () => {
             <InventoryManagement />
           </TabsContent>
 
-          <TabsContent value="control" className="mt-6">
+          <TabsContent value="control" className="mt-0">
             <UnifiedDashboard />
           </TabsContent>
         </Tabs>
