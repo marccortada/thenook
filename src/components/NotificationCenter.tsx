@@ -137,10 +137,9 @@ const NotificationCenter = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold text-primary">Centro de Notificaciones</h2>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Dialog open={showRuleDialog} onOpenChange={setShowRuleDialog}>
             <DialogTrigger asChild>
