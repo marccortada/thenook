@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ChatBot from "@/components/ChatBot";
-import NotificationCenter from "@/components/NotificationCenter";
+import NotificationBell from "@/components/NotificationBell";
 
 interface LayoutProps {
   children: ReactNode;
@@ -66,7 +66,7 @@ const Layout = ({ children }: LayoutProps) => {
                 onClick={() => navigate("/")}
                 className="text-xl font-bold hover:bg-transparent"
               >
-                <span className="text-foreground">
+                <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-extrabold tracking-tight">
                   The Nook Madrid
                 </span>
               </Button>
@@ -79,11 +79,14 @@ const Layout = ({ children }: LayoutProps) => {
                       <SheetTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <Menu className="h-4 w-4 mr-2" />
-                          Admin
+                          Centro de Control
                         </Button>
                       </SheetTrigger>
                       <SheetContent side="left" className="w-64">
                         <div className="flex flex-col space-y-4 mt-8">
+                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                            Gestión
+                          </div>
                           <Button 
                             variant="ghost" 
                             className="justify-start" 
@@ -95,6 +98,10 @@ const Layout = ({ children }: LayoutProps) => {
                             <Home className="mr-2 h-4 w-4" />
                             <span>Panel Admin</span>
                           </Button>
+                          
+                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4">
+                            Análisis
+                          </div>
                           <Button 
                             variant="ghost" 
                             className="justify-start"
@@ -106,6 +113,10 @@ const Layout = ({ children }: LayoutProps) => {
                             <FileText className="mr-2 h-4 w-4" />
                             <span>Centro de Reportes</span>
                           </Button>
+                          
+                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4">
+                            Comunicación
+                          </div>
                           <Button 
                             variant="ghost" 
                             className="justify-start"
@@ -125,18 +136,29 @@ const Layout = ({ children }: LayoutProps) => {
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <Menu className="h-4 w-4 mr-2" />
-                          Admin
+                          Centro de Control
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-48">
+                      <DropdownMenuContent align="start" className="w-56">
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Gestión
+                        </div>
                         <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024")}>
                           <Home className="mr-2 h-4 w-4" />
                           <span>Panel Admin</span>
                         </DropdownMenuItem>
+                        
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Análisis
+                        </div>
                         <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/reports")}>
                           <FileText className="mr-2 h-4 w-4" />
                           <span>Centro de Reportes</span>
                         </DropdownMenuItem>
+                        
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Comunicación
+                        </div>
                         <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/notifications")}>
                           <Bell className="mr-2 h-4 w-4" />
                           <span>Notificaciones</span>
@@ -151,7 +173,7 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
 
             <div className="flex items-center space-x-4">
-              {isAuthenticated && isAdmin && <NotificationCenter />}
+              {isAuthenticated && isAdmin && <NotificationBell />}
               {isAuthenticated && isAdmin ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
