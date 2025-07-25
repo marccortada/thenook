@@ -32,14 +32,16 @@ const Index = () => {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            ¡Bienvenido, {profile?.first_name || 'Administrador'}!
-          </h1>
-          <p className="text-muted-foreground">
-            Panel de administración y gestión
-          </p>
-        </div>
+        {activeTab !== "control" && (
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">
+              ¡Bienvenido, {profile?.first_name || 'Administrador'}!
+            </h1>
+            <p className="text-muted-foreground">
+              Panel de administración y gestión
+            </p>
+          </div>
+        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Mobile Menu */}
