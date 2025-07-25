@@ -59,12 +59,11 @@ const Index = () => {
               <option value="happyhour">% Happy Hour</option>
               <option value="inventory">📦 Inventario</option>
               <option value="control">🎛️ Centro de Control</option>
-              <option value="intelligent">🧠 IA Analytics</option>
             </select>
           </div>
 
           {/* Desktop Tabs */}
-          <TabsList className="hidden lg:grid w-full grid-cols-10">
+          <TabsList className="hidden lg:grid w-full grid-cols-8">
             <TabsTrigger value="reservations" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
               <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Reservas</span>
@@ -103,11 +102,7 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="control" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
               <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Control</span>
-            </TabsTrigger>
-            <TabsTrigger value="intelligent" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-              <Brain className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">IA</span>
+              <span className="hidden sm:inline">Centro Control</span>
             </TabsTrigger>
           </TabsList>
 
@@ -151,10 +146,6 @@ const Index = () => {
 
           <TabsContent value="control" className="mt-6">
             <UnifiedDashboard />
-          </TabsContent>
-
-          <TabsContent value="intelligent" className="mt-6">
-            <IntelligentAnalytics />
           </TabsContent>
         </Tabs>
       </div>
