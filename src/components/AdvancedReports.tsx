@@ -37,10 +37,10 @@ const AdvancedReports = () => {
       end: ''
     },
     filters: {
-      centerId: '',
-      serviceId: '',
-      status: '',
-      employeeId: ''
+      centerId: 'all',
+      serviceId: 'all',
+      status: 'all',
+      employeeId: 'all'
     }
   });
 
@@ -67,7 +67,11 @@ const AdvancedReports = () => {
     const filters = {
       startDate: reportForm.dateRange.start,
       endDate: reportForm.dateRange.end,
-      ...reportForm.filters
+      ...Object.fromEntries(
+        Object.entries(reportForm.filters).filter(([key, value]) => 
+          value && value !== 'all'
+        )
+      )
     };
 
     await generateReport(
@@ -102,7 +106,7 @@ const AdvancedReports = () => {
       name: '',
       description: '',
       dateRange: { start: '', end: '' },
-      filters: { centerId: '', serviceId: '', status: '', employeeId: '' }
+      filters: { centerId: 'all', serviceId: 'all', status: 'all', employeeId: 'all' }
     });
   };
 
@@ -232,7 +236,7 @@ const AdvancedReports = () => {
                         <SelectValue placeholder="Todos los estados" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos</SelectItem>
+                        <SelectItem value="all">Todos</SelectItem>
                         <SelectItem value="confirmed">Confirmado</SelectItem>
                         <SelectItem value="completed">Completado</SelectItem>
                         <SelectItem value="cancelled">Cancelado</SelectItem>
