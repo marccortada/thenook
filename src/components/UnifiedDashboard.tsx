@@ -91,14 +91,7 @@ const UnifiedDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Centro de Control</h1>
-          <p className="text-muted-foreground">
-            Notificaciones, reportes y análisis en un solo lugar
-          </p>
-        </div>
 
         {/* Navigation Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
