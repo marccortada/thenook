@@ -54,7 +54,6 @@ const Index = () => {
               <option value="reservations">📅 Reservas</option>
               <option value="employees">👥 Empleados</option>
               <option value="analytics">📊 Analytics</option>
-              <option value="reports">📋 Reportes</option>
               <option value="packages">🎁 Bonos</option>
               <option value="notes">📝 Notas</option>
               <option value="codes"># Códigos</option>
@@ -65,7 +64,7 @@ const Index = () => {
           </div>
 
           {/* Desktop Grid */}
-          <div className="hidden lg:grid grid-cols-5 gap-3 mb-6">
+          <div className="hidden lg:grid grid-cols-4 gap-4 mb-6">
             <Button
               variant={activeTab === "reservations" ? "default" : "outline"}
               onClick={() => setActiveTab("reservations")}
@@ -91,15 +90,6 @@ const Index = () => {
             >
               <TrendingUp className="h-5 w-5" />
               <span className="text-sm font-medium">Analytics</span>
-            </Button>
-            
-            <Button
-              variant={activeTab === "reports" ? "default" : "outline"}
-              onClick={() => setActiveTab("reports")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <FileText className="h-5 w-5" />
-              <span className="text-sm font-medium">Reportes</span>
             </Button>
             
             <Button
@@ -171,9 +161,6 @@ const Index = () => {
             <AdvancedDashboard />
           </TabsContent>
 
-          <TabsContent value="reports" className="mt-6">
-            <ReportsCenter />
-          </TabsContent>
 
           <TabsContent value="packages" className="mt-6">
             <PackageManagement />
