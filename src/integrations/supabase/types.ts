@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automated_notifications: {
+        Row: {
+          booking_id: string | null
+          client_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          package_id: string | null
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          subject: string | null
+          type: string
+        }
+        Insert: {
+          booking_id?: string | null
+          client_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          package_id?: string | null
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          type: string
+        }
+        Update: {
+          booking_id?: string | null
+          client_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          package_id?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automated_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automated_notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automated_notifications_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "client_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_datetime: string
@@ -1170,6 +1287,44 @@ export type Database = {
           },
         ]
       }
+      note_analysis_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          error_message: string | null
+          id: string
+          note_id: string
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          note_id: string
+          processed_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          note_id?: string
+          processed_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_analysis_queue_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "client_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_rules: {
         Row: {
           created_at: string
@@ -1462,6 +1617,42 @@ export type Database = {
           },
         ]
       }
+      real_time_metrics: {
+        Row: {
+          calculated_at: string
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          period_end: string
+          period_start: string
+          period_type: string
+        }
+        Insert: {
+          calculated_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          period_end: string
+          period_start: string
+          period_type: string
+        }
+        Update: {
+          calculated_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_type?: string
+          metric_value?: number
+          period_end?: string
+          period_start?: string
+          period_type?: string
+        }
+        Relationships: []
+      }
       report_templates: {
         Row: {
           chart_config: Json | null
@@ -1739,6 +1930,10 @@ export type Database = {
           avg_session_duration: number
         }[]
       }
+      calculate_real_time_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       calculate_revenue_metrics: {
         Args: { start_date: string; end_date: string; center_id_param?: string }
         Returns: {
@@ -1748,6 +1943,14 @@ export type Database = {
           revenue_by_service: Json
           revenue_by_day: Json
         }[]
+      }
+      create_booking_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_package_expiry_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       generate_po_number: {
         Args: Record<PropertyKey, never>
@@ -1920,6 +2123,17 @@ export type Database = {
           _role: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      log_activity: {
+        Args: {
+          p_user_id: string
+          p_action: string
+          p_entity_type: string
+          p_entity_id: string
+          p_old_values?: Json
+          p_new_values?: Json
+        }
+        Returns: undefined
       }
       search_entities_by_codes: {
         Args: { codes: string[] }
