@@ -336,10 +336,7 @@ const NotificationCenter = () => {
 
         <TabsContent value="rules">
           <Card>
-            <CardHeader>
-              <CardTitle>Gestión de Reglas</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="space-y-4">
                 {rules.map((rule) => (
                   <div key={rule.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg">
