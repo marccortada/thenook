@@ -138,20 +138,7 @@ const UnifiedDashboard = () => {
       {/* Content */}
       {currentSection && (
         <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${currentSection.bgColor}`}>
-                <currentSection.icon className={`h-5 w-5 ${currentSection.color}`} />
-              </div>
-              <div>
-                <CardTitle>{currentSection.title}</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {currentSection.description}
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {currentSection.components.length > 1 ? (
               <Tabs defaultValue={currentSection.components[0].id} className="w-full">
                 <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${currentSection.components.length}, 1fr)` }}>
