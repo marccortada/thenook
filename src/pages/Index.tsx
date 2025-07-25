@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Package2, Bell } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Package2, Bell, Brain } from "lucide-react";
 import Layout from "@/components/Layout";
 import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
@@ -17,6 +17,7 @@ import ReportsCenter from "@/components/ReportsCenter";
 import InventoryManagement from "@/components/InventoryManagement";
 import AdvancedReports from "@/components/AdvancedReports";
 import NotificationCenter from "@/components/NotificationCenter";
+import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 import ChatBot from "@/components/ChatBot";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -58,11 +59,12 @@ const Index = () => {
               <option value="inventory">📦 Inventario</option>
               <option value="advreports">📈 Reportes Avanzados</option>
               <option value="notifications">🔔 Notificaciones</option>
+              <option value="intelligent">🧠 IA Analytics</option>
             </select>
           </div>
 
           {/* Desktop Tabs */}
-          <TabsList className="hidden lg:grid w-full grid-cols-11">
+          <TabsList className="hidden lg:grid w-full grid-cols-12">
             <TabsTrigger value="reservations" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
               <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Reservas</span>
@@ -106,6 +108,10 @@ const Index = () => {
             <TabsTrigger value="notifications" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
               <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Notific.</span>
+            </TabsTrigger>
+            <TabsTrigger value="intelligent" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Brain className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">IA Analytics</span>
             </TabsTrigger>
           </TabsList>
 
@@ -153,6 +159,10 @@ const Index = () => {
 
           <TabsContent value="notifications" className="mt-6">
             <NotificationCenter />
+          </TabsContent>
+
+          <TabsContent value="intelligent" className="mt-6">
+            <IntelligentAnalytics />
           </TabsContent>
         </Tabs>
       </div>
