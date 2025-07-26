@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 import ChatBot from "@/components/ChatBot";
 const ClientReservation = () => {
   const { toast } = useToast();
@@ -365,10 +366,10 @@ const ClientReservation = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.location.href = '/panel-gestion-nook-madrid-2024'}
+              asChild
               className="text-xs sm:text-sm"
             >
-              Admin
+              <Link to="/admin-login">Admin</Link>
             </Button>
           </div>
         </div>
