@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { LogOut, User, Calendar, Settings, Menu, Home, BarChart3, Bell, FileText, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";

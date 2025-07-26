@@ -20,7 +20,7 @@ import NotificationCenter from "@/components/NotificationCenter";
 import UnifiedDashboard from "@/components/UnifiedDashboard";
 import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 import ChatBot from "@/components/ChatBot";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
 
