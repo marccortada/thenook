@@ -67,12 +67,45 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     let isMounted = true;
     
-    // Set up auth state listener
+    // Initialize session check first
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    // Set up auth state listener - only after initialization
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return;
         
         console.log('Auth state change:', event, session?.user?.id);
+        
+        // Skip INITIAL_SESSION events to avoid loops
+        if (event === 'INITIAL_SESSION') return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -81,28 +114,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
         }
-        
-        if (isMounted) {
-          setLoading(false);
-        }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!isMounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await fetchUserProfile(session.user.id);
-      }
-      
-      if (isMounted) {
-        setLoading(false);
-      }
-    });
+    // Initialize auth
+    initializeAuth();
 
     return () => {
       isMounted = false;
