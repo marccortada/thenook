@@ -22,7 +22,7 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
-      navigate("/admin");
+      navigate("/panel-gestion-nook-madrid-2024");
     }
   }, [isAuthenticated, isAdmin, navigate]);
 
@@ -58,7 +58,7 @@ const AdminLogin = () => {
         description: "Bienvenido al panel de administración",
       });
 
-      navigate("/admin");
+      navigate("/panel-gestion-nook-madrid-2024");
     } catch (error) {
       console.error("Error during login:", error);
       toast({
