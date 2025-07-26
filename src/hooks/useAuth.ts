@@ -21,40 +21,51 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!isMounted) return;
+        
         console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Only fetch profile when user logs in, not on every state change
-        if (event === 'SIGNED_IN' && session?.user && !profile) {
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
+        // Only fetch profile when user logs in
+        if (event === 'SIGNED_IN' && session?.user) {
+          await fetchUserProfile(session.user.id);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
         }
         
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
+        await fetchUserProfile(session.user.id);
+      }
+      
+      if (isMounted) {
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []); // Remove profile dependency to prevent infinite loop
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []); // Empty dependency array
 
   const fetchUserProfile = async (userId: string) => {
     try {
