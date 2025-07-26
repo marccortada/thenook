@@ -92,18 +92,20 @@ const ReservationSystem = () => {
       let clientEmail;
       let profileToUse;
       
-      
       if (isAuthenticated && user) {
-        // User is logged in, use their email  
+        // User is logged in, use their info
         clientEmail = user.email;
-        // We'll need to get their profile from database
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        
-        profileToUse = userProfile;
+        profileToUse = {
+          id: user.id,
+          user_id: user.id,
+          email: user.email,
+          first_name: user.name.split(' ')[0] || '',
+          last_name: user.name.split(' ')[1] || '',
+          phone: null,
+          role: user.role,
+          created_at: '',
+          updated_at: ''
+        };
       } else {
         // User not logged in, check if client already exists by email
         clientEmail = formData.clientEmail || `cliente_${Date.now()}@temp.com`;
