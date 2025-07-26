@@ -24,15 +24,16 @@ export const useAuth = () => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Fetch profile when user logs in
-        if (session?.user) {
+        // Only fetch profile when user logs in, not on every state change
+        if (event === 'SIGNED_IN' && session?.user && !profile) {
           setTimeout(() => {
             fetchUserProfile(session.user.id);
           }, 0);
-        } else {
+        } else if (event === 'SIGNED_OUT') {
           setProfile(null);
         }
         
@@ -53,7 +54,7 @@ export const useAuth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, []); // Remove profile dependency to prevent infinite loop
 
   const fetchUserProfile = async (userId: string) => {
     try {
