@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -56,77 +57,85 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (error) {
         console.error('Error fetching profile:', error);
+        return null;
       } else {
+        console.log('Profile fetched:', data);
         setProfile(data);
+        return data;
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+      return null;
     }
   };
 
   useEffect(() => {
-    let isMounted = true;
+    console.log('AuthProvider mounting...');
     
-    // Initialize session check first
-    const initializeAuth = async () => {
+    let isSubscribed = true;
+
+    // Get initial session
+    const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (!isMounted) return;
-        
+        if (!isSubscribed) return;
+
         if (error) {
-          console.error('Error getting session:', error);
-          setLoading(false);
-          return;
+          console.error('Error getting initial session:', error);
+        } else {
+          console.log('Initial session:', session?.user?.id || 'No session');
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            await fetchUserProfile(session.user.id);
+          }
         }
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
-        }
-        
-        setLoading(false);
       } catch (error) {
-        console.error('Error initializing auth:', error);
-        if (isMounted) {
+        console.error('Error in getInitialSession:', error);
+      } finally {
+        if (isSubscribed) {
           setLoading(false);
         }
       }
     };
-    
-    // Set up auth state listener - only after initialization
+
+    // Set up auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!isMounted) return;
+        if (!isSubscribed) return;
         
-        console.log('Auth state change:', event, session?.user?.id);
-        
-        // Skip INITIAL_SESSION events to avoid loops
-        if (event === 'INITIAL_SESSION') return;
+        console.log('Auth event:', event, session?.user?.id || 'No user');
         
         setSession(session);
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' && session?.user) {
+          console.log('User signed in, fetching profile...');
           await fetchUserProfile(session.user.id);
         } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out');
           setProfile(null);
+        }
+        
+        if (isSubscribed) {
+          setLoading(false);
         }
       }
     );
 
-    // Initialize auth
-    initializeAuth();
+    getInitialSession();
 
     return () => {
-      isMounted = false;
+      console.log('AuthProvider unmounting...');
+      isSubscribed = false;
       subscription.unsubscribe();
     };
   }, []);
 
   const signOut = async () => {
+    console.log('Signing out...');
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Error signing out:', error);
@@ -137,6 +146,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const isEmployee = profile?.role === 'employee';
   const isClient = profile?.role === 'client';
   const isAuthenticated = !!user && !!session;
+
+  console.log('Auth state:', { 
+    user: !!user, 
+    profile: !!profile, 
+    isAdmin, 
+    isAuthenticated, 
+    loading,
+    role: profile?.role 
+  });
 
   const value = {
     user,
