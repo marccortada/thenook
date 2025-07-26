@@ -2151,6 +2151,10 @@ export type Database = {
         Args: { package_id: string; booking_id?: string }
         Returns: boolean
       }
+      validate_user_role: {
+        Args: { required_role: Database["public"]["Enums"]["user_role"] }
+        Returns: boolean
+      }
     }
     Enums: {
       booking_channel: "web" | "whatsapp" | "email" | "phone"
