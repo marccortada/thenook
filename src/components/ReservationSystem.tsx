@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CalendarDays, Clock, MapPin, User, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 const ReservationSystem = () => {
   const { toast } = useToast();
-  const { user, profile, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useSimpleAuth();
   const { centers } = useCenters();
   const { employees } = useEmployees();
   const { lanes } = useLanes();
@@ -92,10 +92,18 @@ const ReservationSystem = () => {
       let clientEmail;
       let profileToUse;
       
-      if (isAuthenticated && profile) {
-        // User is logged in, use their profile
-        clientEmail = profile.email;
-        profileToUse = profile;
+      
+      if (isAuthenticated && user) {
+        // User is logged in, use their email  
+        clientEmail = user.email;
+        // We'll need to get their profile from database
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        profileToUse = userProfile;
       } else {
         // User not logged in, check if client already exists by email
         clientEmail = formData.clientEmail || `cliente_${Date.now()}@temp.com`;
@@ -189,7 +197,7 @@ const ReservationSystem = () => {
 
       toast({
         title: "✅ Reserva Creada",
-        description: `Reserva para ${isAuthenticated && profile ? `${profile.first_name} ${profile.last_name}` : formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
+        description: `Reserva para ${isAuthenticated && user ? user.name : formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
       });
 
       // Reset form
@@ -284,7 +292,7 @@ const ReservationSystem = () => {
             )}
 
             {/* Show logged in user info */}
-            {isAuthenticated && profile && (
+            {isAuthenticated && user && (
               <div className="space-y-4">
                 <h3 className="font-medium flex items-center space-x-2">
                   <User className="h-4 w-4" />
@@ -294,9 +302,9 @@ const ReservationSystem = () => {
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">
-                      {profile.first_name} {profile.last_name}
+                      {user.name}
                     </span>
-                    <span className="text-muted-foreground">({profile.email})</span>
+                    <span className="text-muted-foreground">({user.email})</span>
                   </div>
                 </div>
               </div>

@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import ClientReservation from "./pages/ClientReservation";
 import AdminLogin from "./pages/AdminLogin";
@@ -16,10 +15,9 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<ClientReservation />} />
@@ -27,7 +25,7 @@ const App = () => (
           <Route 
             path="/panel-gestion-nook-madrid-2024" 
             element={
-              <ProtectedRoute requireAdmin={true}>
+              <ProtectedRoute requireAuth={true}>
                 <Index />
               </ProtectedRoute>
             } 
@@ -53,8 +51,7 @@ const App = () => (
         </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
 
 export default App;

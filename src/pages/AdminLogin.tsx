@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { Shield, Eye, EyeOff } from "lucide-react";
 
 const AdminLogin = () => {
@@ -18,44 +17,95 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isAuthenticated, isAdmin } = useAuth();
 
+  // Check if already logged in
   useEffect(() => {
-    if (isAuthenticated && isAdmin) {
-      navigate("/panel-gestion-nook-madrid-2024");
-    }
-  }, [isAuthenticated, isAdmin, navigate]);
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Check user role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (profile?.role === 'admin' || profile?.role === 'employee') {
+          navigate("/panel-gestion-nook-madrid-2024");
+        }
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // Sign in with Supabase
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
-      if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          toast({
-            title: "Error de autenticación",
-            description: "Email o contraseña incorrectos",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+      if (authError) {
+        toast({
+          title: "Error de autenticación",
+          description: "Email o contraseña incorrectos",
+          variant: "destructive",
+        });
         return;
       }
 
+      if (!authData.user) {
+        toast({
+          title: "Error",
+          description: "No se pudo autenticar el usuario",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', authData.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        toast({
+          title: "Error",
+          description: "No se encontró el perfil del usuario",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if user is admin or employee
+      if (profile.role !== 'admin' && profile.role !== 'employee') {
+        toast({
+          title: "Acceso denegado",
+          description: "No tienes permisos para acceder al panel de administración",
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+        return;
+      }
+
+      // Save user data to localStorage for quick access
+      localStorage.setItem('nook_user', JSON.stringify({
+        id: authData.user.id,
+        email: authData.user.email,
+        role: profile.role,
+        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+      }));
+
       toast({
         title: "Acceso concedido",
-        description: "Bienvenido al panel de administración",
+        description: `Bienvenido ${profile.role === 'admin' ? 'Administrador' : 'Empleado'}`,
       });
 
       navigate("/panel-gestion-nook-madrid-2024");
@@ -92,7 +142,7 @@ const AdminLogin = () => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="admin@ejemplo.com"
+                placeholder="admin@thenookmadrid.com"
                 required
               />
             </div>

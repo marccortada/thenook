@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
 import { LogOut, User, Calendar, Settings, Menu, Home, BarChart3, Bell, FileText, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +16,7 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const { user, profile, signOut, isAdmin, isAuthenticated } = useAuth();
+  const { user, signOut, isAdmin, isAuthenticated } = useSimpleAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -40,17 +40,17 @@ const Layout = ({ children }: LayoutProps) => {
   };
 
   const getUserInitials = () => {
-    if (profile?.first_name && profile?.last_name) {
-      return `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase();
+    if (user?.name) {
+      const nameParts = user.name.split(' ');
+      if (nameParts.length >= 2) {
+        return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
+      }
     }
     return user?.email?.charAt(0).toUpperCase() || "?";
   };
 
   const getUserDisplayName = () => {
-    if (profile?.first_name && profile?.last_name) {
-      return `${profile.first_name} ${profile.last_name}`;
-    }
-    return user?.email || "Usuario";
+    return user?.name || user?.email || "Usuario";
   };
 
   return (
@@ -196,7 +196,7 @@ const Layout = ({ children }: LayoutProps) => {
                         </p>
                         <div className="pt-1">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                            Administrador
+                            {user?.role === 'admin' ? 'Administrador' : 'Empleado'}
                           </span>
                         </div>
                       </div>

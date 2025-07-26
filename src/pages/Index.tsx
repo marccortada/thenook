@@ -20,13 +20,13 @@ import NotificationCenter from "@/components/NotificationCenter";
 import UnifiedDashboard from "@/components/UnifiedDashboard";
 import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 import ChatBot from "@/components/ChatBot";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("reservations");
-  const { profile } = useAuth();
+  const { user, isAdmin } = useSimpleAuth();
   const navigate = useNavigate();
 
   return (
@@ -35,10 +35,10 @@ const Index = () => {
         {activeTab !== "control" && (
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">
-              ¡Bienvenido, {profile?.first_name || 'Administrador'}!
+              ¡Bienvenido, {user?.name || 'Usuario'}!
             </h1>
             <p className="text-muted-foreground">
-              Panel de administración y gestión
+              Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
             </p>
           </div>
         )}
@@ -52,14 +52,14 @@ const Index = () => {
               className="w-full p-3 border rounded-lg bg-background text-sm"
             >
               <option value="reservations">📅 Reservas</option>
-              <option value="employees">👥 Empleados</option>
-              <option value="analytics">📊 Analytics</option>
-              <option value="packages">🎁 Bonos</option>
+              {isAdmin && <option value="employees">👥 Empleados</option>}
+              {isAdmin && <option value="analytics">📊 Analytics</option>}
+              {isAdmin && <option value="packages">🎁 Bonos</option>}
               <option value="notes">📝 Notas</option>
-              <option value="codes"># Códigos</option>
-              <option value="happyhour">% Happy Hour</option>
-              <option value="inventory">📦 Inventario</option>
-              <option value="control">🎛️ Centro de Control</option>
+              {isAdmin && <option value="codes"># Códigos</option>}
+              {isAdmin && <option value="happyhour">% Happy Hour</option>}
+              {isAdmin && <option value="inventory">📦 Inventario</option>}
+              {isAdmin && <option value="control">🎛️ Centro de Control</option>}
             </select>
           </div>
 
@@ -74,32 +74,38 @@ const Index = () => {
               <span className="text-sm font-medium">Reservas</span>
             </Button>
             
-            <Button
-              variant={activeTab === "employees" ? "default" : "outline"}
-              onClick={() => setActiveTab("employees")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <Users className="h-5 w-5" />
-              <span className="text-sm font-medium">Empleados</span>
-            </Button>
+            {isAdmin && (
+              <Button
+                variant={activeTab === "employees" ? "default" : "outline"}
+                onClick={() => setActiveTab("employees")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Users className="h-5 w-5" />
+                <span className="text-sm font-medium">Empleados</span>
+              </Button>
+            )}
             
-            <Button
-              variant={activeTab === "analytics" ? "default" : "outline"}
-              onClick={() => setActiveTab("analytics")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <TrendingUp className="h-5 w-5" />
-              <span className="text-sm font-medium">Analytics</span>
-            </Button>
+            {isAdmin && (
+              <Button
+                variant={activeTab === "analytics" ? "default" : "outline"}
+                onClick={() => setActiveTab("analytics")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <TrendingUp className="h-5 w-5" />
+                <span className="text-sm font-medium">Analytics</span>
+              </Button>
+            )}
             
-            <Button
-              variant={activeTab === "packages" ? "default" : "outline"}
-              onClick={() => setActiveTab("packages")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <Gift className="h-5 w-5" />
-              <span className="text-sm font-medium">Bonos</span>
-            </Button>
+            {isAdmin && (
+              <Button
+                variant={activeTab === "packages" ? "default" : "outline"}
+                onClick={() => setActiveTab("packages")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Gift className="h-5 w-5" />
+                <span className="text-sm font-medium">Bonos</span>
+              </Button>
+            )}
             
             <Button
               variant={activeTab === "notes" ? "default" : "outline"}
@@ -110,41 +116,49 @@ const Index = () => {
               <span className="text-sm font-medium">Notas</span>
             </Button>
             
-            <Button
-              variant={activeTab === "codes" ? "default" : "outline"}
-              onClick={() => setActiveTab("codes")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <Hash className="h-5 w-5" />
-              <span className="text-sm font-medium">Códigos</span>
-            </Button>
+            {isAdmin && (
+              <Button
+                variant={activeTab === "codes" ? "default" : "outline"}
+                onClick={() => setActiveTab("codes")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Hash className="h-5 w-5" />
+                <span className="text-sm font-medium">Códigos</span>
+              </Button>
+            )}
             
-            <Button
-              variant={activeTab === "happyhour" ? "default" : "outline"}
-              onClick={() => setActiveTab("happyhour")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <Percent className="h-5 w-5" />
-              <span className="text-sm font-medium">Happy Hour</span>
-            </Button>
+            {isAdmin && (
+              <Button
+                variant={activeTab === "happyhour" ? "default" : "outline"}
+                onClick={() => setActiveTab("happyhour")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Percent className="h-5 w-5" />
+                <span className="text-sm font-medium">Happy Hour</span>
+              </Button>
+            )}
             
-            <Button
-              variant={activeTab === "inventory" ? "default" : "outline"}
-              onClick={() => setActiveTab("inventory")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <Package2 className="h-5 w-5" />
-              <span className="text-sm font-medium">Inventario</span>
-            </Button>
+            {isAdmin && (
+              <Button
+                variant={activeTab === "inventory" ? "default" : "outline"}
+                onClick={() => setActiveTab("inventory")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Package2 className="h-5 w-5" />
+                <span className="text-sm font-medium">Inventario</span>
+              </Button>
+            )}
             
-            <Button
-              variant={activeTab === "control" ? "default" : "outline"}
-              onClick={() => setActiveTab("control")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <BarChart3 className="h-5 w-5" />
-              <span className="text-sm font-medium">Centro Control</span>
-            </Button>
+            {isAdmin && (
+              <Button
+                variant={activeTab === "control" ? "default" : "outline"}
+                onClick={() => setActiveTab("control")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <BarChart3 className="h-5 w-5" />
+                <span className="text-sm font-medium">Centro Control</span>
+              </Button>
+            )}
           </div>
 
           <TabsContent value="reservations" className="mt-6 space-y-6">
@@ -153,38 +167,51 @@ const Index = () => {
             <SpecialistClients />
           </TabsContent>
 
-          <TabsContent value="employees" className="mt-6">
-            <EmployeeManagement />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="employees" className="mt-6">
+              <EmployeeManagement />
+            </TabsContent>
+          )}
 
-          <TabsContent value="analytics" className="mt-6">
-            <AdvancedDashboard />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="analytics" className="mt-6">
+              <AdvancedDashboard />
+            </TabsContent>
+          )}
 
-
-          <TabsContent value="packages" className="mt-6">
-            <PackageManagement />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="packages" className="mt-6">
+              <PackageManagement />
+            </TabsContent>
+          )}
 
           <TabsContent value="notes" className="mt-6">
             <ClientNotes />
           </TabsContent>
 
-          <TabsContent value="codes" className="mt-6">
-            <InternalCodesManagement />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="codes" className="mt-6">
+              <InternalCodesManagement />
+            </TabsContent>
+          )}
 
-          <TabsContent value="happyhour" className="mt-6">
-            <HappyHourManagement />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="happyhour" className="mt-6">
+              <HappyHourManagement />
+            </TabsContent>
+          )}
 
-          <TabsContent value="inventory" className="mt-6">
-            <InventoryManagement />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="inventory" className="mt-6">
+              <InventoryManagement />
+            </TabsContent>
+          )}
 
-          <TabsContent value="control" className="mt-0">
-            <UnifiedDashboard />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="control" className="mt-0">
+              <UnifiedDashboard />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
       
