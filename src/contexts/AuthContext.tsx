@@ -55,16 +55,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .eq('user_id', userId)
         .single();
 
+      console.log('Profile query result:', { data, error });
+
       if (error) {
         console.error('Error fetching profile:', error);
         return null;
       } else {
-        console.log('Profile fetched:', data);
+        console.log('Profile fetched successfully:', data);
         setProfile(data);
         return data;
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Exception in fetchUserProfile:', error);
       return null;
     }
   };
