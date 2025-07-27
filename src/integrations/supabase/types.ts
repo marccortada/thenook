@@ -1463,6 +1463,9 @@ export type Database = {
           email: string
           first_name: string | null
           id: string
+          is_active: boolean | null
+          is_staff: boolean | null
+          last_login: string | null
           last_name: string | null
           phone: string | null
           role: Database["public"]["Enums"]["user_role"] | null
@@ -1474,6 +1477,9 @@ export type Database = {
           email: string
           first_name?: string | null
           id?: string
+          is_active?: boolean | null
+          is_staff?: boolean | null
+          last_login?: string | null
           last_name?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
@@ -1485,6 +1491,9 @@ export type Database = {
           email?: string
           first_name?: string | null
           id?: string
+          is_active?: boolean | null
+          is_staff?: boolean | null
+          last_login?: string | null
           last_name?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
@@ -2122,6 +2131,10 @@ export type Database = {
           _user_id: string
           _role: Database["public"]["Enums"]["user_role"]
         }
+        Returns: boolean
+      }
+      is_active_staff: {
+        Args: { _user_id: string }
         Returns: boolean
       }
       log_activity: {

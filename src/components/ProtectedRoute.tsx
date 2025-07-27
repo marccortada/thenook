@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -16,7 +16,7 @@ const ProtectedRoute = ({
   requireAdmin = false, 
   requireEmployee = false 
 }: ProtectedRouteProps) => {
-  const { isAuthenticated, loading, isAdmin, isEmployee } = useSimpleAuth();
+  const { isAuthenticated, loading, isAdmin, isEmployee } = useSupabaseAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

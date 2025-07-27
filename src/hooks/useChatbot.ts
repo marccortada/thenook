@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 interface Message {
   id: string;
@@ -15,7 +15,7 @@ export const useChatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-  const { user, isAdmin, isEmployee } = useSimpleAuth();
+  const { profile, isAdmin, isEmployee } = useSupabaseAuth();
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
@@ -31,15 +31,15 @@ export const useChatbot = () => {
     setIsLoading(true);
 
     console.log('Sending chatbot message with user info:', {
-      userInfo: user ? {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
+      userInfo: profile ? {
+        id: profile.id,
+        email: profile.email,
+        name: `${profile.first_name} ${profile.last_name}`,
+        role: profile.role,
         isAdmin,
         isEmployee
       } : null,
-      isStaff: user && (isAdmin || isEmployee)
+      isStaff: profile && (isAdmin || isEmployee)
     });
 
     try {
@@ -47,11 +47,11 @@ export const useChatbot = () => {
         body: { 
           message: content,
           context: messages.slice(-5), // Últimos 5 mensajes para contexto
-          userInfo: user ? {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
+          userInfo: profile ? {
+            id: profile.id,
+            email: profile.email,
+            name: `${profile.first_name} ${profile.last_name}`,
+            role: profile.role,
             isAdmin,
             isEmployee
           } : null,
@@ -86,7 +86,7 @@ export const useChatbot = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, toast, user, isAdmin, isEmployee]);
+  }, [messages, toast, profile, isAdmin, isEmployee]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);

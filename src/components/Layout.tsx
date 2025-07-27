@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useSimpleAuth } from "@/hooks/useSimpleAuth";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useNavigate } from "react-router-dom";
 import { LogOut, User, Calendar, Settings, Menu, Home, BarChart3, Bell, FileText, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +16,7 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const { user, signOut, isAdmin, isAuthenticated } = useSimpleAuth();
+  const { profile, signOut, isAdmin, isAuthenticated } = useSupabaseAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -40,17 +40,15 @@ const Layout = ({ children }: LayoutProps) => {
   };
 
   const getUserInitials = () => {
-    if (user?.name) {
-      const nameParts = user.name.split(' ');
-      if (nameParts.length >= 2) {
-        return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
-      }
-    }
-    return user?.email?.charAt(0).toUpperCase() || "?";
+    if (!profile) return 'U';
+    const firstName = profile.first_name || '';
+    const lastName = profile.last_name || '';
+    return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || profile.email.charAt(0).toUpperCase();
   };
 
   const getUserDisplayName = () => {
-    return user?.name || user?.email || "Usuario";
+    if (!profile) return 'Usuario';
+    return `${profile.first_name} ${profile.last_name}`.trim() || profile.email || 'Usuario';
   };
 
   return (
@@ -192,11 +190,11 @@ const Layout = ({ children }: LayoutProps) => {
                           {getUserDisplayName()}
                         </p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          {user?.email}
+                          {profile?.email}
                         </p>
                         <div className="pt-1">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                            {user?.role === 'admin' ? 'Administrador' : 'Empleado'}
+                            {profile?.role === 'admin' ? 'Administrador' : 'Empleado'}
                           </span>
                         </div>
                       </div>
