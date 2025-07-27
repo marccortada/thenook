@@ -155,11 +155,7 @@ const AdminLogin = () => {
             </Button>
           </form>
           
-          <div className="mt-6 text-center space-y-2">
-            <div className="text-xs text-muted-foreground">
-              Admin: admin@thenookmadrid.com / Gnerai123<br/>
-              Empleado: work@thenookmadrid.com / worker1234
-            </div>
+          <div className="mt-6 text-center">
             <Button
               variant="ghost"
               onClick={() => navigate("/")}
