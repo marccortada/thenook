@@ -52,7 +52,7 @@ const Index = () => {
               className="w-full p-3 border rounded-lg bg-background text-sm"
             >
               <option value="reservations">📅 Nueva Reserva</option>
-              <option value="bookings">📋 Reservas</option>
+              <option value="bookings">📋 Agenda</option>
               {isAdmin && <option value="employees">👥 Empleados</option>}
               {isAdmin && <option value="analytics">📊 Analytics</option>}
               {isAdmin && <option value="packages">🎁 Bonos</option>}
@@ -81,7 +81,7 @@ const Index = () => {
               className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
             >
               <FileText className="h-5 w-5" />
-              <span className="text-sm font-medium">Reservas</span>
+              <span className="text-sm font-medium">Agenda</span>
             </Button>
             
             {isAdmin && (
