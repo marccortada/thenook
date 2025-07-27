@@ -30,6 +30,18 @@ export const useChatbot = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
+    console.log('Sending chatbot message with user info:', {
+      userInfo: user ? {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        isAdmin,
+        isEmployee
+      } : null,
+      isStaff: user && (isAdmin || isEmployee)
+    });
+
     try {
       const { data, error } = await supabase.functions.invoke('chatbot', {
         body: { 
@@ -74,7 +86,7 @@ export const useChatbot = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, toast]);
+  }, [messages, toast, user, isAdmin, isEmployee]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
