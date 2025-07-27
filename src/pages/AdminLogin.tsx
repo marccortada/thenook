@@ -39,19 +39,18 @@ const AdminLogin = () => {
         return;
       }
 
-      // Verificación simple de contraseña (en producción usar hash)
-      // Por ahora verificamos contra emails conocidos
+      // Verificación de credenciales
       let isValidPassword = false;
-      if (formData.email === 'admin@thenookmadrid.com' && formData.password === 'admin123') {
+      if (formData.email === 'admin@thenookmadrid.com' && formData.password === 'Gnerai123') {
         isValidPassword = true;
-      } else if (formData.email.includes('empleado') && formData.password === 'empleado123') {
+      } else if (formData.email === 'work@thenookmadrid.com' && formData.password === 'worker1234') {
         isValidPassword = true;
       }
 
       if (!isValidPassword) {
         toast({
           title: "Error de autenticación",
-          description: "Contraseña incorrecta",
+          description: "Credenciales incorrectas",
           variant: "destructive",
         });
         return;
@@ -158,7 +157,8 @@ const AdminLogin = () => {
           
           <div className="mt-6 text-center space-y-2">
             <div className="text-xs text-muted-foreground">
-              Admin: admin@thenookmadrid.com / admin123
+              Admin: admin@thenookmadrid.com / Gnerai123<br/>
+              Empleado: work@thenookmadrid.com / worker1234
             </div>
             <Button
               variant="ghost"

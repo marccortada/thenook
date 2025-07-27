@@ -84,6 +84,7 @@ const Index = () => {
               <span className="text-sm font-medium">Agenda</span>
             </Button>
             
+            {/* Solo para admin */}
             {isAdmin && (
               <Button
                 variant={activeTab === "employees" ? "default" : "outline"}
