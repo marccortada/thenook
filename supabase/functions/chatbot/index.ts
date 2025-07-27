@@ -20,11 +20,17 @@ serve(async (req) => {
   }
 
   try {
-    const { message, context, capabilities } = await req.json();
+    const { message, context, capabilities, userInfo } = await req.json();
 
     if (!message) {
       throw new Error('No message provided');
     }
+
+    console.log('User info received:', userInfo);
+
+    // Detectar si es empleado o admin
+    const isStaff = userInfo && (userInfo.isAdmin || userInfo.isEmployee);
+    const isClient = !isStaff;
 
     // Detectar diferentes tipos de intenciones
     const isBookingRequest = message.toLowerCase().includes('reservar') || 
@@ -46,78 +52,100 @@ serve(async (req) => {
                            message.toLowerCase().includes('buscar reservas') ||
                            (message.includes('@') && (message.toLowerCase().includes('reservas') || message.toLowerCase().includes('citas')));
 
-    // Sistema de prompt con funciones para crear reservas
-    const systemPrompt = `Eres un asistente virtual especializado para THE NOOK MADRID, centros de masajes y wellness en Madrid.
+    // Detectar consultas específicas del staff
+    const isStaffScheduleRequest = isStaff && (
+      message.toLowerCase().includes('citas de hoy') ||
+      message.toLowerCase().includes('agenda de hoy') ||
+      message.toLowerCase().includes('mis citas') ||
+      message.toLowerCase().includes('horario') ||
+      message.toLowerCase().includes('turnos')
+    );
+
+    const isStaffClientInfoRequest = isStaff && (
+      message.toLowerCase().includes('información del cliente') ||
+      message.toLowerCase().includes('historial del cliente') ||
+      message.toLowerCase().includes('notas del cliente')
+    );
+
+    // Sistema de prompt diferenciado por rol
+    let systemPrompt = `Eres un asistente virtual especializado para THE NOOK MADRID, centros de masajes y wellness en Madrid.
+
+DETECCIÓN DE USUARIO:
+${isStaff ? `
+🔹 USUARIO ACTUAL: EMPLEADO/ADMINISTRADOR (${userInfo.name})
+🔹 ACCESO: Información interna del centro y gestión de citas
+🔹 CAPACIDADES ESPECIALES PARA STAFF:
+  - Consultar agenda completa del día
+  - Ver información detallada de clientes
+  - Gestionar reservas de cualquier cliente
+  - Acceso a estadísticas del centro
+  - Información sobre empleados y turnos
+` : `
+🔹 USUARIO ACTUAL: CLIENTE
+🔹 ACCESO: Solo información general del centro y sus propias reservas
+🔹 RESTRICCIONES: NO mostrar información interna, ni agendas de empleados, ni datos de otros clientes
+`}
 
 CAPACIDADES ESPECIALES DEL SISTEMA:
 ${capabilities && capabilities.includes('gestionar_reservas') ? `
-- GESTIÓN DE RESERVAS: Puedes ayudar a buscar, modificar y cancelar reservas existentes
-- CREAR NUEVAS RESERVAS: Puedes registrar nuevas reservas cuando un cliente solicite
-- BÚSQUEDA POR EMAIL: Cuando un cliente proporcione su email, puedes encontrar sus reservas y bonos
-- CONSULTA DE BONOS: Puedes mostrar bonos activos, sesiones restantes y fechas de caducidad
+- GESTIÓN DE RESERVAS: Puedes ayudar a buscar, modificar y cancelar reservas
+- CREAR NUEVAS RESERVAS: Puedes registrar nuevas reservas cuando se solicite
+- BÚSQUEDA POR EMAIL: Puedes encontrar reservas y bonos por email
+- CONSULTA DE BONOS: Puedes mostrar bonos activos, sesiones restantes y fechas
+` : ''}
+
+${isStaff ? `
+FUNCIONES ESPECIALES PARA EMPLEADOS:
+- AGENDA DEL DÍA: Puedes mostrar todas las citas del día actual
+- INFORMACIÓN DE CLIENTES: Acceso a historial completo de clientes
+- GESTIÓN AVANZADA: Modificar cualquier reserva del sistema
+- ESTADÍSTICAS: Información sobre ocupación y rendimiento
+- EMPLEADOS: Información sobre horarios y disponibilidad del staff
+
+FORMATO PARA MOSTRAR AGENDA DEL DÍA:
+📅 **AGENDA DEL DÍA - ${new Date().toLocaleDateString('es-ES')}**
+
+🕐 [HORA] | 👤 [CLIENTE] | 🎯 [SERVICIO] | 👨‍⚕️ [EMPLEADO]
+📧 Email: [email] | 📞 Teléfono: [teléfono]
+💳 Estado: [estado_pago] | 📋 Notas: [notas]
+---
 ` : ''}
 
 INFORMACIÓN GENERAL:
 - THE NOOK tiene 2 centros en Madrid: Zurbarán (Chamberí) y Concha Espina (Chamartín)
-- Somos especialistas en masajes y terapia manual
+- Especialistas en masajes y terapia manual
 - Calificación: 4.9/5 basado en 989 reseñas de Google
-- Utilizamos la plataforma de pago seguro Stripe Inc.
-- Trabajamos sin cobro por adelantado
+- Plataforma de pago seguro Stripe Inc.
+- Sin cobro por adelantado
 
-PROCESO PARA CREAR NUEVAS RESERVAS:
-Cuando un cliente quiere hacer una reserva nueva:
-1. SOLICITA INFORMACIÓN BÁSICA:
-   - Nombre completo
-   - Email
-   - Teléfono
-   - Tipo de servicio deseado
-   - Fecha y hora preferida
-   - Centro preferido (Zurbarán o Concha Espina)
-
-2. CONFIRMA DETALLES:
-   - Revisa toda la información
-   - Explica el precio del servicio
-   - Confirma disponibilidad
-
-3. CREA LA RESERVA:
-   - Registra en el sistema con status "confirmed"
-   - Genera confirmación para el cliente
-   - Proporciona detalles de la cita
-
-SERVICIOS DISPONIBLES EN EL SISTEMA:
+${isClient ? `
+SERVICIOS DISPONIBLES PARA CLIENTES:
 
 MASAJES (60 minutos - 60€):
-1. Masaje Descontracturante - Para aliviar tensiones musculares y contracturas
-2. Masaje Relajante - Para relajación profunda y bienestar general
-3. Masaje Deportivo - Especializado para deportistas y actividad física
-4. Masaje para Dos (en pareja) - Experiencia compartida en cabinas dobles (120€)
-5. Masaje Futura Mamá - Especializado para embarazadas (OBLIGATORIO avisar al reservar)
-6. Masaje a Cuatro Manos - Experiencia única con dos terapeutas (120€)
+1. Masaje Descontracturante - Para aliviar tensiones musculares
+2. Masaje Relajante - Para relajación profunda y bienestar
+3. Masaje Deportivo - Especializado para deportistas
+4. Masaje para Dos (en pareja) - Experiencia compartida (120€)
+5. Masaje Futura Mamá - Especializado para embarazadas
+6. Masaje a Cuatro Manos - Con dos terapeutas (120€)
 7. Masaje con Piedras Calientes - Terapia con termoterapia
-8. Masaje Piernas Cansadas - Específico para mejorar circulación
-9. Drenaje Linfático - Para desintoxicación y reducción de retención
-10. Reflexología Podal - Terapia a través de puntos reflejos en los pies
+8. Masaje Piernas Cansadas - Para mejorar circulación
+9. Drenaje Linfático - Desintoxicación y reducción de retención
+10. Reflexología Podal - Terapia a través de puntos reflejos
 
 RITUALES (90 minutos - 85€):
 - Ritual Energizante - Tratamiento completo revitalizante
-- Otros rituales especializados según necesidades
 
 CENTROS DISPONIBLES:
 1. ZURBARÁN (Chamberí) - Centro principal
 2. CONCHA ESPINA (Chamartín) - Segundo centro
+` : ''}
 
-IMPORTANTE PARA CREAR RESERVAS:
-- Siempre confirma todos los datos antes de crear la reserva
-- Explica que recibirá confirmación por email
-- Menciona la política de cancelación (24h de antelación)
-- Para embarazadas, OBLIGATORIO informar al hacer la reserva
-- Utiliza el formato: "✅ RESERVA CREADA" cuando confirmes una nueva reserva
-
-INSTRUCCIONES PARA RESPUESTAS:
+INSTRUCCIONES IMPORTANTES:
+- ${isClient ? 'NUNCA proporciones información interna, agendas de empleados o datos de otros clientes' : 'Proporciona información completa sobre operaciones internas cuando se solicite'}
 - Sé profesional y empático
-- Solicita información paso a paso
-- Confirma detalles importantes
-- Explica claramente las opciones disponibles
+- ${isStaff ? 'Para empleados: ayuda con la organización diaria y gestión de citas' : 'Para clientes: enfócate en servicios y sus propias reservas'}
+- Confirma detalles importantes antes de realizar acciones
 - Si no puedes realizar una acción, explica cómo contactar con el centro`;
 
     // Analizar si necesitamos crear una reserva
@@ -246,6 +274,85 @@ Devuelve SOLO un JSON válido con la siguiente estructura (deja null si no está
             console.error('Error creating booking:', error);
           }
         }
+      }
+    }
+
+    // Función específica para empleados: mostrar agenda del día
+    if (isStaffScheduleRequest) {
+      try {
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+        const { data: todayBookings } = await supabase
+          .from('bookings')
+          .select(`
+            id,
+            booking_datetime,
+            status,
+            payment_status,
+            notes,
+            services (name),
+            profiles!bookings_client_id_fkey (first_name, last_name, email, phone)
+          `)
+          .gte('booking_datetime', startOfDay.toISOString())
+          .lt('booking_datetime', endOfDay.toISOString())
+          .in('status', ['confirmed', 'pending'])
+          .order('booking_datetime', { ascending: true });
+
+        if (todayBookings && todayBookings.length > 0) {
+          const agendaList = todayBookings.map((booking: any) => {
+            const date = new Date(booking.booking_datetime);
+            const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            const clientName = `${booking.profiles?.first_name || ''} ${booking.profiles?.last_name || ''}`.trim();
+            const service = booking.services?.name || 'Servicio no especificado';
+            const status = booking.status === 'confirmed' ? '✅' : '⏳';
+            const paymentStatus = booking.payment_status === 'completed' ? '💳 Pagado' : '💰 Pendiente';
+            
+            return `${status} **${timeStr}** | 👤 ${clientName}
+🎯 ${service}
+📧 ${booking.profiles?.email || 'No email'}
+📞 ${booking.profiles?.phone || 'No teléfono'}
+💳 ${paymentStatus}
+📋 ${booking.notes || 'Sin notas'}
+---`;
+          }).join('\n');
+
+          const agendaMessage = `📅 **AGENDA DEL DÍA - ${today.toLocaleDateString('es-ES')}**
+
+🏢 **THE NOOK MADRID**
+👋 Hola ${userInfo.name}, aquí tienes la agenda de hoy:
+
+${agendaList}
+
+📊 **Resumen del día:**
+• Total de citas: ${todayBookings.length}
+• Confirmadas: ${todayBookings.filter((b: any) => b.status === 'confirmed').length}
+• Pendientes: ${todayBookings.filter((b: any) => b.status === 'pending').length}
+
+¿Necesitas información específica de algún cliente o ayuda con alguna reserva?`;
+
+          return new Response(JSON.stringify({ reply: agendaMessage }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } else {
+          const noBookingsMessage = `📅 **AGENDA DEL DÍA - ${today.toLocaleDateString('es-ES')}**
+
+🏢 **THE NOOK MADRID**
+👋 Hola ${userInfo.name}
+
+📝 **No hay citas programadas para hoy**
+
+¡Perfecto día para organizar, preparar o relajarse! 
+
+¿Necesitas ayuda con algo más?`;
+
+          return new Response(JSON.stringify({ reply: noBookingsMessage }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching staff schedule:', error);
       }
     }
 

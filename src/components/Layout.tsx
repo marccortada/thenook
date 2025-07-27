@@ -215,6 +215,11 @@ const Layout = ({ children }: LayoutProps) => {
                       <span>Notificaciones</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Mi Perfil</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Cerrar sesión</span>

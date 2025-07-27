@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 
 interface Message {
   id: string;
@@ -14,6 +15,7 @@ export const useChatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+  const { user, isAdmin, isEmployee } = useSimpleAuth();
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
@@ -33,6 +35,14 @@ export const useChatbot = () => {
         body: { 
           message: content,
           context: messages.slice(-5), // Últimos 5 mensajes para contexto
+          userInfo: user ? {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            isAdmin,
+            isEmployee
+          } : null,
           capabilities: [
             'gestionar_reservas', 
             'buscar_por_email', 
