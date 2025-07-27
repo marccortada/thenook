@@ -29,15 +29,8 @@ serve(async (req) => {
     console.log('User info received:', userInfo);
 
     // Detectar si es empleado o admin
-    const isStaff = userInfo && (userInfo.isAdmin || userInfo.isEmployee || userInfo.role === 'admin' || userInfo.role === 'employee');
+    const isStaff = userInfo && (userInfo.isAdmin || userInfo.isEmployee);
     const isClient = !isStaff;
-
-    console.log('Role detection:', {
-      userInfo,
-      isStaff,
-      isClient,
-      hasUserInfo: !!userInfo
-    });
 
     // Detectar diferentes tipos de intenciones
     const isBookingRequest = message.toLowerCase().includes('reservar') || 

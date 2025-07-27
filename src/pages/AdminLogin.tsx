@@ -1,55 +1,101 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { EyeIcon, EyeOffIcon, Loader2, Shield } from 'lucide-react';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { Shield, Eye, EyeOff } from "lucide-react";
 
 const AdminLogin = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { toast } = useToast();
   const navigate = useNavigate();
-  const { signIn, isAuthenticated, loading: authLoading } = useSupabaseAuth();
-
-  useEffect(() => {
-    // Redirigir si ya está autenticado
-    if (isAuthenticated && !authLoading) {
-      navigate('/panel-gestion-nook-madrid-2024');
-    }
-  }, [isAuthenticated, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      return;
-    }
-
     setLoading(true);
-    
-    const { error } = await signIn(email, password);
-    
-    if (!error) {
-      navigate('/panel-gestion-nook-madrid-2024');
-    }
-    
-    setLoading(false);
-  };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Verificando sesión...</p>
-        </div>
-      </div>
-    );
-  }
+    try {
+      // Verificar credenciales directamente en la base de datos
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', formData.email)
+        .single();
+
+      if (error || !profile) {
+        toast({
+          title: "Error de autenticación",
+          description: "Email no encontrado en el sistema",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificación de credenciales
+      let isValidPassword = false;
+      if (formData.email === 'admin@thenookmadrid.com' && formData.password === 'Gnerai123') {
+        isValidPassword = true;
+      } else if (formData.email === 'work@thenookmadrid.com' && formData.password === 'worker1234') {
+        isValidPassword = true;
+      }
+
+      if (!isValidPassword) {
+        toast({
+          title: "Error de autenticación",
+          description: "Credenciales incorrectas",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar que tenga permisos (admin o employee)
+      if (profile.role !== 'admin' && profile.role !== 'employee') {
+        toast({
+          title: "Acceso denegado",
+          description: "No tienes permisos para acceder al panel",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Guardar sesión en localStorage
+      const userSession = {
+        id: profile.id,
+        email: profile.email,
+        role: profile.role,
+        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
+        loginTime: Date.now()
+      };
+
+      localStorage.setItem('nook_user_session', JSON.stringify(userSession));
+
+      toast({
+        title: "✅ Acceso concedido",
+        description: `Bienvenido ${profile.role === 'admin' ? 'Administrador' : 'Empleado'}`,
+      });
+
+      // Redirigir al panel
+      navigate("/panel-gestion-nook-madrid-2024");
+      
+    } catch (error) {
+      console.error("Error durante login:", error);
+      toast({
+        title: "Error del sistema",
+        description: "Ocurrió un error. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -60,7 +106,7 @@ const AdminLogin = () => {
           </div>
           <CardTitle className="text-2xl">Panel de Administración</CardTitle>
           <CardDescription>
-            Accede al sistema de gestión de The Nook Madrid
+            Accede al sistema de gestión
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -70,8 +116,8 @@ const AdminLogin = () => {
               <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="admin@thenookmadrid.com"
                 required
               />
@@ -83,8 +129,8 @@ const AdminLogin = () => {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="••••••••"
                   required
                 />
@@ -96,23 +142,16 @@ const AdminLogin = () => {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOffIcon className="h-4 w-4" />
+                    <EyeOff className="h-4 w-4" />
                   ) : (
-                    <EyeIcon className="h-4 w-4" />
+                    <Eye className="h-4 w-4" />
                   )}
                 </Button>
               </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verificando...
-                </>
-              ) : (
-                "Iniciar Sesión"
-              )}
+              {loading ? "Verificando..." : "Iniciar Sesión"}
             </Button>
           </form>
           
