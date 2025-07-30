@@ -177,9 +177,6 @@ const DailyAgendaView = () => {
               <Button variant="outline" size="icon" onClick={goToPreviousDay}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" onClick={goToToday} className="font-medium">
-                Hoy
-              </Button>
               <Button variant="outline" size="icon" onClick={goToNextDay}>
                 <ChevronRight className="h-4 w-4" />
               </Button>

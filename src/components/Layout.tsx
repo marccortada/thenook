@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+import ChatBot from "@/components/ChatBot";
 import NotificationBell from "@/components/NotificationBell";
 
 interface LayoutProps {
@@ -236,6 +237,9 @@ const Layout = ({ children }: LayoutProps) => {
       <main className="container mx-auto px-4 py-8">
         {children}
       </main>
+      
+      {/* ChatBot */}
+      <ChatBot />
       
     </div>
   );
