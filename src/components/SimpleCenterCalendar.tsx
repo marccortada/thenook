@@ -33,7 +33,7 @@ const SimpleCenterCalendar = () => {
   const [showNewBookingModal, setShowNewBookingModal] = useState(false);
   const [showEditBookingModal, setShowEditBookingModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
-  const [selectedCenterId, setSelectedCenterId] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('');
   
   // Form states
   const [newBookingForm, setNewBookingForm] = useState({
@@ -50,7 +50,14 @@ const SimpleCenterCalendar = () => {
   const { bookings, loading: bookingsLoading, refetch: refetchBookings } = useBookings();
   const { centers } = useCenters();
   const { employees } = useEmployees();
-  const { services } = useServices(selectedCenterId);
+  const { services } = useServices(activeTab);
+
+  // Set initial tab when centers load
+  useEffect(() => {
+    if (centers.length > 0 && !activeTab) {
+      setActiveTab(centers[0].id);
+    }
+  }, [centers, activeTab]);
 
   // Time slots every 30 minutes from 9:00 to 21:00
   const generateTimeSlots = () => {
@@ -113,7 +120,6 @@ const SimpleCenterCalendar = () => {
 
   // Handle new booking
   const handleNewBooking = (centerId: string) => {
-    setSelectedCenterId(centerId);
     setNewBookingForm({
       clientName: '',
       clientEmail: '',
@@ -166,7 +172,8 @@ const SimpleCenterCalendar = () => {
       }
 
       // Get service details for pricing
-      const selectedService = services.find(s => s.id === newBookingForm.serviceId);
+      const currentServices = services || [];
+      const selectedService = currentServices.find(s => s.id === newBookingForm.serviceId);
       if (!selectedService) throw new Error('Servicio no encontrado');
 
       // Create booking datetime
@@ -179,7 +186,7 @@ const SimpleCenterCalendar = () => {
         .insert({
           client_id: clientProfile?.id,
           service_id: newBookingForm.serviceId,
-          center_id: selectedCenterId,
+          center_id: activeTab,
           employee_id: newBookingForm.employeeId === 'auto' ? null : newBookingForm.employeeId,
           booking_datetime: bookingDate.toISOString(),
           duration_minutes: newBookingForm.duration,
@@ -423,7 +430,7 @@ const SimpleCenterCalendar = () => {
       </div>
 
       {/* Calendars by Center */}
-      <Tabs defaultValue={centers[0]?.id} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
           {centers.map((center) => (
             <TabsTrigger key={center.id} value={center.id} className="text-sm">
@@ -500,7 +507,7 @@ const SimpleCenterCalendar = () => {
                   <SelectValue placeholder="Seleccionar servicio" />
                 </SelectTrigger>
                 <SelectContent>
-                  {services.map((service) => (
+                  {services && services.map((service) => (
                     <SelectItem key={service.id} value={service.id}>
                       {service.name} - €{(service.price_cents / 100).toFixed(2)}
                     </SelectItem>
@@ -533,7 +540,7 @@ const SimpleCenterCalendar = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="auto">Asignar automáticamente</SelectItem>
-                {getEmployeesForCenter(selectedCenterId).map((employee) => (
+                {getEmployeesForCenter(activeTab).map((employee) => (
                   <SelectItem key={employee.id} value={employee.id}>
                     {employee.profiles?.first_name} {employee.profiles?.last_name}
                   </SelectItem>
