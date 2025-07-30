@@ -21,7 +21,7 @@ import UnifiedDashboard from "@/components/UnifiedDashboard";
 import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 
 import ChatBot from "@/components/ChatBot";
-import DailyAgendaView from "@/components/DailyAgendaView";
+import SimpleCenterCalendar from "@/components/SimpleCenterCalendar";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
@@ -179,7 +179,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="bookings" className="mt-6 space-y-6">
-            <DailyAgendaView />
+            <SimpleCenterCalendar />
           </TabsContent>
 
           {isAdmin && (
