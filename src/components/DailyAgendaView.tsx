@@ -59,14 +59,14 @@ const DailyAgendaView = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
 
-  // Time slots (every 15 minutes from 9:00 to 22:00)
+  // Time slots (every 30 minutes from 9:00 to 21:00 for better compactness)
   const generateTimeSlots = () => {
     const slots = [];
     const startHour = 9;
-    const endHour = 22;
+    const endHour = 21;
     
     for (let hour = startHour; hour <= endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += 15) {
+      for (let minute = 0; minute < 60; minute += 30) {
         if (hour === endHour && minute > 0) break;
         const time = new Date();
         time.setHours(hour, minute, 0, 0);
@@ -80,6 +80,8 @@ const DailyAgendaView = () => {
 
   // Filter bookings for selected date and center
   const filteredBookings = bookings.filter(booking => {
+    if (!booking.booking_datetime) return false;
+    
     const bookingDate = parseISO(booking.booking_datetime);
     const matchesDate = isSameDay(bookingDate, selectedDate);
     const matchesCenter = selectedCenter === 'all' || booking.center_id === selectedCenter;
@@ -91,16 +93,18 @@ const DailyAgendaView = () => {
     return matchesDate && matchesCenter && matchesSearch;
   });
 
-  // Get columns (lanes or employees)
+  // Get columns (lanes or employees) - filter active ones
   const getColumns = () => {
     if (viewMode === 'lanes') {
-      return selectedCenter === 'all' 
-        ? lanes 
-        : lanes.filter(lane => lane.center_id === selectedCenter);
+      const filtered = selectedCenter === 'all' 
+        ? lanes.filter(lane => lane.active !== false)
+        : lanes.filter(lane => lane.center_id === selectedCenter && lane.active !== false);
+      return filtered.slice(0, 6); // Limit to 6 columns for responsiveness
     } else {
-      return selectedCenter === 'all'
-        ? employees
-        : employees.filter(emp => emp.center_id === selectedCenter);
+      const filtered = selectedCenter === 'all'
+        ? employees.filter(emp => emp.active !== false)
+        : employees.filter(emp => emp.center_id === selectedCenter && emp.active !== false);
+      return filtered.slice(0, 6); // Limit to 6 columns for responsiveness
     }
   };
 
@@ -190,21 +194,21 @@ const DailyAgendaView = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar cliente o servicio..."
+                placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-64"
+                className="pl-9 w-32 lg:w-48"
               />
             </div>
 
             {/* Center filter */}
             <Select value={selectedCenter} onValueChange={setSelectedCenter}>
-              <SelectTrigger className="w-48">
-                <MapPin className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Centro" />
+              <SelectTrigger className="w-32 lg:w-40">
+                <MapPin className="h-4 w-4 mr-1" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los centros</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 {centers.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
                     {center.name}
@@ -215,102 +219,100 @@ const DailyAgendaView = () => {
 
             {/* View mode toggle */}
             <Select value={viewMode} onValueChange={(value: 'lanes' | 'employees') => setViewMode(value)}>
-              <SelectTrigger className="w-36">
-                <Settings className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-28 lg:w-32">
+                <Settings className="h-4 w-4 mr-1" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="lanes">Por Cabinas</SelectItem>
-                <SelectItem value="employees">Por Especialistas</SelectItem>
+                <SelectItem value="lanes">Cabinas</SelectItem>
+                <SelectItem value="employees">Especialistas</SelectItem>
               </SelectContent>
             </Select>
 
             {/* Add booking button */}
-            <Button>
+            <Button size="sm" className="hidden lg:flex">
               <Plus className="h-4 w-4 mr-2" />
-              Nueva Reserva
+              Nueva
+            </Button>
+            <Button size="sm" className="lg:hidden">
+              <Plus className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-blue-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Reservas</p>
-                  <p className="text-2xl font-bold">{filteredBookings.length}</p>
-                </div>
+        {/* Stats - Compact version */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
+          <Card className="p-3 lg:p-4">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-blue-500" />
+              <div>
+                <p className="text-xs lg:text-sm text-muted-foreground">Total</p>
+                <p className="text-lg lg:text-2xl font-bold">{filteredBookings.length}</p>
               </div>
-            </CardContent>
+            </div>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-green-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Confirmadas</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {filteredBookings.filter(b => b.status === 'confirmed').length}
-                  </p>
-                </div>
+          <Card className="p-3 lg:p-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-green-500" />
+              <div>
+                <p className="text-xs lg:text-sm text-muted-foreground">Confirmadas</p>
+                <p className="text-lg lg:text-2xl font-bold text-green-600">
+                  {filteredBookings.filter(b => b.status === 'confirmed').length}
+                </p>
               </div>
-            </CardContent>
+            </div>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-yellow-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Pendientes</p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {filteredBookings.filter(b => b.status === 'pending').length}
-                  </p>
-                </div>
+          <Card className="p-3 lg:p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-yellow-500" />
+              <div>
+                <p className="text-xs lg:text-sm text-muted-foreground">Pendientes</p>
+                <p className="text-lg lg:text-2xl font-bold text-yellow-600">
+                  {filteredBookings.filter(b => b.status === 'pending').length}
+                </p>
               </div>
-            </CardContent>
+            </div>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full bg-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Ingresos</p>
-                  <p className="text-2xl font-bold">
-                    €{filteredBookings.reduce((sum, b) => sum + (b.total_price_cents / 100), 0).toFixed(2)}
-                  </p>
-                </div>
+          <Card className="p-3 lg:p-4">
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 rounded-full bg-primary" />
+              <div>
+                <p className="text-xs lg:text-sm text-muted-foreground">Ingresos</p>
+                <p className="text-lg lg:text-2xl font-bold">
+                  €{filteredBookings.reduce((sum, b) => sum + ((b.total_price_cents || 0) / 100), 0).toFixed(0)}
+                </p>
               </div>
-            </CardContent>
+            </div>
           </Card>
         </div>
 
-        {/* Agenda Grid */}
+        {/* Agenda Grid - Compact */}
         <Card>
           <CardContent className="p-0">
-            <div className="border-b p-4">
-              <h3 className="font-semibold text-lg">
-                Agenda del {format(selectedDate, "d 'de' MMMM", { locale: es })}
+            <div className="border-b p-2 lg:p-4">
+              <h3 className="font-semibold text-base lg:text-lg">
+                Agenda del {format(selectedDate, "d MMM", { locale: es })}
               </h3>
             </div>
             
-            <ScrollArea className="h-[600px]">
+            <ScrollArea className="h-[400px] lg:h-[500px]">
               <div className="relative">
-                {/* Header */}
+                {/* Header - Responsive */}
                 <div className="sticky top-0 z-10 bg-background border-b">
-                  <div className="grid grid-cols-[80px_repeat(auto-fit,minmax(200px,1fr))] gap-0">
-                    <div className="p-3 text-center font-medium border-r bg-muted/50">
+                  <div className={cn(
+                    "grid gap-0",
+                    columns.length <= 3 ? "grid-cols-[60px_repeat(auto-fit,minmax(120px,1fr))]" : "grid-cols-[60px_repeat(auto-fit,minmax(100px,1fr))]"
+                  )}>
+                    <div className="p-2 text-center font-medium border-r bg-muted/50 text-xs lg:text-sm">
                       Hora
                     </div>
                     {columns.map((column) => (
-                      <div key={column.id} className="p-3 text-center font-medium border-r bg-muted/50">
+                      <div key={column.id} className="p-2 text-center font-medium border-r bg-muted/50">
                         <div className="flex flex-col items-center gap-1">
-                          <span className="font-semibold">{column.name}</span>
-                          {viewMode === 'employees' && (
-                            <Badge variant="secondary" className="text-xs">
-                              {column.specialties?.length || 0} especialidades
+                          <span className="font-semibold text-xs lg:text-sm truncate">{column.name}</span>
+                          {viewMode === 'employees' && column.specialties && (
+                            <Badge variant="secondary" className="text-xs hidden lg:inline-flex">
+                              {column.specialties.length} esp.
                             </Badge>
                           )}
                         </div>
@@ -319,16 +321,19 @@ const DailyAgendaView = () => {
                   </div>
                 </div>
 
-                {/* Time slots */}
-                <div className="grid grid-cols-[80px_repeat(auto-fit,minmax(200px,1fr))] gap-0">
+                {/* Time slots - Compact */}
+                <div className={cn(
+                  "grid gap-0",
+                  columns.length <= 3 ? "grid-cols-[60px_repeat(auto-fit,minmax(120px,1fr))]" : "grid-cols-[60px_repeat(auto-fit,minmax(100px,1fr))]"
+                )}>
                   {timeSlots.map((timeSlot, timeIndex) => (
                     <React.Fragment key={timeIndex}>
-                      {/* Time label */}
-                      <div className="p-2 text-center text-sm border-r border-b bg-muted/30 font-medium">
+                      {/* Time label - Compact */}
+                      <div className="p-1 text-center text-xs lg:text-sm border-r border-b bg-muted/30 font-medium">
                         {format(timeSlot, 'HH:mm')}
                       </div>
 
-                      {/* Column slots */}
+                      {/* Column slots - Compact */}
                       {columns.map((column) => {
                         const booking = getBookingForColumnAndTime(column.id, timeSlot);
                         const isFirstSlotOfBooking = booking && 
@@ -337,33 +342,33 @@ const DailyAgendaView = () => {
                         return (
                           <div
                             key={`${column.id}-${timeIndex}`}
-                            className="relative border-r border-b min-h-[60px] hover:bg-muted/20 transition-colors"
+                            className="relative border-r border-b min-h-[40px] lg:min-h-[50px] hover:bg-muted/20 transition-colors"
                           >
                             {booking && isFirstSlotOfBooking && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
                                     className={cn(
-                                      "absolute inset-1 rounded-lg border-2 p-2 cursor-pointer transition-all hover:shadow-md",
+                                      "absolute inset-1 rounded border-l-4 p-1 lg:p-2 cursor-pointer transition-all hover:shadow-md overflow-hidden",
                                       getStatusColor(booking.status)
                                     )}
                                     style={{
-                                      height: `${Math.ceil((convertBookingToSlot(booking).endTime.getTime() - convertBookingToSlot(booking).startTime.getTime()) / (15 * 60 * 1000)) * 60 - 4}px`
+                                      height: `${Math.ceil((convertBookingToSlot(booking).endTime.getTime() - convertBookingToSlot(booking).startTime.getTime()) / (30 * 60 * 1000)) * 40 - 4}px`
                                     }}
                                     onClick={() => handleBookingClick(booking)}
                                   >
                                     <div className="text-xs font-semibold truncate">
                                       {convertBookingToSlot(booking).clientName}
                                     </div>
-                                    <div className="text-xs text-muted-foreground truncate">
+                                    <div className="text-xs text-muted-foreground truncate hidden lg:block">
                                       {convertBookingToSlot(booking).serviceName}
                                     </div>
                                     <div className="text-xs font-medium">
                                       €{convertBookingToSlot(booking).price}
                                     </div>
-                                    <Badge variant="secondary" className="text-xs mt-1">
-                                      {format(convertBookingToSlot(booking).startTime, 'HH:mm')} - {format(convertBookingToSlot(booking).endTime, 'HH:mm')}
-                                    </Badge>
+                                    <div className="text-xs text-muted-foreground hidden lg:block">
+                                      {format(convertBookingToSlot(booking).startTime, 'HH:mm')}
+                                    </div>
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="max-w-sm">
