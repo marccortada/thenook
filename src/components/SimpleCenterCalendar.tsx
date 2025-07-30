@@ -19,7 +19,7 @@ import { useBookings, useCenters, useEmployees } from '@/hooks/useDatabase';
 
 const SimpleCenterCalendar = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   
   const { bookings, loading: bookingsLoading } = useBookings();
   const { centers } = useCenters();
@@ -63,7 +63,7 @@ const SimpleCenterCalendar = () => {
       const bookingEnd = addMinutes(bookingStart, booking.duration_minutes || 60);
       
       const matchesTime = timeSlot >= bookingStart && timeSlot < bookingEnd;
-      const matchesEmployee = !employeeId || booking.employee_id === employeeId;
+      const matchesEmployee = !employeeId || employeeId === 'all' || booking.employee_id === employeeId;
       
       return matchesTime && matchesEmployee;
     });
@@ -128,7 +128,7 @@ const SimpleCenterCalendar = () => {
               <SelectValue placeholder="Todos los especialistas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos los especialistas</SelectItem>
+              <SelectItem value="all">Todos los especialistas</SelectItem>
               {centerEmployees.map((employee) => (
                 <SelectItem key={employee.id} value={employee.id}>
                   {employee.profiles?.first_name} {employee.profiles?.last_name}
@@ -165,7 +165,7 @@ const SimpleCenterCalendar = () => {
                     Reservas del día
                   </div>
                   {timeSlots.map((timeSlot, timeIndex) => {
-                    const booking = getBookingForTimeAndEmployee(center.id, timeSlot, selectedEmployeeId);
+                    const booking = getBookingForTimeAndEmployee(center.id, timeSlot, selectedEmployeeId === 'all' ? undefined : selectedEmployeeId);
                     const isFirstSlotOfBooking = booking && 
                       format(timeSlot, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
