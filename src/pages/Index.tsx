@@ -20,6 +20,7 @@ import NotificationCenter from "@/components/NotificationCenter";
 import UnifiedDashboard from "@/components/UnifiedDashboard";
 import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 import ChatBot from "@/components/ChatBot";
+import DailyAgendaView from "@/components/DailyAgendaView";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
@@ -52,7 +53,7 @@ const Index = () => {
               className="w-full p-3 border rounded-lg bg-background text-sm"
             >
               <option value="reservations">📅 Nueva Reserva</option>
-              <option value="bookings">📋 Agenda</option>
+              <option value="bookings">📅 Vista Diaria</option>
               {isAdmin && <option value="employees">👥 Empleados</option>}
               {isAdmin && <option value="analytics">📊 Analytics</option>}
               {isAdmin && <option value="packages">🎁 Bonos</option>}
@@ -80,8 +81,8 @@ const Index = () => {
               onClick={() => setActiveTab("bookings")}
               className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
             >
-              <FileText className="h-5 w-5" />
-              <span className="text-sm font-medium">Agenda</span>
+              <CalendarDays className="h-5 w-5" />
+              <span className="text-sm font-medium">Vista Diaria</span>
             </Button>
             
             {/* Solo para admin */}
@@ -177,8 +178,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="bookings" className="mt-6 space-y-6">
-            <BookingsList />
-            <SpecialistClients />
+            <DailyAgendaView />
           </TabsContent>
 
           {isAdmin && (
