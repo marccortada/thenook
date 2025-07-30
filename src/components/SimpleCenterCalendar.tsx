@@ -5,25 +5,52 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   ChevronLeft, 
   ChevronRight, 
   User,
   Clock,
-  Plus
+  Plus,
+  Edit,
+  Trash2,
+  Save
 } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { useBookings, useCenters, useEmployees } from '@/hooks/useDatabase';
+import { useBookings, useCenters, useEmployees, useServices } from '@/hooks/useDatabase';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const SimpleCenterCalendar = () => {
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
+  const [showNewBookingModal, setShowNewBookingModal] = useState(false);
+  const [showEditBookingModal, setShowEditBookingModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [selectedCenterId, setSelectedCenterId] = useState<string>('');
   
-  const { bookings, loading: bookingsLoading } = useBookings();
+  // Form states
+  const [newBookingForm, setNewBookingForm] = useState({
+    clientName: '',
+    clientEmail: '',
+    clientPhone: '',
+    serviceId: '',
+    employeeId: '',
+    time: '',
+    duration: 60,
+    notes: ''
+  });
+  
+  const { bookings, loading: bookingsLoading, refetch: refetchBookings } = useBookings();
   const { centers } = useCenters();
   const { employees } = useEmployees();
+  const { services } = useServices(selectedCenterId);
 
   // Time slots every 30 minutes from 9:00 to 21:00
   const generateTimeSlots = () => {
@@ -84,6 +111,158 @@ const SimpleCenterCalendar = () => {
   const goToPreviousDay = () => setSelectedDate(subDays(selectedDate, 1));
   const goToNextDay = () => setSelectedDate(addDays(selectedDate, 1));
 
+  // Handle new booking
+  const handleNewBooking = (centerId: string) => {
+    setSelectedCenterId(centerId);
+    setNewBookingForm({
+      clientName: '',
+      clientEmail: '',
+      clientPhone: '',
+      serviceId: '',
+      employeeId: '',
+      time: '',
+      duration: 60,
+      notes: ''
+    });
+    setShowNewBookingModal(true);
+  };
+
+  // Handle booking click
+  const handleBookingClick = (booking: any) => {
+    setSelectedBooking(booking);
+    setShowEditBookingModal(true);
+  };
+
+  // Create new booking
+  const createBooking = async () => {
+    try {
+      // First create or get client profile
+      let clientProfile;
+      if (newBookingForm.clientEmail) {
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', newBookingForm.clientEmail)
+          .maybeSingle();
+
+        if (existingProfile) {
+          clientProfile = existingProfile;
+        } else {
+          const { data: newProfile, error: profileError } = await supabase
+            .from('profiles')
+            .insert([{
+              email: newBookingForm.clientEmail,
+              first_name: newBookingForm.clientName.split(' ')[0],
+              last_name: newBookingForm.clientName.split(' ').slice(1).join(' '),
+              phone: newBookingForm.clientPhone,
+              role: 'client'
+            }])
+            .select()
+            .single();
+
+          if (profileError) throw profileError;
+          clientProfile = newProfile;
+        }
+      }
+
+      // Get service details for pricing
+      const selectedService = services.find(s => s.id === newBookingForm.serviceId);
+      if (!selectedService) throw new Error('Servicio no encontrado');
+
+      // Create booking datetime
+      const bookingDate = new Date(selectedDate);
+      const [hours, minutes] = newBookingForm.time.split(':');
+      bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+      const { error: bookingError } = await supabase
+        .from('bookings')
+        .insert({
+          client_id: clientProfile?.id,
+          service_id: newBookingForm.serviceId,
+          center_id: selectedCenterId,
+          employee_id: newBookingForm.employeeId === 'auto' ? null : newBookingForm.employeeId,
+          booking_datetime: bookingDate.toISOString(),
+          duration_minutes: newBookingForm.duration,
+          total_price_cents: selectedService.price_cents,
+          status: 'confirmed' as const,
+          channel: 'web' as const,
+          notes: newBookingForm.notes || null,
+          payment_status: 'pending' as const
+        });
+
+      if (bookingError) throw bookingError;
+
+      toast({
+        title: "✅ Reserva Creada",
+        description: `Reserva para ${newBookingForm.clientName} confirmada exitosamente.`,
+      });
+
+      setShowNewBookingModal(false);
+      refetchBookings();
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la reserva. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Update booking employee
+  const updateBookingEmployee = async (bookingId: string, employeeId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ employee_id: employeeId })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Especialista Actualizado",
+        description: "El especialista ha sido asignado correctamente.",
+      });
+
+      refetchBookings();
+      setShowEditBookingModal(false);
+    } catch (error) {
+      console.error('Error updating booking:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el especialista.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Cancel booking
+  const cancelBooking = async (bookingId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Reserva Cancelada",
+        description: "La reserva ha sido cancelada exitosamente.",
+      });
+
+      refetchBookings();
+      setShowEditBookingModal(false);
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cancelar la reserva.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Render calendar for a specific center
   const renderCenterCalendar = (center: any) => {
     const centerEmployees = getEmployeesForCenter(center.id);
@@ -136,7 +315,7 @@ const SimpleCenterCalendar = () => {
               ))}
             </SelectContent>
           </Select>
-          <Button size="sm">
+          <Button size="sm" onClick={() => handleNewBooking(center.id)}>
             <Plus className="h-4 w-4 mr-2" />
             Nueva Reserva
           </Button>
@@ -183,6 +362,7 @@ const SimpleCenterCalendar = () => {
                             style={{
                               height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 64 - 4}px`
                             }}
+                            onClick={() => handleBookingClick(booking)}
                           >
                             <div className="text-sm font-semibold truncate">
                               {booking.profiles?.first_name} {booking.profiles?.last_name}
@@ -252,22 +432,212 @@ const SimpleCenterCalendar = () => {
           ))}
         </TabsList>
 
-        {centers.map((center) => (
-          <TabsContent key={center.id} value={center.id} className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Calendario - {center.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {renderCenterCalendar(center)}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
+      {centers.map((center) => (
+        <TabsContent key={center.id} value={center.id} className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Calendario - {center.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderCenterCalendar(center)}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      ))}
+    </Tabs>
+
+    {/* New Booking Modal */}
+    <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Nueva Reserva</DialogTitle>
+          <DialogDescription>
+            Crear una nueva reserva para {format(selectedDate, "d 'de' MMMM", { locale: es })}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="clientName">Nombre del Cliente</Label>
+              <Input
+                id="clientName"
+                value={newBookingForm.clientName}
+                onChange={(e) => setNewBookingForm({...newBookingForm, clientName: e.target.value})}
+                placeholder="Nombre completo"
+              />
+            </div>
+            <div>
+              <Label htmlFor="clientPhone">Teléfono</Label>
+              <Input
+                id="clientPhone"
+                value={newBookingForm.clientPhone}
+                onChange={(e) => setNewBookingForm({...newBookingForm, clientPhone: e.target.value})}
+                placeholder="+34 600 000 000"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="clientEmail">Email</Label>
+            <Input
+              id="clientEmail"
+              type="email"
+              value={newBookingForm.clientEmail}
+              onChange={(e) => setNewBookingForm({...newBookingForm, clientEmail: e.target.value})}
+              placeholder="cliente@email.com"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="service">Servicio</Label>
+              <Select value={newBookingForm.serviceId} onValueChange={(value) => setNewBookingForm({...newBookingForm, serviceId: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar servicio" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name} - €{(service.price_cents / 100).toFixed(2)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="time">Hora</Label>
+              <Select value={newBookingForm.time} onValueChange={(value) => setNewBookingForm({...newBookingForm, time: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Hora" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeSlots.map((slot) => (
+                    <SelectItem key={slot.getTime()} value={format(slot, 'HH:mm')}>
+                      {format(slot, 'HH:mm')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="employee">Especialista</Label>
+            <Select value={newBookingForm.employeeId} onValueChange={(value) => setNewBookingForm({...newBookingForm, employeeId: value})}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar especialista" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Asignar automáticamente</SelectItem>
+                {getEmployeesForCenter(selectedCenterId).map((employee) => (
+                  <SelectItem key={employee.id} value={employee.id}>
+                    {employee.profiles?.first_name} {employee.profiles?.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notas (opcional)</Label>
+            <Textarea
+              id="notes"
+              value={newBookingForm.notes}
+              onChange={(e) => setNewBookingForm({...newBookingForm, notes: e.target.value})}
+              placeholder="Notas adicionales..."
+              rows={3}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowNewBookingModal(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button onClick={createBooking} className="flex-1">
+              <Save className="h-4 w-4 mr-2" />
+              Crear Reserva
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Edit Booking Modal */}
+    <Dialog open={showEditBookingModal} onOpenChange={setShowEditBookingModal}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Editar Reserva</DialogTitle>
+          <DialogDescription>
+            Gestionar la reserva seleccionada
+          </DialogDescription>
+        </DialogHeader>
+        
+        {selectedBooking && (
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="font-semibold text-lg">
+                {selectedBooking.profiles?.first_name} {selectedBooking.profiles?.last_name}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {selectedBooking.services?.name}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+              </div>
+              <Badge className={cn("mt-2", getStatusColor(selectedBooking.status))}>
+                {selectedBooking.status}
+              </Badge>
+            </div>
+
+            <div>
+              <Label htmlFor="editEmployee">Cambiar Especialista</Label>
+              <Select 
+                defaultValue={selectedBooking.employee_id || "none"} 
+                onValueChange={(value) => {
+                  if (value !== "none") {
+                    updateBookingEmployee(selectedBooking.id, value);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar especialista" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin especialista asignado</SelectItem>
+                  {employees.filter(emp => emp.center_id === selectedBooking.center_id).map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.profiles?.first_name} {employee.profiles?.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditBookingModal(false)} 
+                className="flex-1"
+              >
+                Cerrar
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => cancelBooking(selectedBooking.id)} 
+                className="flex-1"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Cancelar Reserva
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
     </div>
   );
 };
