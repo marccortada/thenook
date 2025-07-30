@@ -19,7 +19,7 @@ import AdvancedReports from "@/components/AdvancedReports";
 import NotificationCenter from "@/components/NotificationCenter";
 import UnifiedDashboard from "@/components/UnifiedDashboard";
 import IntelligentAnalytics from "@/components/IntelligentAnalytics";
-import ChatBot from "@/components/ChatBot";
+
 import DailyAgendaView from "@/components/DailyAgendaView";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
@@ -229,8 +229,6 @@ const Index = () => {
         </Tabs>
       </div>
       
-      {/* ChatBot para Admin */}
-      <ChatBot />
     </Layout>
   );
 };

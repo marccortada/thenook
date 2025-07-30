@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import ChatBot from "@/components/ChatBot";
+
 import NotificationBell from "@/components/NotificationBell";
 
 interface LayoutProps {
@@ -237,8 +237,6 @@ const Layout = ({ children }: LayoutProps) => {
         {children}
       </main>
       
-      {/* ChatBot */}
-      <ChatBot />
     </div>
   );
 };
