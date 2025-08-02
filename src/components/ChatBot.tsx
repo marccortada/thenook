@@ -11,6 +11,38 @@ const ChatBot = () => {
   const [inputValue, setInputValue] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // Mensaje de bienvenida
+  const welcomeMessage = `¡Hola! Soy tu asistente virtual de The Nook Madrid 🏢
+
+💡 **Ejemplos de lo que puedo hacer:**
+
+🔍 **Buscar reservas:**
+• "buscar reservas juan@email.com"
+• "reservas de María González"
+• "mi reserva"
+• "encontrar cita de Ana"
+
+📅 **Consultar por fechas:**
+• "citas de hoy"
+• "reserva del 15/12"
+• "agenda de mañana"
+
+❌ **Cancelar o modificar:**
+• "cancelar mi reserva"
+• "modificar mi cita"
+
+¿En qué puedo ayudarte hoy?`;
+
+  // Mostrar mensaje de bienvenida si no hay mensajes
+  const displayMessages = messages.length === 0 ? [
+    {
+      id: 'welcome',
+      role: 'assistant' as const,
+      content: welcomeMessage,
+      timestamp: new Date(),
+    }
+  ] : messages;
+
   const handleSend = async () => {
     if (inputValue.trim()) {
       await sendMessage(inputValue);
@@ -29,7 +61,7 @@ const ChatBot = () => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [displayMessages, isLoading]);
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -76,13 +108,11 @@ const ChatBot = () => {
               className="h-[290px] sm:h-[340px] p-2 sm:p-4"
             >
               {messages.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
-                  <MessageCircle className="w-12 h-12 mx-auto mb-4 text-primary/50" />
-                  <p className="text-sm">
-                    ¡Hola! Soy tu asistente virtual. 
-                    <br />
-                    Pregúntame sobre servicios, horarios, precios o reservas.
-                  </p>
+                <div className="text-center text-muted-foreground py-4">
+                  <MessageCircle className="w-8 h-8 mx-auto mb-2 text-primary/50" />
+                  <div className="text-sm whitespace-pre-wrap">
+                    {welcomeMessage}
+                  </div>
                 </div>
               )}
 

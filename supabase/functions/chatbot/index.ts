@@ -14,6 +14,17 @@ const corsHeaders = {
 // Crear cliente de Supabase con service role key
 const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
+// Función auxiliar para extraer email del contexto
+function extractEmailFromContext(context: any[]): string | null {
+  for (const msg of context.reverse()) {
+    const emailMatch = msg.content.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    if (emailMatch) {
+      return emailMatch[0];
+    }
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -236,6 +247,15 @@ ${agendaList}
     // Función mejorada para buscar reservas por múltiples criterios
     if (isSearchRequest || isCancelRequest || isModifyRequest) {
       console.log('Iniciando búsqueda de reservas para mensaje:', message);
+      console.log('Contexto previo:', context);
+      
+      // Primero verificar si tenemos reservas en el contexto previo
+      let contextBookings = [];
+      const lastAssistantMessage = context.filter(msg => msg.role === 'assistant').pop();
+      if (lastAssistantMessage && lastAssistantMessage.content.includes('RESERVAS ENCONTRADAS')) {
+        console.log('Encontrado contexto de reservas previo');
+        // Extraer información de reservas del contexto si es necesario para modificaciones
+      }
       
       try {
         // Extraer email del mensaje si existe
@@ -446,9 +466,9 @@ ${searchCriteria.join('\n')}
 ${bookingsList}
 
 💡 **¿Qué puedes hacer?**
-• Para cancelar: "cancelar reserva número X"
-• Para modificar: "modificar reserva número X"
-• Para más detalles: "información de la reserva X"
+1️⃣ Para cancelar: "cancelar reserva número X" (donde X es el número de la reserva)
+2️⃣ Para modificar: "modificar reserva número X"
+3️⃣ Para más detalles: "información de la reserva X"
 
 ¿Te ayudo con alguna gestión específica?`;
 
@@ -505,6 +525,9 @@ El número de reserva "${numberMatch[0]}" no es válido.
 
 Por favor, selecciona un número entre 1 y ${searchResults.length}.
 
+Para recordarte, aquí están tus reservas:
+${bookingsList}
+
 ¿Podrías indicarme el número correcto de la reserva que deseas cancelar?`;
 
                 return new Response(JSON.stringify({ reply: errorMessage }), {
@@ -512,6 +535,76 @@ Por favor, selecciona un número entre 1 y ${searchResults.length}.
                 });
               }
             } else {
+              // Si no hay número, intentar buscar las reservas de nuevo o usar el contexto
+              if (!emailMatch && !nameMatches && !dateMatches) {
+                // Intentar encontrar información del contexto previo
+                const contextEmail = extractEmailFromContext(context);
+                if (contextEmail) {
+                  // Realizar búsqueda usando el email del contexto
+                  const { data: clientProfile } = await supabase
+                    .from('profiles')
+                    .select('id, first_name, last_name, email, phone')
+                    .eq('email', contextEmail)
+                    .single();
+
+                  if (clientProfile) {
+                    const { data: bookings } = await supabase
+                      .from('bookings')
+                      .select(`
+                        id,
+                        booking_datetime,
+                        status,
+                        payment_status,
+                        duration_minutes,
+                        services (name, price_cents),
+                        notes,
+                        employees!bookings_employee_id_fkey (
+                          profiles!employees_profile_id_fkey (first_name, last_name)
+                        ),
+                        profiles!bookings_client_id_fkey (first_name, last_name, email, phone)
+                      `)
+                      .eq('client_id', clientProfile.id)
+                      .gte('booking_datetime', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+                      .in('status', ['confirmed', 'pending'])
+                      .order('booking_datetime', { ascending: true });
+                    
+                    if (bookings && bookings.length > 0) {
+                      searchResults = bookings;
+                      const bookingsList = searchResults.map((booking: any, index: number) => {
+                        const date = new Date(booking.booking_datetime);
+                        const clientName = `${booking.profiles?.first_name || ''} ${booking.profiles?.last_name || ''}`.trim();
+                        const dateStr = date.toLocaleDateString('es-ES', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        });
+                        const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                        const employeeName = booking.employees?.profiles ? 
+                          `${booking.employees.profiles.first_name} ${booking.employees.profiles.last_name}`.trim() : 
+                          'Especialista por asignar';
+                        const paymentStatus = booking.payment_status === 'completed' ? 'Pagado' : 
+                                            booking.payment_status === 'pending' ? 'Pendiente' : 'No especificado';
+                        const phone = booking.profiles?.phone || 'No especificado';
+                        
+                        return `**${index + 1}.** 👤 **${clientName}**
+📧 ${booking.profiles?.email || 'Sin email'}
+📞 **${phone}**
+🎯 **${booking.services?.name || 'Servicio no especificado'}**
+👨‍⚕️ **${employeeName}**
+📅 **${dateStr}**
+⏰ **${timeStr}**
+💳 **${paymentStatus}**
+💰 €${((booking.services?.price_cents || 0) / 100).toFixed(2)}
+📋 ${booking.notes || 'Sin notas especiales'}
+🆔 ID: ${booking.id.slice(0, 8)}
+---`;
+                      }).join('\n');
+                    }
+                  }
+                }
+              }
+              
               // Mostrar lista para cancelar
               const cancelListMessage = `❌ **CANCELAR RESERVA**
 
