@@ -183,7 +183,7 @@ const Auth = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al inicio
           </Button>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
             The Nook Madrid
           </h1>
           <p className="text-muted-foreground mt-2">Tu centro de bienestar en Madrid</p>
