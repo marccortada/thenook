@@ -50,6 +50,7 @@ serve(async (req) => {
     const isSearchRequest = message.toLowerCase().includes('ver mis reservas') ||
                            message.toLowerCase().includes('consultar') ||
                            message.toLowerCase().includes('buscar reservas') ||
+                           message.toLowerCase().includes('buscar reserva') ||
                            message.toLowerCase().includes('buscar cita') ||
                            message.toLowerCase().includes('encontrar reserva') ||
                            message.toLowerCase().includes('mi reserva') ||
@@ -58,7 +59,10 @@ serve(async (req) => {
                            message.toLowerCase().includes('cita de') ||
                            message.toLowerCase().includes('reserva del') ||
                            message.toLowerCase().includes('cita del') ||
-                           (message.includes('@') && (message.toLowerCase().includes('reservas') || message.toLowerCase().includes('citas')));
+                           message.toLowerCase().includes('busca reserva') ||
+                           (message.includes('@') && (message.toLowerCase().includes('reservas') || message.toLowerCase().includes('citas'))) ||
+                           // Detectar email directamente en el mensaje
+                           /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(message);
 
     // Detectar consultas específicas del staff
     const isStaffScheduleRequest = isStaff && (
@@ -231,6 +235,8 @@ ${agendaList}
 
     // Función mejorada para buscar reservas por múltiples criterios
     if (isSearchRequest || isCancelRequest || isModifyRequest) {
+      console.log('Iniciando búsqueda de reservas para mensaje:', message);
+      
       try {
         // Extraer email del mensaje si existe
         const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
@@ -254,27 +260,46 @@ ${agendaList}
           
           const { data: clientProfile } = await supabase
             .from('profiles')
-            .select('id, first_name, last_name, email')
+            .select('id, first_name, last_name, email, phone')
             .eq('email', email)
             .single();
 
+          console.log('Cliente encontrado:', clientProfile);
+
           if (clientProfile) {
-            const { data: bookings } = await supabase
+            const { data: bookings, error: bookingsError } = await supabase
               .from('bookings')
               .select(`
                 id,
                 booking_datetime,
                 status,
+                payment_status,
+                duration_minutes,
                 services (name, price_cents),
                 notes,
-                profiles!bookings_client_id_fkey (first_name, last_name, email)
+                employees!bookings_employee_id_fkey (
+                  profiles!employees_profile_id_fkey (first_name, last_name)
+                ),
+                profiles!bookings_client_id_fkey (first_name, last_name, email, phone)
               `)
               .eq('client_id', clientProfile.id)
               .gte('booking_datetime', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
               .in('status', ['confirmed', 'pending'])
               .order('booking_datetime', { ascending: true });
             
-            searchResults = bookings || [];
+            console.log('Reservas encontradas:', bookings);
+            console.log('Error en consulta de reservas:', bookingsError);
+            
+            
+            if (!bookingsError && bookings && bookings.length > 0) {
+              searchResults = bookings;
+            } else {
+              console.log('No se encontraron reservas o error:', bookingsError);
+              searchResults = [];
+            }
+          } else {
+            console.log('No se encontró cliente con email:', email);
+            searchResults = [];
           }
         }
         // Si no hay email, buscar por nombre
@@ -284,10 +309,12 @@ ${agendaList}
           
           searchCriteria.push(`👤 Nombre: ${firstName}${lastName ? ' ' + lastName : ''}`);
           
+          console.log('Buscando por nombre:', firstName, lastName);
+          
           // Buscar clientes que coincidan con el nombre
           let clientQuery = supabase
             .from('profiles')
-            .select('id, first_name, last_name, email');
+            .select('id, first_name, last_name, email, phone');
           
           if (lastName) {
             clientQuery = clientQuery.ilike('first_name', `%${firstName}%`)
@@ -298,6 +325,8 @@ ${agendaList}
           
           const { data: clients } = await clientQuery;
           
+          console.log('Clientes encontrados:', clients);
+          
           if (clients && clients.length > 0) {
             const clientIds = clients.map(c => c.id);
             
@@ -307,9 +336,14 @@ ${agendaList}
                 id,
                 booking_datetime,
                 status,
+                payment_status,
+                duration_minutes,
                 services (name, price_cents),
                 notes,
-                profiles!bookings_client_id_fkey (first_name, last_name, email)
+                employees!bookings_employee_id_fkey (
+                  profiles!employees_profile_id_fkey (first_name, last_name)
+                ),
+                profiles!bookings_client_id_fkey (first_name, last_name, email, phone)
               `)
               .in('client_id', clientIds)
               .gte('booking_datetime', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
@@ -350,9 +384,14 @@ ${agendaList}
               id,
               booking_datetime,
               status,
+              payment_status,
+              duration_minutes,
               services (name, price_cents),
               notes,
-              profiles!bookings_client_id_fkey (first_name, last_name, email)
+              employees!bookings_employee_id_fkey (
+                profiles!employees_profile_id_fkey (first_name, last_name)
+              ),
+              profiles!bookings_client_id_fkey (first_name, last_name, email, phone)
             `)
             .gte('booking_datetime', startOfDay.toISOString())
             .lt('booking_datetime', endOfDay.toISOString())
@@ -361,6 +400,8 @@ ${agendaList}
           
           searchResults = bookings || [];
         }
+
+        console.log('Resultados finales de búsqueda:', searchResults);
 
         if (searchResults && searchResults.length > 0) {
           const bookingsList = searchResults.map((booking: any, index: number) => {
@@ -373,13 +414,22 @@ ${agendaList}
               day: 'numeric' 
             });
             const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            const employeeName = booking.employees?.profiles ? 
+              `${booking.employees.profiles.first_name} ${booking.employees.profiles.last_name}`.trim() : 
+              'Especialista por asignar';
+            const paymentStatus = booking.payment_status === 'completed' ? 'Pagado' : 
+                                booking.payment_status === 'pending' ? 'Pendiente' : 'No especificado';
+            const phone = booking.profiles?.phone || 'No especificado';
             
             return `**${index + 1}.** 👤 **${clientName}**
 📧 ${booking.profiles?.email || 'Sin email'}
+📞 **${phone}**
 🎯 **${booking.services?.name || 'Servicio no especificado'}**
+👨‍⚕️ **${employeeName}**
 📅 **${dateStr}**
 ⏰ **${timeStr}**
-💳 €${((booking.services?.price_cents || 0) / 100).toFixed(2)}
+💳 **${paymentStatus}**
+💰 €${((booking.services?.price_cents || 0) / 100).toFixed(2)}
 📋 ${booking.notes || 'Sin notas especiales'}
 🆔 ID: ${booking.id.slice(0, 8)}
 ---`;
@@ -527,16 +577,16 @@ Hubo un problema al buscar las reservas. Por favor:
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...context.map((msg: any) => ({
-            role: msg.role,
-            content: msg.content
-          })),
-          { role: 'user', content: message }
-        ],
+        body: JSON.stringify({
+          model: 'gpt-4.1-2025-04-14',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...context.map((msg: any) => ({
+              role: msg.role,
+              content: msg.content
+            })),
+            { role: 'user', content: message }
+          ],
         max_tokens: 1000,
         temperature: 0.7,
       }),
