@@ -118,7 +118,7 @@ const AdminLogin = () => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="admin@thenookmadrid.com"
+                placeholder=""
                 required
               />
             </div>
