@@ -30,6 +30,7 @@ const SimpleCenterCalendar = () => {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showNewBookingModal, setShowNewBookingModal] = useState(false);
   const [showEditBookingModal, setShowEditBookingModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -79,45 +80,22 @@ const SimpleCenterCalendar = () => {
   const getBookingsForDate = (centerId: string) => {
     if (!Array.isArray(bookings)) return [];
     
-    console.log('=== DEBUG BOOKING FILTER ===');
-    console.log('Selected Date:', selectedDate);
-    console.log('Center ID:', centerId);
-    console.log('Total bookings loaded:', bookings.length);
-    
     const filtered = bookings.filter(booking => {
-      if (!booking.booking_datetime || !booking.center_id) {
-        console.log('Skipping booking - missing data:', booking);
-        return false;
-      }
+      if (!booking.booking_datetime || !booking.center_id) return false;
       
       try {
         const bookingDate = parseISO(booking.booking_datetime);
         const isSameDayResult = isSameDay(bookingDate, selectedDate);
         const isSameCenterResult = booking.center_id === centerId;
+        const matchesStatusFilter = statusFilter === 'all' || booking.status === statusFilter;
         
-        // Log every booking for the center we're checking
-        if (booking.center_id === centerId) {
-          console.log('FOUND BOOKING FOR CENTER:', {
-            client: `${booking.profiles?.first_name} ${booking.profiles?.last_name}`,
-            booking_datetime: booking.booking_datetime,
-            bookingDate: bookingDate,
-            selectedDate: selectedDate,
-            isSameDay: isSameDayResult,
-            isSameCenter: isSameCenterResult,
-            centerName: centers.find(c => c.id === centerId)?.name,
-            willShow: isSameDayResult && isSameCenterResult
-          });
-        }
-        
-        return isSameDayResult && isSameCenterResult;
+        return isSameDayResult && isSameCenterResult && matchesStatusFilter;
       } catch (error) {
         console.error('Error parsing booking date:', booking.booking_datetime, error);
         return false;
       }
     });
     
-    console.log(`Final filtered bookings for ${centers.find(c => c.id === centerId)?.name}:`, filtered.length);
-    console.log('=== END DEBUG ===');
     return filtered;
   };
 
@@ -241,10 +219,15 @@ const SimpleCenterCalendar = () => {
       });
 
       setShowNewBookingModal(false);
-      // Force refresh after a short delay to ensure data consistency
-      setTimeout(() => {
-        refetchBookings();
-      }, 100);
+      
+      // Immediate refresh multiple times to ensure data consistency
+      await refetchBookings();
+      setTimeout(async () => {
+        await refetchBookings();
+      }, 500);
+      setTimeout(async () => {
+        await refetchBookings();
+      }, 1000);
     } catch (error) {
       console.error('Error creating booking:', error);
       toast({
@@ -353,7 +336,7 @@ const SimpleCenterCalendar = () => {
           </Card>
         </div>
 
-        {/* Employee selector */}
+        {/* Employee and Status filters */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -372,6 +355,23 @@ const SimpleCenterCalendar = () => {
               ))}
             </SelectContent>
           </Select>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Estado:</span>
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Todos los estados" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los estados</SelectItem>
+              <SelectItem value="confirmed">✅ Confirmadas</SelectItem>
+              <SelectItem value="pending">⏳ Pendientes</SelectItem>
+              <SelectItem value="cancelled">❌ Canceladas</SelectItem>
+              <SelectItem value="completed">✔️ Completadas</SelectItem>
+            </SelectContent>
+          </Select>
+          
           <Button size="sm" onClick={() => handleNewBooking(center.id)}>
             <Plus className="h-4 w-4 mr-2" />
             Nueva Reserva
