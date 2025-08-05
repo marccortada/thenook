@@ -28,7 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const SimpleCenterCalendar = () => {
   const { toast } = useToast();
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date('2025-08-06'));
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showNewBookingModal, setShowNewBookingModal] = useState(false);
