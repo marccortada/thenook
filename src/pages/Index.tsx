@@ -55,6 +55,7 @@ const Index = () => {
             >
               <option value="reservations">📅 Nueva Reserva</option>
               <option value="bookings">📅 Vista Diaria</option>
+              <option value="manage-bookings">🎯 Gestión de Reservas</option>
               {isAdmin && <option value="analytics">📊 Analytics</option>}
               {isAdmin && <option value="packages">🎁 Bonos</option>}
               <option value="notes">📝 Notas</option>
@@ -82,6 +83,15 @@ const Index = () => {
             >
               <CalendarDays className="h-5 w-5" />
               <span className="text-sm font-medium">Vista Diaria</span>
+            </Button>
+            
+            <Button
+              variant={activeTab === "manage-bookings" ? "default" : "outline"}
+              onClick={() => setActiveTab("manage-bookings")}
+              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <Users className="h-5 w-5" />
+              <span className="text-sm font-medium">Gestión de Reservas</span>
             </Button>
             
             {/* Solo para admin */}
@@ -146,6 +156,10 @@ const Index = () => {
 
           <TabsContent value="bookings" className="mt-6 space-y-6">
             <SimpleCenterCalendar />
+          </TabsContent>
+
+          <TabsContent value="manage-bookings" className="mt-6 space-y-6">
+            <BookingsList />
           </TabsContent>
 
           {isAdmin && (
