@@ -23,34 +23,32 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      // Verificar credenciales directamente en la base de datos
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('email', formData.email)
-        .single();
+      // Usar autenticación real de Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      if (error || !profile) {
+      if (error || !data.user) {
         toast({
           title: "Error de autenticación",
-          description: "Email no encontrado en el sistema",
+          description: error?.message || "Credenciales incorrectas",
           variant: "destructive",
         });
         return;
       }
 
-      // Verificación de credenciales
-      let isValidPassword = false;
-      if (formData.email === 'admin@thenookmadrid.com' && formData.password === 'Gnerai123') {
-        isValidPassword = true;
-      } else if (formData.email === 'work@thenookmadrid.com' && formData.password === 'worker1234') {
-        isValidPassword = true;
-      }
+      // Buscar el perfil del usuario
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', data.user.id)
+        .single();
 
-      if (!isValidPassword) {
+      if (profileError || !profile) {
         toast({
           title: "Error de autenticación",
-          description: "Credenciales incorrectas",
+          description: "Perfil de usuario no encontrado",
           variant: "destructive",
         });
         return;
