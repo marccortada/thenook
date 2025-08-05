@@ -29,42 +29,32 @@ const AdminLogin = () => {
         password: formData.password,
       });
 
-      // Si el usuario no existe y es work@thenookmadrid.com, crearlo
+      // Si el usuario no existe y es work@thenookmadrid.com, crearlo usando edge function
       if (error && formData.email === 'work@thenookmadrid.com') {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              first_name: 'Staff',
-              last_name: 'Employee'
-            }
+        const { data: createResponse, error: createError } = await supabase.functions.invoke('create-admin-user', {
+          body: {
+            email: formData.email,
+            password: formData.password
           }
         });
 
-        if (signUpError) {
+        if (createError || !createResponse?.success) {
           toast({
-            title: "Error de registro",
-            description: signUpError.message,
+            title: "Error creando usuario",
+            description: createError?.message || createResponse?.error || "No se pudo crear el usuario",
             variant: "destructive",
           });
           return;
         }
 
-        // Actualizar el perfil para que sea staff
-        if (signUpData.user) {
-          await supabase
-            .from('profiles')
-            .update({ 
-              role: 'employee', 
-              is_staff: true, 
-              is_active: true 
-            })
-            .eq('user_id', signUpData.user.id);
-        }
+        // Intentar login de nuevo después de crear el usuario
+        const loginResult = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
 
-        data = signUpData;
-        error = null;
+        data = loginResult.data;
+        error = loginResult.error;
       }
 
       if (error || !data.user) {
