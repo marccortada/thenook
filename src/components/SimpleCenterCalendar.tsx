@@ -79,13 +79,35 @@ const SimpleCenterCalendar = () => {
   const getBookingsForDate = (centerId: string) => {
     if (!Array.isArray(bookings)) return [];
     
+    console.log('=== DEBUG BOOKING FILTER ===');
+    console.log('Selected Date:', selectedDate);
+    console.log('Center ID:', centerId);
+    console.log('Total bookings loaded:', bookings.length);
+    
     const filtered = bookings.filter(booking => {
-      if (!booking.booking_datetime || !booking.center_id) return false;
+      if (!booking.booking_datetime || !booking.center_id) {
+        console.log('Skipping booking - missing data:', booking);
+        return false;
+      }
       
       try {
         const bookingDate = parseISO(booking.booking_datetime);
         const isSameDayResult = isSameDay(bookingDate, selectedDate);
         const isSameCenterResult = booking.center_id === centerId;
+        
+        // Log every booking for the center we're checking
+        if (booking.center_id === centerId) {
+          console.log('FOUND BOOKING FOR CENTER:', {
+            client: `${booking.profiles?.first_name} ${booking.profiles?.last_name}`,
+            booking_datetime: booking.booking_datetime,
+            bookingDate: bookingDate,
+            selectedDate: selectedDate,
+            isSameDay: isSameDayResult,
+            isSameCenter: isSameCenterResult,
+            centerName: centers.find(c => c.id === centerId)?.name,
+            willShow: isSameDayResult && isSameCenterResult
+          });
+        }
         
         return isSameDayResult && isSameCenterResult;
       } catch (error) {
@@ -94,6 +116,8 @@ const SimpleCenterCalendar = () => {
       }
     });
     
+    console.log(`Final filtered bookings for ${centers.find(c => c.id === centerId)?.name}:`, filtered.length);
+    console.log('=== END DEBUG ===');
     return filtered;
   };
 
