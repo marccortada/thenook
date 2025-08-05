@@ -60,12 +60,12 @@ const SimpleCenterCalendar = () => {
     }
   }, [centers, activeTab]);
 
-  // Time slots every 30 minutes from 9:00 to 21:00
+  // Time slots every 30 minutes from 8:00 to 22:00
   const generateTimeSlots = () => {
     const slots = [];
-    for (let hour = 9; hour <= 21; hour++) {
+    for (let hour = 8; hour <= 22; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
-        if (hour === 21 && minute > 0) break;
+        if (hour === 22 && minute > 0) break; // Stop at 22:00
         const time = new Date();
         time.setHours(hour, minute, 0, 0);
         slots.push(time);
