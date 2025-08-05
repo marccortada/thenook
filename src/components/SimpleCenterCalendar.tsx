@@ -77,11 +77,30 @@ const SimpleCenterCalendar = () => {
 
   // Filter bookings for selected date
   const getBookingsForDate = (centerId: string) => {
-    return bookings.filter(booking => {
+    const filtered = bookings.filter(booking => {
       if (!booking.booking_datetime) return false;
       const bookingDate = parseISO(booking.booking_datetime);
-      return isSameDay(bookingDate, selectedDate) && booking.center_id === centerId;
+      const isSameDayResult = isSameDay(bookingDate, selectedDate);
+      const isSameCenterResult = booking.center_id === centerId;
+      
+      // Debug logging
+      if (booking.center_id === centerId) {
+        console.log(`Debug Booking: ${booking.profiles?.first_name} ${booking.profiles?.last_name}`, {
+          booking_datetime: booking.booking_datetime,
+          bookingDate: bookingDate,
+          selectedDate: selectedDate,
+          isSameDay: isSameDayResult,
+          isSameCenter: isSameCenterResult,
+          centerId: centerId,
+          centerName: centers.find(c => c.id === centerId)?.name
+        });
+      }
+      
+      return isSameDayResult && isSameCenterResult;
     });
+    
+    console.log(`Bookings for center ${centers.find(c => c.id === centerId)?.name}:`, filtered.length);
+    return filtered;
   };
 
   // Get employees for a specific center
