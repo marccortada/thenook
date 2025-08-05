@@ -23,11 +23,49 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      // Usar autenticación real de Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Intentar login primero
+      let { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
+
+      // Si el usuario no existe y es work@thenookmadrid.com, crearlo
+      if (error && formData.email === 'work@thenookmadrid.com') {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              first_name: 'Staff',
+              last_name: 'Employee'
+            }
+          }
+        });
+
+        if (signUpError) {
+          toast({
+            title: "Error de registro",
+            description: signUpError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Actualizar el perfil para que sea staff
+        if (signUpData.user) {
+          await supabase
+            .from('profiles')
+            .update({ 
+              role: 'employee', 
+              is_staff: true, 
+              is_active: true 
+            })
+            .eq('user_id', signUpData.user.id);
+        }
+
+        data = signUpData;
+        error = null;
+      }
 
       if (error || !data.user) {
         toast({
