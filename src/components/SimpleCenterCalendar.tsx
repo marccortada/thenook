@@ -50,7 +50,7 @@ const SimpleCenterCalendar = () => {
   const { bookings, loading: bookingsLoading, refetch: refetchBookings } = useBookings();
   const { centers } = useCenters();
   const { employees } = useEmployees();
-  const { services } = useServices(activeTab);
+  const { services: allServices } = useServices(); // Load all services
 
   // Set initial tab when centers load
   useEffect(() => {
@@ -75,31 +75,25 @@ const SimpleCenterCalendar = () => {
 
   const timeSlots = generateTimeSlots();
 
-  // Filter bookings for selected date
+  // Filter bookings for selected date and center
   const getBookingsForDate = (centerId: string) => {
+    if (!Array.isArray(bookings)) return [];
+    
     const filtered = bookings.filter(booking => {
-      if (!booking.booking_datetime) return false;
-      const bookingDate = parseISO(booking.booking_datetime);
-      const isSameDayResult = isSameDay(bookingDate, selectedDate);
-      const isSameCenterResult = booking.center_id === centerId;
+      if (!booking.booking_datetime || !booking.center_id) return false;
       
-      // Debug logging
-      if (booking.center_id === centerId) {
-        console.log(`Debug Booking: ${booking.profiles?.first_name} ${booking.profiles?.last_name}`, {
-          booking_datetime: booking.booking_datetime,
-          bookingDate: bookingDate,
-          selectedDate: selectedDate,
-          isSameDay: isSameDayResult,
-          isSameCenter: isSameCenterResult,
-          centerId: centerId,
-          centerName: centers.find(c => c.id === centerId)?.name
-        });
+      try {
+        const bookingDate = parseISO(booking.booking_datetime);
+        const isSameDayResult = isSameDay(bookingDate, selectedDate);
+        const isSameCenterResult = booking.center_id === centerId;
+        
+        return isSameDayResult && isSameCenterResult;
+      } catch (error) {
+        console.error('Error parsing booking date:', booking.booking_datetime, error);
+        return false;
       }
-      
-      return isSameDayResult && isSameCenterResult;
     });
     
-    console.log(`Bookings for center ${centers.find(c => c.id === centerId)?.name}:`, filtered.length);
     return filtered;
   };
 
@@ -190,9 +184,8 @@ const SimpleCenterCalendar = () => {
         }
       }
 
-      // Get service details for pricing
-      const currentServices = services || [];
-      const selectedService = currentServices.find(s => s.id === newBookingForm.serviceId);
+      // Get service details for pricing - search in all services
+      const selectedService = allServices?.find(s => s.id === newBookingForm.serviceId);
       if (!selectedService) throw new Error('Servicio no encontrado');
 
       // Create booking datetime
@@ -224,7 +217,10 @@ const SimpleCenterCalendar = () => {
       });
 
       setShowNewBookingModal(false);
-      refetchBookings();
+      // Force refresh after a short delay to ensure data consistency
+      setTimeout(() => {
+        refetchBookings();
+      }, 100);
     } catch (error) {
       console.error('Error creating booking:', error);
       toast({
@@ -293,6 +289,17 @@ const SimpleCenterCalendar = () => {
   const renderCenterCalendar = (center: any) => {
     const centerEmployees = getEmployeesForCenter(center.id);
     const centerBookings = getBookingsForDate(center.id);
+    
+    // Debug: Log center bookings
+    console.log(`Rendering calendar for ${center.name}:`, {
+      centerId: center.id,
+      centerBookings: centerBookings.length,
+      bookingDetails: centerBookings.map(b => ({
+        client: `${b.profiles?.first_name} ${b.profiles?.last_name}`,
+        datetime: b.booking_datetime,
+        center_id: b.center_id
+      }))
+    });
     
     return (
       <div className="space-y-4">
@@ -525,12 +532,14 @@ const SimpleCenterCalendar = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar servicio" />
                 </SelectTrigger>
-                <SelectContent>
-                  {services && services.map((service) => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name} - €{(service.price_cents / 100).toFixed(2)}
-                    </SelectItem>
-                  ))}
+                 <SelectContent>
+                   {allServices && allServices
+                     .filter(service => service.center_id === activeTab || !service.center_id)
+                     .map((service) => (
+                     <SelectItem key={service.id} value={service.id}>
+                       {service.name} - €{(service.price_cents / 100).toFixed(2)}
+                     </SelectItem>
+                   ))}
                 </SelectContent>
               </Select>
             </div>
