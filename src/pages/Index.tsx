@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Package2, Bell, Brain } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Bell, Brain } from "lucide-react";
 import Layout from "@/components/Layout";
 import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
@@ -14,7 +14,7 @@ import InternalCodesManagement from "@/components/InternalCodesManagement";
 import HappyHourManagement from "@/components/HappyHourManagement";
 import AdvancedDashboard from "@/components/AdvancedDashboard";
 import ReportsCenter from "@/components/ReportsCenter";
-import InventoryManagement from "@/components/InventoryManagement";
+
 import AdvancedReports from "@/components/AdvancedReports";
 import NotificationCenter from "@/components/NotificationCenter";
 import UnifiedDashboard from "@/components/UnifiedDashboard";
@@ -61,7 +61,7 @@ const Index = () => {
               <option value="notes">📝 Notas</option>
               {isAdmin && <option value="codes"># Códigos</option>}
               {isAdmin && <option value="happyhour">% Happy Hour</option>}
-              {isAdmin && <option value="inventory">📦 Inventario</option>}
+              
               {isAdmin && <option value="control">🎛️ Centro de Control</option>}
             </select>
           </div>
@@ -151,16 +151,6 @@ const Index = () => {
               </Button>
             )}
             
-            {isAdmin && (
-              <Button
-                variant={activeTab === "inventory" ? "default" : "outline"}
-                onClick={() => setActiveTab("inventory")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Package2 className="h-5 w-5" />
-                <span className="text-sm font-medium">Inventario</span>
-              </Button>
-            )}
             
             {isAdmin && (
               <Button
@@ -216,11 +206,6 @@ const Index = () => {
             </TabsContent>
           )}
 
-          {isAdmin && (
-            <TabsContent value="inventory" className="mt-6">
-              <InventoryManagement />
-            </TabsContent>
-          )}
 
           {isAdmin && (
             <TabsContent value="control" className="mt-0">
