@@ -55,11 +55,9 @@ const Index = () => {
             >
               <option value="reservations">📅 Nueva Reserva</option>
               <option value="bookings">📅 Vista Diaria</option>
-              {isAdmin && <option value="employees">👥 Empleados</option>}
               {isAdmin && <option value="analytics">📊 Analytics</option>}
               {isAdmin && <option value="packages">🎁 Bonos</option>}
               <option value="notes">📝 Notas</option>
-              {isAdmin && <option value="codes"># Códigos</option>}
               {isAdmin && <option value="happyhour">% Happy Hour</option>}
               
               {isAdmin && <option value="control">🎛️ Centro de Control</option>}
@@ -87,17 +85,6 @@ const Index = () => {
             </Button>
             
             {/* Solo para admin */}
-            {isAdmin && (
-              <Button
-                variant={activeTab === "employees" ? "default" : "outline"}
-                onClick={() => setActiveTab("employees")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Users className="h-5 w-5" />
-                <span className="text-sm font-medium">Empleados</span>
-              </Button>
-            )}
-            
             {isAdmin && (
               <Button
                 variant={activeTab === "analytics" ? "default" : "outline"}
@@ -128,17 +115,6 @@ const Index = () => {
               <StickyNote className="h-5 w-5" />
               <span className="text-sm font-medium">Notas</span>
             </Button>
-            
-            {isAdmin && (
-              <Button
-                variant={activeTab === "codes" ? "default" : "outline"}
-                onClick={() => setActiveTab("codes")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Hash className="h-5 w-5" />
-                <span className="text-sm font-medium">Códigos</span>
-              </Button>
-            )}
             
             {isAdmin && (
               <Button
@@ -173,12 +149,6 @@ const Index = () => {
           </TabsContent>
 
           {isAdmin && (
-            <TabsContent value="employees" className="mt-6">
-              <EmployeeManagement />
-            </TabsContent>
-          )}
-
-          {isAdmin && (
             <TabsContent value="analytics" className="mt-6">
               <AdvancedDashboard />
             </TabsContent>
@@ -193,12 +163,6 @@ const Index = () => {
           <TabsContent value="notes" className="mt-6">
             <ClientNotes />
           </TabsContent>
-
-          {isAdmin && (
-            <TabsContent value="codes" className="mt-6">
-              <InternalCodesManagement />
-            </TabsContent>
-          )}
 
           {isAdmin && (
             <TabsContent value="happyhour" className="mt-6">

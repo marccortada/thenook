@@ -23,8 +23,6 @@ import ReportsCenter from './ReportsCenter';
 import AdvancedReports from './AdvancedReports';
 import IntelligentAnalytics from './IntelligentAnalytics';
 import AdvancedScheduleManagement from './AdvancedScheduleManagement';
-import AdvancedCRM from './AdvancedCRM';
-import EmployeeManagement from './EmployeeManagement';
 
 const UnifiedDashboard = () => {
   const [activeSection, setActiveSection] = useState('schedule');
@@ -39,17 +37,6 @@ const UnifiedDashboard = () => {
       bgColor: 'bg-orange-50',
       components: [
         { id: 'management', title: 'Gestión Avanzada', component: AdvancedScheduleManagement },
-      ]
-    },
-    {
-      id: 'employees',
-      title: 'Gestión de Empleados',
-      description: 'Administra tu equipo de trabajo',
-      icon: Users,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      components: [
-        { id: 'employee-management', title: 'Gestión de Empleados', component: EmployeeManagement },
       ]
     },
     {
@@ -75,28 +62,6 @@ const UnifiedDashboard = () => {
         { id: 'advanced', title: 'Reportes Avanzados', component: AdvancedReports },
       ]
     },
-    {
-      id: 'crm',
-      title: 'CRM Avanzado',
-      description: 'Gestión completa de relaciones con clientes',
-      icon: Users,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      components: [
-        { id: 'profiles', title: 'Perfiles y Fidelización', component: AdvancedCRM },
-      ]
-    },
-    {
-      id: 'analytics',
-      title: 'Analytics Inteligente',
-      description: 'Análisis avanzado con IA',
-      icon: BarChart3,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      components: [
-        { id: 'intelligent', title: 'Análisis IA', component: IntelligentAnalytics },
-      ]
-    }
   ];
 
   const currentSection = sections.find(s => s.id === activeSection) || sections[0];
