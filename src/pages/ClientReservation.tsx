@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X } from "lucide-react";
+import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
@@ -296,26 +296,46 @@ const ClientReservation = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
-        {/* Mensaje informativo sobre gestión de reservas */}
-        <div className="max-w-4xl mx-auto mb-4 sm:mb-6">
-          <div className="glass-effect rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-primary/20">
-            <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <svg className="h-4 w-4 sm:h-5 sm:w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+        {/* Quick Access Buttons */}
+        <div className="max-w-4xl mx-auto mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card className="hover-lift glass-effect border-primary/20 cursor-pointer transition-all duration-200 hover:scale-105">
+              <Link to="/manage-booking" className="block">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <div className="flex flex-col items-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Search className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-primary">
+                        Gestionar mi Reserva
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Ver, modificar o cancelar una reserva existente
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Link>
+            </Card>
+
+            <Card className="hover-lift glass-effect border-primary/20 cursor-pointer transition-all duration-200 hover:scale-105">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <CalendarDays className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-primary">
+                      Nueva Reserva
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Reservar una nueva cita
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold text-primary mb-2">
-                  ¿Ya tienes una reserva?
-                </h3>
-                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  Introduce tu email o teléfono en el formulario para ver tus reservas y bonos activos.
-                </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
         
