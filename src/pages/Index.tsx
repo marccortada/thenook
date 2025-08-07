@@ -21,6 +21,7 @@ import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 
 import ChatBot from "@/components/ChatBot";
 import SimpleCenterCalendar from "@/components/SimpleCenterCalendar";
+import AdvancedCalendarView from "@/components/AdvancedCalendarView";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
@@ -88,7 +89,7 @@ const Index = () => {
               className="w-full p-3 border rounded-lg bg-background text-sm"
             >
               <option value="reservations">📅 Nueva Reserva</option>
-              <option value="bookings">📅 Vista Diaria</option>
+              <option value="bookings">📅 Calendario</option>
               <option value="clients">👥 Gestión de Clientes</option>
               {(isAdmin || isEmployee) && <option value="analytics">📊 Analytics</option>}
               {isAdmin && <option value="packages">🎁 Bonos</option>}
@@ -115,7 +116,7 @@ const Index = () => {
               className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
             >
               <CalendarDays className="h-5 w-5" />
-              <span className="text-sm font-medium">Vista Diaria</span>
+              <span className="text-sm font-medium">Calendario</span>
             </Button>
             
             <Button
@@ -180,7 +181,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="bookings" className="mt-6 space-y-6">
-            <SimpleCenterCalendar />
+            <AdvancedCalendarView />
           </TabsContent>
 
           <TabsContent value="clients" className="mt-6 space-y-6">
