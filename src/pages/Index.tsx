@@ -7,8 +7,7 @@ import Layout from "@/components/Layout";
 import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
 import PackageManagement from "@/components/PackageManagement";
-import ClientNotes from "@/components/ClientNotes";
-import BookingsList from "@/components/BookingsList";
+import ClientManagement from "@/components/ClientManagement";
 import SpecialistClients from "@/components/SpecialistClients";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
 import HappyHourManagement from "@/components/HappyHourManagement";
@@ -55,10 +54,9 @@ const Index = () => {
             >
               <option value="reservations">📅 Nueva Reserva</option>
               <option value="bookings">📅 Vista Diaria</option>
-              <option value="manage-bookings">🎯 Gestión de Reservas</option>
+              <option value="clients">👥 Gestión de Clientes</option>
               {isAdmin && <option value="analytics">📊 Analytics</option>}
               {isAdmin && <option value="packages">🎁 Bonos</option>}
-              <option value="notes">📝 Notas</option>
               {isAdmin && <option value="happyhour">% Happy Hour</option>}
               
               {isAdmin && <option value="control">🎛️ Centro de Control</option>}
@@ -86,12 +84,12 @@ const Index = () => {
             </Button>
             
             <Button
-              variant={activeTab === "manage-bookings" ? "default" : "outline"}
-              onClick={() => setActiveTab("manage-bookings")}
+              variant={activeTab === "clients" ? "default" : "outline"}
+              onClick={() => setActiveTab("clients")}
               className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
             >
               <Users className="h-5 w-5" />
-              <span className="text-sm font-medium">Gestión de Reservas</span>
+              <span className="text-sm font-medium">Gestión de Clientes</span>
             </Button>
             
             {/* Solo para admin */}
@@ -117,14 +115,6 @@ const Index = () => {
               </Button>
             )}
             
-            <Button
-              variant={activeTab === "notes" ? "default" : "outline"}
-              onClick={() => setActiveTab("notes")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <StickyNote className="h-5 w-5" />
-              <span className="text-sm font-medium">Notas</span>
-            </Button>
             
             {isAdmin && (
               <Button
@@ -158,8 +148,8 @@ const Index = () => {
             <SimpleCenterCalendar />
           </TabsContent>
 
-          <TabsContent value="manage-bookings" className="mt-6 space-y-6">
-            <BookingsList />
+          <TabsContent value="clients" className="mt-6 space-y-6">
+            <ClientManagement />
           </TabsContent>
 
           {isAdmin && (
@@ -174,9 +164,6 @@ const Index = () => {
             </TabsContent>
           )}
 
-          <TabsContent value="notes" className="mt-6">
-            <ClientNotes />
-          </TabsContent>
 
           {isAdmin && (
             <TabsContent value="happyhour" className="mt-6">
