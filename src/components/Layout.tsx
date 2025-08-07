@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
-import { LogOut, User, Calendar, Settings, Menu, Home, BarChart3, Bell, FileText, X } from "lucide-react";
+import { LogOut, User, Calendar, Settings, Menu, Home, Bell, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -100,21 +100,6 @@ const Layout = ({ children }: LayoutProps) => {
                           </Button>
                           
                           <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4">
-                            Análisis
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            className="justify-start"
-                            onClick={() => {
-                              navigate("/panel-gestion-nook-madrid-2024/reports");
-                              setMobileMenuOpen(false);
-                            }}
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            <span>Centro de Reportes</span>
-                          </Button>
-                          
-                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4">
                             Comunicación
                           </div>
                           <Button 
@@ -146,14 +131,6 @@ const Layout = ({ children }: LayoutProps) => {
                         <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024")}>
                           <Home className="mr-2 h-4 w-4" />
                           <span>Panel Admin</span>
-                        </DropdownMenuItem>
-                        
-                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Análisis
-                        </div>
-                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/reports")}>
-                          <FileText className="mr-2 h-4 w-4" />
-                          <span>Centro de Reportes</span>
                         </DropdownMenuItem>
                         
                         <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -205,10 +182,6 @@ const Layout = ({ children }: LayoutProps) => {
                     <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024")}>
                       <Calendar className="mr-2 h-4 w-4" />
                       <span>Panel Admin</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/reports")}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Centro de Reportes</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/notifications")}>
                       <Settings className="mr-2 h-4 w-4" />
