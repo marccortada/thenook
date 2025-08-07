@@ -38,6 +38,8 @@ export const useClients = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log('🔍 useClients: Iniciando consulta a Supabase...');
 
       // Fetch clients with booking statistics
       const { data: clientsData, error } = await supabase
@@ -55,6 +57,11 @@ export const useClients = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      console.log('🔍 useClients: Datos recibidos de Supabase:', { 
+        clientsCount: clientsData?.length || 0, 
+        firstClient: clientsData?.[0] 
+      });
 
       // Process client data with statistics
       const processedClients = clientsData?.map(client => {
@@ -75,8 +82,9 @@ export const useClients = () => {
       }) || [];
 
       setClients(processedClients);
+      console.log('🔍 useClients: Clientes procesados exitosamente:', processedClients.length);
     } catch (error) {
-      console.error('Error fetching clients:', error);
+      console.error('🚨 useClients Error fetching clients:', error);
       setError('Error al cargar los clientes');
       toast({
         title: "Error",

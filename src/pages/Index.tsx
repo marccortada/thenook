@@ -27,13 +27,44 @@ import { useCenters } from "@/hooks/useDatabase";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("reservations");
-  const { user, isAdmin } = useSimpleAuth();
+  const { user, isAdmin, isEmployee, isAuthenticated, loading } = useSimpleAuth();
   const navigate = useNavigate();
+
+  // Debug logs para diagnosticar el problema
+  console.log('🔍 Index Component Debug:', {
+    user,
+    isAdmin,
+    isEmployee, 
+    isAuthenticated,
+    loading,
+    activeTab
+  });
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
-        {activeTab !== "control" && (
+        {/* Mostrar estado de carga */}
+        {loading && (
+          <div className="mb-8 text-center">
+            <p className="text-muted-foreground">Cargando panel de administración...</p>
+          </div>
+        )}
+        
+        {/* Mostrar mensaje si no hay autenticación */}
+        {!loading && !isAuthenticated && (
+          <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <p className="text-destructive">⚠️ Sesión no válida. Por favor, inicia sesión nuevamente.</p>
+            <Button 
+              onClick={() => navigate('/admin-login')} 
+              variant="outline" 
+              className="mt-2"
+            >
+              Ir a Login
+            </Button>
+          </div>
+        )}
+
+        {activeTab !== "control" && !loading && isAuthenticated && (
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">
               ¡Bienvenido, {user?.name || 'Usuario'}!
@@ -41,6 +72,10 @@ const Index = () => {
             <p className="text-muted-foreground">
               Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
             </p>
+            {/* Debug info visible */}
+            <div className="mt-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+              Debug: Usuario={user?.email}, Admin={isAdmin ? 'Sí' : 'No'}, Empleado={isEmployee ? 'Sí' : 'No'}
+            </div>
           </div>
         )}
 
@@ -55,7 +90,7 @@ const Index = () => {
               <option value="reservations">📅 Nueva Reserva</option>
               <option value="bookings">📅 Vista Diaria</option>
               <option value="clients">👥 Gestión de Clientes</option>
-              {isAdmin && <option value="analytics">📊 Analytics</option>}
+              {(isAdmin || isEmployee) && <option value="analytics">📊 Analytics</option>}
               {isAdmin && <option value="packages">🎁 Bonos</option>}
               {isAdmin && <option value="happyhour">% Happy Hour</option>}
               
@@ -92,8 +127,8 @@ const Index = () => {
               <span className="text-sm font-medium">Gestión de Clientes</span>
             </Button>
             
-            {/* Solo para admin */}
-            {isAdmin && (
+            {/* Para admin y empleados */}
+            {(isAdmin || isEmployee) && (
               <Button
                 variant={activeTab === "analytics" ? "default" : "outline"}
                 onClick={() => setActiveTab("analytics")}
@@ -152,7 +187,7 @@ const Index = () => {
             <ClientManagement />
           </TabsContent>
 
-          {isAdmin && (
+          {(isAdmin || isEmployee) && (
             <TabsContent value="analytics" className="mt-6">
               <AdvancedDashboard />
             </TabsContent>
