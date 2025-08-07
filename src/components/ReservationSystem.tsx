@@ -117,10 +117,22 @@ const ReservationSystem = () => {
           .maybeSingle();
 
         if (existingProfile) {
-          // Use existing profile
-          profileToUse = existingProfile;
+          // Update existing profile with new information if provided
+          const updatedProfile = {
+            first_name: formData.clientName.split(' ')[0] || existingProfile.first_name,
+            last_name: formData.clientName.split(' ').slice(1).join(' ') || existingProfile.last_name,
+            phone: formData.clientPhone || existingProfile.phone,
+          };
+
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update(updatedProfile)
+            .eq('id', existingProfile.id);
+
+          if (updateError) throw updateError;
+          profileToUse = { ...existingProfile, ...updatedProfile };
         } else {
-          // Create new client profile
+          // Create new client profile with role 'client'
           const { data: newProfile, error: profileError } = await supabase
             .from('profiles')
             .insert([{
@@ -128,7 +140,7 @@ const ReservationSystem = () => {
               first_name: formData.clientName.split(' ')[0],
               last_name: formData.clientName.split(' ').slice(1).join(' ') || '',
               phone: formData.clientPhone,
-              role: 'client'
+              role: 'client'  // Explicitly set role as client
             }])
             .select()
             .single();
