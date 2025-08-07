@@ -16,7 +16,6 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
-import ChatBot from "@/components/ChatBot";
 const ClientReservation = () => {
   const { toast } = useToast();
   const { centers } = useCenters();
@@ -28,53 +27,19 @@ const ClientReservation = () => {
     clientName: "",
     clientPhone: "",
     clientEmail: "",
-    service: "",
     center: "",
     date: undefined as Date | undefined,
     time: "",
-    employee: "",
-    lane: "",
     notes: "",
-    serviceType: "individual" as "individual" | "voucher",
   });
 
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const [showExistingBookings, setShowExistingBookings] = useState(false);
 
-  const { services, loading: servicesLoading } = useServices(formData.center);
-  const { packages, loading: packagesLoading } = usePackages(formData.center);
-
   const timeSlots = [
     "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
     "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
   ];
-
-  // Filter employees and lanes based on selected center
-  const availableEmployees = employees.filter(emp => 
-    formData.center ? emp.center_id === formData.center && emp.active : emp.active
-  );
-  
-  const availableLanes = lanes.filter(lane => 
-    formData.center ? lane.center_id === formData.center && lane.active : lane.active
-  );
-
-  // Group services by name to avoid duplicates
-  const uniqueServices = services.reduce((acc, service) => {
-    const existingService = acc.find(s => s.name === service.name);
-    if (!existingService) {
-      acc.push(service);
-    }
-    return acc;
-  }, [] as typeof services);
-
-  // Group packages by name to avoid duplicates
-  const uniquePackages = packages.reduce((acc, pkg) => {
-    const existingPackage = acc.find(p => p.name === pkg.name);
-    if (!existingPackage) {
-      acc.push(pkg);
-    }
-    return acc;
-  }, [] as typeof packages);
 
   // Check for existing bookings and packages when email/phone changes
   const checkExistingBookings = async () => {
@@ -139,7 +104,7 @@ const ClientReservation = () => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.clientName || !formData.service || !formData.center || !formData.date || !formData.time) {
+    if (!formData.clientName || !formData.center || !formData.date || !formData.time) {
       toast({
         title: "Error",
         description: "Por favor completa todos los campos obligatorios",
@@ -193,52 +158,22 @@ const ClientReservation = () => {
         profileToUse = newProfile;
       }
 
-      // Get service or package details for pricing
-      let selectedItem, duration_minutes, price_cents;
-      
-      if (formData.serviceType === 'individual') {
-        selectedItem = services.find(s => s.id === formData.service);
-        if (!selectedItem) throw new Error('Servicio no encontrado');
-        duration_minutes = selectedItem.duration_minutes;
-        price_cents = selectedItem.price_cents;
-      } else {
-        selectedItem = packages.find(p => p.id === formData.service);
-        if (!selectedItem) throw new Error('Bono no encontrado');
-        duration_minutes = selectedItem.services?.duration_minutes || 60;
-        price_cents = selectedItem.price_cents;
-      }
+      // Default service configuration for client bookings
+      const duration_minutes = 60; // Standard session
+      const price_cents = 0; // Admin will set pricing later
 
       // Create the booking datetime
       const bookingDate = new Date(formData.date!);
       const [hours, minutes] = formData.time.split(':');
       bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      // Check employee availability before creating booking
-      if (formData.employee && formData.employee !== "any") {
-        const bookingDateTime = bookingDate.toISOString();
-        const { data: conflictingBookings } = await supabase
-          .from('bookings')
-          .select('*')
-          .eq('employee_id', formData.employee)
-          .eq('booking_datetime', bookingDateTime)
-          .neq('status', 'cancelled');
-
-        if (conflictingBookings && conflictingBookings.length > 0) {
-          toast({
-            title: "Especialista no disponible",
-            description: "El especialista seleccionado no está disponible en ese horario. Por favor, selecciona otro especialista o horario.",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
 
       const bookingData = {
         client_id: profileToUse?.id,
-        service_id: formData.service,
+        service_id: null, // Admin will assign service later
         center_id: formData.center,
-        lane_id: formData.lane && formData.lane !== "any" ? formData.lane : availableLanes[0]?.id,
-        employee_id: formData.employee && formData.employee !== "any" ? formData.employee : availableEmployees[0]?.id,
+        lane_id: null, // Admin will assign lane later
+        employee_id: null, // Admin will assign employee later
         booking_datetime: bookingDate.toISOString(),
         duration_minutes,
         total_price_cents: price_cents,
@@ -261,14 +196,10 @@ const ClientReservation = () => {
         clientName: "",
         clientPhone: "",
         clientEmail: "",
-        service: "",
         center: "",
         date: undefined,
         time: "",
-        employee: "",
-        lane: "",
         notes: "",
-        serviceType: "individual",
       });
       setShowExistingBookings(false);
       setExistingBookings([]);
@@ -282,19 +213,7 @@ const ClientReservation = () => {
     }
   };
 
-  const selectedService = services.find(s => s.id === formData.service);
-  const selectedPackage = packages.find(p => p.id === formData.service);
   const selectedCenter = centers.find(c => c.id === formData.center);
-  
-  const getSelectedItem = () => {
-    if (formData.serviceType === "individual") {
-      return selectedService;
-    } else {
-      return selectedPackage;
-    }
-  };
-  
-  const selectedItem = getSelectedItem();
 
   const cancelBooking = async (bookingId: string) => {
     try {
@@ -393,8 +312,7 @@ const ClientReservation = () => {
                   ¿Ya tienes una reserva?
                 </h3>
                 <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  Si deseas gestionar, cambiar o cancelar una reserva existente, utiliza nuestro asistente virtual en la esquina inferior derecha. 
-                  Solo proporciona tu email y podrás acceder a todas tus reservas y bonos.
+                  Introduce tu email o teléfono en el formulario para ver tus reservas y bonos activos.
                 </p>
               </div>
             </div>
@@ -517,87 +435,16 @@ const ClientReservation = () => {
                  </div>
               )}
 
-              {/* Service Selection */}
+              {/* Center Selection */}
               <div className="space-y-3 sm:space-y-4">
-                <h3 className="font-medium text-sm sm:text-base">Selección de Servicio</h3>
+                <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                  <MapPin className="h-4 w-4" />
+                  <span>Centro</span>
+                </h3>
                 
                 <div>
-                  <Label className="text-sm">Tipo de Servicio</Label>
-                  <RadioGroup
-                    value={formData.serviceType}
-                    onValueChange={(value) => setFormData({ ...formData, serviceType: value as "individual" | "voucher", service: "" })}
-                    className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mt-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="individual" id="individual" />
-                      <Label htmlFor="individual" className="text-sm">Sesión Individual</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="voucher" id="voucher" />
-                      <Label htmlFor="voucher" className="text-sm">Bono/Paquete</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                <div>
-                  <Label htmlFor="service" className="text-sm">
-                    {formData.serviceType === "individual" ? "Servicio" : "Bono/Paquete"} *
-                  </Label>
-                  {servicesLoading || packagesLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      <span className="ml-2 text-sm">Cargando servicios...</span>
-                    </div>
-                  ) : (
-                    <Select value={formData.service} onValueChange={(value) => setFormData({ ...formData, service: value })}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder={formData.serviceType === "individual" ? "Selecciona un servicio" : "Selecciona un bono"} />
-                      </SelectTrigger>
-                      <SelectContent className="z-[100] bg-background border shadow-lg max-h-60 overflow-y-auto">
-                        {formData.serviceType === "individual" ? (
-                          uniqueServices.length > 0 ? uniqueServices.map((service) => (
-                            <SelectItem key={service.id} value={service.id}>
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                <span>{service.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {service.duration_minutes}min - €{(service.price_cents / 100).toFixed(2)}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          )) : (
-                            <div className="p-2 text-sm text-muted-foreground text-center">
-                              {formData.center ? "No hay servicios disponibles" : "Selecciona primero un centro"}
-                            </div>
-                          )
-                        ) : (
-                          uniquePackages.length > 0 ? uniquePackages.map((packageItem) => (
-                          <SelectItem key={packageItem.id} value={packageItem.id}>
-                            <div className="flex flex-col">
-                              <span className="text-sm">{packageItem.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {packageItem.sessions_count} sesiones - €{(packageItem.price_cents / 100).toFixed(2)}
-                                {packageItem.discount_percentage && (
-                                  <span className="text-green-600 ml-1">
-                                    ({packageItem.discount_percentage}% descuento)
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          </SelectItem>
-                          )) : (
-                            <div className="p-2 text-sm text-muted-foreground text-center">
-                              {formData.center ? "No hay bonos disponibles" : "Selecciona primero un centro"}
-                            </div>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-
-                <div>
                   <Label htmlFor="center" className="text-sm">Centro *</Label>
-                  <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value, service: "", employee: "", lane: "" })}>
+                  <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value })}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Selecciona un centro" />
                     </SelectTrigger>
@@ -672,54 +519,6 @@ const ClientReservation = () => {
                 </div>
               </div>
 
-              {/* Specialist & Lane Selection */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="font-medium text-sm sm:text-base">Preferencias (Opcional)</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <Label htmlFor="employee" className="text-sm">Especialista</Label>
-                    <Select value={formData.employee} onValueChange={(value) => setFormData({ ...formData, employee: value })}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Cualquier especialista" />
-                      </SelectTrigger>
-                      <SelectContent className="z-[100] bg-background border shadow-lg max-h-60 overflow-y-auto">
-                        <SelectItem value="any">Cualquier especialista</SelectItem>
-                        {availableEmployees.map((employee) => (
-                          <SelectItem key={employee.id} value={employee.id}>
-                            <div className="flex items-center space-x-2">
-                              <User className="h-3 w-3" />
-                              <span>
-                                {employee.profiles?.first_name} {employee.profiles?.last_name}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="lane" className="text-sm">Sala</Label>
-                    <Select value={formData.lane} onValueChange={(value) => setFormData({ ...formData, lane: value })}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Cualquier sala" />
-                      </SelectTrigger>
-                      <SelectContent className="z-[100] bg-background border shadow-lg max-h-60 overflow-y-auto">
-                        <SelectItem value="any">Cualquier sala</SelectItem>
-                        {availableLanes.map((lane) => (
-                          <SelectItem key={lane.id} value={lane.id}>
-                            <div className="flex items-center space-x-2">
-                              <MapPin className="h-3 w-3" />
-                              <span>{lane.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
 
               {/* Notes */}
               <div>
@@ -734,19 +533,10 @@ const ClientReservation = () => {
               </div>
 
               {/* Summary */}
-              {formData.service && formData.center && formData.date && formData.time && (
+              {formData.center && formData.date && formData.time && (
                 <div className="bg-accent/20 rounded-lg p-3 sm:p-4 space-y-2">
                   <h4 className="font-medium text-sm sm:text-base">Resumen de la Reserva</h4>
                   <div className="space-y-1 text-xs sm:text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Servicio:</span>
-                      <span className="font-medium">
-                        {formData.serviceType === "individual" 
-                          ? selectedService?.name 
-                          : selectedPackage?.name
-                        }
-                      </span>
-                    </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Centro:</span>
                       <span>{selectedCenter?.name}</span>
@@ -759,12 +549,9 @@ const ClientReservation = () => {
                       <span className="text-muted-foreground">Hora:</span>
                       <span>{formData.time}</span>
                     </div>
-                    {selectedItem && (
-                      <div className="flex justify-between font-medium">
-                        <span>Precio:</span>
-                        <span>€{(selectedItem.price_cents / 100).toFixed(2)}</span>
-                      </div>
-                    )}
+                    <div className="text-xs text-muted-foreground mt-2">
+                      El administrador asignará el especialista y tipo de servicio cuando llegues al centro.
+                    </div>
                   </div>
                 </div>
               )}
@@ -779,8 +566,6 @@ const ClientReservation = () => {
         </div>
       </main>
       
-      {/* ChatBot para clientes */}
-      <ChatBot />
     </div>
   );
 };

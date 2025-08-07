@@ -19,7 +19,6 @@ import NotificationCenter from "@/components/NotificationCenter";
 import UnifiedDashboard from "@/components/UnifiedDashboard";
 import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 
-import ChatBot from "@/components/ChatBot";
 import SimpleCenterCalendar from "@/components/SimpleCenterCalendar";
 import AdvancedCalendarView from "@/components/AdvancedCalendarView";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
@@ -215,9 +214,6 @@ const Index = () => {
           )}
         </Tabs>
       </div>
-      
-      {/* ChatBot para Admin */}
-      <ChatBot />
       
     </Layout>
   );
