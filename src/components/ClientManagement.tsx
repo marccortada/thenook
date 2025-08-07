@@ -3,13 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Users, 
@@ -19,61 +18,28 @@ import {
   Mail, 
   Calendar,
   Edit,
-  StickyNote,
-  Tag,
   User,
   MapPin,
   Clock
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useClients, Client, ClientBooking } from "@/hooks/useClients";
 import { useClientNotes } from "@/hooks/useClientNotes";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
-interface Client {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  role: string;
-  created_at: string;
-  updated_at: string;
-  total_bookings?: number;
-  last_booking?: string;
-  total_spent?: number;
-  tags?: string[];
-}
-
-interface Booking {
-  id: string;
-  booking_datetime: string;
-  duration_minutes: number;
-  total_price_cents: number;
-  status: string;
-  service_name?: string;
-  center_name?: string;
-  notes: string | null;
-}
-
 const ClientManagement = () => {
-  const [clients, setClients] = useState<Client[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [clientBookings, setClientBookings] = useState<Booking[]>([]);
+  const [clientBookings, setClientBookings] = useState<ClientBooking[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Partial<Client>>({});
   const [newNote, setNewNote] = useState({ title: "", content: "", category: "general", priority: "normal" });
-  const [newTag, setNewTag] = useState("");
   const { toast } = useToast();
 
-  // Fetch clients on component mount
-  useEffect(() => {
-    fetchClients();
-  }, []);
+  // Use the new hook
+  const { clients, loading, updateClient, fetchClientBookings } = useClients();
 
   // Filter clients based on search query
   useEffect(() => {
@@ -89,112 +55,17 @@ const ClientManagement = () => {
     }
   }, [searchQuery, clients]);
 
-  const fetchClients = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch clients with booking statistics
-      const { data: clientsData, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          bookings:bookings(
-            id,
-            booking_datetime,
-            total_price_cents
-          )
-        `)
-        .eq('role', 'client')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Process client data with statistics
-      const processedClients = clientsData?.map(client => ({
-        ...client,
-        total_bookings: client.bookings?.length || 0,
-        last_booking: client.bookings?.length > 0 
-          ? client.bookings.sort((a: any, b: any) => new Date(b.booking_datetime).getTime() - new Date(a.booking_datetime).getTime())[0].booking_datetime
-          : null,
-        total_spent: client.bookings?.reduce((sum: number, booking: any) => sum + (booking.total_price_cents || 0), 0) || 0,
-        tags: [] // We'll implement tags later
-      })) || [];
-
-      setClients(processedClients);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los clientes",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchClientBookings = async (clientId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          services(name),
-          centers(name)
-        `)
-        .eq('client_id', clientId)
-        .order('booking_datetime', { ascending: false });
-
-      if (error) throw error;
-
-      const processedBookings = data?.map(booking => ({
-        ...booking,
-        service_name: booking.services?.name || 'Servicio desconocido',
-        center_name: booking.centers?.name || 'Centro desconocido'
-      })) || [];
-
-      setClientBookings(processedBookings);
-    } catch (error) {
-      console.error('Error fetching client bookings:', error);
-    }
-  };
-
   const handleClientClick = async (client: Client) => {
     setSelectedClient(client);
     setEditingClient(client);
-    await fetchClientBookings(client.id);
+    const bookings = await fetchClientBookings(client.id);
+    setClientBookings(bookings);
     setIsDialogOpen(true);
   };
 
-  const updateClient = async () => {
+  const handleUpdateClient = async () => {
     if (!selectedClient) return;
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: editingClient.first_name,
-          last_name: editingClient.last_name,
-          email: editingClient.email,
-          phone: editingClient.phone,
-        })
-        .eq('id', selectedClient.id);
-
-      if (error) throw error;
-
-      await fetchClients();
-      toast({
-        title: "Éxito",
-        description: "Cliente actualizado correctamente",
-      });
-    } catch (error) {
-      console.error('Error updating client:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el cliente",
-        variant: "destructive",
-      });
-    }
+    await updateClient(selectedClient.id, editingClient);
   };
 
   const { notes, createNote, refetch: refetchNotes } = useClientNotes(selectedClient?.id);
@@ -404,7 +275,7 @@ const ClientManagement = () => {
                       />
                     </div>
 
-                    <Button onClick={updateClient} className="w-full">
+                    <Button onClick={handleUpdateClient} className="w-full">
                       <Edit className="h-4 w-4 mr-2" />
                       Guardar Cambios
                     </Button>
