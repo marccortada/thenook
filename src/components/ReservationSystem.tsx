@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 
 const ReservationSystem = () => {
   const { toast } = useToast();
@@ -356,44 +357,13 @@ const ReservationSystem = () => {
                     <span className="ml-2">Cargando servicios...</span>
                   </div>
                 ) : (
-                  <Select value={formData.service} onValueChange={(value) => setFormData({ ...formData, service: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={formData.serviceType === "individual" ? "Selecciona un servicio" : "Selecciona un bono"} />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100] bg-background border shadow-lg">
-                      {formData.serviceType === "individual" ? (
-                        uniqueServices.length > 0 ? uniqueServices.map((service) => (
-                          <SelectItem key={service.id} value={service.id}>
-                            {service.name} - {service.duration_minutes}min - €{(service.price_cents / 100).toFixed(2)}
-                          </SelectItem>
-                        )) : (
-                          <div className="p-2 text-sm text-muted-foreground text-center">
-                            {formData.center ? "No hay servicios disponibles" : "Selecciona primero un centro"}
-                          </div>
-                        )
-                      ) : (
-                        uniquePackages.length > 0 ? uniquePackages.map((packageItem) => (
-                        <SelectItem key={packageItem.id} value={packageItem.id}>
-                          <div className="flex flex-col">
-                            <span>{packageItem.name}</span>
-                            <span className="text-sm text-muted-foreground">
-                              {packageItem.sessions_count} sesiones - €{(packageItem.price_cents / 100).toFixed(2)}
-                              {packageItem.discount_percentage && (
-                                <span className="text-green-600 ml-1">
-                                  ({packageItem.discount_percentage}% descuento)
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </SelectItem>
-                        )) : (
-                          <div className="p-2 text-sm text-muted-foreground text-center">
-                            {formData.center ? "No hay bonos disponibles" : "Selecciona primero un centro"}
-                          </div>
-                        )
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <ServiceSelectorGrouped
+                    mode={formData.serviceType}
+                    services={services}
+                    packages={packages}
+                    selectedId={formData.service}
+                    onSelect={(id) => setFormData({ ...formData, service: id })}
+                  />
                 )}
               </div>
 
