@@ -346,11 +346,13 @@ const DailyAgendaView = () => {
                                 <TooltipTrigger asChild>
                                   <div
                                     className={cn(
-                                      "absolute inset-1 rounded border-l-4 p-1 lg:p-2 cursor-pointer transition-all hover:shadow-md overflow-hidden",
+                                      "absolute inset-1 rounded border-l-4 p-1 lg:p-2 cursor-pointer transition-all hover:shadow-md",
                                       getStatusColor(booking.status)
                                     )}
                                     style={{
-                                      height: `${Math.ceil((convertBookingToSlot(booking).endTime.getTime() - convertBookingToSlot(booking).startTime.getTime()) / (30 * 60 * 1000)) * 40 - 4}px`
+                                      height: `${Math.ceil((convertBookingToSlot(booking).endTime.getTime() - convertBookingToSlot(booking).startTime.getTime()) / (30 * 60 * 1000)) * 40 - 4}px`,
+                                      maxWidth: 'calc(100% - 8px)',
+                                      overflow: 'hidden'
                                     }}
                                     onClick={() => handleBookingClick(booking)}
                                   >
