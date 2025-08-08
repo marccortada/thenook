@@ -339,33 +339,33 @@ const DailyAgendaView = () => {
                         return (
                           <div
                             key={`${column.id}-${timeIndex}`}
-                            className="relative border-r border-b min-h-[40px] lg:min-h-[50px] hover:bg-muted/20 transition-colors"
+                            className="relative border-r border-b min-h-[40px] lg:min-h-[50px] hover:bg-muted/20 transition-colors overflow-hidden"
                           >
                             {booking && isFirstSlotOfBooking && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
                                     className={cn(
-                                      "absolute inset-1 rounded border-l-4 p-1 lg:p-2 cursor-pointer transition-all hover:shadow-md",
+                                      "absolute top-1 left-1 right-1 rounded border-l-4 p-1 lg:p-2 cursor-pointer transition-all hover:shadow-md",
                                       getStatusColor(booking.status)
                                     )}
                                     style={{
                                       height: `${Math.ceil((convertBookingToSlot(booking).endTime.getTime() - convertBookingToSlot(booking).startTime.getTime()) / (30 * 60 * 1000)) * 40 - 4}px`,
-                                      maxWidth: 'calc(100% - 8px)',
-                                      overflow: 'hidden'
+                                      minWidth: 0,
+                                      maxWidth: '100%'
                                     }}
                                     onClick={() => handleBookingClick(booking)}
                                   >
-                                    <div className="text-xs font-semibold truncate">
+                                    <div className="text-xs font-semibold truncate w-full">
                                       {convertBookingToSlot(booking).clientName}
                                     </div>
-                                    <div className="text-xs text-muted-foreground truncate hidden lg:block">
+                                    <div className="text-xs text-muted-foreground truncate w-full hidden lg:block">
                                       {convertBookingToSlot(booking).serviceName}
                                     </div>
-                                    <div className="text-xs font-medium">
+                                    <div className="text-xs font-medium truncate w-full">
                                       €{convertBookingToSlot(booking).price}
                                     </div>
-                                    <div className="text-xs text-muted-foreground hidden lg:block">
+                                    <div className="text-xs text-muted-foreground truncate w-full hidden lg:block">
                                       {format(convertBookingToSlot(booking).startTime, 'HH:mm')}
                                     </div>
                                   </div>
