@@ -329,28 +329,10 @@ const ReservationSystem = () => {
             <div className="space-y-4">
               <h3 className="font-medium">Selección de Servicio</h3>
               
-              <div>
-                <Label>Tipo de Servicio</Label>
-                <RadioGroup
-                  value={formData.serviceType}
-                  onValueChange={(value) => setFormData({ ...formData, serviceType: value as "individual" | "voucher", service: "" })}
-                  className="flex space-x-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="individual" id="individual" />
-                    <Label htmlFor="individual">Sesión Individual</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="voucher" id="voucher" />
-                    <Label htmlFor="voucher">Bono/Paquete</Label>
-                  </div>
-                </RadioGroup>
-              </div>
+              {/* Selector combinado (Bonos + Servicios) - se muestran ambos, no hace falta alternar */}
 
               <div>
-                <Label htmlFor="service">
-                  {formData.serviceType === "individual" ? "Servicio" : "Bono/Paquete"} *
-                </Label>
+                <Label htmlFor="service">Servicio o Bono *</Label>
                 {servicesLoading || packagesLoading ? (
                   <div className="flex items-center justify-center p-4">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -358,11 +340,11 @@ const ReservationSystem = () => {
                   </div>
                 ) : (
                   <ServiceSelectorGrouped
-                    mode={formData.serviceType}
+                    mode="combined"
                     services={services}
                     packages={packages}
                     selectedId={formData.service}
-                    onSelect={(id) => setFormData({ ...formData, service: id })}
+                    onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: kind === 'package' ? 'voucher' : 'individual' })}
                   />
                 )}
               </div>

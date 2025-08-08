@@ -5,14 +5,15 @@ import type { Service, Package } from "@/hooks/useDatabase";
 import { cn } from "@/lib/utils";
 
 interface Props {
-  mode: "individual" | "voucher";
+  // combined: muestra paquetes y servicios en una sola vista (como en la captura)
+  mode?: "individual" | "voucher" | "combined";
   services: Service[];
   packages: Package[];
   selectedId?: string;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, kind: "service" | "package") => void;
 }
 
-// Heurísticas simples para agrupar servicios por nombre/texto existente en la BD
+// Heurísticas simples para agrupar servicios por nombre/descr. existente en la BD
 const isDuo = (name?: string) => !!name?.toLowerCase().match(/(dos|pareja|parejas|dúo|duo)/);
 const isCuatroManos = (name?: string) => !!name?.toLowerCase().includes("cuatro manos");
 const isRitual = (name?: string, description?: string) => {
@@ -44,36 +45,43 @@ const ItemRow: React.FC<{
   </div>
 );
 
-const ServiceSelectorGrouped: React.FC<Props> = ({ mode, services, packages, selectedId, onSelect }) => {
-  if (mode === "voucher") {
-    return (
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="bonos">
-          <AccordionTrigger className="px-3">Bonos</AccordionTrigger>
-          <AccordionContent className="space-y-2">
-            {packages.length === 0 && (
-              <p className="text-sm text-muted-foreground px-3">No hay bonos disponibles para el centro seleccionado.</p>
-            )}
-            {packages.map((pkg) => (
-              <ItemRow
-                key={pkg.id}
-                title={pkg.name}
-                subtitle={`${pkg.sessions_count} sesiones${pkg.services?.duration_minutes ? ` · ${pkg.services.duration_minutes} min` : ""} · ${currency(pkg.price_cents)}`}
-                right={
-                  <Button size="sm" variant={selectedId === pkg.id ? "default" : "outline"} onClick={() => onSelect(pkg.id)}>
-                    {selectedId === pkg.id ? "Seleccionado" : "Seleccionar"}
-                  </Button>
-                }
-                active={selectedId === pkg.id}
-              />
-            ))}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    );
-  }
+function PackagesAccordion({
+  packages,
+  selectedId,
+  onSelect,
+}: { packages: Package[]; selectedId?: string; onSelect: (id: string) => void }) {
+  return (
+    <Accordion type="single" collapsible className="w-full">
+      <AccordionItem value="bonos">
+        <AccordionTrigger className="px-3">Bonos</AccordionTrigger>
+        <AccordionContent className="space-y-2">
+          {packages.length === 0 && (
+            <p className="text-sm text-muted-foreground px-3">No hay bonos disponibles para el centro seleccionado.</p>
+          )}
+          {packages.map((pkg) => (
+            <ItemRow
+              key={pkg.id}
+              title={pkg.name}
+              subtitle={`${pkg.sessions_count} sesiones${pkg.services?.duration_minutes ? ` · ${pkg.services.duration_minutes} min` : ""} · ${currency(pkg.price_cents)}`}
+              right={
+                <Button size="sm" variant={selectedId === pkg.id ? "default" : "outline"} onClick={() => onSelect(pkg.id)}>
+                  {selectedId === pkg.id ? "Seleccionado" : "Seleccionar"}
+                </Button>
+              }
+              active={selectedId === pkg.id}
+            />
+          ))}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+}
 
-  // Filtrar solo servicios activos de tipo masaje o tratamiento según texto
+function ServicesAccordions({
+  services,
+  selectedId,
+  onSelect,
+}: { services: Service[]; selectedId?: string; onSelect: (id: string) => void }) {
   const massageServices = services.filter((s) => s.active !== false);
 
   const groups = [
@@ -104,7 +112,6 @@ const ServiceSelectorGrouped: React.FC<Props> = ({ mode, services, packages, sel
     },
   ];
 
-  // Ocultar grupos vacíos para no confundir
   const visibleGroups = groups.filter((g) => g.items.length > 0);
 
   return (
@@ -124,8 +131,8 @@ const ServiceSelectorGrouped: React.FC<Props> = ({ mode, services, packages, sel
                   </Button>
                 }
                 active={selectedId === s.id}
-              />)
-            )}
+              />
+            ))}
           </AccordionContent>
         </AccordionItem>
       ))}
@@ -133,6 +140,23 @@ const ServiceSelectorGrouped: React.FC<Props> = ({ mode, services, packages, sel
         <p className="text-sm text-muted-foreground px-3">No hay servicios disponibles para el centro seleccionado.</p>
       )}
     </Accordion>
+  );
+}
+
+const ServiceSelectorGrouped: React.FC<Props> = ({ mode = "combined", services, packages, selectedId, onSelect }) => {
+  if (mode === "voucher") {
+    return <PackagesAccordion packages={packages} selectedId={selectedId} onSelect={(id) => onSelect(id, "package")} />;
+  }
+  if (mode === "individual") {
+    return <ServicesAccordions services={services} selectedId={selectedId} onSelect={(id) => onSelect(id, "service")} />;
+  }
+
+  // combined
+  return (
+    <div className="space-y-4">
+      <PackagesAccordion packages={packages} selectedId={selectedId} onSelect={(id) => onSelect(id, "package")} />
+      <ServicesAccordions services={services} selectedId={selectedId} onSelect={(id) => onSelect(id, "service")} />
+    </div>
   );
 };
 
