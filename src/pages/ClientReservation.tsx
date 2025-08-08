@@ -511,7 +511,7 @@ const ClientReservation = () => {
                 
                 <div>
                   <Label htmlFor="center" className="text-sm">Centro *</Label>
-                  <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value })}>
+                  <Select value={formData.center} onValueChange={(value) => { setFormData({ ...formData, center: value }); setSelection(null); }}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Selecciona un centro" />
                     </SelectTrigger>

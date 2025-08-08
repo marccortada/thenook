@@ -50,15 +50,26 @@ function PackagesAccordion({
   selectedId,
   onSelect,
 }: { packages: Package[]; selectedId?: string; onSelect: (id: string) => void }) {
+  // Deduplicar bonos por nombre, conservando el menor precio
+  const pmap = new Map<string, Package>();
+  for (const p of packages) {
+    const key = (p.name || "").trim().toLowerCase();
+    const existing = pmap.get(key);
+    if (!existing || (typeof p.price_cents === 'number' && p.price_cents < (existing.price_cents ?? Number.MAX_SAFE_INTEGER))) {
+      pmap.set(key, p);
+    }
+  }
+  const dedupedPackages = Array.from(pmap.values());
+
   return (
     <Accordion type="single" collapsible className="w-full">
       <AccordionItem value="bonos">
         <AccordionTrigger className="px-3">Bonos</AccordionTrigger>
         <AccordionContent className="space-y-2">
-          {packages.length === 0 && (
+          {dedupedPackages.length === 0 && (
             <p className="text-sm text-muted-foreground px-3">No hay bonos disponibles para el centro seleccionado.</p>
           )}
-          {packages.map((pkg) => (
+          {dedupedPackages.map((pkg) => (
             <ItemRow
               key={pkg.id}
               title={pkg.name}
@@ -82,7 +93,17 @@ function ServicesAccordions({
   selectedId,
   onSelect,
 }: { services: Service[]; selectedId?: string; onSelect: (id: string) => void }) {
-  const massageServices = services.filter((s) => s.active !== false);
+  // Deduplicar por nombre normalizado + duración, conservando el menor precio
+  const map = new Map<string, Service>();
+  for (const s of services) {
+    const key = `${(s.name || "").trim().toLowerCase()}|${s.duration_minutes}`;
+    const existing = map.get(key);
+    if (!existing || (typeof s.price_cents === 'number' && s.price_cents < (existing.price_cents ?? Number.MAX_SAFE_INTEGER))) {
+      map.set(key, s);
+    }
+  }
+  const deduped = Array.from(map.values());
+  const massageServices = deduped.filter((s) => s.active !== false);
 
   const groups = [
     {
