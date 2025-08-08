@@ -32,7 +32,7 @@ const ItemRow: React.FC<{
 }> = ({ title, subtitle, right, active }) => (
   <div
     className={cn(
-      "flex items-center justify-between gap-3 px-3 py-2 rounded-md border",
+      "flex items-center justify-between gap-3 px-3 py-2 rounded-md border flex-wrap sm:flex-nowrap",
       "bg-card text-card-foreground",
       active ? "border-primary/60 ring-1 ring-primary/30" : "border-border"
     )}
@@ -41,7 +41,7 @@ const ItemRow: React.FC<{
       <p className={cn("text-sm font-medium truncate", active && "text-primary")}>{title}</p>
       {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
     </div>
-    {right}
+    {right && <div className="shrink-0">{right}</div>}
   </div>
 );
 

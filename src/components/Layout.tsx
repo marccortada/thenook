@@ -124,7 +124,7 @@ const Layout = ({ children }: LayoutProps) => {
                           Centro de Control
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56">
+                      <DropdownMenuContent align="start" className="w-56 z-[100] bg-background border shadow-lg">
                         <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Gestión
                         </div>
@@ -162,7 +162,7 @@ const Layout = ({ children }: LayoutProps) => {
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuContent className="w-56 z-[100] bg-background border shadow-lg" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">
