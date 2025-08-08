@@ -16,12 +16,14 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 const ClientReservation = () => {
   const { toast } = useToast();
   const { centers } = useCenters();
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
+  // hooks para servicios y bonos se declaran después de formData
   
   const [formData, setFormData] = useState({
     clientName: "",
@@ -32,6 +34,11 @@ const ClientReservation = () => {
     time: "",
     notes: "",
   });
+
+  const [selection, setSelection] = useState<{ id: string; kind: "service" | "package" } | null>(null);
+
+  const { services, loading: servicesLoading } = useServices(formData.center);
+  const { packages, loading: packagesLoading } = usePackages(formData.center);
 
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const [showExistingBookings, setShowExistingBookings] = useState(false);
@@ -104,10 +111,10 @@ const ClientReservation = () => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.clientName || !formData.center || !formData.date || !formData.time) {
+    if (!formData.clientName || !formData.center || !formData.date || !formData.time || !selection) {
       toast({
         title: "Error",
-        description: "Por favor completa todos los campos obligatorios",
+        description: !selection ? "Selecciona un servicio o bono" : "Por favor completa todos los campos obligatorios",
         variant: "destructive",
       });
       return;
@@ -158,28 +165,44 @@ const ClientReservation = () => {
         profileToUse = newProfile;
       }
 
-      // Default service configuration for client bookings
-      const duration_minutes = 60; // Standard session
-      const price_cents = 0; // Admin will set pricing later
+      // Configuración según selección (servicio/bono)
+      let duration_minutes = 60;
+      let price_cents = 0; // No cobramos aquí; se gestiona en el centro
+      let service_id: string | null = null;
+      let notesText: string | null = formData.notes || null;
+
+      if (selection?.kind === 'service') {
+        const s = services.find((x) => x.id === selection.id);
+        if (s) {
+          duration_minutes = s.duration_minutes;
+          service_id = s.id;
+        }
+      } else if (selection?.kind === 'package') {
+        const pkg = packages.find((x) => x.id === selection.id);
+        if (pkg) {
+          duration_minutes = pkg.services?.duration_minutes || 60;
+          service_id = pkg.service_id || null;
+          notesText = [notesText || '', `Bono seleccionado: ${pkg.name}`].filter(Boolean).join(' | ');
+        }
+      }
 
       // Create the booking datetime
       const bookingDate = new Date(formData.date!);
       const [hours, minutes] = formData.time.split(':');
       bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-
       const bookingData = {
         client_id: profileToUse?.id,
-        service_id: null, // Admin will assign service later
+        service_id,
         center_id: formData.center,
-        lane_id: null, // Admin will assign lane later
-        employee_id: null, // Admin will assign employee later
+        lane_id: null, // Admin asignará
+        employee_id: null, // Admin asignará
         booking_datetime: bookingDate.toISOString(),
         duration_minutes,
         total_price_cents: price_cents,
         status: 'pending' as const,
         channel: 'web' as const,
-        notes: formData.notes || null,
+        notes: notesText,
         stripe_session_id: null,
         payment_status: 'pending' as const,
       };
@@ -454,6 +477,30 @@ const ClientReservation = () => {
                    </div>
                  </div>
               )}
+              {/* Service Selection */}
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                  <CalendarDays className="h-4 w-4" />
+                  <span>Selección de Servicio</span>
+                </h3>
+                <div>
+                  <Label className="text-sm">Servicio o Bono *</Label>
+                  {servicesLoading || packagesLoading ? (
+                    <div className="flex items-center justify-center p-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <span className="ml-2">Cargando opciones...</span>
+                    </div>
+                  ) : (
+                    <ServiceSelectorGrouped
+                      mode="combined"
+                      services={services}
+                      packages={packages}
+                      selectedId={selection?.id}
+                      onSelect={(id, kind) => setSelection({ id, kind })}
+                    />
+                  )}
+                </div>
+              </div>
 
               {/* Center Selection */}
               <div className="space-y-3 sm:space-y-4">
