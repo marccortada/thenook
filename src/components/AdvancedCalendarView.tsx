@@ -153,7 +153,7 @@ const AdvancedCalendarView = () => {
       setEditingBooking(existingBooking);
       setEditClientId(existingBooking.client_id || null);
       setEditNotes(existingBooking.notes || '');
-      setEditPaymentStatus((existingBooking.payment_status as 'pending' | 'completed') || 'pending');
+      setEditPaymentStatus(existingBooking.payment_status === 'paid' ? 'paid' : 'pending');
       setShowEditModal(true);
       return;
     }
@@ -381,7 +381,17 @@ const AdvancedCalendarView = () => {
 
                   {/* Lane slots */}
                   {centerLanes.map((lane) => {
-                    const booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, timeSlot.time);
+                    let booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, timeSlot.time);
+                    if (!booking && lane.id === centerLanes[0].id) {
+                      const fallback = bookings.find(b => {
+                        if (!b.booking_datetime || b.center_id !== selectedCenter || b.lane_id) return false;
+                        const start = parseISO(b.booking_datetime);
+                        const end = addMinutes(start, b.duration_minutes || 60);
+                        const sameDay = isSameDay(start, selectedDate);
+                        return sameDay && timeSlot.time >= start && timeSlot.time < end;
+                      });
+                      if (fallback) booking = fallback;
+                    }
                     const isFirstSlotOfBooking = booking && 
                       format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
@@ -404,13 +414,16 @@ const AdvancedCalendarView = () => {
                             <div className="text-sm font-semibold truncate">
                               {booking.profiles?.first_name} {booking.profiles?.last_name}
                             </div>
-                            {booking.payment_status === 'completed' && (
+                            {booking.payment_status === 'paid' && (
                               <div className="absolute top-1 right-1">
                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                               </div>
                             )}
                             <div className="text-xs text-muted-foreground truncate">
                               {booking.services?.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {booking.profiles?.phone}
                             </div>
                             <div className="text-xs font-medium mt-1">
                               €{((booking.total_price_cents || 0) / 100).toFixed(0)}
@@ -508,7 +521,7 @@ const AdvancedCalendarView = () => {
                               </div>
                               <div className="text-xs opacity-75 flex items-center gap-1">
                                 {format(bookingTime, 'HH:mm')}
-                                {booking.payment_status === 'completed' && (
+                                {booking.payment_status === 'paid' && (
                                   <CheckCircle2 className="h-3 w-3 text-green-600" />
                                 )}
                               </div>
@@ -693,13 +706,13 @@ const AdvancedCalendarView = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="payment">Estado de pago</Label>
-                <Select value={editPaymentStatus} onValueChange={(v: 'pending' | 'completed') => setEditPaymentStatus(v)}>
+                <Select value={editPaymentStatus} onValueChange={(v: 'pending' | 'paid') => setEditPaymentStatus(v)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="completed">Pagado</SelectItem>
+                    <SelectItem value="paid">Pagado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
