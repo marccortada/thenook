@@ -57,11 +57,19 @@ const AdvancedCalendarView = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
 
+  const [createClientId, setCreateClientId] = useState<string | null>(null);
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingBooking, setEditingBooking] = useState<any | null>(null);
   const [editClientId, setEditClientId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [editPaymentStatus, setEditPaymentStatus] = useState<'pending' | 'paid'>('pending');
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editServiceId, setEditServiceId] = useState<string>('');
+  const [editDuration, setEditDuration] = useState<number>(60);
+  const [editTime, setEditTime] = useState<Date>(new Date());
   
   // Form state
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
@@ -92,10 +100,11 @@ const AdvancedCalendarView = () => {
   // Generate time slots from 8:00 to 22:00 every 30 minutes
   const generateTimeSlots = (): TimeSlot[] => {
     const slots: TimeSlot[] = [];
+    const base = startOfDay(selectedDate);
     for (let hour = 8; hour <= 22; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         if (hour === 22 && minute > 0) break; // Stop at 22:00
-        const time = new Date();
+        const time = new Date(base);
         time.setHours(hour, minute, 0, 0);
         slots.push({
           time,
@@ -154,6 +163,13 @@ const AdvancedCalendarView = () => {
       setEditClientId(existingBooking.client_id || null);
       setEditNotes(existingBooking.notes || '');
       setEditPaymentStatus(existingBooking.payment_status === 'paid' ? 'paid' : 'pending');
+      setEditServiceId(existingBooking.service_id || '');
+      setEditDuration(existingBooking.duration_minutes || 60);
+      const dt = parseISO(existingBooking.booking_datetime);
+      setEditTime(dt);
+      setEditName(`${existingBooking.profiles?.first_name || ''} ${existingBooking.profiles?.last_name || ''}`.trim());
+      setEditEmail(existingBooking.profiles?.email || '');
+      setEditPhone(existingBooking.profiles?.phone || '');
       setShowEditModal(true);
       return;
     }
@@ -173,35 +189,32 @@ const AdvancedCalendarView = () => {
   // Create booking
   const createBooking = async () => {
     try {
-      if (!bookingForm.clientName || !bookingForm.clientEmail || !bookingForm.serviceId) {
-        toast({
-          title: "Error",
-          description: "Por favor completa todos los campos obligatorios",
-          variant: "destructive",
-        });
+      if (!bookingForm.serviceId) {
+        toast({ title: 'Error', description: 'Selecciona un servicio', variant: 'destructive' });
+        return;
+      }
+      if (!createClientId && !bookingForm.clientEmail) {
+        toast({ title: 'Error', description: 'Selecciona un cliente o introduce email', variant: 'destructive' });
         return;
       }
 
-      // Create or get client profile
-      let clientProfile;
-      if (bookingForm.clientEmail) {
+      // Determine client profile
+      let clientIdToUse: string | null = createClientId;
+      if (!clientIdToUse && bookingForm.clientEmail) {
         const { data: existingProfile } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id')
           .eq('email', bookingForm.clientEmail)
           .maybeSingle();
-
         if (existingProfile) {
-          clientProfile = existingProfile;
-          // Update existing profile if needed
-          await updateClient(existingProfile.id, {
+          clientIdToUse = existingProfile.id as string;
+          await updateClient(existingProfile.id as string, {
             first_name: bookingForm.clientName.split(' ')[0],
             last_name: bookingForm.clientName.split(' ').slice(1).join(' '),
             phone: bookingForm.clientPhone,
             email: bookingForm.clientEmail,
           });
         } else {
-          // Create new profile
           const { data: newProfile, error: profileError } = await supabase
             .from('profiles')
             .insert([{
@@ -211,11 +224,10 @@ const AdvancedCalendarView = () => {
               phone: bookingForm.clientPhone,
               role: 'client'
             }])
-            .select()
+            .select('id')
             .single();
-
           if (profileError) throw profileError;
-          clientProfile = newProfile;
+          clientIdToUse = (newProfile as any).id as string;
         }
       }
 
@@ -232,7 +244,7 @@ const AdvancedCalendarView = () => {
       const { error: bookingError } = await supabase
         .from('bookings')
         .insert({
-          client_id: clientProfile?.id,
+          client_id: clientIdToUse,
           service_id: bookingForm.serviceId,
           center_id: bookingForm.centerId,
           lane_id: bookingForm.laneId,
@@ -247,13 +259,11 @@ const AdvancedCalendarView = () => {
 
       if (bookingError) throw bookingError;
 
-      toast({
-        title: "✅ Reserva Creada",
-        description: `Reserva para ${bookingForm.clientName} confirmada exitosamente.`,
-      });
+      toast({ title: '✅ Reserva Creada', description: 'Reserva creada correctamente.' });
 
       setShowBookingModal(false);
       setSelectedSlot(null);
+      setCreateClientId(null);
       setBookingForm({
         clientName: '',
         clientPhone: '',
@@ -266,15 +276,10 @@ const AdvancedCalendarView = () => {
         notes: ''
       });
 
-      // Refresh bookings
       await refetchBookings();
     } catch (error) {
       console.error('Error creating booking:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la reserva. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'No se pudo crear la reserva.', variant: 'destructive' });
     }
   };
 
@@ -282,13 +287,32 @@ const AdvancedCalendarView = () => {
   const saveBookingEdits = async () => {
     try {
       if (!editingBooking) return;
+
+      // Update client profile if requested
+      if (editClientId) {
+        const [first, ...rest] = editName.trim().split(' ');
+        await updateClient(editClientId, {
+          first_name: first || undefined,
+          last_name: rest.join(' ') || undefined,
+          phone: editPhone || undefined,
+          email: editEmail || undefined,
+        });
+      }
+
+      // Build booking updates
+      const baseDate = parseISO(editingBooking.booking_datetime);
+      const newDateTime = new Date(baseDate);
+      newDateTime.setHours(editTime.getHours(), editTime.getMinutes(), 0, 0);
+
       const updates: any = {
         notes: editNotes || null,
         payment_status: editPaymentStatus,
+        service_id: editServiceId || editingBooking.service_id,
+        duration_minutes: editDuration || editingBooking.duration_minutes,
+        booking_datetime: newDateTime.toISOString(),
       };
-      if (editClientId) {
-        updates.client_id = editClientId;
-      }
+      if (editClientId) updates.client_id = editClientId;
+
       const { error } = await supabase
         .from('bookings')
         .update(updates)
@@ -617,33 +641,17 @@ const AdvancedCalendarView = () => {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="clientName">Nombre del Cliente *</Label>
-              <Input
-                id="clientName"
-                value={bookingForm.clientName}
-                onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
-                placeholder="Nombre completo"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="clientPhone">Teléfono</Label>
-              <Input
-                id="clientPhone"
-                value={bookingForm.clientPhone}
-                onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
-                placeholder="+34 600 000 000"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="clientEmail">Correo Electrónico *</Label>
-              <Input
-                id="clientEmail"
-                type="email"
-                value={bookingForm.clientEmail}
-                onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
-                placeholder="cliente@example.com"
+              <ClientSelector
+                label="Cliente"
+                onSelect={(c) => {
+                  setCreateClientId(c.id);
+                  setBookingForm((prev) => ({
+                    ...prev,
+                    clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                    clientPhone: c.phone || '',
+                    clientEmail: c.email || '',
+                  }));
+                }}
               />
             </div>
 
@@ -703,6 +711,61 @@ const AdvancedCalendarView = () => {
                 selectedId={editingBooking.client_id || undefined}
                 onSelect={(c) => setEditClientId(c.id)}
               />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nombre</Label>
+                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nombre y apellidos" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Teléfono</Label>
+                  <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+34 600 000 000" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Email</Label>
+                  <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="cliente@example.com" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Servicio</Label>
+                  <Select value={editServiceId} onValueChange={(v) => setEditServiceId(v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar servicio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.filter(s => s.center_id === (editingBooking.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name} - €{(service.price_cents / 100).toFixed(0)} ({service.duration_minutes}min)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Hora</Label>
+                  <Select value={format(editTime, 'HH:mm')} onValueChange={(val) => {
+                    const [h,m] = val.split(':').map(Number);
+                    const d = new Date(editTime);
+                    d.setHours(h, m, 0, 0);
+                    setEditTime(d);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeSlots.map(ts => (
+                        <SelectItem key={ts.hour} value={ts.hour}>{ts.hour}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Duración (min)</Label>
+                  <Input type="number" min={15} step={15} value={editDuration} onChange={(e) => setEditDuration(parseInt(e.target.value || '60', 10))} />
+                </div>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="payment">Estado de pago</Label>
