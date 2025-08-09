@@ -20,7 +20,8 @@ import {
   Phone,
   Mail,
   Save,
-  X
+  X,
+  CheckCircle2
 } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -29,6 +30,7 @@ import { useBookings, useCenters, useLanes, useServices } from '@/hooks/useDatab
 import { useClients } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import ClientSelector from '@/components/ClientSelector';
 
 interface TimeSlot {
   time: Date;
@@ -54,6 +56,12 @@ const AdvancedCalendarView = () => {
   const [selectedCenter, setSelectedCenter] = useState<string>('');
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingBooking, setEditingBooking] = useState<any | null>(null);
+  const [editClientId, setEditClientId] = useState<string | null>(null);
+  const [editNotes, setEditNotes] = useState('');
+  const [editPaymentStatus, setEditPaymentStatus] = useState<'pending' | 'paid'>('pending');
   
   // Form state
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
@@ -142,7 +150,11 @@ const AdvancedCalendarView = () => {
     const existingBooking = getBookingForSlot(centerId, laneId, date, timeSlot);
     
     if (existingBooking) {
-      // TODO: Show booking details modal
+      setEditingBooking(existingBooking);
+      setEditClientId(existingBooking.client_id || null);
+      setEditNotes(existingBooking.notes || '');
+      setEditPaymentStatus((existingBooking.payment_status as 'pending' | 'completed') || 'pending');
+      setShowEditModal(true);
       return;
     }
 
@@ -266,6 +278,33 @@ const AdvancedCalendarView = () => {
     }
   };
 
+  // Edit existing booking
+  const saveBookingEdits = async () => {
+    try {
+      if (!editingBooking) return;
+      const updates: any = {
+        notes: editNotes || null,
+        payment_status: editPaymentStatus,
+      };
+      if (editClientId) {
+        updates.client_id = editClientId;
+      }
+      const { error } = await supabase
+        .from('bookings')
+        .update(updates)
+        .eq('id', editingBooking.id);
+      if (error) throw error;
+
+      toast({ title: 'Reserva actualizada', description: 'Los cambios se han guardado correctamente.' });
+      setShowEditModal(false);
+      setEditingBooking(null);
+      await refetchBookings();
+    } catch (err) {
+      console.error('Error updating booking', err);
+      toast({ title: 'Error', description: 'No se pudo actualizar la reserva.', variant: 'destructive' });
+    }
+  };
+
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -365,6 +404,11 @@ const AdvancedCalendarView = () => {
                             <div className="text-sm font-semibold truncate">
                               {booking.profiles?.first_name} {booking.profiles?.last_name}
                             </div>
+                            {booking.payment_status === 'completed' && (
+                              <div className="absolute top-1 right-1">
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              </div>
+                            )}
                             <div className="text-xs text-muted-foreground truncate">
                               {booking.services?.name}
                             </div>
@@ -462,8 +506,11 @@ const AdvancedCalendarView = () => {
                               <div className="font-medium">
                                 {booking.profiles?.first_name} {booking.profiles?.last_name}
                               </div>
-                              <div className="text-xs opacity-75">
+                              <div className="text-xs opacity-75 flex items-center gap-1">
                                 {format(bookingTime, 'HH:mm')}
+                                {booking.payment_status === 'completed' && (
+                                  <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                )}
                               </div>
                             </div>
                           );
@@ -625,6 +672,59 @@ const AdvancedCalendarView = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Booking Modal */}
+      <Dialog open={showEditModal} onOpenChange={(open) => { setShowEditModal(open); if (!open) setEditingBooking(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Reserva</DialogTitle>
+            <DialogDescription>Modifica notas, pago y cliente.</DialogDescription>
+          </DialogHeader>
+
+          {editingBooking && (
+            <div className="space-y-4">
+              <ClientSelector
+                label="Cliente"
+                selectedId={editingBooking.client_id || undefined}
+                onSelect={(c) => setEditClientId(c.id)}
+              />
+
+              <div className="space-y-2">
+                <Label htmlFor="payment">Estado de pago</Label>
+                <Select value={editPaymentStatus} onValueChange={(v: 'pending' | 'completed') => setEditPaymentStatus(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pendiente</SelectItem>
+                    <SelectItem value="completed">Pagado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notesEdit">Notas internas</Label>
+                <Textarea
+                  id="notesEdit"
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  rows={4}
+                  placeholder="Añade notas internas..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => { setShowEditModal(false); setEditingBooking(null); }}>
+                  <X className="h-4 w-4 mr-2" /> Cancelar
+                </Button>
+                <Button onClick={saveBookingEdits}>
+                  <Save className="h-4 w-4 mr-2" /> Guardar cambios
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
