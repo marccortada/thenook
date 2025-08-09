@@ -51,16 +51,15 @@ const HappyHourManagement = () => {
   ];
 
   const fetchHappyHours = async () => {
+    setIsLoading(true);
     try {
-      // Temporal: usar consulta directa hasta que se complete la migración
       const { data, error } = await supabase
-        .from('profiles')
+        .from('happy_hours')
         .select('*')
-        .limit(0); // No queremos datos, solo verificar conexión
+        .order('created_at', { ascending: false });
 
-      if (error) console.error('Error de conexión:', error);
-      // Por ahora mostramos datos dummy
-      setHappyHours([]);
+      if (error) throw error;
+      setHappyHours(data || []);
     } catch (error) {
       console.error('Error fetching happy hours:', error);
       toast({
@@ -79,21 +78,34 @@ const HappyHourManagement = () => {
 
   const handleCreateHappyHour = async () => {
     if (!newHappyHour.name.trim()) {
-      toast({
-        title: "Error",
-        description: "El nombre es obligatorio",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" });
+      return;
+    }
+    if (!newHappyHour.start_time || !newHappyHour.end_time) {
+      toast({ title: "Error", description: "Horas de inicio y fin obligatorias", variant: "destructive" });
       return;
     }
 
     setIsCreating(true);
     try {
-      // Temporal: simulamos la creación exitosa
-      toast({
-        title: "Happy Hour creado",
-        description: "La funcionalidad se completará cuando se ejecute la migración de la base de datos",
-      });
+      const { data, error } = await supabase
+        .from('happy_hours')
+        .insert({
+          name: newHappyHour.name.trim(),
+          description: newHappyHour.description?.trim() || null,
+          start_time: newHappyHour.start_time,
+          end_time: newHappyHour.end_time,
+          discount_percentage: newHappyHour.discount_percentage,
+          days_of_week: newHappyHour.days_of_week,
+          is_active: newHappyHour.is_active,
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      toast({ title: "Happy Hour creado", description: "Se ha guardado correctamente" });
+      setHappyHours((prev) => [data as HappyHour, ...prev]);
 
       // Reset form
       setNewHappyHour({
@@ -103,33 +115,50 @@ const HappyHourManagement = () => {
         end_time: "18:00",
         discount_percentage: 30,
         days_of_week: [1, 2, 3, 4, 5, 6, 7],
-        is_active: true
+        is_active: true,
       });
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating happy hour:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el happy hour",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error?.message || "No se pudo crear el happy hour", variant: "destructive" });
     } finally {
       setIsCreating(false);
     }
   };
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
-    toast({
-      title: "Estado actualizado",
-      description: "La funcionalidad se completará cuando se ejecute la migración de la base de datos",
-    });
+    try {
+      const { error, data } = await supabase
+        .from('happy_hours')
+        .update({ is_active: !currentStatus })
+        .eq('id', id)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      setHappyHours((prev) => prev.map(h => h.id === id ? { ...h, is_active: !currentStatus } : h));
+      toast({ title: "Estado actualizado", description: `Ahora está ${!currentStatus ? 'activo' : 'inactivo'}` });
+    } catch (error: any) {
+      console.error('Error updating status:', error);
+      toast({ title: "Error", description: error?.message || "No se pudo actualizar el estado", variant: "destructive" });
+    }
   };
 
   const handleDelete = async (id: string) => {
-    toast({
-      title: "Happy Hour eliminado",
-      description: "La funcionalidad se completará cuando se ejecute la migración de la base de datos",
-    });
+    try {
+      const { error } = await supabase
+        .from('happy_hours')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setHappyHours((prev) => prev.filter(h => h.id !== id));
+      toast({ title: "Happy Hour eliminado", description: "Se ha eliminado correctamente" });
+    } catch (error: any) {
+      console.error('Error deleting happy hour:', error);
+      toast({ title: "Error", description: error?.message || "No se pudo eliminar el happy hour", variant: "destructive" });
+    }
   };
 
   const toggleDay = (day: number) => {
