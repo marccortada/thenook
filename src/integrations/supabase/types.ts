@@ -416,7 +416,7 @@ export type Database = {
         Row: {
           client_id: string
           created_at: string
-          expiry_date: string
+          expiry_date: string | null
           id: string
           notes: string | null
           package_id: string
@@ -431,7 +431,7 @@ export type Database = {
         Insert: {
           client_id: string
           created_at?: string
-          expiry_date: string
+          expiry_date?: string | null
           id?: string
           notes?: string | null
           package_id: string
@@ -446,7 +446,7 @@ export type Database = {
         Update: {
           client_id?: string
           created_at?: string
-          expiry_date?: string
+          expiry_date?: string | null
           id?: string
           notes?: string | null
           package_id?: string
