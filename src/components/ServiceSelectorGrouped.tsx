@@ -20,6 +20,7 @@ const isRitual = (name?: string, description?: string) => {
   const txt = `${name || ""} ${description || ""}`.toLowerCase();
   return txt.includes("ritual");
 };
+const isTresPersonas = (name?: string) => !!name?.toLowerCase().match(/(tres|3)\s*personas/);
 
 const currency = (cents?: number) =>
   typeof cents === "number" ? (cents / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" }) : "";
@@ -109,27 +110,34 @@ function ServicesAccordions({
     {
       key: "masajes-individuales",
       title: "Masajes Individuales",
-      items: massageServices.filter((s) => s.type === "massage" && !isDuo(s.name) && !isCuatroManos(s.name) && !isRitual(s.name, s.description)),
+      items: massageServices.filter(
+        (s) => s.type === "massage" && !isDuo(s.name) && !isCuatroManos(s.name) && !isRitual(s.name, s.description) && !isTresPersonas(s.name)
+      ),
     },
     {
       key: "masajes-cuatro-manos",
       title: "Masajes a Cuatro Manos",
-      items: massageServices.filter((s) => isCuatroManos(s.name)),
+      items: massageServices.filter((s) => isCuatroManos(s.name) && !isTresPersonas(s.name)),
     },
     {
       key: "masajes-dos-personas",
       title: "Masajes para dos Personas",
-      items: massageServices.filter((s) => s.type === "massage" && isDuo(s.name) && !isRitual(s.name, s.description)),
+      items: massageServices.filter((s) => s.type === "massage" && isDuo(s.name) && !isRitual(s.name, s.description) && !isTresPersonas(s.name)),
     },
     {
       key: "rituales-individuales",
       title: "Rituales Individuales",
-      items: massageServices.filter((s) => isRitual(s.name, s.description) && !isDuo(s.name)),
+      items: massageServices.filter((s) => isRitual(s.name, s.description) && !isDuo(s.name) && !isTresPersonas(s.name)),
     },
     {
       key: "rituales-dos-personas",
       title: "Rituales para dos Personas",
-      items: massageServices.filter((s) => isRitual(s.name, s.description) && isDuo(s.name)),
+      items: massageServices.filter((s) => isRitual(s.name, s.description) && isDuo(s.name) && !isTresPersonas(s.name)),
+    },
+    {
+      key: "tratamientos-tres-personas",
+      title: "Tratamientos tres personas",
+      items: massageServices.filter((s) => isTresPersonas(s.name)),
     },
   ];
 
