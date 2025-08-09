@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import ManageBooking from "./pages/ManageBooking";
 import ClientReservation from "./pages/ClientReservation";
 import PackagesPage from "./pages/PackagesPage";
+import BuyVoucherPage from "./pages/BuyVoucherPage";
 import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
 import NotificationDashboard from "./pages/NotificationDashboard";
@@ -24,7 +25,15 @@ const App = () => (
         <Routes>
           <Route path="/" element={<ClientReservation />} />
           <Route path="/manage-booking" element={<ManageBooking />} />
-          <Route path="/bonos" element={<PackagesPage />} />
+          <Route path="/comprar-bono" element={<BuyVoucherPage />} />
+          <Route 
+            path="/bonos"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <PackagesPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route 
             path="/panel-gestion-nook-madrid-2024" 

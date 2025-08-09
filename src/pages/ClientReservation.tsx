@@ -361,7 +361,7 @@ const ClientReservation = () => {
             </Card>
 
             <Card className="hover-lift glass-effect border-primary/20 cursor-pointer transition-all duration-200 hover:scale-105">
-              <Link to="/bonos" className="block">
+              <Link to="/comprar-bono" className="block">
                 <CardContent className="p-4 sm:p-6 text-center">
                   <div className="flex flex-col items-center space-y-3">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -372,7 +372,7 @@ const ClientReservation = () => {
                         Bonos y Tarjetas de Regalo
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Gestiona tus bonos y tarjetas (próximamente)
+                        Compra un bono para ti o para regalar
                       </p>
                     </div>
                   </div>
