@@ -30,6 +30,7 @@ import { useClientPackages, useExpiringPackages, type ClientPackage } from '@/ho
 import { usePackages } from '@/hooks/useDatabase';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import ClientSelector from '@/components/ClientSelector';
 
 const PackageManagement = () => {
   const [selectedClient, setSelectedClient] = useState<string>('');
@@ -40,6 +41,7 @@ const PackageManagement = () => {
   const { packages, loading, error, refetch, createPackage, usePackageSession, cancelPackage, updatePackageNotes } = useClientPackages(selectedClient);
   const { expiringPackages, loading: expiringLoading, refetch: refetchExpiring } = useExpiringPackages(7);
   const { packages: availablePackages } = usePackages();
+  const [createClientId, setCreateClientId] = useState<string>("");
 
   const getStatusColor = (status: ClientPackage['status']) => {
     switch (status) {
@@ -80,13 +82,18 @@ const PackageManagement = () => {
     const formData = new FormData(e.currentTarget);
     
     const packageData = {
-      client_id: formData.get('client_id') as string,
+      client_id: createClientId,
       package_id: formData.get('package_id') as string,
       expiry_date: formData.get('expiry_date') as string,
       purchase_price_cents: parseInt(formData.get('purchase_price_cents') as string) * 100,
       total_sessions: parseInt(formData.get('total_sessions') as string),
       notes: formData.get('notes') as string || undefined,
     };
+
+    if (!packageData.client_id) {
+      // Evitar envío si no se seleccionó cliente
+      return;
+    }
 
     try {
       await createPackage(packageData);
@@ -198,13 +205,14 @@ const PackageManagement = () => {
               </DialogHeader>
               <form onSubmit={handleCreatePackage} className="space-y-4">
                 <div>
-                  <Label htmlFor="client_id">Cliente ID</Label>
-                  <Input 
-                    id="client_id" 
-                    name="client_id" 
-                    placeholder="UUID del cliente"
-                    required 
+                  <ClientSelector
+                    label="Cliente"
+                    placeholder="Busca por nombre, email o teléfono"
+                    onSelect={(c) => setCreateClientId(c.id)}
                   />
+                  {!createClientId && (
+                    <p className="text-xs text-muted-foreground mt-1">Selecciona un cliente para continuar</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="package_id">Paquete</Label>
