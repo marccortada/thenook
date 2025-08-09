@@ -99,7 +99,7 @@ export const useClientPackages = (clientId?: string) => {
   const createPackage = async (packageData: {
     client_id: string;
     package_id: string;
-    expiry_date: string;
+    expiry_date?: string; // opcional
     purchase_price_cents: number;
     total_sessions: number;
     notes?: string;
@@ -111,12 +111,16 @@ export const useClientPackages = (clientId?: string) => {
 
       if (voucherError) throw voucherError;
 
+      // Preparar datos, omitiendo expiry_date si no se proporciona
+      const insertData: any = {
+        ...packageData,
+        voucher_code: voucherData,
+      };
+      if (!packageData.expiry_date) delete insertData.expiry_date;
+
       const { data, error } = await supabase
         .from('client_packages')
-        .insert([{
-          ...packageData,
-          voucher_code: voucherData,
-        }])
+        .insert([insertData])
         .select(`
           *,
           packages!inner(

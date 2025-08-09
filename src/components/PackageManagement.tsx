@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -23,7 +23,6 @@ import {
   RotateCcw,
   Edit3,
   Trash2,
-  QrCode,
   AlertCircle
 } from 'lucide-react';
 import { useClientPackages, useExpiringPackages, type ClientPackage } from '@/hooks/useClientPackages';
@@ -37,6 +36,7 @@ const PackageManagement = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [notesText, setNotesText] = useState('');
+  const [selectedPackageId, setSelectedPackageId] = useState<string>('');
   
   const { packages, loading, error, refetch, createPackage, usePackageSession, cancelPackage, updatePackageNotes } = useClientPackages(selectedClient);
   const { expiringPackages, loading: expiringLoading, refetch: refetchExpiring } = useExpiringPackages(7);
@@ -81,17 +81,18 @@ const PackageManagement = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    const selectedPkg = availablePackages.find((p) => p.id === selectedPackageId);
+
     const packageData = {
       client_id: createClientId,
-      package_id: formData.get('package_id') as string,
-      expiry_date: formData.get('expiry_date') as string,
-      purchase_price_cents: parseInt(formData.get('purchase_price_cents') as string) * 100,
-      total_sessions: parseInt(formData.get('total_sessions') as string),
-      notes: formData.get('notes') as string || undefined,
+      package_id: selectedPackageId,
+      expiry_date: (formData.get('expiry_date') as string) || undefined,
+      purchase_price_cents: selectedPkg?.price_cents ?? 0,
+      total_sessions: selectedPkg?.sessions_count ?? 1,
+      notes: (formData.get('notes') as string) || undefined,
     };
 
-    if (!packageData.client_id) {
-      // Evitar envío si no se seleccionó cliente
+    if (!packageData.client_id || !packageData.package_id) {
       return;
     }
 
@@ -199,10 +200,11 @@ const PackageManagement = () => {
                 Crear Bono
               </Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Crear Nuevo Bono</DialogTitle>
-              </DialogHeader>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Crear Nuevo Bono</DialogTitle>
+                  <DialogDescription>Selecciona el cliente y el paquete; el precio y sesiones se rellenan automáticamente.</DialogDescription>
+                </DialogHeader>
               <form onSubmit={handleCreatePackage} className="space-y-4">
                 <div>
                   <ClientSelector
@@ -216,7 +218,7 @@ const PackageManagement = () => {
                 </div>
                 <div>
                   <Label htmlFor="package_id">Paquete</Label>
-                  <Select name="package_id" required>
+                  <Select name="package_id" required value={selectedPackageId} onValueChange={setSelectedPackageId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar paquete" />
                     </SelectTrigger>
@@ -228,36 +230,18 @@ const PackageManagement = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedPackageId && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Se asignarán {availablePackages.find(p=>p.id===selectedPackageId)?.sessions_count} sesiones por €{((availablePackages.find(p=>p.id===selectedPackageId)?.price_cents||0)/100).toFixed(2)}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <Label htmlFor="expiry_date">Fecha de Vencimiento</Label>
+                  <Label htmlFor="expiry_date">Fecha de Vencimiento (opcional)</Label>
                   <Input 
                     id="expiry_date" 
                     name="expiry_date" 
                     type="datetime-local"
-                    required 
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="purchase_price_cents">Precio (€)</Label>
-                  <Input 
-                    id="purchase_price_cents" 
-                    name="purchase_price_cents" 
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="49.99"
-                    required 
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="total_sessions">Total Sesiones</Label>
-                  <Input 
-                    id="total_sessions" 
-                    name="total_sessions" 
-                    type="number"
-                    min="1"
-                    required 
                   />
                 </div>
                 <div>
@@ -272,7 +256,7 @@ const PackageManagement = () => {
                   <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
                     Cancelar
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" disabled={!createClientId || !selectedPackageId}>
                     Crear Bono
                   </Button>
                 </div>
@@ -361,10 +345,7 @@ const PackageManagement = () => {
                     <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <QrCode className="h-5 w-5 text-muted-foreground" />
-                            <span className="font-mono text-sm font-medium">{pkg.voucher_code}</span>
-                          </div>
+                          <div className="text-sm font-medium">Código del bono: <span className="font-mono">{pkg.voucher_code}</span></div>
                           <Badge className={getStatusColor(pkg.status)}>
                             {getStatusLabel(pkg.status)}
                           </Badge>
@@ -533,7 +514,7 @@ const PackageManagement = () => {
                       </div>
                       <div className="mt-2 flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <QrCode className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-xs">Código del bono:</span>
                           <span className="font-mono text-sm">{pkg.voucher_code}</span>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -571,10 +552,7 @@ const PackageManagement = () => {
                     <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <QrCode className="h-5 w-5 text-muted-foreground" />
-                            <span className="font-mono text-sm font-medium">{pkg.voucher_code}</span>
-                          </div>
+                        <div className="text-sm font-medium">Código del bono: <span className="font-mono">{pkg.voucher_code}</span></div>
                           <Badge className="bg-green-100 text-green-800 border-green-300">
                             Activo
                           </Badge>
