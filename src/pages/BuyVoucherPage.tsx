@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ const currency = (cents?: number) =>
 
 export default function BuyVoucherPage() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { packages } = usePackages();
   const [pkgId, setPkgId] = useState<string>("");
   const [mode, setMode] = useState<"self" | "gift">("self");
@@ -63,6 +65,10 @@ export default function BuyVoucherPage() {
 
   return (
     <main className="container mx-auto px-4 py-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Comprar Bono</h1>
+        <Button variant="outline" onClick={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }}>Volver</Button>
+      </div>
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Compra tu Bono</CardTitle>
