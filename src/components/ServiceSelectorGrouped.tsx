@@ -63,7 +63,7 @@ function PackagesAccordion({
   const dedupedPackages = Array.from(pmap.values());
 
   return (
-    <Accordion type="single" collapsible className="w-full">
+    <Accordion type="multiple" defaultValue={["bonos"]} className="w-full">
       <AccordionItem value="bonos">
         <AccordionTrigger className="px-3">Bonos</AccordionTrigger>
         <AccordionContent className="space-y-2">
@@ -144,7 +144,7 @@ function ServicesAccordions({
   const visibleGroups = groups.filter((g) => g.items.length > 0);
 
   return (
-    <Accordion type="single" collapsible className="w-full">
+    <Accordion type="multiple" defaultValue={visibleGroups.map((g) => g.key)} className="w-full">
       {visibleGroups.map((group) => (
         <AccordionItem key={group.key} value={group.key}>
           <AccordionTrigger className="px-3">{group.title}</AccordionTrigger>
