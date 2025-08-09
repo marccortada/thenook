@@ -63,7 +63,7 @@ function PackagesAccordion({
   const dedupedPackages = Array.from(pmap.values());
 
   return (
-    <Accordion type="multiple" defaultValue={["bonos"]} className="w-full">
+    <Accordion type="multiple" defaultValue={[]} className="w-full">
       <AccordionItem value="bonos">
         <AccordionTrigger className="px-3">Bonos</AccordionTrigger>
         <AccordionContent className="space-y-2">
@@ -76,7 +76,7 @@ function PackagesAccordion({
               title={pkg.name}
               subtitle={`${pkg.sessions_count} sesiones${pkg.services?.duration_minutes ? ` · ${pkg.services.duration_minutes} min` : ""} · ${currency(pkg.price_cents)}`}
               right={
-                <Button size="sm" variant={selectedId === pkg.id ? "default" : "outline"} onClick={() => onSelect(pkg.id)}>
+                <Button type="button" size="sm" variant={selectedId === pkg.id ? "default" : "outline"} onClick={() => onSelect(pkg.id)}>
                   {selectedId === pkg.id ? "Seleccionado" : "Seleccionar"}
                 </Button>
               }
@@ -144,7 +144,7 @@ function ServicesAccordions({
   const visibleGroups = groups.filter((g) => g.items.length > 0);
 
   return (
-    <Accordion type="multiple" defaultValue={visibleGroups.map((g) => g.key)} className="w-full">
+    <Accordion type="multiple" defaultValue={[]} className="w-full">
       {visibleGroups.map((group) => (
         <AccordionItem key={group.key} value={group.key}>
           <AccordionTrigger className="px-3">{group.title}</AccordionTrigger>
@@ -155,7 +155,7 @@ function ServicesAccordions({
                 title={s.name}
                 subtitle={`${s.duration_minutes} min · ${currency(s.price_cents)}`}
                 right={
-                  <Button size="sm" variant={selectedId === s.id ? "default" : "outline"} onClick={() => onSelect(s.id)}>
+                  <Button type="button" size="sm" variant={selectedId === s.id ? "default" : "outline"} onClick={() => onSelect(s.id)}>
                     {selectedId === s.id ? "Seleccionado" : "Seleccionar"}
                   </Button>
                 }

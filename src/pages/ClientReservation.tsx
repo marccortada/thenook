@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search } from "lucide-react";
+import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,7 +114,7 @@ const ClientReservation = () => {
     if (!formData.clientName || !formData.center || !formData.date || !formData.time || !selection) {
       toast({
         title: "Error",
-        description: !selection ? "Selecciona un servicio o bono" : "Por favor completa todos los campos obligatorios",
+        description: !selection ? "Selecciona un servicio" : "Por favor completa todos los campos obligatorios",
         variant: "destructive",
       });
       return;
@@ -321,7 +321,7 @@ const ClientReservation = () => {
       <main className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
         {/* Quick Access Buttons */}
         <div className="max-w-4xl mx-auto mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card className="hover-lift glass-effect border-primary/20 cursor-pointer transition-all duration-200 hover:scale-105">
               <Link to="/manage-booking" className="block">
                 <CardContent className="p-4 sm:p-6 text-center">
@@ -331,7 +331,7 @@ const ClientReservation = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-primary">
-                        Gestionar mi Reserva
+                        Gestionar / Cancelar Reservas
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Ver, modificar o cancelar una reserva existente
@@ -358,6 +358,26 @@ const ClientReservation = () => {
                   </div>
                 </div>
               </CardContent>
+            </Card>
+
+            <Card className="hover-lift glass-effect border-primary/20 cursor-pointer transition-all duration-200 hover:scale-105">
+              <Link to="/bonos" className="block">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <div className="flex flex-col items-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Gift className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-primary">
+                        Bonos y Tarjetas de Regalo
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Gestiona tus bonos y tarjetas (próximamente)
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Link>
             </Card>
           </div>
         </div>
@@ -484,19 +504,19 @@ const ClientReservation = () => {
                   <span>Selección de Servicio</span>
                 </h3>
                 <div>
-                  <Label className="text-sm">Servicio o Bono *</Label>
-                  {servicesLoading || packagesLoading ? (
+                  <Label className="text-sm">Servicio *</Label>
+                  {servicesLoading ? (
                     <div className="flex items-center justify-center p-4">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                       <span className="ml-2">Cargando opciones...</span>
                     </div>
                   ) : (
                     <ServiceSelectorGrouped
-                      mode="combined"
+                      mode="individual"
                       services={services}
-                      packages={packages}
+                      packages={[]}
                       selectedId={selection?.id}
-                      onSelect={(id, kind) => setSelection({ id, kind })}
+                      onSelect={(id) => setSelection({ id, kind: "service" })}
                     />
                   )}
                 </div>

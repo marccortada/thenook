@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import ManageBooking from "./pages/ManageBooking";
 import ClientReservation from "./pages/ClientReservation";
+import PackagesPage from "./pages/PackagesPage";
 import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
 import NotificationDashboard from "./pages/NotificationDashboard";
@@ -23,6 +24,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<ClientReservation />} />
           <Route path="/manage-booking" element={<ManageBooking />} />
+          <Route path="/bonos" element={<PackagesPage />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route 
             path="/panel-gestion-nook-madrid-2024" 
