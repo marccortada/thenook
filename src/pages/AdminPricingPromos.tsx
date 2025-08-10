@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useServices, usePackages } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import PackageManagement from "@/components/PackageManagement";
+
 
 const currency = (cents?: number) => typeof cents === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(cents/100) : "-";
 
@@ -42,6 +42,62 @@ export default function AdminPricingPromos() {
       toast({ title: 'Guardado', description: 'Servicio actualizado' });
       setServiceEdits((prev) => { const n = { ...prev }; delete n[id]; return n; });
       refetchServices();
+    }
+  };
+
+  // Bonos (paquetes) - edición de precio/sesiones/estado + alta
+  const [packageEdits, setPackageEdits] = useState<Record<string, { price_cents: number; sessions_count: number; active: boolean }>>({});
+  const [newPackage, setNewPackage] = useState<{ name: string; service_id?: string; sessions_count: number; price_cents: number; active: boolean }>({
+    name: '',
+    service_id: undefined,
+    sessions_count: 5,
+    price_cents: 0,
+    active: true
+  });
+
+  const handlePackageChange = (id: string, field: 'price_cents'|'sessions_count'|'active', value: any) => {
+    setPackageEdits((prev) => ({
+      ...prev,
+      [id]: {
+        price_cents: prev[id]?.price_cents ?? packages.find(p=>p.id===id)?.price_cents ?? 0,
+        sessions_count: prev[id]?.sessions_count ?? packages.find(p=>p.id===id)?.sessions_count ?? 1,
+        active: prev[id]?.active ?? packages.find(p=>p.id===id)?.active ?? true,
+        [field]: value
+      }
+    }));
+  };
+
+  const savePackage = async (id: string) => {
+    const patch = packageEdits[id];
+    if (!patch) return;
+    const { error } = await (supabase as any).from('packages').update(patch).eq('id', id);
+    if (error) {
+      toast({ title:'Error', description:'No se pudo actualizar el bono', variant:'destructive' });
+    } else {
+      toast({ title:'Guardado', description:'Bono actualizado' });
+      setPackageEdits((prev)=>{ const n={...prev}; delete n[id]; return n; });
+      refetchPackages();
+    }
+  };
+
+  const createPackage = async () => {
+    if (!newPackage.name || newPackage.sessions_count <= 0) {
+      toast({ title:'Campos requeridos', description:'Nombre y sesiones > 0', variant:'destructive' });
+      return;
+    }
+    const { error } = await (supabase as any).from('packages').insert({
+      name: newPackage.name,
+      service_id: newPackage.service_id || null,
+      sessions_count: newPackage.sessions_count,
+      price_cents: newPackage.price_cents,
+      active: newPackage.active
+    });
+    if (error) {
+      toast({ title:'Error', description:'No se pudo crear el bono', variant:'destructive' });
+    } else {
+      toast({ title:'Creado', description:'Bono creado' });
+      setNewPackage({ name:'', service_id: undefined, sessions_count:5, price_cents:0, active:true });
+      refetchPackages();
     }
   };
 
@@ -135,8 +191,96 @@ export default function AdminPricingPromos() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="packages" className="mt-6">
-            <PackageManagement />
+          <TabsContent value="packages" className="mt-6 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Bonos (paquetes) - precios y sesiones</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {packages.map((p) => {
+                  const edit = packageEdits[p.id] || { price_cents: p.price_cents, sessions_count: p.sessions_count, active: p.active };
+                  return (
+                    <div key={p.id} className="border rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <div className="font-medium">{p.name}</div>
+                          <div className="text-xs text-muted-foreground">{p.services?.name ? `Servicio: ${p.services?.name} · ` : ''}{edit.sessions_count} sesiones</div>
+                        </div>
+                        <div className="text-sm font-semibold">{currency(edit.price_cents)}</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 items-end">
+                        <div>
+                          <Label>Precio (céntimos)</Label>
+                          <Input type="number" value={edit.price_cents} onChange={(e) => handlePackageChange(p.id, 'price_cents', parseInt(e.target.value || '0', 10))} />
+                        </div>
+                        <div>
+                          <Label>Sesiones</Label>
+                          <Input type="number" value={edit.sessions_count} onChange={(e) => handlePackageChange(p.id, 'sessions_count', parseInt(e.target.value || '0', 10))} />
+                        </div>
+                        <div>
+                          <Label>Estado</Label>
+                          <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(p.id, 'active', v === 'true')}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="true">Activo</SelectItem>
+                              <SelectItem value="false">Inactivo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-2 flex justify-end">
+                          <Button size="sm" onClick={() => savePackage(p.id)}>Guardar</Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Crear nuevo bono</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                <div className="md:col-span-2">
+                  <Label>Nombre</Label>
+                  <Input value={newPackage.name} onChange={(e) => setNewPackage({ ...newPackage, name: e.target.value })} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Servicio (opcional)</Label>
+                  <Select value={newPackage.service_id || ''} onValueChange={(v) => setNewPackage({ ...newPackage, service_id: v || undefined })}>
+                    <SelectTrigger><SelectValue placeholder="Selecciona servicio" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Sin servicio</SelectItem>
+                      {services.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Sesiones</Label>
+                  <Input type="number" value={newPackage.sessions_count} onChange={(e) => setNewPackage({ ...newPackage, sessions_count: parseInt(e.target.value || '0', 10) })} />
+                </div>
+                <div>
+                  <Label>Precio (céntimos)</Label>
+                  <Input type="number" value={newPackage.price_cents} onChange={(e) => setNewPackage({ ...newPackage, price_cents: parseInt(e.target.value || '0', 10) })} />
+                </div>
+                <div>
+                  <Label>Estado</Label>
+                  <Select value={String(newPackage.active)} onValueChange={(v) => setNewPackage({ ...newPackage, active: v === 'true' })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Activo</SelectItem>
+                      <SelectItem value="false">Inactivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-6 flex justify-end">
+                  <Button onClick={createPackage}>Crear</Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="promotions" className="mt-6 space-y-4">
