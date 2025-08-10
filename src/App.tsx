@@ -8,6 +8,7 @@ import ManageBooking from "./pages/ManageBooking";
 import ClientReservation from "./pages/ClientReservation";
 import PackagesPage from "./pages/PackagesPage";
 import BuyVoucherPage from "./pages/BuyVoucherPage";
+import GiftCardsPage from "./pages/GiftCardsPage";
 import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
 import NotificationDashboard from "./pages/NotificationDashboard";
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/" element={<ClientReservation />} />
           <Route path="/manage-booking" element={<ManageBooking />} />
           <Route path="/comprar-bono" element={<BuyVoucherPage />} />
+          <Route path="/tarjetas-regalo" element={<GiftCardsPage />} />
           <Route 
             path="/bonos"
             element={
