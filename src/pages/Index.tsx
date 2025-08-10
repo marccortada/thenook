@@ -10,7 +10,7 @@ import PackageManagement from "@/components/PackageManagement";
 import ClientManagement from "@/components/ClientManagement";
 import SpecialistClients from "@/components/SpecialistClients";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
-import HappyHourManagement from "@/components/HappyHourManagement";
+
 import AdvancedDashboard from "@/components/AdvancedDashboard";
 import ReportsCenter from "@/components/ReportsCenter";
 
@@ -92,7 +92,6 @@ const Index = () => {
               <option value="clients">👥 Gestión de Clientes</option>
               {(isAdmin || isEmployee) && <option value="analytics">📊 Analytics</option>}
               {isAdmin && <option value="packages">🎁 Bonos</option>}
-              {isAdmin && <option value="happyhour">% Happy Hour</option>}
               
               {isAdmin && <option value="control">🎛️ Centro de Control</option>}
             </select>
@@ -151,16 +150,6 @@ const Index = () => {
             )}
             
             
-            {isAdmin && (
-              <Button
-                variant={activeTab === "happyhour" ? "default" : "outline"}
-                onClick={() => setActiveTab("happyhour")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Percent className="h-5 w-5" />
-                <span className="text-sm font-medium">Happy Hour</span>
-              </Button>
-            )}
             
             
             {isAdmin && (
@@ -200,11 +189,6 @@ const Index = () => {
           )}
 
 
-          {isAdmin && (
-            <TabsContent value="happyhour" className="mt-6">
-              <HappyHourManagement />
-            </TabsContent>
-          )}
 
 
           {isAdmin && (

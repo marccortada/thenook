@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 
+import HappyHourManagement from "@/components/HappyHourManagement";
+
 const currency = (cents?: number) => typeof cents === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(cents/100) : "-";
 
 export default function AdminPricingPromos() {
@@ -284,6 +286,7 @@ export default function AdminPricingPromos() {
           </TabsContent>
 
           <TabsContent value="promotions" className="mt-6 space-y-4">
+            <HappyHourManagement />
             <Card>
               <CardHeader>
                 <CardTitle>Nueva promoción</CardTitle>
