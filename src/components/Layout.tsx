@@ -164,11 +164,11 @@ const Layout = ({ children }: LayoutProps) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 z-[100] bg-background border shadow-lg" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">
+                      <div className="flex flex-col space-y-1 max-w-[220px] sm:max-w-[280px]">
+                        <p className="text-sm font-medium leading-none truncate">
                           {getUserDisplayName()}
                         </p>
-                        <p className="text-xs leading-none text-muted-foreground">
+                        <p className="text-xs leading-none text-muted-foreground truncate">
                           {user?.email}
                         </p>
                         <div className="pt-1">

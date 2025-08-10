@@ -378,7 +378,7 @@ const AdvancedCalendarView = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="h-[600px]">
+          <ScrollArea className="h-[60vh] md:h-[70vh]">
             <div className="grid grid-cols-[80px_repeat(4,1fr)] gap-0 min-w-[800px]">
               {/* Header */}
               <div className="sticky top-0 z-10 bg-background border-b">
