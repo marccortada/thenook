@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 
@@ -137,11 +137,6 @@ const useLocalCart = () => {
   return { items, add, remove, clear, totalCents };
 };
 
-const PlaceholderImage = ({ text = "Tarjeta de Regalo" }: { text?: string }) => (
-  <div className="h-full w-full rounded-md bg-muted/60 text-muted-foreground flex items-center justify-center">
-    <span className="text-xs sm:text-sm font-medium">{text}</span>
-  </div>
-);
 
 const GiftCardsPage = () => {
   const { items, add, remove, clear, totalCents } = useLocalCart();
@@ -245,19 +240,15 @@ const GiftCardsPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col gap-3">
-                  <AspectRatio ratio={4 / 3}>
-                    {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.imageUrl}
-                        alt={`Tarjeta de regalo ${item.name}`}
-                        className="h-full w-full object-cover rounded-md"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <PlaceholderImage />
-                    )}
-                  </AspectRatio>
+                  {item.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.imageUrl}
+                      alt={`Tarjeta de regalo ${item.name}`}
+                      className="h-auto w-full object-cover rounded-md"
+                      loading="lazy"
+                    />
+                  )}
                   <p className="text-xs text-muted-foreground min-h-8">
                     {item.description}
                   </p>
