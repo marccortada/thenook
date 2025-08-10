@@ -14,6 +14,8 @@ import NotFound from "./pages/NotFound";
 import NotificationDashboard from "./pages/NotificationDashboard";
 import ReportsCenter from "./pages/ReportsCenter";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminPricingPromos from "./pages/AdminPricingPromos";
+import RedeemCode from "./pages/RedeemCode";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +64,22 @@ const App = () => (
             } 
           />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route 
+            path="/panel-gestion-nook-madrid-2024/precios-promos" 
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <AdminPricingPromos />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/panel-gestion-nook-madrid-2024/canjear" 
+            element={
+              <ProtectedRoute requireEmployee={true}>
+                <RedeemCode />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </BrowserRouter>

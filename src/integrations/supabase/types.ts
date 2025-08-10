@@ -412,6 +412,55 @@ export type Database = {
           },
         ]
       }
+      client_package_usages: {
+        Row: {
+          booking_id: string | null
+          client_package_id: string
+          id: string
+          notes: string | null
+          used_at: string
+          used_by: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          client_package_id: string
+          id?: string
+          notes?: string | null
+          used_at?: string
+          used_by?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          client_package_id?: string
+          id?: string
+          notes?: string | null
+          used_at?: string
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_package_usages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_package_usages_client_package_id_fkey"
+            columns: ["client_package_id"]
+            isOneToOne: false
+            referencedRelation: "client_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_package_usages_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_packages: {
         Row: {
           client_id: string
@@ -860,6 +909,121 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "report_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_card_redemptions: {
+        Row: {
+          amount_cents: number
+          booking_id: string | null
+          client_id: string | null
+          gift_card_id: string
+          id: string
+          notes: string | null
+          redeemed_at: string
+          redeemed_by: string | null
+        }
+        Insert: {
+          amount_cents: number
+          booking_id?: string | null
+          client_id?: string | null
+          gift_card_id: string
+          id?: string
+          notes?: string | null
+          redeemed_at?: string
+          redeemed_by?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          booking_id?: string | null
+          client_id?: string | null
+          gift_card_id?: string
+          id?: string
+          notes?: string | null
+          redeemed_at?: string
+          redeemed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_card_redemptions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_card_redemptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_card_redemptions_gift_card_id_fkey"
+            columns: ["gift_card_id"]
+            isOneToOne: false
+            referencedRelation: "gift_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_card_redemptions_redeemed_by_fkey"
+            columns: ["redeemed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_cards: {
+        Row: {
+          assigned_client_id: string | null
+          code: string
+          created_at: string
+          expiry_date: string | null
+          id: string
+          initial_balance_cents: number
+          purchased_at: string
+          purchased_by_email: string | null
+          purchased_by_name: string | null
+          remaining_balance_cents: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_client_id?: string | null
+          code: string
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          initial_balance_cents: number
+          purchased_at?: string
+          purchased_by_email?: string | null
+          purchased_by_name?: string | null
+          remaining_balance_cents: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_client_id?: string | null
+          code?: string
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          initial_balance_cents?: number
+          purchased_at?: string
+          purchased_by_email?: string | null
+          purchased_by_name?: string | null
+          remaining_balance_cents?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_cards_assigned_client_id_fkey"
+            columns: ["assigned_client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1541,6 +1705,74 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          applies_to: string
+          coupon_code: string | null
+          created_at: string
+          created_by: string | null
+          days_of_week: number[] | null
+          description: string | null
+          end_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          start_at: string | null
+          target_id: string | null
+          time_end: string | null
+          time_start: string | null
+          type: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          applies_to: string
+          coupon_code?: string | null
+          created_at?: string
+          created_by?: string | null
+          days_of_week?: number[] | null
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          start_at?: string | null
+          target_id?: string | null
+          time_end?: string | null
+          time_start?: string | null
+          type: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          applies_to?: string
+          coupon_code?: string | null
+          created_at?: string
+          created_by?: string | null
+          days_of_week?: number[] | null
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          start_at?: string | null
+          target_id?: string | null
+          time_end?: string | null
+          time_start?: string | null
+          type?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_order_items: {
         Row: {
           created_at: string
@@ -2186,6 +2418,15 @@ export type Database = {
           p_new_values?: Json
         }
         Returns: undefined
+      }
+      redeem_voucher_code: {
+        Args: {
+          p_code: string
+          p_booking_id?: string
+          p_amount_cents?: number
+          p_notes?: string
+        }
+        Returns: Json
       }
       search_entities_by_codes: {
         Args: { codes: string[] }

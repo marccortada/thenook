@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
-import { LogOut, User, Calendar, Settings, Menu, Home, Bell, X } from "lucide-react";
+import { LogOut, User, Calendar, Settings, Menu, Home, Bell, X, Hash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -98,7 +98,28 @@ const Layout = ({ children }: LayoutProps) => {
                             <Home className="mr-2 h-4 w-4" />
                             <span>Panel Admin</span>
                           </Button>
-                          
+                          <Button 
+                            variant="ghost" 
+                            className="justify-start"
+                            onClick={() => {
+                              navigate("/panel-gestion-nook-madrid-2024/precios-promos");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Precios y Promos</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="justify-start"
+                            onClick={() => {
+                              navigate("/panel-gestion-nook-madrid-2024/canjear");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            <Hash className="mr-2 h-4 w-4" />
+                            <span>Canjear Código</span>
+                          </Button>
                           <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4">
                             Comunicación
                           </div>
@@ -139,6 +160,14 @@ const Layout = ({ children }: LayoutProps) => {
                         <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/notifications")}>
                           <Bell className="mr-2 h-4 w-4" />
                           <span>Notificaciones</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/precios-promos")}>
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Precios y Promos</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/canjear")}>
+                          <Hash className="mr-2 h-4 w-4" />
+                          <span>Canjear Código</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
