@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 export default function RedeemCode() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [bookingId, setBookingId] = useState("");
   const [amount, setAmount] = useState<number | undefined>();
@@ -47,7 +49,12 @@ export default function RedeemCode() {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Canjear código</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Canjear código</h1>
+          <Button variant="outline" onClick={() => navigate('/panel-gestion-nook-madrid-2024')}>
+            <ArrowLeft className="h-4 w-4 mr-2" /> Salir
+          </Button>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Introduce el código del bono o tarjeta</CardTitle>
