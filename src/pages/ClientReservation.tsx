@@ -321,7 +321,7 @@ const ClientReservation = () => {
       <main className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
         {/* Quick Access Buttons */}
         <div className="max-w-4xl mx-auto mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="hover-lift glass-effect border-primary/20 cursor-pointer transition-all duration-200 hover:scale-105">
               <Link to="/manage-booking" className="block">
                 <CardContent className="p-4 sm:p-6 text-center">
@@ -369,7 +369,7 @@ const ClientReservation = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-primary">
-                        Bonos y Tarjetas de Regalo
+                        Comprar Bono
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Compra un bono para ti o para regalar
@@ -379,8 +379,28 @@ const ClientReservation = () => {
                 </CardContent>
               </Link>
             </Card>
+
+            <Card className="hover-lift glass-effect border-primary/20 cursor-pointer transition-all duration-200 hover:scale-105">
+              <Link to="/tarjetas-regalo" className="block">
+                <CardContent className="p-4 sm:p-6 text-center">
+                  <div className="flex flex-col items-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Gift className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-primary">
+                        Tarjetas de Regalo
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Elige una tarjeta regalo
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Link>
+            </Card>
           </div>
-        </div>
+          </div>
         
         <div className="max-w-4xl mx-auto">
         <Card className="hover-lift glass-effect border-primary/20">
