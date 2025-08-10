@@ -173,7 +173,7 @@ export default function AdminPricingPromos() {
                             <Label>Estado</Label>
                             <Select value={String(edit.active)} onValueChange={(v) => handleServiceChange(s.id, 'active', v === 'true')}>
                               <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="z-50 bg-background">
                                 <SelectItem value="true">Activo</SelectItem>
                                 <SelectItem value="false">Inactivo</SelectItem>
                               </SelectContent>
@@ -221,10 +221,10 @@ export default function AdminPricingPromos() {
                           <Label>Estado</Label>
                           <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(p.id, 'active', v === 'true')}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="true">Activo</SelectItem>
-                              <SelectItem value="false">Inactivo</SelectItem>
-                            </SelectContent>
+                             <SelectContent className="z-50 bg-background">
+                               <SelectItem value="true">Activo</SelectItem>
+                               <SelectItem value="false">Inactivo</SelectItem>
+                             </SelectContent>
                           </Select>
                         </div>
                         <div className="col-span-2 flex justify-end">
@@ -248,10 +248,10 @@ export default function AdminPricingPromos() {
                 </div>
                 <div className="md:col-span-2">
                   <Label>Servicio (opcional)</Label>
-                  <Select value={newPackage.service_id || ''} onValueChange={(v) => setNewPackage({ ...newPackage, service_id: v || undefined })}>
+                  <Select value={newPackage.service_id ?? 'none'} onValueChange={(v) => setNewPackage({ ...newPackage, service_id: v === 'none' ? undefined : v })}>
                     <SelectTrigger><SelectValue placeholder="Selecciona servicio" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Sin servicio</SelectItem>
+                    <SelectContent className="z-50 bg-background">
+                      <SelectItem value="none">Sin servicio</SelectItem>
                       {services.map((s) => (
                         <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                       ))}
@@ -270,10 +270,10 @@ export default function AdminPricingPromos() {
                   <Label>Estado</Label>
                   <Select value={String(newPackage.active)} onValueChange={(v) => setNewPackage({ ...newPackage, active: v === 'true' })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">Activo</SelectItem>
-                      <SelectItem value="false">Inactivo</SelectItem>
-                    </SelectContent>
+                     <SelectContent className="z-50 bg-background">
+                       <SelectItem value="true">Activo</SelectItem>
+                       <SelectItem value="false">Inactivo</SelectItem>
+                     </SelectContent>
                   </Select>
                 </div>
                 <div className="md:col-span-6 flex justify-end">
@@ -297,10 +297,10 @@ export default function AdminPricingPromos() {
                   <Label>Tipo</Label>
                   <Select value={promo.type} onValueChange={(v) => setPromo({ ...promo, type: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percentage">% Porcentaje</SelectItem>
-                      <SelectItem value="fixed_amount">Importe fijo</SelectItem>
-                    </SelectContent>
+                     <SelectContent className="z-50 bg-background">
+                       <SelectItem value="percentage">% Porcentaje</SelectItem>
+                       <SelectItem value="fixed_amount">Importe fijo</SelectItem>
+                     </SelectContent>
                   </Select>
                 </div>
                 <div>
@@ -311,12 +311,12 @@ export default function AdminPricingPromos() {
                   <Label>Aplica a</Label>
                   <Select value={promo.applies_to} onValueChange={(v) => setPromo({ ...promo, applies_to: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todo</SelectItem>
-                      <SelectItem value="service">Servicio</SelectItem>
-                      <SelectItem value="package">Bono</SelectItem>
-                      <SelectItem value="gift_card">Tarjeta</SelectItem>
-                    </SelectContent>
+                     <SelectContent className="z-50 bg-background">
+                       <SelectItem value="all">Todo</SelectItem>
+                       <SelectItem value="service">Servicio</SelectItem>
+                       <SelectItem value="package">Bono</SelectItem>
+                       <SelectItem value="gift_card">Tarjeta</SelectItem>
+                     </SelectContent>
                   </Select>
                 </div>
                 <div className="md:col-span-2">
