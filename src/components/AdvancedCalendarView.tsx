@@ -367,7 +367,7 @@ const AdvancedCalendarView = () => {
     const centerName = centers.find(c => c.id === selectedCenter)?.name || 'Centro';
 
     return (
-      <Card className="w-full">
+      <Card className="w-full rounded-none border-0 sm:rounded-md sm:border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -483,7 +483,7 @@ const AdvancedCalendarView = () => {
     const centerName = centers.find(c => c.id === selectedCenter)?.name || 'Centro';
 
     return (
-      <Card className="w-full">
+      <Card className="w-full rounded-none border-0 sm:rounded-md sm:border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />

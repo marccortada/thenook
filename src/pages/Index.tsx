@@ -72,10 +72,7 @@ const Index = () => {
             <p className="text-muted-foreground">
               Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
             </p>
-            {/* Debug info visible */}
-            <div className="mt-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-              Debug: Usuario={user?.email}, Admin={isAdmin ? 'Sí' : 'No'}, Empleado={isEmployee ? 'Sí' : 'No'}
-            </div>
+            {/* Debug info visible - removed */}
           </div>
         )}
 
@@ -185,7 +182,7 @@ const Index = () => {
             <ReservationSystem />
           </TabsContent>
 
-          <TabsContent value="bookings" className="mt-6 space-y-6">
+          <TabsContent value="bookings" className="mt-6 space-y-6 -mx-4 sm:mx-0">
             <AdvancedCalendarView />
           </TabsContent>
 
