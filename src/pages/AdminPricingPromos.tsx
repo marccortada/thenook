@@ -223,45 +223,74 @@ export default function AdminPricingPromos() {
     }
   };
 
-  // Carga inicial
-  useEffect(() => {
-    fetchGiftOptions();
-    fetchGiftDenoms();
-  }, []);
+  // Catálogo oficial de tarjetas (vinculado con inicio)
+  const CATALOG_GIFT_ITEMS: { name: string; amount_cents: number }[] = [
+    { name: 'Piernas Cansadas', amount_cents: 4500 },
+    { name: 'Masaje Descontracturante 55 minutos', amount_cents: 6000 },
+    { name: 'Reflexología Podal', amount_cents: 6000 },
+    { name: 'Shiatsu', amount_cents: 6000 },
+    { name: 'Masaje para Embarazada 50 minutos', amount_cents: 6000 },
+    { name: 'Masaje Relajante 55 minutos', amount_cents: 6000 },
+    { name: 'Masaje Deportivo 50 minutos', amount_cents: 6000 },
+    { name: 'Masaje con Piedras Calientes', amount_cents: 6500 },
+    { name: 'Bambuterapia Masaje con Cañas de Bambú', amount_cents: 6500 },
+    { name: 'Ritual Romántico Individual', amount_cents: 7000 },
+    { name: 'Ritual Energizante Individual', amount_cents: 7000 },
+    { name: 'Drenaje Linfático 75 minutos', amount_cents: 7500 },
+    { name: 'Antiestrés The Nook', amount_cents: 8000 },
+    { name: 'Masaje para Embarazada 75 minutos', amount_cents: 8000 },
+    { name: 'Masaje Descontracturante 75 minutos', amount_cents: 8000 },
+    { name: 'Masaje dos Personas 45 minutos', amount_cents: 9000 },
+    { name: 'Ritual del Kobido Individual', amount_cents: 9000 },
+    { name: 'Masaje 90 minutos', amount_cents: 9000 },
+    { name: 'Ritual Sakura Individual', amount_cents: 10000 },
+    { name: 'Masaje dos Personas 55 minutos', amount_cents: 11000 },
+    { name: 'Masaje a Cuatro Manos 50 minutos', amount_cents: 11000 },
+    { name: 'Masaje Relajante Extra Largo 110 minutos', amount_cents: 11500 },
+    { name: 'Bambuterapia Masaje con Cañas de Bambú para dos Personas', amount_cents: 12000 },
+    { name: 'Masaje con Piedras Calientes para dos personas', amount_cents: 12000 },
+    { name: 'Ritual Beauty Individual', amount_cents: 12500 },
+    { name: 'Ritual Energizante para dos Personas', amount_cents: 13000 },
+    { name: 'Ritual Romántico para dos Personas', amount_cents: 13000 },
+    { name: 'Masaje dos Personas 75 minutos', amount_cents: 14000 },
+    { name: 'Masaje a Cuatro Manos 80 minutos', amount_cents: 16000 },
+    { name: 'Ritual del Kobido para dos Personas', amount_cents: 17000 },
+    { name: 'Masaje dos Personas 110 minutos', amount_cents: 19000 },
+    { name: 'Ritual Sakura para dos Personas', amount_cents: 19000 },
+    { name: 'Ritual Beauty para dos Personas', amount_cents: 23000 },
+    { name: 'BONO 5 masajes para Embarazada', amount_cents: 26400 },
+    { name: 'BONO 5 masajes Reductor Anticelulítico', amount_cents: 26400 },
+    { name: 'BONO 5 masajes 55 minutos', amount_cents: 26400 },
+    { name: 'BONO 5 masajes 75 minutos', amount_cents: 35500 },
+    { name: 'BONO 5 masajes dos Personas 45 minutos', amount_cents: 39600 },
+    { name: 'BONO 10 masajes 55 minutos', amount_cents: 51000 },
+    { name: 'BONO 10 masajes Reductor Anticelulítico', amount_cents: 51000 },
+    { name: 'BONO 10 masajes para Embarazada', amount_cents: 51000 },
+    { name: 'BONO 5 masajes dos Personas 75 minutos', amount_cents: 61500 },
+  ];
 
-  // Sugerencias por defecto si no hay opciones
-  const DEFAULT_GIFT_AMOUNTS = Array.from(new Set([
-    2500, 5000, 6000, 6500, 7000, 7500, 8000, 9000, 10000, 11000, 11500,
-    12000, 12500, 13000, 14000, 16000, 17000, 19000, 23000, 26400, 35500,
-    39600, 51000, 61500,
-  ])).sort((a, b) => a - b);
-  const seedingRef = useRef(false);
+  const seedCatalogGiftOptions = async () => {
+    const { data: existing } = await (supabase as any)
+      .from('gift_card_options')
+      .select('id, name');
+    const existingNames = new Set((existing || []).map((e: any) => (e.name || '').trim().toLowerCase()));
 
-  const seedDefaultGiftOptions = async () => {
-    if (seedingRef.current) return;
-    seedingRef.current = true;
-    try {
-      const toInsert = DEFAULT_GIFT_AMOUNTS.map((amt) => ({
-        name: `Tarjeta ${new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amt / 100)}`,
-        amount_cents: amt,
-        is_active: true,
-      }));
-      const { error } = await (supabase as any).from('gift_card_options').insert(toInsert);
-      if (!error) {
-        toast({ title: 'Opciones creadas', description: 'Se cargaron opciones sugeridas de tarjetas' });
-        fetchGiftOptions();
-      }
-    } finally {
-      seedingRef.current = false;
+    const toInsert = CATALOG_GIFT_ITEMS
+      .filter((i) => !existingNames.has(i.name.trim().toLowerCase()))
+      .map((i) => ({ name: i.name, amount_cents: i.amount_cents, is_active: true }));
+
+    if (toInsert.length === 0) {
+      toast({ title: 'Catálogo actualizado', description: 'Ya están todas las opciones.' });
+      return;
+    }
+    const { error } = await (supabase as any).from('gift_card_options').insert(toInsert);
+    if (error) {
+      toast({ title: 'Error', description: 'No se pudieron crear las tarjetas', variant: 'destructive' });
+    } else {
+      toast({ title: 'Listo', description: `Añadidas ${toInsert.length} tarjetas` });
+      fetchGiftOptions();
     }
   };
-
-  // Intentar sembrar si realmente no hay nada
-  useEffect(() => {
-    if (giftOptions.length === 0) {
-      seedDefaultGiftOptions();
-    }
-  }, [giftOptions.length]);
   const handleGiftChange = (id: string, field: 'name'|'amount_cents'|'is_active', value: any) => {
     const current = giftOptions.find((o: any) => o.id === id);
     setGiftEdits((prev) => ({
@@ -489,15 +518,18 @@ export default function AdminPricingPromos() {
 
           <TabsContent value="giftcards" className="mt-6 space-y-4">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-row items-center justify-between gap-2">
                 <CardTitle>Tarjetas regalo - opciones disponibles</CardTitle>
-                {giftOptions.length === 0 && (
-                  giftDenoms.length > 0 ? (
-                    <Button size="sm" variant="outline" onClick={importGiftOptions}>Crear desde existentes</Button>
-                  ) : (
-                    <Button size="sm" variant="outline" onClick={seedDefaultGiftOptions}>Cargar sugerencias</Button>
-                  )
-                )}
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="ghost" onClick={seedCatalogGiftOptions}>Añadir faltantes</Button>
+                  {giftOptions.length === 0 && (
+                    giftDenoms.length > 0 ? (
+                      <Button size="sm" variant="outline" onClick={importGiftOptions}>Crear desde existentes</Button>
+                    ) : (
+                      <Button size="sm" variant="outline" onClick={seedCatalogGiftOptions}>Cargar sugerencias</Button>
+                    )
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {giftOptions.length > 0 ? (

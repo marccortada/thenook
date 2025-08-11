@@ -135,7 +135,23 @@ const useLocalCart = () => {
 
 
 const GiftCardsPage = () => {
-  const giftItems: GiftCardItem[] = useMemo(() => PREDEFINED_GIFTS, []);
+  const [giftOptions, setGiftOptions] = useState<any[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await (supabase as any)
+        .from('gift_card_options')
+        .select('*')
+        .eq('is_active', true)
+        .order('amount_cents', { ascending: true });
+      if (!error) setGiftOptions(data || []);
+    })();
+  }, []);
+
+  const giftItems: GiftCardItem[] = useMemo(() => (
+    (giftOptions || []).map((o: any) => ({ id: o.id, name: o.name, type: 'fixed' as const, priceCents: o.amount_cents }))
+  ), [giftOptions]);
+
   const groups = useMemo(() => {
     const individuales = giftItems.filter((i) => i.type === "fixed" && !isCuatroManos(i.name) && !isRitual(i.name) && !isDuo(i.name));
     const cuatro = giftItems.filter((i) => i.type === "fixed" && isCuatroManos(i.name));
