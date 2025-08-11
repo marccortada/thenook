@@ -169,33 +169,33 @@ function ServicesAccordions({
     },
   ];
 
-  const visibleGroups = groups.filter((g) => g.items.length > 0);
-
+  // Mostrar SIEMPRE todos los grupos (aunque estén vacíos)
   return (
     <Accordion type="multiple" defaultValue={[]} className="w-full">
-      {visibleGroups.map((group) => (
+      {groups.map((group) => (
         <AccordionItem key={group.key} value={group.key}>
           <AccordionTrigger className="px-3">{group.title}</AccordionTrigger>
           <AccordionContent className="space-y-2">
-            {group.items.map((s) => (
-              <ItemRow
-                key={s.id}
-                title={s.name}
-                subtitle={`${s.duration_minutes} min · ${currency(s.price_cents)}`}
-                right={
-                  <Button type="button" size="sm" variant={selectedId === s.id ? "default" : "outline"} onClick={() => onSelect(s.id)}>
-                    {selectedId === s.id ? "Seleccionado" : "Seleccionar"}
-                  </Button>
-                }
-                active={selectedId === s.id}
-              />
-            ))}
+            {group.items.length === 0 ? (
+              <p className="text-sm text-muted-foreground px-3">No hay servicios en esta categoría.</p>
+            ) : (
+              group.items.map((s) => (
+                <ItemRow
+                  key={s.id}
+                  title={s.name}
+                  subtitle={`${s.duration_minutes} min · ${currency(s.price_cents)}`}
+                  right={
+                    <Button type="button" size="sm" variant={selectedId === s.id ? "default" : "outline"} onClick={() => onSelect(s.id)}>
+                      {selectedId === s.id ? "Seleccionado" : "Seleccionar"}
+                    </Button>
+                  }
+                  active={selectedId === s.id}
+                />
+              ))
+            )}
           </AccordionContent>
         </AccordionItem>
       ))}
-      {visibleGroups.length === 0 && (
-        <p className="text-sm text-muted-foreground px-3">No hay servicios disponibles para el centro seleccionado.</p>
-      )}
     </Accordion>
   );
 }
