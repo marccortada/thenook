@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -223,10 +223,45 @@ export default function AdminPricingPromos() {
     }
   };
 
+  // Carga inicial
   useEffect(() => {
     fetchGiftOptions();
     fetchGiftDenoms();
   }, []);
+
+  // Sugerencias por defecto si no hay opciones
+  const DEFAULT_GIFT_AMOUNTS = Array.from(new Set([
+    2500, 5000, 6000, 6500, 7000, 7500, 8000, 9000, 10000, 11000, 11500,
+    12000, 12500, 13000, 14000, 16000, 17000, 19000, 23000, 26400, 35500,
+    39600, 51000, 61500,
+  ])).sort((a, b) => a - b);
+  const seedingRef = useRef(false);
+
+  const seedDefaultGiftOptions = async () => {
+    if (seedingRef.current) return;
+    seedingRef.current = true;
+    try {
+      const toInsert = DEFAULT_GIFT_AMOUNTS.map((amt) => ({
+        name: `Tarjeta ${new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amt / 100)}`,
+        amount_cents: amt,
+        is_active: true,
+      }));
+      const { error } = await (supabase as any).from('gift_card_options').insert(toInsert);
+      if (!error) {
+        toast({ title: 'Opciones creadas', description: 'Se cargaron opciones sugeridas de tarjetas' });
+        fetchGiftOptions();
+      }
+    } finally {
+      seedingRef.current = false;
+    }
+  };
+
+  // Intentar sembrar si realmente no hay nada
+  useEffect(() => {
+    if (giftOptions.length === 0) {
+      seedDefaultGiftOptions();
+    }
+  }, [giftOptions.length]);
   const handleGiftChange = (id: string, field: 'name'|'amount_cents'|'is_active', value: any) => {
     const current = giftOptions.find((o: any) => o.id === id);
     setGiftEdits((prev) => ({
@@ -456,8 +491,12 @@ export default function AdminPricingPromos() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Tarjetas regalo - opciones disponibles</CardTitle>
-                {giftOptions.length === 0 && giftDenoms.length > 0 && (
-                  <Button size="sm" variant="outline" onClick={importGiftOptions}>Crear desde existentes</Button>
+                {giftOptions.length === 0 && (
+                  giftDenoms.length > 0 ? (
+                    <Button size="sm" variant="outline" onClick={importGiftOptions}>Crear desde existentes</Button>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={seedDefaultGiftOptions}>Cargar sugerencias</Button>
+                  )
                 )}
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
