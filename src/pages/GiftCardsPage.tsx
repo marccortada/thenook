@@ -135,9 +135,9 @@ const GiftCardsPage = () => {
   const presets = [25, 50, 100, 200];
 
   useEffect(() => {
-    document.title = "Tarjetas de Regalo | The Nook Madrid";
-
-    const desc = "Tarjetas de regalo elegantes para todos los tratamientos en The Nook Madrid.";
+    document.title = "Tarjetas Regalo | The Nook Madrid";
+ 
+     const desc = "Tarjetas Regalo elegantes para todos los tratamientos en The Nook Madrid.";
     const ensureMeta = (name: string, content: string) => {
       let m = document.querySelector(`meta[name="${name}"]`);
       if (!m) {
@@ -192,11 +192,11 @@ const GiftCardsPage = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-6">
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <article>
           <header className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold">Tarjetas de Regalo</h1>
+              <h1 className="text-2xl font-bold">Tarjetas Regalo</h1>
               <p className="text-sm text-muted-foreground">
                 Elige tu tarjeta regalo. Diseño elegante y 100% responsive.
               </p>
@@ -265,7 +265,7 @@ const GiftCardsPage = () => {
           </header>
 
           <section aria-label="Listado de tarjetas de regalo">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {[...giftItems, custom].map((item) => (
                 <Card key={item.id} className="flex flex-col">
                   <CardHeader className="pb-2">

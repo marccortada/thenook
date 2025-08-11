@@ -244,10 +244,10 @@ const ManageBooking = () => {
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
                 <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>Gestionar mi Reserva</span>
+                <span>Mis Reservas</span>
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Introduce tu email o teléfono para buscar y gestionar tus reservas
+                Introduce tu email o teléfono para buscar tus reservas
               </p>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
@@ -358,39 +358,6 @@ const ManageBooking = () => {
                               >
                                 Pagar ahora
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => startEditing(booking)}
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Modificar
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" size="sm">
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Cancelar
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Cancelar reserva?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Esta acción no se puede deshacer. Tu reserva será cancelada permanentemente.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>No, mantener</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => cancelBooking(booking.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Sí, cancelar
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
                             </div>
                           </div>
                           
