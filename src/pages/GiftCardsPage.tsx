@@ -148,9 +148,21 @@ const GiftCardsPage = () => {
     })();
   }, []);
 
-  const giftItems: GiftCardItem[] = useMemo(() => (
-    (giftOptions || []).map((o: any) => ({ id: o.id, name: o.name, type: 'fixed' as const, priceCents: o.amount_cents }))
-  ), [giftOptions]);
+  const normalize = (s: string) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
+  const giftItems: GiftCardItem[] = useMemo(() => {
+    const byName = new Map((giftOptions || []).map((o: any) => [normalize(o.name || ''), o]));
+    return PREDEFINED_GIFTS.map((ci) => {
+      const match = byName.get(normalize(ci.name));
+      return {
+        id: match?.id ?? ci.id,
+        name: ci.name,
+        type: 'fixed' as const,
+        priceCents: match?.amount_cents ?? ci.priceCents,
+        description: (ci as any).description,
+        imageUrl: (ci as any).imageUrl,
+      };
+    });
+  }, [giftOptions]);
 
   const groups = useMemo(() => {
     const individuales = giftItems.filter((i) => i.type === "fixed" && !isCuatroManos(i.name) && !isRitual(i.name) && !isDuo(i.name));
