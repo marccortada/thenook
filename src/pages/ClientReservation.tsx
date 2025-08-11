@@ -455,32 +455,34 @@ const ClientReservation = () => {
                      </Button>
                    </div>
                    <div className="space-y-2">
-                     {existingBookings.map((booking) => (
-                       <Card key={booking.id} className="p-3 sm:p-4">
-                         <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-                           <div className="flex-1">
-                             <p className="font-medium text-sm sm:text-base">{booking.services?.name}</p>
-                             {booking.type === 'package' ? (
-                               <>
-                                 <p className="text-xs sm:text-sm text-muted-foreground">
-                                   {booking.remaining_sessions} sesiones restantes
-                                 </p>
-                                 <p className="text-xs sm:text-sm text-orange-600">
-                                   Vence: {format(new Date(booking.booking_datetime), "PPP", { locale: es })}
-                                 </p>
-                               </>
-                             ) : (
-                               <>
-                                 <p className="text-xs sm:text-sm text-muted-foreground">
-                                   {format(new Date(booking.booking_datetime), "PPP 'a las' HH:mm", { locale: es })}
-                                 </p>
-                                 <p className="text-xs sm:text-sm text-muted-foreground">
-                                   {booking.centers?.name}
-                                 </p>
-                               </>
-                             )}
-                       </Card>
-                     ))}
+                      {existingBookings.map((booking) => (
+                        <Card key={booking.id} className="p-3 sm:p-4">
+                          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                            <div className="flex-1">
+                              <p className="font-medium text-sm sm:text-base">{booking.services?.name}</p>
+                              {booking.type === 'package' ? (
+                                <>
+                                  <p className="text-xs sm:text-sm text-muted-foreground">
+                                    {booking.remaining_sessions} sesiones restantes
+                                  </p>
+                                  <p className="text-xs sm:text-sm text-orange-600">
+                                    Vence: {format(new Date(booking.booking_datetime), "PPP", { locale: es })}
+                                  </p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-xs sm:text-sm text-muted-foreground">
+                                    {format(new Date(booking.booking_datetime), "PPP 'a las' HH:mm", { locale: es })}
+                                  </p>
+                                  <p className="text-xs sm:text-sm text-muted-foreground">
+                                    {booking.centers?.name}
+                                  </p>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
                    </div>
                  </div>
               )}
