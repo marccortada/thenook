@@ -137,35 +137,25 @@ function ServicesAccordions({
   const groups = [
     {
       key: "masajes-individuales",
-      title: "Masajes Individuales",
+      title: "Masajes individuales",
       items: massageServices.filter(
-        (s) => !isDuo(s.name) && !isCuatroManos(s.name) && !isRitual(s.name, s.description) && !isTresPersonas(s.name)
+        (s) => !isDuo(s.name) && !isCuatroManos(s.name) && !isRitual(s.name, s.description)
       ),
     },
     {
-      key: "masajes-cuatro-manos",
-      title: "Masajes a Cuatro Manos",
-      items: massageServices.filter((s) => isCuatroManos(s.name) && !isTresPersonas(s.name)),
-    },
-    {
       key: "masajes-dos-personas",
-      title: "Masajes para dos Personas",
-      items: massageServices.filter((s) => isDuo(s.name) && !isRitual(s.name, s.description) && !isTresPersonas(s.name)),
+      title: "Masajes para 2 personas",
+      items: massageServices.filter((s) => isDuo(s.name) && !isCuatroManos(s.name) && !isRitual(s.name, s.description)),
     },
     {
-      key: "rituales-individuales",
-      title: "Rituales Individuales",
-      items: massageServices.filter((s) => isRitual(s.name, s.description) && !isDuo(s.name) && !isTresPersonas(s.name)),
+      key: "masajes-cuatro-manos",
+      title: "A 4 manos",
+      items: massageServices.filter((s) => isCuatroManos(s.name)),
     },
     {
-      key: "rituales-dos-personas",
-      title: "Rituales para dos Personas",
-      items: massageServices.filter((s) => isRitual(s.name, s.description) && isDuo(s.name) && !isTresPersonas(s.name)),
-    },
-    {
-      key: "tratamientos-tres-personas",
-      title: "Tratamientos tres personas",
-      items: massageServices.filter((s) => isTresPersonas(s.name)),
+      key: "rituales",
+      title: "Rituales",
+      items: massageServices.filter((s) => isRitual(s.name, s.description)),
     },
   ];
 
