@@ -913,6 +913,33 @@ export type Database = {
           },
         ]
       }
+      gift_card_options: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gift_card_redemptions: {
         Row: {
           amount_cents: number

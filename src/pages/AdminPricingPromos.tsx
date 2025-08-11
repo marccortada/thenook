@@ -69,7 +69,7 @@ export default function AdminPricingPromos() {
       refetchServices();
     }
   };
-  // Bonos (paquetes) - edición de precio/sesiones/estado + alta
+  // Bonos (paquetes) - edición de precio/sesiones/estado + alta (agrupados sin duplicados entre centros)
   const [packageEdits, setPackageEdits] = useState<Record<string, { price_cents: number; sessions_count: number; active: boolean }>>({});
   const [newPackage, setNewPackage] = useState<{ name: string; service_id?: string; sessions_count: number; price_cents: number; active: boolean }>({
     name: '',
@@ -79,27 +79,56 @@ export default function AdminPricingPromos() {
     active: true
   });
 
-  const handlePackageChange = (id: string, field: 'price_cents'|'sessions_count'|'active', value: any) => {
+  const uniquePackages = useMemo(() => {
+    const map = new Map<string, { ids: string[]; name: string; sessions_count: number; price_cents: number; allActive: boolean; service_name?: string }>();
+    packages.forEach((p: any) => {
+      const key = `${(p.name || '').trim().toLowerCase()}|${p.sessions_count}`;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, {
+          ids: [p.id],
+          name: p.name,
+          sessions_count: p.sessions_count,
+          price_cents: p.price_cents,
+          allActive: !!p.active,
+          service_name: p.services?.name
+        });
+      } else {
+        existing.ids.push(p.id);
+        existing.price_cents = Math.min(existing.price_cents, p.price_cents);
+        existing.allActive = existing.allActive && !!p.active;
+        if (!existing.service_name && p.services?.name) existing.service_name = p.services.name;
+      }
+    });
+    return Array.from(map.entries()).map(([key, v]) => ({ key, ...v }));
+  }, [packages]);
+
+  const handlePackageChange = (groupKey: string, field: 'price_cents'|'sessions_count'|'active', value: any) => {
+    const current = uniquePackages.find((g) => g.key === groupKey);
     setPackageEdits((prev) => ({
       ...prev,
-      [id]: {
-        price_cents: prev[id]?.price_cents ?? packages.find(p=>p.id===id)?.price_cents ?? 0,
-        sessions_count: prev[id]?.sessions_count ?? packages.find(p=>p.id===id)?.sessions_count ?? 1,
-        active: prev[id]?.active ?? packages.find(p=>p.id===id)?.active ?? true,
+      [groupKey]: {
+        price_cents: prev[groupKey]?.price_cents ?? (current?.price_cents ?? 0),
+        sessions_count: prev[groupKey]?.sessions_count ?? (current?.sessions_count ?? 1),
+        active: prev[groupKey]?.active ?? (current?.allActive ?? true),
         [field]: value
       }
     }));
   };
 
-  const savePackage = async (id: string) => {
-    const patch = packageEdits[id];
+  const savePackage = async (groupKey: string, ids: string[]) => {
+    const patch = packageEdits[groupKey];
     if (!patch) return;
-    const { error } = await (supabase as any).from('packages').update(patch).eq('id', id);
+    const { error } = await (supabase as any).from('packages').update({
+      price_cents: patch.price_cents,
+      sessions_count: patch.sessions_count,
+      active: patch.active
+    }).in('id', ids);
     if (error) {
       toast({ title:'Error', description:'No se pudo actualizar el bono', variant:'destructive' });
     } else {
-      toast({ title:'Guardado', description:'Bono actualizado' });
-      setPackageEdits((prev)=>{ const n={...prev}; delete n[id]; return n; });
+      toast({ title:'Guardado', description:'Bono actualizado en todos los centros' });
+      setPackageEdits((prev)=>{ const n={...prev}; delete n[groupKey]; return n; });
       refetchPackages();
     }
   };
@@ -159,6 +188,64 @@ export default function AdminPricingPromos() {
     if (!error) fetchPromos();
   };
 
+  // Tarjetas regalo - opciones de importes (sin duplicados)
+  const [giftOptions, setGiftOptions] = useState<any[]>([]);
+  const [giftEdits, setGiftEdits] = useState<Record<string, { name: string; amount_cents: number; is_active: boolean }>>({});
+  const [newGift, setNewGift] = useState<{ name: string; amount_cents: number; is_active: boolean }>({
+    name: '',
+    amount_cents: 0,
+    is_active: true,
+  });
+
+  const fetchGiftOptions = async () => {
+    const { data, error } = await (supabase as any)
+      .from('gift_card_options')
+      .select('*')
+      .order('amount_cents', { ascending: true });
+    if (!error) setGiftOptions(data || []);
+  };
+  useEffect(() => { fetchGiftOptions(); }, []);
+
+  const handleGiftChange = (id: string, field: 'name'|'amount_cents'|'is_active', value: any) => {
+    const current = giftOptions.find((o: any) => o.id === id);
+    setGiftEdits((prev) => ({
+      ...prev,
+      [id]: {
+        name: prev[id]?.name ?? (current?.name ?? ''),
+        amount_cents: prev[id]?.amount_cents ?? (current?.amount_cents ?? 0),
+        is_active: prev[id]?.is_active ?? (current?.is_active ?? true),
+        [field]: value,
+      },
+    }));
+  };
+
+  const saveGift = async (id: string) => {
+    const patch = giftEdits[id];
+    if (!patch) return;
+    const { error } = await (supabase as any).from('gift_card_options').update(patch).eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: 'No se pudo actualizar la opción', variant: 'destructive' });
+    } else {
+      toast({ title: 'Guardado', description: 'Opción actualizada' });
+      setGiftEdits((prev) => { const n = { ...prev }; delete n[id]; return n; });
+      fetchGiftOptions();
+    }
+  };
+
+  const createGift = async () => {
+    if (!newGift.name || newGift.amount_cents <= 0) {
+      toast({ title: 'Campos requeridos', description: 'Nombre y cantidad > 0', variant: 'destructive' });
+      return;
+    }
+    const { error } = await (supabase as any).from('gift_card_options').insert(newGift);
+    if (error) {
+      toast({ title: 'Error', description: 'No se pudo crear la opción (¿duplicada?)', variant: 'destructive' });
+    } else {
+      toast({ title: 'Creada', description: 'Opción de tarjeta creada' });
+      setNewGift({ name: '', amount_cents: 0, is_active: true });
+      fetchGiftOptions();
+    }
+  };
   return (
     <Layout>
       <div className="max-w-6xl mx-auto">
@@ -167,6 +254,7 @@ export default function AdminPricingPromos() {
           <TabsList>
             <TabsTrigger value="services">Servicios</TabsTrigger>
             <TabsTrigger value="packages">Bonos</TabsTrigger>
+            <TabsTrigger value="giftcards">Tarjetas regalo</TabsTrigger>
             <TabsTrigger value="promotions">Promociones</TabsTrigger>
           </TabsList>
 
@@ -222,38 +310,39 @@ export default function AdminPricingPromos() {
                 <CardTitle>Bonos (paquetes) - precios y sesiones</CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {packages.map((p) => {
-                  const edit = packageEdits[p.id] || { price_cents: p.price_cents, sessions_count: p.sessions_count, active: p.active };
+                {uniquePackages.map((g) => {
+                  const edit = packageEdits[g.key] || { price_cents: g.price_cents, sessions_count: g.sessions_count, active: g.allActive };
                   return (
-                    <div key={p.id} className="border rounded-lg p-3">
+                    <div key={g.key} className="border rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div>
-                          <div className="font-medium">{p.name}</div>
-                          <div className="text-xs text-muted-foreground">{p.services?.name ? `Servicio: ${p.services?.name} · ` : ''}{edit.sessions_count} sesiones</div>
+                          <div className="font-medium">{g.name}</div>
+                          <div className="text-xs text-muted-foreground">{g.service_name ? `Servicio: ${g.service_name} · ` : ''}{edit.sessions_count} sesiones</div>
                         </div>
                         <div className="text-sm font-semibold">{currency(edit.price_cents)}</div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 items-end">
                         <div>
                           <Label>Precio (céntimos)</Label>
-                          <Input type="number" value={edit.price_cents} onChange={(e) => handlePackageChange(p.id, 'price_cents', parseInt(e.target.value || '0', 10))} />
+                          <Input type="number" value={edit.price_cents} onChange={(e) => handlePackageChange(g.key, 'price_cents', parseInt(e.target.value || '0', 10))} />
                         </div>
                         <div>
                           <Label>Sesiones</Label>
-                          <Input type="number" value={edit.sessions_count} onChange={(e) => handlePackageChange(p.id, 'sessions_count', parseInt(e.target.value || '0', 10))} />
+                          <Input type="number" value={edit.sessions_count} onChange={(e) => handlePackageChange(g.key, 'sessions_count', parseInt(e.target.value || '0', 10))} />
                         </div>
                         <div>
                           <Label>Estado</Label>
-                          <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(p.id, 'active', v === 'true')}>
+                          <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(g.key, 'active', v === 'true')}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
-                             <SelectContent className="z-50 bg-background">
-                               <SelectItem value="true">Activo</SelectItem>
-                               <SelectItem value="false">Inactivo</SelectItem>
-                             </SelectContent>
+                            <SelectContent className="z-50 bg-background">
+                              <SelectItem value="true">Activo</SelectItem>
+                              <SelectItem value="false">Inactivo</SelectItem>
+                            </SelectContent>
                           </Select>
                         </div>
-                        <div className="col-span-2 flex justify-end">
-                          <Button size="sm" onClick={() => savePackage(p.id)}>Guardar</Button>
+                        <div className="col-span-2 flex items-center justify-between">
+                          <div className="text-xs text-muted-foreground">Se actualizará en todos los centros</div>
+                          <Button size="sm" onClick={() => savePackage(g.key, g.ids)}>Guardar</Button>
                         </div>
                       </div>
                     </div>
@@ -303,6 +392,83 @@ export default function AdminPricingPromos() {
                 </div>
                 <div className="md:col-span-6 flex justify-end">
                   <Button onClick={createPackage}>Crear</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="giftcards" className="mt-6 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tarjetas regalo - opciones disponibles</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {giftOptions.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">Sin opciones aún</div>
+                ) : (
+                  giftOptions.map((o: any) => {
+                    const edit = giftEdits[o.id] || { name: o.name, amount_cents: o.amount_cents, is_active: o.is_active };
+                    return (
+                      <div key={o.id} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="font-medium">{edit.name}</div>
+                          <div className="text-sm font-semibold">{currency(edit.amount_cents)}</div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 items-end">
+                          <div>
+                            <Label>Nombre</Label>
+                            <Input value={edit.name} onChange={(e) => handleGiftChange(o.id, 'name', e.target.value)} />
+                          </div>
+                          <div>
+                            <Label>Importe (céntimos)</Label>
+                            <Input type="number" value={edit.amount_cents} onChange={(e) => handleGiftChange(o.id, 'amount_cents', parseInt(e.target.value || '0', 10))} />
+                          </div>
+                          <div>
+                            <Label>Estado</Label>
+                            <Select value={String(edit.is_active)} onValueChange={(v) => handleGiftChange(o.id, 'is_active', v === 'true')}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent className="z-50 bg-background">
+                                <SelectItem value="true">Activo</SelectItem>
+                                <SelectItem value="false">Inactivo</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="col-span-2 flex justify-end">
+                            <Button size="sm" onClick={() => saveGift(o.id)}>Guardar</Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Crear nueva opción</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                <div className="md:col-span-3">
+                  <Label>Nombre</Label>
+                  <Input value={newGift.name} onChange={(e) => setNewGift({ ...newGift, name: e.target.value })} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Importe (céntimos)</Label>
+                  <Input type="number" value={newGift.amount_cents} onChange={(e) => setNewGift({ ...newGift, amount_cents: parseInt(e.target.value || '0', 10) })} />
+                </div>
+                <div>
+                  <Label>Estado</Label>
+                  <Select value={String(newGift.is_active)} onValueChange={(v) => setNewGift({ ...newGift, is_active: v === 'true' })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent className="z-50 bg-background">
+                      <SelectItem value="true">Activo</SelectItem>
+                      <SelectItem value="false">Inactivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-6 flex justify-end">
+                  <Button onClick={createGift}>Crear</Button>
                 </div>
               </CardContent>
             </Card>
