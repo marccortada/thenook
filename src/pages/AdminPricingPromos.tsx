@@ -196,6 +196,7 @@ export default function AdminPricingPromos() {
     amount_cents: 0,
     is_active: true,
   });
+  const [giftDenoms, setGiftDenoms] = useState<{ amount_cents: number; count: number }[]>([]);
 
   const fetchGiftOptions = async () => {
     const { data, error } = await (supabase as any)
@@ -204,8 +205,28 @@ export default function AdminPricingPromos() {
       .order('amount_cents', { ascending: true });
     if (!error) setGiftOptions(data || []);
   };
-  useEffect(() => { fetchGiftOptions(); }, []);
 
+  const fetchGiftDenoms = async () => {
+    const { data, error } = await (supabase as any)
+      .from('gift_cards')
+      .select('initial_balance_cents, status');
+    if (!error) {
+      const map = new Map<number, { amount_cents: number; count: number }>();
+      (data || []).forEach((row: any) => {
+        const amt = row.initial_balance_cents as number;
+        const prev = map.get(amt);
+        if (!prev) map.set(amt, { amount_cents: amt, count: 1 });
+        else prev.count += 1;
+      });
+      const list = Array.from(map.values()).sort((a, b) => a.amount_cents - b.amount_cents);
+      setGiftDenoms(list);
+    }
+  };
+
+  useEffect(() => {
+    fetchGiftOptions();
+    fetchGiftDenoms();
+  }, []);
   const handleGiftChange = (id: string, field: 'name'|'amount_cents'|'is_active', value: any) => {
     const current = giftOptions.find((o: any) => o.id === id);
     setGiftEdits((prev) => ({
@@ -403,9 +424,7 @@ export default function AdminPricingPromos() {
                 <CardTitle>Tarjetas regalo - opciones disponibles</CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {giftOptions.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">Sin opciones aún</div>
-                ) : (
+                {giftOptions.length > 0 ? (
                   giftOptions.map((o: any) => {
                     const edit = giftEdits[o.id] || { name: o.name, amount_cents: o.amount_cents, is_active: o.is_active };
                     return (
@@ -440,6 +459,20 @@ export default function AdminPricingPromos() {
                       </div>
                     );
                   })
+                ) : giftDenoms.length > 0 ? (
+                  giftDenoms.map((d) => (
+                    <div key={d.amount_cents} className="border rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">Tarjeta regalo</div>
+                          <div className="text-xs text-muted-foreground">{d.count} en base de datos</div>
+                        </div>
+                        <div className="text-sm font-semibold">{currency(d.amount_cents)}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-muted-foreground">Sin opciones disponibles</div>
                 )}
               </CardContent>
             </Card>
