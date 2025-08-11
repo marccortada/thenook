@@ -33,15 +33,29 @@ export default function BuyVoucherPage() {
   };
 
   const categorized = useMemo(() => {
+    // Deduplicar por nombre manteniendo el menor precio
+    const pmap = new Map<string, any>();
+    for (const p of packages as any[]) {
+      const key = (p?.name || "").trim().toLowerCase();
+      const existing = pmap.get(key);
+      const price = typeof p?.price_cents === 'number' ? p.price_cents : Number.MAX_SAFE_INTEGER;
+      const existingPrice = typeof existing?.price_cents === 'number' ? existing.price_cents : Number.MAX_SAFE_INTEGER;
+      if (!existing || price < existingPrice) {
+        pmap.set(key, p);
+      }
+    }
+    const list = Array.from(pmap.values());
+
     const grupos: Record<string, typeof packages> = {
       individuales: [] as any,
       cuatro: [] as any,
       rituales: [] as any,
       paraDos: [] as any,
     };
-    packages.forEach((p) => {
-      const name = (p as any).services?.name || p.name || "";
-      const desc = (p as any).services?.description || (p as any).description || "";
+
+    list.forEach((p: any) => {
+      const name = p?.services?.name || p?.name || "";
+      const desc = p?.services?.description || p?.description || "";
       if (isCuatroManos(name)) grupos.cuatro.push(p);
       else if (isRitual(name, desc)) grupos.rituales.push(p);
       else if (isDuo(name)) grupos.paraDos.push(p);

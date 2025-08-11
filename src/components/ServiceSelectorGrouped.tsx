@@ -64,27 +64,55 @@ function PackagesAccordion({
 
   return (
     <Accordion type="multiple" defaultValue={[]} className="w-full">
-      <AccordionItem value="bonos">
-        <AccordionTrigger className="px-3">Bonos</AccordionTrigger>
-        <AccordionContent className="space-y-2">
-          {dedupedPackages.length === 0 && (
-            <p className="text-sm text-muted-foreground px-3">No hay bonos disponibles para el centro seleccionado.</p>
-          )}
-          {dedupedPackages.map((pkg) => (
-            <ItemRow
-              key={pkg.id}
-              title={pkg.name}
-              subtitle={`${pkg.sessions_count} sesiones${pkg.services?.duration_minutes ? ` · ${pkg.services.duration_minutes} min` : ""} · ${currency(pkg.price_cents)}`}
-              right={
-                <Button type="button" size="sm" variant={selectedId === pkg.id ? "default" : "outline"} onClick={() => onSelect(pkg.id)}>
-                  {selectedId === pkg.id ? "Seleccionado" : "Seleccionar"}
-                </Button>
-              }
-              active={selectedId === pkg.id}
-            />
-          ))}
-        </AccordionContent>
-      </AccordionItem>
+      {dedupedPackages.filter((pkg) => isDuo((pkg as any).services?.name || pkg.name)).length > 0 && (
+        <AccordionItem value="bonos-dos">
+          <AccordionTrigger className="px-3">Bonos para dos Personas</AccordionTrigger>
+          <AccordionContent className="space-y-2">
+            {dedupedPackages
+              .filter((pkg) => isDuo((pkg as any).services?.name || pkg.name))
+              .map((pkg) => (
+                <ItemRow
+                  key={pkg.id}
+                  title={pkg.name}
+                  subtitle={`${pkg.sessions_count} sesiones${pkg.services?.duration_minutes ? ` · ${pkg.services.duration_minutes} min` : ""} · ${currency(pkg.price_cents)}`}
+                  right={
+                    <Button type="button" size="sm" variant={selectedId === pkg.id ? "default" : "outline"} onClick={() => onSelect(pkg.id)}>
+                      {selectedId === pkg.id ? "Seleccionado" : "Seleccionar"}
+                    </Button>
+                  }
+                  active={selectedId === pkg.id}
+                />
+              ))}
+          </AccordionContent>
+        </AccordionItem>
+      )}
+
+      {dedupedPackages.filter((pkg) => !isDuo((pkg as any).services?.name || pkg.name)).length > 0 && (
+        <AccordionItem value="bonos-otros">
+          <AccordionTrigger className="px-3">Otros Bonos</AccordionTrigger>
+          <AccordionContent className="space-y-2">
+            {dedupedPackages
+              .filter((pkg) => !isDuo((pkg as any).services?.name || pkg.name))
+              .map((pkg) => (
+                <ItemRow
+                  key={pkg.id}
+                  title={pkg.name}
+                  subtitle={`${pkg.sessions_count} sesiones${pkg.services?.duration_minutes ? ` · ${pkg.services.duration_minutes} min` : ""} · ${currency(pkg.price_cents)}`}
+                  right={
+                    <Button type="button" size="sm" variant={selectedId === pkg.id ? "default" : "outline"} onClick={() => onSelect(pkg.id)}>
+                      {selectedId === pkg.id ? "Seleccionado" : "Seleccionar"}
+                    </Button>
+                  }
+                  active={selectedId === pkg.id}
+                />
+              ))}
+          </AccordionContent>
+        </AccordionItem>
+      )}
+
+      {dedupedPackages.length === 0 && (
+        <p className="text-sm text-muted-foreground px-3">No hay bonos disponibles para el centro seleccionado.</p>
+      )}
     </Accordion>
   );
 }
