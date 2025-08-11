@@ -20,7 +20,7 @@ import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 
 const ReservationSystem = () => {
   const { toast } = useToast();
-  const { user, isAuthenticated } = useSimpleAuth();
+  const { user, isAuthenticated, isAdmin } = useSimpleAuth();
   const { centers } = useCenters();
   const { employees } = useEmployees();
   const { lanes } = useLanes();
@@ -363,10 +363,14 @@ const ReservationSystem = () => {
                 <div className="p-4 bg-accent/20 rounded-lg">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">
-                      {user.name}
-                    </span>
-                    <span className="text-muted-foreground">({user.email})</span>
+                    {isAdmin ? (
+                      <span className="font-medium">Bienvenido, Admin</span>
+                    ) : (
+                      <>
+                        <span className="font-medium">{user.name}</span>
+                        <span className="text-muted-foreground hidden sm:inline">({user.email})</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
