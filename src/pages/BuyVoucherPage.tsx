@@ -25,7 +25,10 @@ export default function BuyVoucherPage() {
   const [notes, setNotes] = useState("");
   const selectedPkg = useMemo(() => packages.find(p => p.id === pkgId), [packages, pkgId]);
 
-  const isDuo = (name?: string) => !!name?.toLowerCase().match(/(dos|pareja|parejas|dúo|duo)/);
+  const isDuo = (name?: string) => {
+    const txt = (name || "").toLowerCase();
+    return /(dos|pareja|parejas|dúo|duo)/.test(txt) || /\b2\s*personas?\b/.test(txt) || /para\s*2\s*personas?/.test(txt) || /\b(2p|2\s*pax)\b/.test(txt);
+  };
   const isCuatroManos = (name?: string) => !!name?.toLowerCase().includes("cuatro manos");
   const isRitual = (name?: string, description?: string) => {
     const txt = `${name || ""} ${description || ""}`.toLowerCase();
