@@ -38,23 +38,22 @@ const custom: GiftCardItem = {
   description: "Elige un importe fijo o escribe otro importe.",
 };
 
-const [giftOptions, setGiftOptions] = useState<{ id: string; name: string; amount_cents: number }[]>([]);
+function useGiftOptions() {
+  const [giftOptions, setGiftOptions] = useState<{ id: string; name: string; amount_cents: number }[]>([]);
 
-useEffect(() => {
-  supabase
-    .from('gift_card_options')
-    .select('id,name,amount_cents,is_active')
-    .eq('is_active', true)
-    .order('amount_cents', { ascending: true })
-    .then(({ data, error }) => {
-      if (!error) setGiftOptions((data || []).map((d: any) => ({ id: d.id, name: d.name, amount_cents: d.amount_cents })));
-    });
-}, []);
+  useEffect(() => {
+    supabase
+      .from('gift_card_options')
+      .select('id,name,amount_cents,is_active')
+      .eq('is_active', true)
+      .order('amount_cents', { ascending: true })
+      .then(({ data, error }) => {
+        if (!error) setGiftOptions((data || []).map((d: any) => ({ id: d.id, name: d.name, amount_cents: d.amount_cents })));
+      });
+  }, []);
 
-const giftItems: GiftCardItem[] = useMemo(
-  () => giftOptions.map((o) => ({ id: o.id, name: o.name, type: "fixed", priceCents: o.amount_cents } as GiftCardItem)),
-  [giftOptions]
-);
+  return giftOptions;
+}
 
 // Simple local cart (persisted to localStorage)
 const useLocalCart = () => {
@@ -100,6 +99,11 @@ const useLocalCart = () => {
 
 
 const GiftCardsPage = () => {
+  const giftOptions = useGiftOptions();
+  const giftItems: GiftCardItem[] = useMemo(
+    () => giftOptions.map((o) => ({ id: o.id, name: o.name, type: "fixed", priceCents: o.amount_cents } as GiftCardItem)),
+    [giftOptions]
+  );
   const { items, add, remove, clear, totalCents } = useLocalCart();
   const [customAmount, setCustomAmount] = useState<number | "">("");
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
