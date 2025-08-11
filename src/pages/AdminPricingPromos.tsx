@@ -33,20 +33,42 @@ export default function AdminPricingPromos() {
       [id]: { price_cents: prev[id]?.price_cents ?? 0, active: prev[id]?.active ?? true, [field]: value }
     }));
   };
+  // Agrupar servicios por nombre (normalizado) y duración para evitar duplicados entre centros
+  const uniqueServices = useMemo(() => {
+    const map = new Map<string, { ids: string[]; name: string; type: any; duration_minutes: number; price_cents: number; allActive: boolean }>();
+    services.forEach((s: any) => {
+      const key = `${(s.name || '').trim().toLowerCase()}|${s.duration_minutes}`;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, {
+          ids: [s.id],
+          name: s.name,
+          type: s.type,
+          duration_minutes: s.duration_minutes,
+          price_cents: s.price_cents,
+          allActive: !!s.active,
+        });
+      } else {
+        existing.ids.push(s.id);
+        existing.price_cents = Math.min(existing.price_cents, s.price_cents);
+        existing.allActive = existing.allActive && !!s.active;
+      }
+    });
+    return Array.from(map.entries()).map(([key, v]) => ({ key, ...v }));
+  }, [services]);
 
-  const saveService = async (id: string) => {
-    const patch = serviceEdits[id];
+  const saveService = async (groupKey: string, ids: string[]) => {
+    const patch = serviceEdits[groupKey];
     if (!patch) return;
-    const { error } = await (supabase as any).from('services').update(patch).eq('id', id);
+    const { error } = await (supabase as any).from('services').update(patch).in('id', ids);
     if (error) {
       toast({ title: 'Error', description: 'No se pudo actualizar el servicio', variant: 'destructive' });
     } else {
-      toast({ title: 'Guardado', description: 'Servicio actualizado' });
-      setServiceEdits((prev) => { const n = { ...prev }; delete n[id]; return n; });
+      toast({ title: 'Guardado', description: 'Servicio actualizado en todos los centros' });
+      setServiceEdits((prev) => { const n = { ...prev }; delete n[groupKey]; return n; });
       refetchServices();
     }
   };
-
   // Bonos (paquetes) - edición de precio/sesiones/estado + alta
   const [packageEdits, setPackageEdits] = useState<Record<string, { price_cents: number; sessions_count: number; active: boolean }>>({});
   const [newPackage, setNewPackage] = useState<{ name: string; service_id?: string; sessions_count: number; price_cents: number; active: boolean }>({
@@ -155,25 +177,25 @@ export default function AdminPricingPromos() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {services.map((s) => {
-                    const edit = serviceEdits[s.id] || { price_cents: s.price_cents, active: s.active };
+                  {uniqueServices.map((g) => {
+                    const edit = serviceEdits[g.key] || { price_cents: g.price_cents, active: g.allActive };
                     return (
-                      <div key={s.id} className="border rounded-lg p-3">
+                      <div key={g.key} className="border rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div>
-                            <div className="font-medium">{s.name}</div>
-                            <div className="text-xs text-muted-foreground">{s.type} · {s.duration_minutes} min</div>
+                            <div className="font-medium">{g.name}</div>
+                            <div className="text-xs text-muted-foreground">{g.type} · {g.duration_minutes} min</div>
                           </div>
-                          <div className="text-sm font-semibold">{currency(s.price_cents)}</div>
+                          <div className="text-sm font-semibold">{currency(edit.price_cents)}</div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 items-end">
                           <div>
                             <Label>Precio (céntimos)</Label>
-                            <Input type="number" value={edit.price_cents} onChange={(e) => handleServiceChange(s.id, 'price_cents', parseInt(e.target.value || '0', 10))} />
+                            <Input type="number" value={edit.price_cents} onChange={(e) => handleServiceChange(g.key, 'price_cents', parseInt(e.target.value || '0', 10))} />
                           </div>
                           <div>
                             <Label>Estado</Label>
-                            <Select value={String(edit.active)} onValueChange={(v) => handleServiceChange(s.id, 'active', v === 'true')}>
+                            <Select value={String(edit.active)} onValueChange={(v) => handleServiceChange(g.key, 'active', v === 'true')}>
                               <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent className="z-50 bg-background">
                                 <SelectItem value="true">Activo</SelectItem>
@@ -181,8 +203,9 @@ export default function AdminPricingPromos() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="col-span-2 flex justify-end">
-                            <Button size="sm" onClick={() => saveService(s.id)}>Guardar</Button>
+                          <div className="col-span-2 flex items-center justify-between">
+                            <div className="text-xs text-muted-foreground">Se actualizará en todos los centros</div>
+                            <Button size="sm" onClick={() => saveService(g.key, g.ids)}>Guardar</Button>
                           </div>
                         </div>
                       </div>
