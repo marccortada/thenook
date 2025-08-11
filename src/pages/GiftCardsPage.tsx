@@ -38,22 +38,50 @@ const custom: GiftCardItem = {
   description: "Elige un importe fijo o escribe otro importe.",
 };
 
-function useGiftOptions() {
-  const [giftOptions, setGiftOptions] = useState<{ id: string; name: string; amount_cents: number }[]>([]);
-
-  useEffect(() => {
-    supabase
-      .from('gift_card_options')
-      .select('id,name,amount_cents,is_active')
-      .eq('is_active', true)
-      .order('amount_cents', { ascending: true })
-      .then(({ data, error }) => {
-        if (!error) setGiftOptions((data || []).map((d: any) => ({ id: d.id, name: d.name, amount_cents: d.amount_cents })));
-      });
-  }, []);
-
-  return giftOptions;
-}
+const PREDEFINED_GIFTS: GiftCardItem[] = [
+  { id: 'gift-1', name: 'Piernas Cansadas', type: 'fixed', priceCents: 4500 },
+  { id: 'gift-3', name: 'Masaje Descontracturante 55 minutos', type: 'fixed', priceCents: 6000 },
+  { id: 'gift-4', name: 'Reflexología Podal', type: 'fixed', priceCents: 6000 },
+  { id: 'gift-5', name: 'Shiatsu', type: 'fixed', priceCents: 6000 },
+  { id: 'gift-6', name: 'Masaje para Embarazada 50 minutos', type: 'fixed', priceCents: 6000 },
+  { id: 'gift-7', name: 'Masaje Relajante 55 minutos', type: 'fixed', priceCents: 6000 },
+  { id: 'gift-8', name: 'Masaje Deportivo 50 minutos', type: 'fixed', priceCents: 6000 },
+  { id: 'gift-9', name: 'Masaje con Piedras Calientes', type: 'fixed', priceCents: 6500 },
+  { id: 'gift-10', name: 'Bambuterapia Masaje con Cañas de Bambú', type: 'fixed', priceCents: 6500 },
+  { id: 'gift-11', name: 'Ritual Romántico Individual', type: 'fixed', priceCents: 7000 },
+  { id: 'gift-12', name: 'Ritual Energizante Individual', type: 'fixed', priceCents: 7000 },
+  { id: 'gift-13', name: 'Drenaje Linfático 75 minutos', type: 'fixed', priceCents: 7500 },
+  { id: 'gift-14', name: 'Antiestrés The Nook', type: 'fixed', priceCents: 8000 },
+  { id: 'gift-15', name: 'Masaje para Embarazada 75 minutos', type: 'fixed', priceCents: 8000 },
+  { id: 'gift-16', name: 'Masaje Descontracturante 75 minutos', type: 'fixed', priceCents: 8000 },
+  { id: 'gift-17', name: 'Masaje dos Personas 45 minutos', type: 'fixed', priceCents: 9000 },
+  { id: 'gift-18', name: 'Ritual del Kobido Individual', type: 'fixed', priceCents: 9000 },
+  { id: 'gift-19', name: 'Masaje 90 minutos', type: 'fixed', priceCents: 9000 },
+  { id: 'gift-20', name: 'Ritual Sakura Individual', type: 'fixed', priceCents: 10000 },
+  { id: 'gift-21', name: 'Masaje dos Personas 55 minutos', type: 'fixed', priceCents: 11000 },
+  { id: 'gift-22', name: 'Masaje a Cuatro Manos 50 minutos', type: 'fixed', priceCents: 11000 },
+  { id: 'gift-23', name: 'Masaje Relajante Extra Largo 110 minutos', type: 'fixed', priceCents: 11500 },
+  { id: 'gift-24', name: 'Bambuterapia Masaje con Cañas de Bambú para dos Personas', type: 'fixed', priceCents: 12000 },
+  { id: 'gift-25', name: 'Masaje con Piedras Calientes para dos personas', type: 'fixed', priceCents: 12000 },
+  { id: 'gift-26', name: 'Ritual Beauty Individual', type: 'fixed', priceCents: 12500 },
+  { id: 'gift-27', name: 'Ritual Energizante para dos Personas', type: 'fixed', priceCents: 13000 },
+  { id: 'gift-28', name: 'Ritual Romántico para dos Personas', type: 'fixed', priceCents: 13000 },
+  { id: 'gift-29', name: 'Masaje dos Personas 75 minutos', type: 'fixed', priceCents: 14000 },
+  { id: 'gift-30', name: 'Masaje a Cuatro Manos 80 minutos', type: 'fixed', priceCents: 16000 },
+  { id: 'gift-31', name: 'Ritual del Kobido para dos Personas', type: 'fixed', priceCents: 17000 },
+  { id: 'gift-32', name: 'Masaje dos Personas 110 minutos', type: 'fixed', priceCents: 19000 },
+  { id: 'gift-33', name: 'Ritual Sakura para dos Personas', type: 'fixed', priceCents: 19000 },
+  { id: 'gift-34', name: 'Ritual Beauty para dos Personas', type: 'fixed', priceCents: 23000 },
+  { id: 'gift-35', name: 'BONO 5 masajes para Embarazada', type: 'fixed', priceCents: 26400 },
+  { id: 'gift-36', name: 'BONO 5 masajes Reductor Anticelulítico', type: 'fixed', priceCents: 26400 },
+  { id: 'gift-37', name: 'BONO 5 masajes 55 minutos', type: 'fixed', priceCents: 26400 },
+  { id: 'gift-38', name: 'BONO 5 masajes 75 minutos', type: 'fixed', priceCents: 35500 },
+  { id: 'gift-39', name: 'BONO 5 masajes dos Personas 45 minutos', type: 'fixed', priceCents: 39600 },
+  { id: 'gift-40', name: 'BONO 10 masajes 55 minutos', type: 'fixed', priceCents: 51000 },
+  { id: 'gift-41', name: 'BONO 10 masajes Reductor Anticelulítico', type: 'fixed', priceCents: 51000 },
+  { id: 'gift-42', name: 'BONO 10 masajes para Embarazada', type: 'fixed', priceCents: 51000 },
+  { id: 'gift-43', name: 'BONO 5 masajes dos Personas 75 minutos', type: 'fixed', priceCents: 61500 },
+];
 
 // Simple local cart (persisted to localStorage)
 const useLocalCart = () => {
@@ -99,15 +127,12 @@ const useLocalCart = () => {
 
 
 const GiftCardsPage = () => {
-  const giftOptions = useGiftOptions();
-  const giftItems: GiftCardItem[] = useMemo(
-    () => giftOptions.map((o) => ({ id: o.id, name: o.name, type: "fixed", priceCents: o.amount_cents } as GiftCardItem)),
-    [giftOptions]
-  );
+  const giftItems: GiftCardItem[] = useMemo(() => PREDEFINED_GIFTS, []);
+
   const { items, add, remove, clear, totalCents } = useLocalCart();
   const [customAmount, setCustomAmount] = useState<number | "">("");
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
-  const presets = useMemo(() => giftOptions.map((o) => Math.round(o.amount_cents / 100)), [giftOptions]);
+  const presets = [25, 50, 100, 200];
 
   useEffect(() => {
     document.title = "Tarjetas de Regalo | The Nook Madrid";
@@ -148,9 +173,9 @@ const GiftCardsPage = () => {
         <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              <p className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent" aria-label="The Nook Madrid">
                 The Nook Madrid
-              </h1>
+              </p>
             </div>
             <div className="flex items-center space-x-2">
               <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm">
