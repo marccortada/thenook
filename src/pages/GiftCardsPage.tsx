@@ -210,7 +210,27 @@ const GiftCardsPage = () => {
                         <Button variant="secondary" onClick={clear} className="flex-1">
                           Vaciar
                         </Button>
-                        <Button className="flex-1">Continuar</Button>
+                        <Button className="flex-1" onClick={async () => {
+                          if (items.length === 0) return;
+                          try {
+                            const payload = {
+                              intent: "gift_cards",
+                              gift_cards: {
+                                items: items.map(i => ({ amount_cents: i.priceCents, quantity: i.quantity }))
+                              },
+                              currency: "eur"
+                            };
+                            const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
+                            if (error) throw error;
+                            if (data?.url) {
+                              window.open(data.url, "_blank");
+                            }
+                          } catch (e: any) {
+                            toast.error(e.message || "No se pudo iniciar el pago");
+                          }
+                        }}>
+                          Continuar
+                        </Button>
                       </div>
                     </div>
                   )}

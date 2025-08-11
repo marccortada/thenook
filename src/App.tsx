@@ -16,6 +16,8 @@ import ReportsCenter from "./pages/ReportsCenter";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminPricingPromos from "./pages/AdminPricingPromos";
 import RedeemCode from "./pages/RedeemCode";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCanceled from "./pages/PaymentCanceled";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +82,8 @@ const App = () => (
               </ProtectedRoute>
             } 
           />
+          <Route path="/pago-exitoso" element={<PaymentSuccess />} />
+          <Route path="/pago-cancelado" element={<PaymentCanceled />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </BrowserRouter>
