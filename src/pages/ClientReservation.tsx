@@ -43,10 +43,25 @@ const ClientReservation = () => {
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const [showExistingBookings, setShowExistingBookings] = useState(false);
 
-  const timeSlots = [
-    "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
-    "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
-  ];
+  // Genera horarios de 10:00 a 22:00 cada 5 min
+  const generateTimeSlots = (start: string, end: string, stepMin = 5) => {
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    const slots: string[] = [];
+    let cur = new Date();
+    cur.setHours(sh, sm, 0, 0);
+    const endDate = new Date();
+    endDate.setHours(eh, em, 0, 0);
+    while (cur <= endDate) {
+      const hh = String(cur.getHours()).padStart(2, "0");
+      const mm = String(cur.getMinutes()).padStart(2, "0");
+      slots.push(`${hh}:${mm}`);
+      cur.setMinutes(cur.getMinutes() + stepMin);
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots("10:00", "22:00", 5);
 
   // Check for existing bookings and packages when email/phone changes
   const checkExistingBookings = async () => {
@@ -389,6 +404,22 @@ const ClientReservation = () => {
                       id="clientName"
                       value={formData.clientName}
                       onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                      onBlur={async () => {
+                        const first = formData.clientName.trim().split(" ")[0];
+                        if (!formData.clientEmail && first && formData.clientPhone) {
+                          try {
+                            const { data } = await supabase
+                              .from('profiles')
+                              .select('email, first_name, last_name, phone')
+                              .ilike('first_name', `%${first}%`)
+                              .eq('phone', formData.clientPhone)
+                              .maybeSingle();
+                            if (data?.email) {
+                              setFormData((prev) => ({ ...prev, clientEmail: data.email }));
+                            }
+                          } catch {}
+                        }
+                      }}
                       placeholder="Nombre y apellidos"
                       className="mt-1"
                     />
@@ -399,7 +430,23 @@ const ClientReservation = () => {
                       id="clientPhone"
                       value={formData.clientPhone}
                       onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-                      onBlur={checkExistingBookings}
+                      onBlur={async () => {
+                        const first = formData.clientName.trim().split(" ")[0];
+                        if (!formData.clientEmail && first && formData.clientPhone) {
+                          try {
+                            const { data } = await supabase
+                              .from('profiles')
+                              .select('email, first_name, last_name, phone')
+                              .ilike('first_name', `%${first}%`)
+                              .eq('phone', formData.clientPhone)
+                              .maybeSingle();
+                            if (data?.email) {
+                              setFormData((prev) => ({ ...prev, clientEmail: data.email }));
+                            }
+                          } catch {}
+                        }
+                        await checkExistingBookings();
+                      }}
                       placeholder="+34 600 000 000"
                       className="mt-1"
                     />

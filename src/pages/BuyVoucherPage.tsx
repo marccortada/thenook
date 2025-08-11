@@ -25,16 +25,30 @@ export default function BuyVoucherPage() {
   const [notes, setNotes] = useState("");
   const selectedPkg = useMemo(() => packages.find(p => p.id === pkgId), [packages, pkgId]);
 
-  const byType = useMemo(() => {
-    const acc: Record<string, typeof packages> = {} as any;
-    packages.forEach((p) => {
-      const t = (p as any).services?.type || 'otros';
-      (acc[t] ||= []).push(p);
-    });
-    return acc;
-  }, [packages]);
+  const isDuo = (name?: string) => !!name?.toLowerCase().match(/(dos|pareja|parejas|dúo|duo)/);
+  const isCuatroManos = (name?: string) => !!name?.toLowerCase().includes("cuatro manos");
+  const isRitual = (name?: string, description?: string) => {
+    const txt = `${name || ""} ${description || ""}`.toLowerCase();
+    return txt.includes("ritual");
+  };
 
-  const typeLabel = (t: string) => (t === 'massage' ? 'Masajes' : t === 'treatment' ? 'Tratamientos' : 'Otros');
+  const categorized = useMemo(() => {
+    const grupos: Record<string, typeof packages> = {
+      individuales: [] as any,
+      cuatro: [] as any,
+      rituales: [] as any,
+      paraDos: [] as any,
+    };
+    packages.forEach((p) => {
+      const name = (p as any).services?.name || p.name || "";
+      const desc = (p as any).services?.description || (p as any).description || "";
+      if (isCuatroManos(name)) grupos.cuatro.push(p);
+      else if (isRitual(name, desc)) grupos.rituales.push(p);
+      else if (isDuo(name)) grupos.paraDos.push(p);
+      else grupos.individuales.push(p);
+    });
+    return grupos;
+  }, [packages]);
 
   useEffect(() => {
     document.title = "Comprar Bono | The Nook Madrid";
@@ -126,16 +140,23 @@ export default function BuyVoucherPage() {
                       <SelectValue placeholder="Selecciona un bono" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(byType).map(([t, list]) => (
-                        <SelectGroup key={t}>
-                          <SelectLabel>{typeLabel(t)}</SelectLabel>
-                          {list.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      ))}
+                      {([
+                        ["Individuales", (categorized as any).individuales],
+                        ["A cuatro manos", (categorized as any).cuatro],
+                        ["Rituales", (categorized as any).rituales],
+                        ["Para dos", (categorized as any).paraDos],
+                      ] as [string, any[]][])
+                        .filter(([, list]) => list && list.length > 0)
+                        .map(([label, list]) => (
+                          <SelectGroup key={label}>
+                            <SelectLabel>{label}</SelectLabel>
+                            {list.map((p: any) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>

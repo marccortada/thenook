@@ -84,6 +84,11 @@ const PREDEFINED_GIFTS: GiftCardItem[] = [
 ];
 
 // Simple local cart (persisted to localStorage)
+// Heurísticas de categorías
+const isDuo = (name?: string) => !!name?.toLowerCase().match(/(dos|pareja|parejas|dúo|duo)/);
+const isCuatroManos = (name?: string) => !!name?.toLowerCase().includes("cuatro manos");
+const isRitual = (name?: string) => !!name?.toLowerCase().includes("ritual");
+
 const useLocalCart = () => {
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
@@ -128,6 +133,13 @@ const useLocalCart = () => {
 
 const GiftCardsPage = () => {
   const giftItems: GiftCardItem[] = useMemo(() => PREDEFINED_GIFTS, []);
+  const groups = useMemo(() => {
+    const individuales = giftItems.filter((i) => i.type === "fixed" && !isCuatroManos(i.name) && !isRitual(i.name) && !isDuo(i.name));
+    const cuatro = giftItems.filter((i) => i.type === "fixed" && isCuatroManos(i.name));
+    const rituales = giftItems.filter((i) => i.type === "fixed" && isRitual(i.name));
+    const paraDos = giftItems.filter((i) => i.type === "fixed" && isDuo(i.name));
+    return { individuales, cuatro, rituales, paraDos };
+  }, [giftItems]);
 
   const { items, add, remove, clear, totalCents } = useLocalCart();
   const [customAmount, setCustomAmount] = useState<number | "">("");
@@ -265,81 +277,103 @@ const GiftCardsPage = () => {
           </header>
 
           <section aria-label="Listado de tarjetas de regalo">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {[...giftItems, custom].map((item) => (
-                <Card key={item.id} className="flex flex-col">
+            {([
+              ["Individuales", groups.individuales],
+              ["A cuatro manos", groups.cuatro],
+              ["Rituales", groups.rituales],
+              ["Para dos", groups.paraDos],
+            ] as [string, GiftCardItem[]][])
+              .filter(([, list]) => list.length > 0)
+              .map(([label, list]) => (
+                <div key={label} className="mb-8">
+                  <h2 className="text-xl font-semibold mb-3">{label}</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                    {list.map((item) => (
+                      <Card key={item.id} className="flex flex-col">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base leading-snug line-clamp-2" title={item.name}>
+                            {item.name}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-1 flex flex-col gap-3">
+                          {item.imageUrl && (
+                            <img
+                              src={item.imageUrl}
+                              alt={`Tarjeta de regalo ${item.name}`}
+                              className="h-auto w-full object-cover rounded-md"
+                              loading="lazy"
+                            />
+                          )}
+                          <p className="text-xs text-muted-foreground min-h-8">
+                            {item.description}
+                          </p>
+                          <p className="font-semibold">{euro(item.priceCents!)}</p>
+                        </CardContent>
+                        <CardFooter>
+                          <Button className="w-full" onClick={() => add({ name: item.name, priceCents: item.priceCents! })}>
+                            Comprar
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            {/* Personalizado */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-3">Personalizado</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <Card key={custom.id} className="flex flex-col">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base leading-snug line-clamp-2" title={item.name}>
-                      {item.name}
+                    <CardTitle className="text-base leading-snug line-clamp-2" title={custom.name}>
+                      {custom.name}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col gap-3">
-                    {item.imageUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.imageUrl}
-                        alt={`Tarjeta de regalo ${item.name}`}
-                        className="h-auto w-full object-cover rounded-md"
-                        loading="lazy"
-                      />
-                    )}
-                    <p className="text-xs text-muted-foreground min-h-8">
-                      {item.description}
-                    </p>
-                    {item.type === "fixed" ? (
-                      <p className="font-semibold">{euro(item.priceCents!)}</p>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                          {presets.map((p) => (
-                            <Button
-                              key={p}
-                              variant={selectedPreset === p ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setSelectedPreset((prev) => (prev === p ? null : p))}
-                            >
-                              {euro(p * 100)}
-                            </Button>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            inputMode="numeric"
-                            min={1}
-                            step={1}
-                            value={customAmount === "" ? "" : customAmount}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              if (v === "") {
-                                setCustomAmount("");
-                                return;
-                              }
-                              const n = Number(v);
-                              if (!Number.isNaN(n)) setCustomAmount(n);
-                            }}
-                            placeholder="Otro importe (€)"
-                            className="h-9"
-                          />
-                          <Button size="sm" onClick={addCustomToCart}>
-                            Comprar
+                    <p className="text-xs text-muted-foreground min-h-8">{custom.description}</p>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {presets.map((p) => (
+                          <Button
+                            key={p}
+                            variant={selectedPreset === p ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setSelectedPreset((prev) => (prev === p ? null : p))}
+                          >
+                            {euro(p * 100)}
                           </Button>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          Consejo: puedes elegir un importe fijo o escribir otro importe.
-                        </p>
+                        ))}
                       </div>
-                    )}
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          step={1}
+                          value={customAmount === "" ? "" : customAmount}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === "") {
+                              setCustomAmount("");
+                              return;
+                            }
+                            const n = Number(v);
+                            if (!Number.isNaN(n)) setCustomAmount(n);
+                          }}
+                          placeholder="Otro importe (€)"
+                          className="h-9"
+                        />
+                        <Button size="sm" onClick={addCustomToCart}>
+                          Comprar
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Consejo: puedes elegir un importe fijo o escribir otro importe.
+                      </p>
+                    </div>
                   </CardContent>
-                  {item.type === "fixed" && (
-                    <CardFooter>
-                      <Button className="w-full" onClick={() => add({ name: item.name, priceCents: item.priceCents! })}>
-                        Comprar
-                      </Button>
-                    </CardFooter>
-                  )}
                 </Card>
-              ))}
+              </div>
             </div>
           </section>
         </article>
