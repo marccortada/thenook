@@ -338,6 +338,27 @@ const ManageBooking = () => {
                             {/* Action Buttons */}
                             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-3 sm:mt-0">
                               <Button
+                                variant="default"
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    const { data, error } = await supabase.functions.invoke("create-checkout", {
+                                      body: {
+                                        intent: "booking_payment",
+                                        booking_payment: { booking_id: booking.id },
+                                        currency: "eur",
+                                      },
+                                    });
+                                    if (error) throw error;
+                                    if (data?.url) window.open(data.url, "_blank");
+                                  } catch (e: any) {
+                                    toast({ title: "No se pudo iniciar el pago", description: e.message, variant: "destructive" });
+                                  }
+                                }}
+                              >
+                                Pagar ahora
+                              </Button>
+                              <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => startEditing(booking)}

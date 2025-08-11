@@ -45,22 +45,28 @@ export default function BuyVoucherPage() {
       return;
     }
 
-    const { data, error } = await supabase.functions.invoke("purchase-voucher", {
-      body: {
-        package_id: pkgId,
-        mode,
-        buyer,
-        recipient: rec,
-        notes,
-      },
-    });
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return;
+    try {
+      const payload = {
+        intent: "package_voucher" as const,
+        package_voucher: {
+          package_id: pkgId,
+          mode,
+          buyer,
+          recipient: rec,
+          notes,
+        },
+        currency: "eur",
+      };
+      const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      } else {
+        toast({ title: "Error", description: "No se pudo iniciar el pago" , variant: "destructive"});
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "No se pudo iniciar el pago", variant: "destructive" });
     }
-
-    toast({ title: "Bono creado", description: `Código: ${data.voucher_code}` });
   };
 
   return (
