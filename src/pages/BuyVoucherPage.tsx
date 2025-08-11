@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { usePackages } from "@/hooks/useDatabase";
@@ -24,6 +24,17 @@ export default function BuyVoucherPage() {
   const [recipient, setRecipient] = useState({ name: "", email: "", phone: "" });
   const [notes, setNotes] = useState("");
   const selectedPkg = useMemo(() => packages.find(p => p.id === pkgId), [packages, pkgId]);
+
+  const byType = useMemo(() => {
+    const acc: Record<string, typeof packages> = {} as any;
+    packages.forEach((p) => {
+      const t = (p as any).services?.type || 'otros';
+      (acc[t] ||= []).push(p);
+    });
+    return acc;
+  }, [packages]);
+
+  const typeLabel = (t: string) => (t === 'massage' ? 'Masajes' : t === 'treatment' ? 'Tratamientos' : 'Otros');
 
   useEffect(() => {
     document.title = "Comprar Bono | The Nook Madrid";
@@ -115,10 +126,15 @@ export default function BuyVoucherPage() {
                       <SelectValue placeholder="Selecciona un bono" />
                     </SelectTrigger>
                     <SelectContent>
-                      {packages.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
-                        </SelectItem>
+                      {Object.entries(byType).map(([t, list]) => (
+                        <SelectGroup key={t}>
+                          <SelectLabel>{typeLabel(t)}</SelectLabel>
+                          {list.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
                       ))}
                     </SelectContent>
                   </Select>
@@ -139,27 +155,29 @@ export default function BuyVoucherPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h3 className="font-medium mb-2">Comprador</h3>
-                    <Label>Nombre *</Label>
+                    <Label>Nombre</Label>
                     <Input value={buyer.name} onChange={(e) => setBuyer({ ...buyer, name: e.target.value })} className="mb-2" />
-                    <Label>Email *</Label>
+                    <Label>Email</Label>
                     <Input type="email" value={buyer.email} onChange={(e) => setBuyer({ ...buyer, email: e.target.value })} className="mb-2" />
                     <Label>Teléfono</Label>
                     <Input value={buyer.phone} onChange={(e) => setBuyer({ ...buyer, phone: e.target.value })} />
                   </div>
-                  <div>
-                    <h3 className="font-medium mb-2">Destinatario</h3>
-                    <Label>Nombre {mode === 'gift' ? '*' : ''}</Label>
-                    <Input value={(mode === 'gift' ? recipient : buyer).name} onChange={(e) => (mode === 'gift' ? setRecipient({ ...recipient, name: e.target.value }) : setBuyer({ ...buyer, name: e.target.value }))} className="mb-2" />
-                    <Label>Email {mode === 'gift' ? '*' : ''}</Label>
-                    <Input type="email" value={(mode === 'gift' ? recipient : buyer).email} onChange={(e) => (mode === 'gift' ? setRecipient({ ...recipient, email: e.target.value }) : setBuyer({ ...buyer, email: e.target.value }))} className="mb-2" />
-                    <Label>Teléfono</Label>
-                    <Input value={(mode === 'gift' ? recipient : buyer).phone} onChange={(e) => (mode === 'gift' ? setRecipient({ ...recipient, phone: e.target.value }) : setBuyer({ ...buyer, phone: e.target.value }))} />
-                  </div>
+                  {mode === 'gift' && (
+                    <div>
+                      <h3 className="font-medium mb-2">Destinatario</h3>
+                      <Label>Nombre</Label>
+                      <Input value={recipient.name} onChange={(e) => setRecipient({ ...recipient, name: e.target.value })} className="mb-2" />
+                      <Label>Email</Label>
+                      <Input type="email" value={recipient.email} onChange={(e) => setRecipient({ ...recipient, email: e.target.value })} className="mb-2" />
+                      <Label>Teléfono</Label>
+                      <Input value={recipient.phone} onChange={(e) => setRecipient({ ...recipient, phone: e.target.value })} />
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <Label>Notas (opcional)</Label>
-                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Mensaje para el centro (opcional)" />
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Escribe aquí si quieres comentarnos cualquier cosa" />
                 </div>
 
                 {selectedPkg && (
