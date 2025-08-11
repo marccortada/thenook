@@ -197,6 +197,7 @@ export default function AdminPricingPromos() {
     is_active: true,
   });
   const [giftDenoms, setGiftDenoms] = useState<{ amount_cents: number; count: number }[]>([]);
+  const seededRef = useRef(false);
 
   const fetchGiftOptions = async () => {
     const { data, error } = await (supabase as any)
@@ -222,7 +223,12 @@ export default function AdminPricingPromos() {
       setGiftDenoms(list);
     }
   };
-
+  
+  useEffect(() => {
+    fetchGiftOptions();
+    fetchGiftDenoms();
+  }, []);
+  
   // Catálogo oficial de tarjetas (vinculado con inicio)
   const CATALOG_GIFT_ITEMS: { name: string; amount_cents: number }[] = [
     { name: 'Piernas Cansadas', amount_cents: 4500 },
@@ -291,6 +297,14 @@ export default function AdminPricingPromos() {
       fetchGiftOptions();
     }
   };
+
+  useEffect(() => {
+    if (!seededRef.current && giftOptions.length === 0) {
+      seededRef.current = true;
+      seedCatalogGiftOptions();
+    }
+  }, [giftOptions]);
+
   const handleGiftChange = (id: string, field: 'name'|'amount_cents'|'is_active', value: any) => {
     const current = giftOptions.find((o: any) => o.id === id);
     setGiftEdits((prev) => ({
