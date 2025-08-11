@@ -267,6 +267,40 @@ export default function AdminPricingPromos() {
       fetchGiftOptions();
     }
   };
+  const deleteGift = async (id: string) => {
+    const { error } = await (supabase as any).from('gift_card_options').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: 'No se pudo eliminar', variant: 'destructive' });
+    } else {
+      toast({ title: 'Eliminada', description: 'Opción eliminada' });
+      fetchGiftOptions();
+    }
+  };
+
+  const importGiftOptions = async () => {
+    const existing = new Set((giftOptions || []).map((o: any) => o.amount_cents));
+    const toInsert = giftDenoms
+      .filter((d) => !existing.has(d.amount_cents))
+      .map((d) => ({
+        name: `Tarjeta ${new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(d.amount_cents / 100)}`,
+        amount_cents: d.amount_cents,
+        is_active: true,
+      }));
+
+    if (toInsert.length === 0) {
+      toast({ title: 'Nada que importar', description: 'Ya existen todas las opciones' });
+      return;
+    }
+
+    const { error } = await (supabase as any).from('gift_card_options').insert(toInsert);
+    if (error) {
+      toast({ title: 'Error', description: 'No se pudieron crear opciones', variant: 'destructive' });
+    } else {
+      toast({ title: 'Importadas', description: `Se crearon ${toInsert.length} opciones` });
+      fetchGiftOptions();
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto">
@@ -420,8 +454,11 @@ export default function AdminPricingPromos() {
 
           <TabsContent value="giftcards" className="mt-6 space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Tarjetas regalo - opciones disponibles</CardTitle>
+                {giftOptions.length === 0 && giftDenoms.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={importGiftOptions}>Crear desde existentes</Button>
+                )}
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {giftOptions.length > 0 ? (
@@ -452,7 +489,8 @@ export default function AdminPricingPromos() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="col-span-2 flex justify-end">
+                          <div className="col-span-2 flex justify-between">
+                            <Button variant="outline" size="sm" onClick={() => deleteGift(o.id)}>Eliminar</Button>
                             <Button size="sm" onClick={() => saveGift(o.id)}>Guardar</Button>
                           </div>
                         </div>

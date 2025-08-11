@@ -4,10 +4,10 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-
 interface CartItem {
   id: string;
   name: string;
@@ -31,13 +31,6 @@ const euro = (cents: number) =>
     cents / 100
   );
 
-const fixed = (id: number, name: string, euros: number): GiftCardItem => ({
-  id: String(id),
-  name,
-  type: "fixed",
-  priceCents: Math.round(euros * 100),
-});
-
 const custom: GiftCardItem = {
   id: "custom",
   name: "TARJETA REGALO por VALOR personalizado",
@@ -45,57 +38,23 @@ const custom: GiftCardItem = {
   description: "Elige un importe fijo o escribe otro importe.",
 };
 
-const GIFT_ITEMS: GiftCardItem[] = [
-  fixed(1, "Piernas Cansadas", 45),
-  custom,
-  fixed(3, "Masaje Descontracturante 55 minutos", 60),
-  fixed(4, "Reflexología Podal", 60),
-  fixed(5, "Shiatsu", 60),
-  fixed(6, "Masaje para Embarazada 50 minutos", 60),
-  fixed(7, "Masaje Relajante 55 minutos", 60),
-  fixed(8, "Masaje Deportivo 50 minutos", 60),
-  fixed(9, "Masaje con Piedras Calientes", 65),
-  fixed(10, "Bambuterapia Masaje con Cañas de Bambú", 65),
-  fixed(11, "Ritual Romántico Individual", 70),
-  fixed(12, "Ritual Energizante Individual", 70),
-  fixed(13, "Drenaje Linfático 75 minutos", 75),
-  fixed(14, "Antiestrés The Nook", 80),
-  fixed(15, "Masaje para Embarazada 75 minutos", 80),
-  fixed(16, "Masaje Descontracturante 75 minutos", 80),
-  fixed(17, "Masaje dos Personas 45 minutos", 90),
-  fixed(18, "Ritual del Kobido Individual", 90),
-  fixed(19, "Masaje 90 minutos", 90),
-  fixed(20, "Ritual Sakura Individual", 100),
-  fixed(21, "Masaje dos Personas 55 minutos", 110),
-  fixed(22, "Masaje a Cuatro Manos 50 minutos", 110),
-  fixed(23, "Masaje Relajante Extra Largo 110 minutos", 115),
-  fixed(24, "Bambuterapia Masaje con Cañas de Bambú para dos Personas", 120),
-  fixed(25, "Masaje con Piedras Calientes para dos personas", 120),
-  fixed(26, "Ritual Beauty Individual", 125),
-  fixed(27, "Ritual Energizante para dos Personas", 130),
-  fixed(28, "Ritual Romántico para dos Personas", 130),
-  fixed(29, "Masaje dos Personas 75 minutos", 140),
-  fixed(30, "Masaje a Cuatro Manos 80 minutos", 160),
-  fixed(31, "Ritual del Kobido para dos Personas", 170),
-  fixed(32, "Masaje dos Personas 110 minutos", 190),
-  fixed(33, "Ritual Sakura para dos Personas", 190),
-  fixed(34, "Ritual Beauty para dos Personas", 230),
-  fixed(35, "BONO 5 masajes para Embarazada", 264),
-  fixed(36, "BONO 5 masajes Reductor Anticelulítico", 264),
-  fixed(37, "BONO 5 masajes 55 minutos", 264),
-  fixed(38, "BONO 5 masajes 75 minutos", 355),
-  fixed(39, "BONO 5 masajes dos Personas 45 minutos", 396),
-  fixed(40, "BONO 10 masajes 55 minutos", 510),
-  fixed(41, "BONO 10 masajes Reductor Anticelulítico", 510),
-  fixed(42, "BONO 10 masajes para Embarazada", 510),
-  fixed(43, "BONO 5 masajes dos Personas 75 minutos", 615),
-].map((it) => ({
-  ...it,
-  description:
-    it.type === "fixed"
-      ? `Tarjeta regalo válida para ${it.name}`
-      : it.description,
-}));
+const [giftOptions, setGiftOptions] = useState<{ id: string; name: string; amount_cents: number }[]>([]);
+
+useEffect(() => {
+  supabase
+    .from('gift_card_options')
+    .select('id,name,amount_cents,is_active')
+    .eq('is_active', true)
+    .order('amount_cents', { ascending: true })
+    .then(({ data, error }) => {
+      if (!error) setGiftOptions((data || []).map((d: any) => ({ id: d.id, name: d.name, amount_cents: d.amount_cents })));
+    });
+}, []);
+
+const giftItems: GiftCardItem[] = useMemo(
+  () => giftOptions.map((o) => ({ id: o.id, name: o.name, type: "fixed", priceCents: o.amount_cents } as GiftCardItem)),
+  [giftOptions]
+);
 
 // Simple local cart (persisted to localStorage)
 const useLocalCart = () => {
@@ -144,7 +103,7 @@ const GiftCardsPage = () => {
   const { items, add, remove, clear, totalCents } = useLocalCart();
   const [customAmount, setCustomAmount] = useState<number | "">("");
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
-  const presets = [25, 50, 100, 200];
+  const presets = useMemo(() => giftOptions.map((o) => Math.round(o.amount_cents / 100)), [giftOptions]);
 
   useEffect(() => {
     document.title = "Tarjetas de Regalo | The Nook Madrid";
@@ -258,7 +217,7 @@ const GiftCardsPage = () => {
 
           <section aria-label="Listado de tarjetas de regalo">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-              {GIFT_ITEMS.map((item) => (
+              {[...giftItems, custom].map((item) => (
                 <Card key={item.id} className="flex flex-col">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base leading-snug line-clamp-2" title={item.name}>
