@@ -139,7 +139,7 @@ function ServicesAccordions({
       key: "masajes-individuales",
       title: "Masajes Individuales",
       items: massageServices.filter(
-        (s) => s.type === "massage" && !isDuo(s.name) && !isCuatroManos(s.name) && !isRitual(s.name, s.description) && !isTresPersonas(s.name)
+        (s) => !isDuo(s.name) && !isCuatroManos(s.name) && !isRitual(s.name, s.description) && !isTresPersonas(s.name)
       ),
     },
     {
@@ -150,7 +150,7 @@ function ServicesAccordions({
     {
       key: "masajes-dos-personas",
       title: "Masajes para dos Personas",
-      items: massageServices.filter((s) => s.type === "massage" && isDuo(s.name) && !isRitual(s.name, s.description) && !isTresPersonas(s.name)),
+      items: massageServices.filter((s) => isDuo(s.name) && !isRitual(s.name, s.description) && !isTresPersonas(s.name)),
     },
     {
       key: "rituales-individuales",

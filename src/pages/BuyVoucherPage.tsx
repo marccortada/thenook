@@ -154,23 +154,65 @@ export default function BuyVoucherPage() {
                       <SelectValue placeholder="Selecciona un bono" />
                     </SelectTrigger>
                     <SelectContent>
-                      {([
-                        ["Individuales", (categorized as any).individuales],
-                        ["A cuatro manos", (categorized as any).cuatro],
-                        ["Rituales", (categorized as any).rituales],
-                        ["Para dos", (categorized as any).paraDos],
-                      ] as [string, any[]][])
-                        .filter(([, list]) => list && list.length > 0)
-                        .map(([label, list]) => (
-                          <SelectGroup key={label}>
-                            <SelectLabel>{label}</SelectLabel>
-                            {list.map((p: any) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        ))}
+                      <SelectGroup>
+                        <SelectLabel>Individuales</SelectLabel>
+                        {categorized.individuales.length > 0 ? (
+                          categorized.individuales.map((p: any) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="__no_ind__" disabled>
+                            No hay bonos individuales
+                          </SelectItem>
+                        )}
+                      </SelectGroup>
+
+                      <SelectGroup>
+                        <SelectLabel>A cuatro manos</SelectLabel>
+                        {categorized.cuatro.length > 0 ? (
+                          categorized.cuatro.map((p: any) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="__no_cuatro__" disabled>
+                            No hay bonos a cuatro manos
+                          </SelectItem>
+                        )}
+                      </SelectGroup>
+
+                      <SelectGroup>
+                        <SelectLabel>Rituales</SelectLabel>
+                        {categorized.rituales.length > 0 ? (
+                          categorized.rituales.map((p: any) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="__no_rit__" disabled>
+                            No hay bonos de rituales
+                          </SelectItem>
+                        )}
+                      </SelectGroup>
+
+                      <SelectGroup>
+                        <SelectLabel>Para dos</SelectLabel>
+                        {categorized.paraDos.length > 0 ? (
+                          categorized.paraDos.map((p: any) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="__no_dos__" disabled>
+                            No hay bonos para dos
+                          </SelectItem>
+                        )}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>
