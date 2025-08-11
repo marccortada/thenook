@@ -310,7 +310,7 @@ const GiftCardsPage = () => {
                     {list.map((item) => (
                       <Card key={item.id} className="flex flex-col">
                         <CardHeader className="pb-2">
-                          <CardTitle className="text-base leading-snug line-clamp-2" title={item.name}>
+                          <CardTitle className="text-base leading-snug md:line-clamp-2" title={item.name}>
                             {item.name}
                           </CardTitle>
                         </CardHeader>
@@ -324,7 +324,7 @@ const GiftCardsPage = () => {
                             />
                           )}
                           <p className="text-xs text-muted-foreground min-h-8">
-                            {item.description}
+                            {item.description || item.name}
                           </p>
                           <p className="font-semibold">{euro(item.priceCents!)}</p>
                         </CardContent>
@@ -344,7 +344,7 @@ const GiftCardsPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 <Card key={custom.id} className="flex flex-col">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base leading-snug line-clamp-2" title={custom.name}>
+                    <CardTitle className="text-base leading-snug md:line-clamp-2" title={custom.name}>
                       {custom.name}
                     </CardTitle>
                   </CardHeader>
