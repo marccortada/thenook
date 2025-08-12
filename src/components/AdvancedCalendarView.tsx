@@ -101,9 +101,9 @@ const AdvancedCalendarView = () => {
   const generateTimeSlots = (): TimeSlot[] => {
     const slots: TimeSlot[] = [];
     const base = startOfDay(selectedDate);
-    for (let hour = 8; hour <= 22; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        if (hour === 22 && minute > 0) break; // Stop at 22:00
+      for (let hour = 10; hour <= 22; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          if (hour === 22 && minute > 0) break; // Stop at 22:00
         const time = new Date(base);
         time.setHours(hour, minute, 0, 0);
         slots.push({
@@ -686,16 +686,37 @@ const AdvancedCalendarView = () => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notas (opcional)</Label>
-                <Textarea
-                  id="notes"
-                  value={bookingForm.notes}
-                  onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
-                  placeholder="Notas adicionales..."
-                  rows={3}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Hora</Label>
+                  <Select value={format(bookingForm.timeSlot, 'HH:mm')} onValueChange={(val) => {
+                    const [h, m] = val.split(':').map(Number);
+                    const d = new Date(bookingForm.timeSlot);
+                    d.setHours(h, m, 0, 0);
+                    setBookingForm({ ...bookingForm, timeSlot: d });
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Hora" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeOptions5m.map((t) => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notas (opcional)</Label>
+                  <Textarea
+                    id="notes"
+                    value={bookingForm.notes}
+                    onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
+                    placeholder="Notas adicionales..."
+                    rows={3}
+                  />
+                </div>
               </div>
+
             </div>
 
             <div className="sticky bottom-0 px-4 py-3 border-t bg-background">
