@@ -522,7 +522,7 @@ const SimpleCenterCalendar = () => {
 
     {/* New Booking Modal */}
     <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
-      <DialogContent className="w-[96vw] sm:max-w-md p-0">
+      <DialogContent className="w-[98vw] sm:max-w-lg md:max-w-xl p-0">
         <div className="flex flex-col max-h-[85vh]">
           <DialogHeader className="px-4 pt-4 pb-2 border-b">
             <DialogTitle>Nueva Reserva</DialogTitle>
@@ -568,7 +568,7 @@ const SimpleCenterCalendar = () => {
               <div>
                 <Label htmlFor="service">Servicio</Label>
                 <Select value={newBookingForm.serviceId} onValueChange={(value) => setNewBookingForm({...newBookingForm, serviceId: value})}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11">
                     <SelectValue placeholder="Seleccionar servicio" />
                   </SelectTrigger>
                    <SelectContent>
@@ -585,7 +585,7 @@ const SimpleCenterCalendar = () => {
               <div>
                 <Label htmlFor="time">Hora</Label>
                 <Select value={newBookingForm.time} onValueChange={(value) => setNewBookingForm({...newBookingForm, time: value})}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11">
                     <SelectValue placeholder="Hora" />
                   </SelectTrigger>
                   <SelectContent>
@@ -623,7 +623,7 @@ const SimpleCenterCalendar = () => {
                 value={newBookingForm.notes}
                 onChange={(e) => setNewBookingForm({...newBookingForm, notes: e.target.value})}
                 placeholder="Notas adicionales..."
-                rows={3}
+                rows={4}
               />
             </div>
           </div>
