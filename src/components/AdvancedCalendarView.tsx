@@ -654,7 +654,7 @@ const AdvancedCalendarView = () => {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-24">
+            <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-32">
               <div className="space-y-2">
                 <ClientSelector
                   label="Cliente"
@@ -686,8 +686,8 @@ const AdvancedCalendarView = () => {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="space-y-2 md:col-span-1">
                   <Label>Hora</Label>
                   <Select value={format(bookingForm.timeSlot, 'HH:mm')} onValueChange={(val) => {
                     const [h, m] = val.split(':').map(Number);
@@ -695,7 +695,7 @@ const AdvancedCalendarView = () => {
                     d.setHours(h, m, 0, 0);
                     setBookingForm({ ...bookingForm, timeSlot: d });
                   }}>
-                    <SelectTrigger className="h-11">
+                    <SelectTrigger className="h-11 min-w-[140px]">
                       <SelectValue placeholder="Hora" />
                     </SelectTrigger>
                     <SelectContent>
@@ -705,14 +705,14 @@ const AdvancedCalendarView = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="notes">Notas (opcional)</Label>
                   <Textarea
                     id="notes"
                     value={bookingForm.notes}
                     onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
                     placeholder="Notas adicionales..."
-                    rows={4}
+                    rows={6}
                   />
                 </div>
               </div>
