@@ -38,6 +38,10 @@ const ReservationSystem = () => {
     lane: "",
     notes: "",
     serviceType: "individual" as "individual" | "voucher",
+    redeemCode: "",
+    redeemAmountEUR: undefined as number | undefined,
+    redeemNotes: "",
+    redeemNow: false,
   });
 
   const { services, loading: servicesLoading } = useServices(formData.center);
@@ -225,6 +229,23 @@ const ReservationSystem = () => {
       const newBooking = await createBooking(bookingData);
       console.log('Booking successfully created:', newBooking);
 
+      // Canjear código si procede
+      if (formData.redeemNow && formData.redeemCode) {
+        try {
+          const amountCents = formData.redeemAmountEUR && formData.redeemAmountEUR > 0 ? Math.round(formData.redeemAmountEUR * 100) : null;
+          const { error: redeemError } = await (supabase as any).rpc('redeem_voucher_code', {
+            p_code: formData.redeemCode.trim(),
+            p_booking_id: newBooking?.id || null,
+            p_amount_cents: amountCents,
+            p_notes: formData.redeemNotes || null,
+          });
+          if (redeemError) throw redeemError;
+          toast({ title: '🎫 Canje aplicado', description: 'Se aplicó el bono/tarjeta a la reserva.' });
+        } catch (e: any) {
+          toast({ title: 'Canje no aplicado', description: e.message || 'Revisa el código o el importe', variant: 'destructive' });
+        }
+      }
+
       toast({
         title: "✅ Reserva Creada",
         description: `Reserva para ${isAuthenticated && user ? user.name : formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
@@ -243,6 +264,10 @@ const ReservationSystem = () => {
         lane: "",
         notes: "",
         serviceType: "individual",
+        redeemCode: "",
+        redeemAmountEUR: undefined,
+        redeemNotes: "",
+        redeemNow: false,
       });
     } catch (error) {
       console.error('Error creating booking:', error);

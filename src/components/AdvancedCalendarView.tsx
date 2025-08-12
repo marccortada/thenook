@@ -84,6 +84,12 @@ const AdvancedCalendarView = () => {
     notes: ''
   });
 
+  // Canje en flujo de reserva
+  const [redeemCode, setRedeemCode] = useState('');
+  const [redeemAmountEUR, setRedeemAmountEUR] = useState<number | undefined>(undefined);
+  const [redeemNotes, setRedeemNotes] = useState('');
+  const [redeemOnCreate, setRedeemOnCreate] = useState(false);
+
   const { bookings, loading: bookingsLoading, refetch: refetchBookings } = useBookings();
   const { centers } = useCenters();
   const { lanes } = useLanes();
@@ -255,7 +261,7 @@ const AdvancedCalendarView = () => {
       const timeSlotMinutes = bookingForm.timeSlot.getMinutes();
       bookingDateTime.setHours(timeSlotHours, timeSlotMinutes, 0, 0);
 
-      const { error: bookingError } = await supabase
+      const { data: created, error: bookingError } = await supabase
         .from('bookings')
         .insert({
           client_id: clientIdToUse,
@@ -269,15 +275,38 @@ const AdvancedCalendarView = () => {
           channel: 'web' as const,
           notes: bookingForm.notes || null,
           payment_status: 'pending' as const
-        });
+        })
+        .select('id')
+        .single();
 
       if (bookingError) throw bookingError;
+
+      // Canjear código si procede
+      if (redeemOnCreate && redeemCode) {
+        try {
+          const amountCents = redeemAmountEUR && redeemAmountEUR > 0 ? Math.round(redeemAmountEUR * 100) : null;
+          const { error: redeemError } = await (supabase as any).rpc('redeem_voucher_code', {
+            p_code: redeemCode.trim(),
+            p_booking_id: created?.id || null,
+            p_amount_cents: amountCents,
+            p_notes: redeemNotes || null,
+          });
+          if (redeemError) throw redeemError;
+          toast({ title: '🎫 Canje aplicado', description: 'Se aplicó el bono/tarjeta a la reserva.' });
+        } catch (e: any) {
+          toast({ title: 'Canje no aplicado', description: e.message || 'Revisa el código o el importe', variant: 'destructive' });
+        }
+      }
 
       toast({ title: '✅ Reserva Creada', description: 'Reserva creada correctamente.' });
 
       setShowBookingModal(false);
       setSelectedSlot(null);
       setCreateClientId(null);
+      setRedeemCode('');
+      setRedeemAmountEUR(undefined);
+      setRedeemNotes('');
+      setRedeemOnCreate(false);
       setBookingForm({
         clientName: '',
         clientPhone: '',
@@ -715,6 +744,30 @@ const AdvancedCalendarView = () => {
                     rows={6}
                     className="resize-none"
                   />
+                </div>
+              </div>
+
+              <div className="border-t pt-3 space-y-3">
+                <Label>Canjear código (opcional)</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <Label>Código</Label>
+                    <Input value={redeemCode} onChange={(e) => setRedeemCode(e.target.value)} placeholder="ABCD1234" />
+                  </div>
+                  <div>
+                    <Label>Importe (€) solo si es tarjeta</Label>
+                    <Input type="number" step="0.01" min="0" value={redeemAmountEUR ?? ''} onChange={(e) => setRedeemAmountEUR(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="Ej. 50.00" />
+                  </div>
+                  <div className="md:col-span-1 flex items-end">
+                    <label className="inline-flex items-center gap-2 text-sm">
+                      <input type="checkbox" className="accent-current" checked={redeemOnCreate} onChange={(e) => setRedeemOnCreate(e.target.checked)} />
+                      Canjear al crear
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <Label>Notas de canje</Label>
+                  <Textarea rows={2} value={redeemNotes} onChange={(e) => setRedeemNotes(e.target.value)} placeholder="Observaciones del canje" />
                 </div>
               </div>
 
