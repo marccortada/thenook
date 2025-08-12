@@ -464,7 +464,7 @@ const AdvancedCalendarView = () => {
                               {booking.profiles?.phone}
                             </div>
                             <div className="text-xs font-medium mt-1">
-                              €{((booking.total_price_cents || 0) / 100).toFixed(0)}
+                              {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {format(parseISO(booking.booking_datetime), 'HH:mm')}
@@ -679,7 +679,7 @@ const AdvancedCalendarView = () => {
                   <SelectContent>
                     {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
                       <SelectItem key={service.id} value={service.id}>
-                        {service.name} - €{(service.price_cents / 100).toFixed(0)} ({service.duration_minutes}min)
+                        {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -777,7 +777,7 @@ const AdvancedCalendarView = () => {
                     <SelectContent>
                       {services.filter(s => s.center_id === (editingBooking.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
                         <SelectItem key={service.id} value={service.id}>
-                          {service.name} - €{(service.price_cents / 100).toFixed(0)} ({service.duration_minutes}min)
+                          {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -39,7 +39,8 @@ const PackageManagement = () => {
   const [selectedPackageId, setSelectedPackageId] = useState<string>('');
   
   const { packages, loading, error, refetch, createPackage, usePackageSession, cancelPackage, updatePackageNotes } = useClientPackages(selectedClient);
-  const { expiringPackages, loading: expiringLoading, refetch: refetchExpiring } = useExpiringPackages(7);
+  const [daysAhead, setDaysAhead] = useState<number>(7);
+  const { expiringPackages, loading: expiringLoading, refetch: refetchExpiring } = useExpiringPackages(daysAhead);
   const { packages: availablePackages } = usePackages();
   const [createClientId, setCreateClientId] = useState<string>("");
 
@@ -290,7 +291,7 @@ const PackageManagement = () => {
               {expiringPackages.length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Próximos 7 días
+              Próximos {daysAhead} días
             </p>
           </CardContent>
         </Card>
@@ -479,9 +480,16 @@ const PackageManagement = () => {
         <TabsContent value="expiring">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                <span>Bonos Próximos a Vencer</span>
+              <CardTitle className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                  <span>Bonos Próximos a Vencer</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="daysAhead" className="text-sm">Días</Label>
+                  <Input id="daysAhead" type="number" min={1} max={60} value={daysAhead}
+                    onChange={(e) => setDaysAhead(Number(e.target.value) || 7)} className="w-20 h-8" />
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>

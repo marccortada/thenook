@@ -287,7 +287,7 @@ const DailyAgendaView = () => {
               <div>
                 <p className="text-xs lg:text-sm text-muted-foreground">Ingresos</p>
                 <p className="text-lg lg:text-2xl font-bold">
-                  €{filteredBookings.reduce((sum, b) => sum + ((b.total_price_cents || 0) / 100), 0).toFixed(0)}
+                  {filteredBookings.reduce((sum, b) => sum + ((b.total_price_cents || 0) / 100), 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                 </p>
               </div>
             </div>

@@ -343,7 +343,7 @@ const SimpleCenterCalendar = () => {
           <Card className="p-3">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">
-                €{centerBookings.reduce((sum, b) => sum + ((b.total_price_cents || 0) / 100), 0).toFixed(0)}
+                {centerBookings.reduce((sum, b) => sum + ((b.total_price_cents || 0) / 100), 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
               </div>
               <div className="text-sm text-muted-foreground">Ingresos</div>
             </div>
@@ -443,7 +443,7 @@ const SimpleCenterCalendar = () => {
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="secondary" className="text-xs">
-                                €{((booking.total_price_cents || 0) / 100).toFixed(0)}
+                                {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
                               </Badge>
                               {booking.employee_id && (
                                 <div className="text-xs text-muted-foreground truncate">
@@ -576,7 +576,7 @@ const SimpleCenterCalendar = () => {
                        .filter(service => service.center_id === activeTab || !service.center_id)
                        .map((service) => (
                        <SelectItem key={service.id} value={service.id}>
-                         {service.name} - €{(service.price_cents / 100).toFixed(2)}
+                          {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)}
                        </SelectItem>
                      ))}
                   </SelectContent>

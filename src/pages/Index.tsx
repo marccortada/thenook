@@ -26,7 +26,7 @@ import { useNavigate } from "react-router-dom";
 import { useCenters } from "@/hooks/useDatabase";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("reservations");
+  const [activeTab, setActiveTab] = useState("bookings");
   const { user, isAdmin, isEmployee, isAuthenticated, loading } = useSimpleAuth();
   const navigate = useNavigate();
 
@@ -152,7 +152,7 @@ const Index = () => {
               </Button>
             )}
             
-            {isAdmin && (
+            {(isAdmin || isEmployee) && (
               <Button
                 variant={activeTab === "packages" ? "default" : "outline"}
                 onClick={() => setActiveTab("packages")}
@@ -196,7 +196,7 @@ const Index = () => {
             </TabsContent>
           )}
 
-          {isAdmin && (
+          {(isAdmin || isEmployee) && (
             <TabsContent value="packages" className="mt-6">
               <PackageManagement />
             </TabsContent>
