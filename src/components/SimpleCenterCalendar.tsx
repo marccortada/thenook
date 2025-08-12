@@ -531,7 +531,7 @@ const SimpleCenterCalendar = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="px-4 py-3 overflow-auto flex-1 space-y-4">
+          <div className="px-4 py-3 overflow-auto flex-1 space-y-4 pb-24">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="clientName">Nombre del Cliente</Label>

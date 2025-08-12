@@ -654,7 +654,7 @@ const AdvancedCalendarView = () => {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 px-4 py-3 overflow-auto flex-1">
+            <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-24">
               <div className="space-y-2">
                 <ClientSelector
                   label="Cliente"
