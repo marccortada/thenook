@@ -719,14 +719,14 @@ const AdvancedCalendarView = () => {
 
             </div>
 
-            <div className="sticky bottom-0 px-4 py-3 border-t bg-background">
+            <div className="sticky bottom-0 px-2 py-2 border-t bg-background">
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowBookingModal(false)}>
-                  <X className="h-4 w-4 mr-2" />
+                <Button size="sm" variant="outline" onClick={() => setShowBookingModal(false)}>
+                  <X className="h-4 w-4 mr-1" />
                   Cancelar
                 </Button>
-                <Button onClick={createBooking}>
-                  <Save className="h-4 w-4 mr-2" />
+                <Button size="sm" onClick={createBooking}>
+                  <Save className="h-4 w-4 mr-1" />
                   Crear Reserva
                 </Button>
               </div>
@@ -831,10 +831,10 @@ const AdvancedCalendarView = () => {
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => { setShowEditModal(false); setEditingBooking(null); }}>
+                <Button size="sm" variant="outline" onClick={() => { setShowEditModal(false); setEditingBooking(null); }}>
                   <X className="h-4 w-4 mr-2" /> Cancelar
                 </Button>
-                <Button onClick={saveBookingEdits}>
+                <Button size="sm" onClick={saveBookingEdits}>
                   <Save className="h-4 w-4 mr-2" /> Guardar cambios
                 </Button>
               </div>

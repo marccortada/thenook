@@ -628,13 +628,13 @@ const SimpleCenterCalendar = () => {
             </div>
           </div>
 
-          <div className="sticky bottom-0 px-4 py-3 border-t bg-background">
+          <div className="sticky bottom-0 px-2 py-2 border-t bg-background">
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowNewBookingModal(false)} className="flex-1">
+              <Button size="sm" variant="outline" onClick={() => setShowNewBookingModal(false)} className="flex-1">
                 Cancelar
               </Button>
-              <Button onClick={createBooking} className="flex-1">
-                <Save className="h-4 w-4 mr-2" />
+              <Button size="sm" onClick={createBooking} className="flex-1">
+                <Save className="h-4 w-4 mr-1" />
                 Crear Reserva
               </Button>
             </div>
