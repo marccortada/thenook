@@ -654,7 +654,7 @@ const AdvancedCalendarView = () => {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-28">
+            <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-4">
               <div className="space-y-2">
                 <ClientSelector
                   label="Cliente"
@@ -720,7 +720,7 @@ const AdvancedCalendarView = () => {
 
             </div>
 
-            <div className="sticky bottom-0 px-4 py-3 border-t bg-background">
+            <div className="mt-auto px-4 py-3 border-t bg-background">
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowBookingModal(false)}>
                   <X className="h-4 w-4 mr-2" />

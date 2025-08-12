@@ -531,7 +531,7 @@ const SimpleCenterCalendar = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="px-4 py-3 overflow-auto flex-1 space-y-4 pb-24">
+          <div className="px-4 py-3 overflow-auto flex-1 space-y-4 pb-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="clientName">Nombre del Cliente</Label>
@@ -628,7 +628,7 @@ const SimpleCenterCalendar = () => {
             </div>
           </div>
 
-          <div className="sticky bottom-0 px-4 py-3 border-t bg-background">
+          <div className="mt-auto px-4 py-3 border-t bg-background">
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setShowNewBookingModal(false)} className="flex-1">
                 Cancelar
