@@ -17,7 +17,8 @@ import {
   Plus,
   Edit,
   Trash2,
-  Save
+  Save,
+  Ban
 } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -508,118 +509,122 @@ const SimpleCenterCalendar = () => {
 
     {/* New Booking Modal */}
     <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Nueva Reserva</DialogTitle>
-          <DialogDescription>
-            Crear una nueva reserva para {format(selectedDate, "d 'de' MMMM", { locale: es })}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="clientName">Nombre del Cliente</Label>
-              <Input
-                id="clientName"
-                value={newBookingForm.clientName}
-                onChange={(e) => setNewBookingForm({...newBookingForm, clientName: e.target.value})}
-                placeholder="Nombre completo"
-              />
-            </div>
-            <div>
-              <Label htmlFor="clientPhone">Teléfono</Label>
-              <Input
-                id="clientPhone"
-                value={newBookingForm.clientPhone}
-                onChange={(e) => setNewBookingForm({...newBookingForm, clientPhone: e.target.value})}
-                placeholder="+34 600 000 000"
-              />
-            </div>
-          </div>
+      <DialogContent className="w-[96vw] sm:max-w-md p-0">
+        <div className="flex flex-col max-h-[85vh]">
+          <DialogHeader className="px-4 pt-4 pb-2 border-b">
+            <DialogTitle>Nueva Reserva</DialogTitle>
+            <DialogDescription>
+              Crear una nueva reserva para {format(selectedDate, "d 'de' MMMM", { locale: es })}
+            </DialogDescription>
+          </DialogHeader>
           
-          <div>
-            <Label htmlFor="clientEmail">Email</Label>
-            <Input
-              id="clientEmail"
-              type="email"
-              value={newBookingForm.clientEmail}
-              onChange={(e) => setNewBookingForm({...newBookingForm, clientEmail: e.target.value})}
-              placeholder="cliente@email.com"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="service">Servicio</Label>
-              <Select value={newBookingForm.serviceId} onValueChange={(value) => setNewBookingForm({...newBookingForm, serviceId: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar servicio" />
-                </SelectTrigger>
-                 <SelectContent>
-                   {allServices && allServices
-                     .filter(service => service.center_id === activeTab || !service.center_id)
-                     .map((service) => (
-                     <SelectItem key={service.id} value={service.id}>
-                       {service.name} - €{(service.price_cents / 100).toFixed(2)}
-                     </SelectItem>
-                   ))}
-                </SelectContent>
-              </Select>
+          <div className="px-4 py-3 overflow-auto flex-1 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="clientName">Nombre del Cliente</Label>
+                <Input
+                  id="clientName"
+                  value={newBookingForm.clientName}
+                  onChange={(e) => setNewBookingForm({...newBookingForm, clientName: e.target.value})}
+                  placeholder="Nombre completo"
+                />
+              </div>
+              <div>
+                <Label htmlFor="clientPhone">Teléfono</Label>
+                <Input
+                  id="clientPhone"
+                  value={newBookingForm.clientPhone}
+                  onChange={(e) => setNewBookingForm({...newBookingForm, clientPhone: e.target.value})}
+                  placeholder="+34 600 000 000"
+                />
+              </div>
             </div>
+            
             <div>
-              <Label htmlFor="time">Hora</Label>
-              <Select value={newBookingForm.time} onValueChange={(value) => setNewBookingForm({...newBookingForm, time: value})}>
+              <Label htmlFor="clientEmail">Email</Label>
+              <Input
+                id="clientEmail"
+                type="email"
+                value={newBookingForm.clientEmail}
+                onChange={(e) => setNewBookingForm({...newBookingForm, clientEmail: e.target.value})}
+                placeholder="cliente@email.com"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="service">Servicio</Label>
+                <Select value={newBookingForm.serviceId} onValueChange={(value) => setNewBookingForm({...newBookingForm, serviceId: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar servicio" />
+                  </SelectTrigger>
+                   <SelectContent>
+                     {allServices && allServices
+                       .filter(service => service.center_id === activeTab || !service.center_id)
+                       .map((service) => (
+                       <SelectItem key={service.id} value={service.id}>
+                         {service.name} - €{(service.price_cents / 100).toFixed(2)}
+                       </SelectItem>
+                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="time">Hora</Label>
+                <Select value={newBookingForm.time} onValueChange={(value) => setNewBookingForm({...newBookingForm, time: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Hora" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSlots.map((slot) => (
+                      <SelectItem key={slot.getTime()} value={format(slot, 'HH:mm')}>
+                        {format(slot, 'HH:mm')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="employee">Especialista</Label>
+              <Select value={newBookingForm.employeeId} onValueChange={(value) => setNewBookingForm({...newBookingForm, employeeId: value})}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Hora" />
+                  <SelectValue placeholder="Seleccionar especialista" />
                 </SelectTrigger>
                 <SelectContent>
-                  {timeSlots.map((slot) => (
-                    <SelectItem key={slot.getTime()} value={format(slot, 'HH:mm')}>
-                      {format(slot, 'HH:mm')}
+                  <SelectItem value="auto">Asignar automáticamente</SelectItem>
+                  {getEmployeesForCenter(activeTab).map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.profiles?.first_name} {employee.profiles?.last_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label htmlFor="notes">Notas (opcional)</Label>
+              <Textarea
+                id="notes"
+                value={newBookingForm.notes}
+                onChange={(e) => setNewBookingForm({...newBookingForm, notes: e.target.value})}
+                placeholder="Notas adicionales..."
+                rows={3}
+              />
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="employee">Especialista</Label>
-            <Select value={newBookingForm.employeeId} onValueChange={(value) => setNewBookingForm({...newBookingForm, employeeId: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar especialista" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Asignar automáticamente</SelectItem>
-                {getEmployeesForCenter(activeTab).map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    {employee.profiles?.first_name} {employee.profiles?.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="notes">Notas (opcional)</Label>
-            <Textarea
-              id="notes"
-              value={newBookingForm.notes}
-              onChange={(e) => setNewBookingForm({...newBookingForm, notes: e.target.value})}
-              placeholder="Notas adicionales..."
-              rows={3}
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowNewBookingModal(false)} className="flex-1">
-              Cancelar
-            </Button>
-            <Button onClick={createBooking} className="flex-1">
-              <Save className="h-4 w-4 mr-2" />
-              Crear Reserva
-            </Button>
+          <div className="sticky bottom-0 px-4 py-3 border-t bg-background">
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowNewBookingModal(false)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button onClick={createBooking} className="flex-1">
+                <Save className="h-4 w-4 mr-2" />
+                Crear Reserva
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

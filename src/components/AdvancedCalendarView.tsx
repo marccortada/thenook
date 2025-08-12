@@ -631,66 +631,70 @@ const AdvancedCalendarView = () => {
 
       {/* New Booking Modal */}
       <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nueva Reserva</DialogTitle>
-            <DialogDescription>
-              Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="w-[96vw] sm:max-w-md p-0">
+          <div className="flex flex-col max-h-[85vh]">
+            <DialogHeader className="px-4 pt-4 pb-2 border-b">
+              <DialogTitle>Nueva Reserva</DialogTitle>
+              <DialogDescription>
+                Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <ClientSelector
-                label="Cliente"
-                onSelect={(c) => {
-                  setCreateClientId(c.id);
-                  setBookingForm((prev) => ({
-                    ...prev,
-                    clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
-                    clientPhone: c.phone || '',
-                    clientEmail: c.email || '',
-                  }));
-                }}
-              />
+            <div className="space-y-4 px-4 py-3 overflow-auto flex-1">
+              <div className="space-y-2">
+                <ClientSelector
+                  label="Cliente"
+                  onSelect={(c) => {
+                    setCreateClientId(c.id);
+                    setBookingForm((prev) => ({
+                      ...prev,
+                      clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                      clientPhone: c.phone || '',
+                      clientEmail: c.email || '',
+                    }));
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="serviceId">Servicio *</Label>
+                <Select value={bookingForm.serviceId} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar servicio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
+                      <SelectItem key={service.id} value={service.id}>
+                        {service.name} - €{(service.price_cents / 100).toFixed(0)} ({service.duration_minutes}min)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notas (opcional)</Label>
+                <Textarea
+                  id="notes"
+                  value={bookingForm.notes}
+                  onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
+                  placeholder="Notas adicionales..."
+                  rows={3}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="serviceId">Servicio *</Label>
-              <Select value={bookingForm.serviceId} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar servicio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name} - €{(service.price_cents / 100).toFixed(0)} ({service.duration_minutes}min)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notas (opcional)</Label>
-              <Textarea
-                id="notes"
-                value={bookingForm.notes}
-                onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
-                placeholder="Notas adicionales..."
-                rows={3}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowBookingModal(false)}>
-                <X className="h-4 w-4 mr-2" />
-                Cancelar
-              </Button>
-              <Button onClick={createBooking}>
-                <Save className="h-4 w-4 mr-2" />
-                Crear Reserva
-              </Button>
+            <div className="sticky bottom-0 px-4 py-3 border-t bg-background">
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowBookingModal(false)}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancelar
+                </Button>
+                <Button onClick={createBooking}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Crear Reserva
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>

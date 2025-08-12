@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -22,7 +23,8 @@ import {
   Phone,
   Mail,
   CalendarDays,
-  Settings
+  Settings,
+  Ban
 } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -226,14 +228,23 @@ const DailyAgendaView = () => {
               </SelectContent>
             </Select>
 
-            {/* Add booking button */}
-            <Button size="sm" className="hidden lg:flex">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva
-            </Button>
-            <Button size="sm" className="lg:hidden">
-              <Plus className="h-4 w-4" />
-            </Button>
+            {/* Add booking button with options */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  <span className="hidden lg:inline">Nuevo</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => toast({ title: "Crear cita", description: "Selecciona un hueco en la agenda para crear la cita." })}>
+                  <Calendar className="h-4 w-4 mr-2" /> Crear cita
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast({ title: "Crear bloqueo", description: "Próximamente: bloqueo rápido en la agenda." })}>
+                  <Ban className="h-4 w-4 mr-2" /> Crear bloqueo
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -396,82 +407,90 @@ const DailyAgendaView = () => {
 
         {/* Booking Details Dialog */}
         <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Detalles de la Reserva</DialogTitle>
-              <DialogDescription>
-                Información completa de la reserva seleccionada
-              </DialogDescription>
-            </DialogHeader>
-            
-            {selectedBooking && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg">{selectedBooking.clientName}</h3>
-                  <Badge className={getStatusColor(selectedBooking.status)}>
-                    {selectedBooking.status}
-                  </Badge>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">
-                      {format(selectedBooking.startTime, "d 'de' MMMM 'de' yyyy", { locale: es })}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">
-                      {format(selectedBooking.startTime, 'HH:mm')} - {format(selectedBooking.endTime, 'HH:mm')}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 rounded bg-primary" />
-                    <span className="text-sm">{selectedBooking.serviceName}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 text-green-600">€</div>
-                    <span className="text-sm font-medium">€{selectedBooking.price}</span>
-                  </div>
-
-                  {selectedBooking.clientEmail && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{selectedBooking.clientEmail}</span>
+          <DialogContent className="w-[96vw] sm:max-w-md p-0">
+            <div className="flex flex-col max-h-[85vh]">
+              <DialogHeader className="px-4 pt-4 pb-2 border-b">
+                <DialogTitle>Detalles de la Reserva</DialogTitle>
+                <DialogDescription>
+                  Información completa de la reserva seleccionada
+                </DialogDescription>
+              </DialogHeader>
+              
+              {selectedBooking && (
+                <>
+                  <div className="space-y-4 px-4 py-3 overflow-auto flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-lg">{selectedBooking.clientName}</h3>
+                      <Badge className={getStatusColor(selectedBooking.status)}>
+                        {selectedBooking.status}
+                      </Badge>
                     </div>
-                  )}
-
-                  {selectedBooking.clientPhone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{selectedBooking.clientPhone}</span>
+    
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          {format(selectedBooking.startTime, "d 'de' MMMM 'de' yyyy", { locale: es })}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          {format(selectedBooking.startTime, 'HH:mm')} - {format(selectedBooking.endTime, 'HH:mm')}
+                        </span>
+                      </div>
+    
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 rounded bg-primary" />
+                        <span className="text-sm">{selectedBooking.serviceName}</span>
+                      </div>
+    
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 text-green-600">€</div>
+                        <span className="text-sm font-medium">€{selectedBooking.price}</span>
+                      </div>
+    
+                      {selectedBooking.clientEmail && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{selectedBooking.clientEmail}</span>
+                        </div>
+                      )}
+    
+                      {selectedBooking.clientPhone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{selectedBooking.clientPhone}</span>
+                        </div>
+                      )}
+    
+                      {selectedBooking.notes && (
+                        <div className="p-3 bg-muted rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-1">Notas:</p>
+                          <p className="text-sm">{selectedBooking.notes}</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-
-                  {selectedBooking.notes && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Notas:</p>
-                      <p className="text-sm">{selectedBooking.notes}</p>
+                  </div>
+                  <div className="sticky bottom-0 px-4 py-3 border-t bg-background">
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Cancelar
+                      </Button>
+                      <Button variant="secondary" size="sm" className="flex-1" onClick={() => setShowBookingDetails(false)}>
+                        Cerrar
+                      </Button>
                     </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Edit3 className="h-4 w-4 mr-2" />
-                    Editar
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            )}
+                  </div>
+                </>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </div>
