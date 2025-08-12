@@ -646,7 +646,7 @@ const AdvancedCalendarView = () => {
       {/* New Booking Modal */}
       <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
         <DialogContent className="w-[98vw] sm:max-w-lg md:max-w-xl p-0">
-          <div className="flex flex-col min-h-[60vh] max-h-[92vh]">
+          <div className="flex flex-col min-h-[70vh] max-h-[95vh]">
             <DialogHeader className="px-4 pt-4 pb-2 border-b">
               <DialogTitle>Nueva Reserva</DialogTitle>
               <DialogDescription>
@@ -654,7 +654,7 @@ const AdvancedCalendarView = () => {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-12">
+            <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-28">
               <div className="space-y-2">
                 <ClientSelector
                   label="Cliente"
@@ -713,6 +713,7 @@ const AdvancedCalendarView = () => {
                     onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
                     placeholder="Notas adicionales..."
                     rows={6}
+                    className="resize-none"
                   />
                 </div>
               </div>
