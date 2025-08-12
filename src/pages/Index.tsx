@@ -91,12 +91,12 @@ const Index = () => {
               }}
               className="w-full p-3 border rounded-lg bg-background text-sm"
             >
-              <option value="reservations">📅 Nueva Reserva</option>
               <option value="bookings">📅 Calendario</option>
+              <option value="reservations">📅 Nueva Reserva</option>
               <option value="clients">👥 Gestión de Clientes</option>
               {(isAdmin || isEmployee) && <option value="redeem">🎫 Canjear código</option>}
+              {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
               {isAdmin && <option value="analytics">📊 Analytics</option>}
-              {isAdmin && <option value="packages">🎁 Bonos</option>}
               {isAdmin && <option value="control">🎛️ Centro de Control</option>}
             </select>
           </div>
