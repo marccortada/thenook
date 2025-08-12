@@ -117,6 +117,20 @@ const AdvancedCalendarView = () => {
 
   const timeSlots = generateTimeSlots();
 
+  // Time options for selects: every 5 minutes from 10:00 to 22:00
+  const timeOptions5m = React.useMemo(() => {
+    const opts: string[] = [];
+    const base = startOfDay(selectedDate);
+    const start = new Date(base); start.setHours(10, 0, 0, 0);
+    const end = new Date(base); end.setHours(22, 0, 0, 0);
+    const cur = new Date(start);
+    while (cur <= end) {
+      opts.push(format(cur, 'HH:mm'));
+      cur.setMinutes(cur.getMinutes() + 5);
+    }
+    return opts;
+  }, [selectedDate]);
+
   // Get dates for week view
   const getWeekDates = () => {
     const start = startOfWeek(selectedDate, { weekStartsOn: 1 }); // Start on Monday
@@ -389,7 +403,7 @@ const AdvancedCalendarView = () => {
               {centerLanes.map((lane) => (
                 <div key={lane.id} className="sticky top-0 z-10 bg-background border-b">
                   <div className="p-3 text-center font-medium border-r bg-muted/50">
-                    <div className="font-semibold text-sm">{lane.name}</div>
+                    <div className="font-semibold text-sm">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
                     <div className="text-xs text-muted-foreground">Capacidad: {lane.capacity}</div>
                   </div>
                 </div>
@@ -758,11 +772,11 @@ const AdvancedCalendarView = () => {
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      {timeSlots.map(ts => (
-                        <SelectItem key={ts.hour} value={ts.hour}>{ts.hour}</SelectItem>
-                      ))}
-                    </SelectContent>
+                  <SelectContent>
+                    {timeOptions5m.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2 md:col-span-2">

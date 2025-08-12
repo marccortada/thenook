@@ -223,7 +223,7 @@ const DailyAgendaView = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="lanes">Cabinas</SelectItem>
+                <SelectItem value="lanes">Carriles</SelectItem>
                 <SelectItem value="employees">Especialistas</SelectItem>
               </SelectContent>
             </Select>
@@ -317,7 +317,7 @@ const DailyAgendaView = () => {
                     {columns.map((column) => (
                       <div key={column.id} className="p-2 text-center font-medium border-r bg-muted/50">
                         <div className="flex flex-col items-center gap-1">
-                          <span className="font-semibold text-xs lg:text-sm truncate">{column.name}</span>
+                          <span className="font-semibold text-xs lg:text-sm truncate">{(column.name || '').replace(/ra[ií]l/gi, 'Carril')}</span>
                           {viewMode === 'employees' && column.specialties && (
                             <Badge variant="secondary" className="text-xs hidden lg:inline-flex">
                               {column.specialties.length} esp.

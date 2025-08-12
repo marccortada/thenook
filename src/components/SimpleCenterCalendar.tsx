@@ -61,7 +61,7 @@ const SimpleCenterCalendar = () => {
     }
   }, [centers, activeTab]);
 
-  // Time slots every 30 minutes from 8:00 to 22:00
+  // Time slots every 30 minutes from 8:00 to 22:00 (for grid only)
   const generateTimeSlots = () => {
     const slots = [];
     for (let hour = 8; hour <= 22; hour++) {
@@ -76,6 +76,19 @@ const SimpleCenterCalendar = () => {
   };
 
   const timeSlots = generateTimeSlots();
+
+  // Time options for forms: every 5 minutes from 10:00 to 22:00
+  const timeOptions = React.useMemo(() => {
+    const opts: string[] = [];
+    const start = new Date(); start.setHours(10, 0, 0, 0);
+    const end = new Date(); end.setHours(22, 0, 0, 0);
+    const cur = new Date(start);
+    while (cur <= end) {
+      opts.push(format(cur, 'HH:mm'));
+      cur.setMinutes(cur.getMinutes() + 5);
+    }
+    return opts;
+  }, []);
 
   // Filter bookings for selected date and center
   const getBookingsForDate = (centerId: string) => {
@@ -576,9 +589,9 @@ const SimpleCenterCalendar = () => {
                     <SelectValue placeholder="Hora" />
                   </SelectTrigger>
                   <SelectContent>
-                    {timeSlots.map((slot) => (
-                      <SelectItem key={slot.getTime()} value={format(slot, 'HH:mm')}>
-                        {format(slot, 'HH:mm')}
+                    {timeOptions.map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
                       </SelectItem>
                     ))}
                   </SelectContent>
