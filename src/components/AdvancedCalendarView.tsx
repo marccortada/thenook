@@ -646,7 +646,7 @@ const AdvancedCalendarView = () => {
       {/* New Booking Modal */}
       <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
         <DialogContent className="w-[98vw] sm:max-w-lg md:max-w-xl p-0">
-          <div className="flex flex-col max-h-[85vh]">
+          <div className="flex flex-col min-h-[60vh] max-h-[92vh]">
             <DialogHeader className="px-4 pt-4 pb-2 border-b">
               <DialogTitle>Nueva Reserva</DialogTitle>
               <DialogDescription>
@@ -654,7 +654,7 @@ const AdvancedCalendarView = () => {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-32">
+            <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-12">
               <div className="space-y-2">
                 <ClientSelector
                   label="Cliente"
@@ -719,14 +719,14 @@ const AdvancedCalendarView = () => {
 
             </div>
 
-            <div className="sticky bottom-0 px-2 py-2 border-t bg-background">
+            <div className="sticky bottom-0 px-4 py-3 border-t bg-background">
               <div className="flex justify-end gap-2">
-                <Button size="sm" variant="outline" onClick={() => setShowBookingModal(false)}>
-                  <X className="h-4 w-4 mr-1" />
+                <Button variant="outline" onClick={() => setShowBookingModal(false)}>
+                  <X className="h-4 w-4 mr-2" />
                   Cancelar
                 </Button>
-                <Button size="sm" onClick={createBooking}>
-                  <Save className="h-4 w-4 mr-1" />
+                <Button onClick={createBooking}>
+                  <Save className="h-4 w-4 mr-2" />
                   Crear Reserva
                 </Button>
               </div>

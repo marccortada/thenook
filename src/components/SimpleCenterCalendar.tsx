@@ -523,7 +523,7 @@ const SimpleCenterCalendar = () => {
     {/* New Booking Modal */}
     <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
       <DialogContent className="w-[98vw] sm:max-w-lg md:max-w-xl p-0">
-        <div className="flex flex-col max-h-[85vh]">
+        <div className="flex flex-col min-h-[60vh] max-h-[92vh]">
           <DialogHeader className="px-4 pt-4 pb-2 border-b">
             <DialogTitle>Nueva Reserva</DialogTitle>
             <DialogDescription>
@@ -531,7 +531,7 @@ const SimpleCenterCalendar = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="px-4 py-3 overflow-auto flex-1 space-y-4 pb-24">
+          <div className="px-4 py-3 overflow-auto flex-1 space-y-4 pb-12">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="clientName">Nombre del Cliente</Label>
@@ -628,13 +628,13 @@ const SimpleCenterCalendar = () => {
             </div>
           </div>
 
-          <div className="sticky bottom-0 px-2 py-2 border-t bg-background">
+          <div className="sticky bottom-0 px-4 py-3 border-t bg-background">
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => setShowNewBookingModal(false)} className="flex-1">
+              <Button variant="outline" onClick={() => setShowNewBookingModal(false)} className="flex-1">
                 Cancelar
               </Button>
-              <Button size="sm" onClick={createBooking} className="flex-1">
-                <Save className="h-4 w-4 mr-1" />
+              <Button onClick={createBooking} className="flex-1">
+                <Save className="h-4 w-4 mr-2" />
                 Crear Reserva
               </Button>
             </div>
