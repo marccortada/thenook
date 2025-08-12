@@ -21,6 +21,7 @@ const Layout = ({ children }: LayoutProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isOwner = !!user && user.email === 'work@thenookmadrid.com';
 
   const handleSignOut = async () => {
     try {
@@ -71,8 +72,8 @@ const Layout = ({ children }: LayoutProps) => {
                 </span>
               </Button>
               
-              {/* Menú de navegación principal - Solo para admins */}
-              {isAuthenticated && isAdmin && (
+              {/* Menú de navegación principal - Admin/Owner */}
+              {isAuthenticated && (isAdmin || isOwner) && (
                 <>
                   {isMobile ? (
                     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -164,7 +165,7 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
 
             <div className="flex items-center space-x-4">
-              {isAuthenticated && isAdmin && <NotificationBell />}
+              {isAuthenticated && (isAdmin || isOwner) && <NotificationBell />}
               {isAuthenticated && isAdmin ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

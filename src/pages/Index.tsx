@@ -30,6 +30,8 @@ const Index = () => {
   const { user, isAdmin, isEmployee, isAuthenticated, loading } = useSimpleAuth();
   const navigate = useNavigate();
 
+  const isOwner = !!user && user.email === 'work@thenookmadrid.com';
+
   // Debug logs para diagnosticar el problema
   console.log('🔍 Index Component Debug:', {
     user,
@@ -89,8 +91,8 @@ const Index = () => {
               <option value="clients">👥 Gestión de Clientes</option>
               
               {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
-              {isAdmin && <option value="analytics">📊 Analytics</option>}
-              {isAdmin && <option value="control">🎛️ Centro de Control</option>}
+              {(isAdmin || isOwner) && <option value="analytics">📊 Analytics</option>}
+              {(isAdmin || isOwner) && <option value="control">🎛️ Centro de Control</option>}
             </select>
           </div>
 
@@ -124,7 +126,7 @@ const Index = () => {
             </Button>
             
             
-            {isAdmin && (
+            {(isAdmin || isOwner) && (
               <Button
                 variant={activeTab === "analytics" ? "default" : "outline"}
                 onClick={() => setActiveTab("analytics")}
@@ -149,7 +151,7 @@ const Index = () => {
             
             
             
-            {isAdmin && (
+            {(isAdmin || isOwner) && (
               <Button
                 variant={activeTab === "control" ? "default" : "outline"}
                 onClick={() => setActiveTab("control")}
@@ -173,7 +175,7 @@ const Index = () => {
             <ClientManagement />
           </TabsContent>
 
-          {isAdmin && (
+          {(isAdmin || isOwner) && (
             <TabsContent value="analytics" className="mt-6">
               <AdvancedDashboard />
             </TabsContent>
@@ -188,7 +190,7 @@ const Index = () => {
 
 
 
-          {isAdmin && (
+          {(isAdmin || isOwner) && (
             <TabsContent value="control" className="mt-0">
               <UnifiedDashboard />
             </TabsContent>
