@@ -81,20 +81,13 @@ const Index = () => {
           <div className="lg:hidden mb-4">
             <select 
               value={activeTab} 
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === 'redeem') {
-                  navigate('/panel-gestion-nook-madrid-2024/canjear');
-                  return;
-                }
-                setActiveTab(value);
-              }}
+              onChange={(e) => setActiveTab(e.target.value)}
               className="w-full p-3 border rounded-lg bg-background text-sm"
             >
               <option value="bookings">📅 Calendario</option>
               <option value="reservations">📅 Nueva Reserva</option>
               <option value="clients">👥 Gestión de Clientes</option>
-              {(isAdmin || isEmployee) && <option value="redeem">🎫 Canjear código</option>}
+              
               {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
               {isAdmin && <option value="analytics">📊 Analytics</option>}
               {isAdmin && <option value="control">🎛️ Centro de Control</option>}
@@ -130,16 +123,6 @@ const Index = () => {
               <span className="text-sm font-medium">Gestión de Clientes</span>
             </Button>
             
-            {(isAdmin || isEmployee) && (
-              <Button
-                variant={"outline"}
-                onClick={() => navigate('/panel-gestion-nook-madrid-2024/canjear')}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Hash className="h-5 w-5" />
-                <span className="text-sm font-medium">Canjear código</span>
-              </Button>
-            )}
             
             {isAdmin && (
               <Button

@@ -132,9 +132,6 @@ const ClientManagement = () => {
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         <span className="ml-3">Cargando clientes...</span>
-        <p className="text-xs text-muted-foreground mt-1">
-          Debug: Componente ClientManagement cargando datos...
-        </p>
       </div>
     );
   }
@@ -146,9 +143,6 @@ const ClientManagement = () => {
           <Users className="h-6 w-6" />
           Gestión de Clientes
         </h2>
-        <div className="text-xs bg-muted/50 px-2 py-1 rounded">
-          Debug: {clients.length} clientes cargados
-        </div>
       </div>
 
       {/* Search Bar */}
