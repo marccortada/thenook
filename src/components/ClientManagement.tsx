@@ -20,7 +20,8 @@ import {
   Edit,
   User,
   MapPin,
-  Clock
+  Clock,
+  ArrowUpDown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useClients, Client, ClientBooking } from "@/hooks/useClients";
@@ -165,11 +166,36 @@ const ClientManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Users className="h-6 w-6" />
           Gestión de Clientes
         </h2>
+        <div className="flex items-center gap-2">
+          <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Nombre</SelectItem>
+              <SelectItem value="total_spent">Gasto total</SelectItem>
+              <SelectItem value="last_booking">Última visita</SelectItem>
+              <SelectItem value="created_at">Fecha de inclusión</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            aria-label="Cambiar orden"
+          >
+            <ArrowUpDown className="h-4 w-4 mr-2" />
+            {sortOrder === 'asc' ? 'Asc' : 'Desc'}
+          </Button>
+          <Button onClick={() => setShowCreateClient(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo cliente
+          </Button>
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -182,6 +208,38 @@ const ClientManagement = () => {
           className="pl-10"
         />
       </div>
+
+      <Dialog open={showCreateClient} onOpenChange={setShowCreateClient}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nuevo Cliente</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="nc_name">Nombre</Label>
+                <Input id="nc_name" value={newClient.first_name} onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })} />
+              </div>
+              <div>
+                <Label htmlFor="nc_last">Apellidos</Label>
+                <Input id="nc_last" value={newClient.last_name} onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="nc_email">Email</Label>
+              <Input id="nc_email" type="email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} />
+            </div>
+            <div>
+              <Label htmlFor="nc_phone">Teléfono</Label>
+              <Input id="nc_phone" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreateClient(false)}>Cancelar</Button>
+              <Button onClick={handleCreateClient} disabled={!newClient.first_name || !newClient.email}>Crear</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Clients Grid */}
       <div className="grid gap-4">
@@ -196,7 +254,29 @@ const ClientManagement = () => {
             </CardContent>
           </Card>
         ) : (
-          filteredClients.map((client) => (
+          ([...filteredClients]
+            .sort((a, b) => {
+              const dir = sortOrder === 'asc' ? 1 : -1;
+              if (sortBy === 'name') {
+                const an = `${a.first_name} ${a.last_name}`.toLowerCase();
+                const bn = `${b.first_name} ${b.last_name}`.toLowerCase();
+                return an.localeCompare(bn) * dir;
+              }
+              if (sortBy === 'total_spent') {
+                const av = (a.total_spent || 0);
+                const bv = (b.total_spent || 0);
+                return (av - bv) * dir;
+              }
+              if (sortBy === 'last_booking') {
+                const ad = a.last_booking ? new Date(a.last_booking).getTime() : 0;
+                const bd = b.last_booking ? new Date(b.last_booking).getTime() : 0;
+                return (ad - bd) * dir;
+              }
+              const ac = (a as any).created_at ? new Date((a as any).created_at).getTime() : 0;
+              const bc = (b as any).created_at ? new Date((b as any).created_at).getTime() : 0;
+              return (ac - bc) * dir;
+            })
+          ).map((client) => (
             <Card 
               key={client.id} 
               className="cursor-pointer hover:shadow-md transition-shadow"
