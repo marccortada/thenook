@@ -27,6 +27,7 @@ import { useClients, Client, ClientBooking } from "@/hooks/useClients";
 import { useClientNotes } from "@/hooks/useClientNotes";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
 
 const ClientManagement = () => {
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
@@ -38,9 +39,14 @@ const ClientManagement = () => {
   const [newNote, setNewNote] = useState({ title: "", content: "", category: "general", priority: "normal" });
   const { toast } = useToast();
 
+  // Ordenación y creación
+  const [sortBy, setSortBy] = useState<'name' | 'total_spent' | 'last_booking' | 'created_at'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showCreateClient, setShowCreateClient] = useState(false);
+  const [newClient, setNewClient] = useState({ first_name: '', last_name: '', email: '', phone: '' });
+
   // Use the new hook
-  const { clients, loading, updateClient, fetchClientBookings } = useClients();
-  
+  const { clients, loading, updateClient, fetchClientBookings, refetch } = useClients();
   // Debug logs para diagnosticar problemas de carga
   console.log('🔍 ClientManagement Debug:', {
     clientsCount: clients?.length || 0,
@@ -76,6 +82,27 @@ const ClientManagement = () => {
     await updateClient(selectedClient.id, editingClient);
   };
 
+  const handleCreateClient = async () => {
+    try {
+      if (!newClient.first_name || !newClient.email) return;
+      const { error } = await supabase.from('profiles').insert([
+        {
+          email: newClient.email.trim(),
+          first_name: newClient.first_name.trim(),
+          last_name: newClient.last_name.trim(),
+          phone: newClient.phone.trim(),
+          role: 'client'
+        }
+      ]);
+      if (error) throw error;
+      toast({ title: 'Cliente creado', description: 'Se ha añadido el cliente correctamente.' });
+      setShowCreateClient(false);
+      setNewClient({ first_name: '', last_name: '', email: '', phone: '' });
+      await refetch?.();
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'No se pudo crear el cliente', variant: 'destructive' });
+    }
+  };
   const { notes, createNote, refetch: refetchNotes } = useClientNotes(selectedClient?.id);
 
   const handleCreateNote = async () => {
