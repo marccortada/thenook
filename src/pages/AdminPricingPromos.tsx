@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import HappyHourManagement from "@/components/HappyHourManagement";
 
-const currency = (cents?: number) => typeof cents === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(cents/100) : "-";
+const currency = (euros?: number) => typeof euros === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(euros) : "-";
 
 export default function AdminPricingPromos() {
   const { services, refetch: refetchServices } = useServices();
@@ -25,17 +25,17 @@ export default function AdminPricingPromos() {
   }, []);
 
   // Servicios - edición rápida de precio/estado
-  const [serviceEdits, setServiceEdits] = useState<Record<string, { price_cents: number; active: boolean }>>({});
+  const [serviceEdits, setServiceEdits] = useState<Record<string, { price_euros: number; active: boolean }>>({});
 
-  const handleServiceChange = (id: string, field: 'price_cents'|'active', value: any) => {
+  const handleServiceChange = (id: string, field: 'price_euros'|'active', value: any) => {
     setServiceEdits((prev) => ({
       ...prev,
-      [id]: { price_cents: prev[id]?.price_cents ?? 0, active: prev[id]?.active ?? true, [field]: value }
+      [id]: { price_euros: prev[id]?.price_euros ?? 0, active: prev[id]?.active ?? true, [field]: value }
     }));
   };
   // Agrupar servicios por nombre (normalizado) y duración para evitar duplicados entre centros
   const uniqueServices = useMemo(() => {
-    const map = new Map<string, { ids: string[]; name: string; type: any; duration_minutes: number; price_cents: number; allActive: boolean }>();
+    const map = new Map<string, { ids: string[]; name: string; type: any; duration_minutes: number; price_euros: number; allActive: boolean }>();
     services.forEach((s: any) => {
       const key = `${(s.name || '').trim().toLowerCase()}|${s.duration_minutes}`;
       const existing = map.get(key);
@@ -45,12 +45,12 @@ export default function AdminPricingPromos() {
           name: s.name,
           type: s.type,
           duration_minutes: s.duration_minutes,
-          price_cents: s.price_cents,
+          price_euros: s.price_cents / 100,
           allActive: !!s.active,
         });
       } else {
         existing.ids.push(s.id);
-        existing.price_cents = Math.min(existing.price_cents, s.price_cents);
+        existing.price_euros = Math.min(existing.price_euros, s.price_cents / 100);
         existing.allActive = existing.allActive && !!s.active;
       }
     });
@@ -60,7 +60,9 @@ export default function AdminPricingPromos() {
   const saveService = async (groupKey: string, ids: string[]) => {
     const patch = serviceEdits[groupKey];
     if (!patch) return;
-    const { error } = await (supabase as any).from('services').update(patch).in('id', ids);
+    const updateData = { ...patch, price_cents: Math.round(patch.price_euros * 100) };
+    delete updateData.price_euros;
+    const { error } = await (supabase as any).from('services').update(updateData).in('id', ids);
     if (error) {
       toast({ title: 'Error', description: 'No se pudo actualizar el servicio', variant: 'destructive' });
     } else {
@@ -70,17 +72,17 @@ export default function AdminPricingPromos() {
     }
   };
   // Bonos (paquetes) - edición de precio/sesiones/estado + alta (agrupados sin duplicados entre centros)
-  const [packageEdits, setPackageEdits] = useState<Record<string, { price_cents: number; sessions_count: number; active: boolean }>>({});
-  const [newPackage, setNewPackage] = useState<{ name: string; service_id?: string; sessions_count: number; price_cents: number; active: boolean }>({
+  const [packageEdits, setPackageEdits] = useState<Record<string, { price_euros: number; sessions_count: number; active: boolean }>>({});
+  const [newPackage, setNewPackage] = useState<{ name: string; service_id?: string; sessions_count: number; price_euros: number; active: boolean }>({
     name: '',
     service_id: undefined,
     sessions_count: 5,
-    price_cents: 0,
+    price_euros: 0,
     active: true
   });
 
   const uniquePackages = useMemo(() => {
-    const map = new Map<string, { ids: string[]; name: string; sessions_count: number; price_cents: number; allActive: boolean; service_name?: string }>();
+    const map = new Map<string, { ids: string[]; name: string; sessions_count: number; price_euros: number; allActive: boolean; service_name?: string }>();
     packages.forEach((p: any) => {
       const key = `${(p.name || '').trim().toLowerCase()}|${p.sessions_count}`;
       const existing = map.get(key);
@@ -89,13 +91,13 @@ export default function AdminPricingPromos() {
           ids: [p.id],
           name: p.name,
           sessions_count: p.sessions_count,
-          price_cents: p.price_cents,
+          price_euros: p.price_cents / 100,
           allActive: !!p.active,
           service_name: p.services?.name
         });
       } else {
         existing.ids.push(p.id);
-        existing.price_cents = Math.min(existing.price_cents, p.price_cents);
+        existing.price_euros = Math.min(existing.price_euros, p.price_cents / 100);
         existing.allActive = existing.allActive && !!p.active;
         if (!existing.service_name && p.services?.name) existing.service_name = p.services.name;
       }
@@ -103,12 +105,12 @@ export default function AdminPricingPromos() {
     return Array.from(map.entries()).map(([key, v]) => ({ key, ...v }));
   }, [packages]);
 
-  const handlePackageChange = (groupKey: string, field: 'price_cents'|'sessions_count'|'active', value: any) => {
+  const handlePackageChange = (groupKey: string, field: 'price_euros'|'sessions_count'|'active', value: any) => {
     const current = uniquePackages.find((g) => g.key === groupKey);
     setPackageEdits((prev) => ({
       ...prev,
       [groupKey]: {
-        price_cents: prev[groupKey]?.price_cents ?? (current?.price_cents ?? 0),
+        price_euros: prev[groupKey]?.price_euros ?? (current?.price_euros ?? 0),
         sessions_count: prev[groupKey]?.sessions_count ?? (current?.sessions_count ?? 1),
         active: prev[groupKey]?.active ?? (current?.allActive ?? true),
         [field]: value
@@ -120,7 +122,7 @@ export default function AdminPricingPromos() {
     const patch = packageEdits[groupKey];
     if (!patch) return;
     const { error } = await (supabase as any).from('packages').update({
-      price_cents: patch.price_cents,
+      price_cents: Math.round(patch.price_euros * 100),
       sessions_count: patch.sessions_count,
       active: patch.active
     }).in('id', ids);
@@ -142,14 +144,14 @@ export default function AdminPricingPromos() {
       name: newPackage.name,
       service_id: newPackage.service_id || null,
       sessions_count: newPackage.sessions_count,
-      price_cents: newPackage.price_cents,
+      price_cents: Math.round(newPackage.price_euros * 100),
       active: newPackage.active
     });
     if (error) {
       toast({ title:'Error', description:'No se pudo crear el bono', variant:'destructive' });
     } else {
       toast({ title:'Creado', description:'Bono creado' });
-      setNewPackage({ name:'', service_id: undefined, sessions_count:5, price_cents:0, active:true });
+      setNewPackage({ name:'', service_id: undefined, sessions_count:5, price_euros:0, active:true });
       refetchPackages();
     }
   };
@@ -399,7 +401,7 @@ export default function AdminPricingPromos() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {uniqueServices.map((g) => {
-                    const edit = serviceEdits[g.key] || { price_cents: g.price_cents, active: g.allActive };
+                    const edit = serviceEdits[g.key] || { price_euros: g.price_euros, active: g.allActive };
                     return (
                       <div key={g.key} className="border rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
@@ -407,12 +409,12 @@ export default function AdminPricingPromos() {
                             <div className="font-medium">{g.name}</div>
                             <div className="text-xs text-muted-foreground">{g.type} · {g.duration_minutes} min</div>
                           </div>
-                          <div className="text-sm font-semibold">{currency(edit.price_cents)}</div>
+                          <div className="text-sm font-semibold">{currency(edit.price_euros)}</div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 items-end">
                           <div>
-                            <Label>Precio (céntimos)</Label>
-                            <Input type="number" value={edit.price_cents} onChange={(e) => handleServiceChange(g.key, 'price_cents', parseInt(e.target.value || '0', 10))} />
+                            <Label>Precio (€)</Label>
+                            <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handleServiceChange(g.key, 'price_euros', parseFloat(e.target.value || '0'))} />
                           </div>
                           <div>
                             <Label>Estado</Label>
@@ -444,7 +446,7 @@ export default function AdminPricingPromos() {
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {uniquePackages.map((g) => {
-                  const edit = packageEdits[g.key] || { price_cents: g.price_cents, sessions_count: g.sessions_count, active: g.allActive };
+                  const edit = packageEdits[g.key] || { price_euros: g.price_euros, sessions_count: g.sessions_count, active: g.allActive };
                   return (
                     <div key={g.key} className="border rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
@@ -452,12 +454,12 @@ export default function AdminPricingPromos() {
                           <div className="font-medium">{g.name}</div>
                           <div className="text-xs text-muted-foreground">{g.service_name ? `Servicio: ${g.service_name} · ` : ''}{edit.sessions_count} sesiones</div>
                         </div>
-                        <div className="text-sm font-semibold">{currency(edit.price_cents)}</div>
+                        <div className="text-sm font-semibold">{currency(edit.price_euros)}</div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 items-end">
                         <div>
-                          <Label>Precio (céntimos)</Label>
-                          <Input type="number" value={edit.price_cents} onChange={(e) => handlePackageChange(g.key, 'price_cents', parseInt(e.target.value || '0', 10))} />
+                          <Label>Precio (€)</Label>
+                          <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handlePackageChange(g.key, 'price_euros', parseFloat(e.target.value || '0'))} />
                         </div>
                         <div>
                           <Label>Sesiones</Label>
@@ -510,8 +512,8 @@ export default function AdminPricingPromos() {
                   <Input type="number" value={newPackage.sessions_count} onChange={(e) => setNewPackage({ ...newPackage, sessions_count: parseInt(e.target.value || '0', 10) })} />
                 </div>
                 <div>
-                  <Label>Precio (céntimos)</Label>
-                  <Input type="number" value={newPackage.price_cents} onChange={(e) => setNewPackage({ ...newPackage, price_cents: parseInt(e.target.value || '0', 10) })} />
+                  <Label>Precio (€)</Label>
+                  <Input type="number" step="0.01" value={newPackage.price_euros} onChange={(e) => setNewPackage({ ...newPackage, price_euros: parseFloat(e.target.value || '0') })} />
                 </div>
                 <div>
                   <Label>Estado</Label>
@@ -553,7 +555,7 @@ export default function AdminPricingPromos() {
                       <div key={o.id} className="border rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div className="font-medium">{edit.name}</div>
-                          <div className="text-sm font-semibold">{currency(edit.amount_cents)}</div>
+                          <div className="text-sm font-semibold">{currency(edit.amount_cents / 100)}</div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 items-end">
                           <div>
@@ -590,7 +592,7 @@ export default function AdminPricingPromos() {
                           <div className="font-medium">Tarjeta regalo</div>
                           <div className="text-xs text-muted-foreground">{d.count} en base de datos</div>
                         </div>
-                        <div className="text-sm font-semibold">{currency(d.amount_cents)}</div>
+                        <div className="text-sm font-semibold">{currency(d.amount_cents / 100)}</div>
                       </div>
                     </div>
                   ))
