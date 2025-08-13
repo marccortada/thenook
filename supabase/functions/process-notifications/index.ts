@@ -220,29 +220,43 @@ function processMessageTemplate(template: string, variables: Record<string, stri
 }
 
 async function sendEmail(notification: NotificationToProcess, message: string) {
-  // For demo purposes - integrate with your email service (SendGrid, Resend, etc.)
-  console.log(`📧 Sending email to ${notification.client_email}: ${message}`)
+  // Call the specialized booking confirmation function
+  console.log(`📧 Delegating email to booking confirmation service for ${notification.client_email}`)
   
-  // Example integration with Resend (commented out)
-  /*
+  // For non-booking confirmations, use direct Resend integration
+  const resendApiKey = Deno.env.get('RESEND_API_KEY')
+  if (!resendApiKey) {
+    throw new Error('RESEND_API_KEY not configured')
+  }
+
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+      'Authorization': `Bearer ${resendApiKey}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      from: 'noreply@yourdomain.com',
+      from: 'The Nook Madrid <noreply@thenookmadrid.com>',
       to: notification.client_email,
-      subject: notification.subject || 'Notificación',
-      html: message
+      subject: notification.subject || 'Notificación de The Nook Madrid',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #2c3e50;">The Nook Madrid</h2>
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+            ${message}
+          </div>
+          <p style="color: #666; font-size: 14px; margin-top: 20px;">
+            Saludos,<br>Equipo de The Nook Madrid
+          </p>
+        </div>
+      `
     })
   })
   
   if (!response.ok) {
-    throw new Error(`Email service error: ${response.statusText}`)
+    const errorText = await response.text()
+    throw new Error(`Email service error: ${response.statusText} - ${errorText}`)
   }
-  */
 }
 
 async function sendSMS(notification: NotificationToProcess, message: string) {
