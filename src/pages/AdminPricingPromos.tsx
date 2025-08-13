@@ -335,7 +335,7 @@ export default function AdminPricingPromos() {
 
   const createGift = async () => {
     if (!newGift.name || newGift.amount_cents <= 0) {
-      toast({ title: 'Campos requeridos', description: 'Nombre y cantidad > 0', variant: 'destructive' });
+      toast({ title: 'Campos requeridos', description: 'Nombre y importe > 0€', variant: 'destructive' });
       return;
     }
     const { error } = await (supabase as any).from('gift_card_options').insert(newGift);
@@ -562,10 +562,10 @@ export default function AdminPricingPromos() {
                             <Label>Nombre</Label>
                             <Input value={edit.name} onChange={(e) => handleGiftChange(o.id, 'name', e.target.value)} />
                           </div>
-                          <div>
-                            <Label>Importe (céntimos)</Label>
-                            <Input type="number" value={edit.amount_cents} onChange={(e) => handleGiftChange(o.id, 'amount_cents', parseInt(e.target.value || '0', 10))} />
-                          </div>
+                           <div>
+                             <Label>Importe (€)</Label>
+                             <Input type="number" step="0.01" value={(edit.amount_cents / 100).toFixed(2)} onChange={(e) => handleGiftChange(o.id, 'amount_cents', Math.round(parseFloat(e.target.value || '0') * 100))} />
+                           </div>
                           <div>
                             <Label>Estado</Label>
                             <Select value={String(edit.is_active)} onValueChange={(v) => handleGiftChange(o.id, 'is_active', v === 'true')}>
@@ -596,9 +596,9 @@ export default function AdminPricingPromos() {
                       </div>
                     </div>
                   ))
-                ) : (
-                  <div className="text-sm text-muted-foreground">Sin opciones disponibles</div>
-                )}
+                 ) : (
+                   <div className="text-sm text-muted-foreground">Error: no se pudieron cargar las tarjetas. Inténtalo de nuevo.</div>
+                 )}
               </CardContent>
             </Card>
 
@@ -611,10 +611,10 @@ export default function AdminPricingPromos() {
                   <Label>Nombre</Label>
                   <Input value={newGift.name} onChange={(e) => setNewGift({ ...newGift, name: e.target.value })} />
                 </div>
-                <div className="md:col-span-2">
-                  <Label>Importe (céntimos)</Label>
-                  <Input type="number" value={newGift.amount_cents} onChange={(e) => setNewGift({ ...newGift, amount_cents: parseInt(e.target.value || '0', 10) })} />
-                </div>
+                 <div className="md:col-span-2">
+                   <Label>Importe (€)</Label>
+                   <Input type="number" step="0.01" value={(newGift.amount_cents / 100).toFixed(2)} onChange={(e) => setNewGift({ ...newGift, amount_cents: Math.round(parseFloat(e.target.value || '0') * 100) })} />
+                 </div>
                 <div>
                   <Label>Estado</Label>
                   <Select value={String(newGift.is_active)} onValueChange={(v) => setNewGift({ ...newGift, is_active: v === 'true' })}>

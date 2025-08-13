@@ -170,4 +170,36 @@ All colors MUST be HSL.
     transform: translateY(-4px);
     box-shadow: var(--shadow-strong);
   }
+
+  /* Fix mobile scrollbar issues */
+  @media (max-width: 768px) {
+    /* Hide scrollbars on mobile but keep functionality */
+    .scrollbar-hidden {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE and Edge */
+    }
+    
+    .scrollbar-hidden::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+
+    /* Move scrollbars to footer area on mobile */
+    [data-radix-scroll-area-scrollbar] {
+      opacity: 0.3;
+      transition: opacity 0.2s;
+    }
+
+    [data-radix-scroll-area-scrollbar]:hover {
+      opacity: 0.8;
+    }
+
+    /* Reduce scrollbar size on mobile */
+    [data-radix-scroll-area-scrollbar] {
+      width: 6px !important;
+    }
+
+    [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] {
+      height: 6px !important;
+    }
+  }
 }
