@@ -338,13 +338,20 @@ export default function AdminPricingPromos() {
       toast({ title: 'Campos requeridos', description: 'Nombre y importe > 0€', variant: 'destructive' });
       return;
     }
-    const { error } = await (supabase as any).from('gift_card_options').insert(newGift);
-    if (error) {
-      toast({ title: 'Error', description: 'No se pudo crear la opción (¿duplicada?)', variant: 'destructive' });
-    } else {
-      toast({ title: 'Creada', description: 'Opción de tarjeta creada' });
-      setNewGift({ name: '', amount_cents: 0, is_active: true });
-      fetchGiftOptions();
+    
+    try {
+      const { error } = await supabase.from('gift_card_options').insert(newGift);
+      if (error) {
+        console.error('Error creating gift card:', error);
+        toast({ title: 'Error', description: `No se pudo crear la tarjeta: ${error.message}`, variant: 'destructive' });
+      } else {
+        toast({ title: 'Creada', description: 'Tarjeta regalo creada correctamente' });
+        setNewGift({ name: '', amount_cents: 0, is_active: true });
+        fetchGiftOptions();
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      toast({ title: 'Error', description: 'Error inesperado al crear la tarjeta', variant: 'destructive' });
     }
   };
   const deleteGift = async (id: string) => {
