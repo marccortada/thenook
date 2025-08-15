@@ -547,58 +547,57 @@ export default function AdminPricingPromos() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {giftOptions.length > 0 ? (
-                  giftOptions.map((o: any) => {
-                    const edit = giftEdits[o.id] || { name: o.name, amount_cents: o.amount_cents, is_active: o.is_active };
-                    return (
-                      <div key={o.id} className="border rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="font-medium">{edit.name}</div>
-                          <div className="text-sm font-semibold">{currency(edit.amount_cents / 100)}</div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 items-end">
-                          <div>
-                            <Label>Nombre</Label>
-                            <Input value={edit.name} onChange={(e) => handleGiftChange(o.id, 'name', e.target.value)} />
-                          </div>
+               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                 {giftOptions.length > 0 ? (
+                   giftOptions.map((o: any) => {
+                     const edit = giftEdits[o.id] || { name: o.name, amount_cents: o.amount_cents, is_active: o.is_active };
+                     return (
+                       <div key={o.id} className="border rounded-lg p-3">
+                         <div className="flex items-center justify-between mb-3">
+                           <h3 className="font-semibold text-lg">{o.name}</h3>
+                           <div className="text-sm font-semibold">{currency(edit.amount_cents / 100)}</div>
+                         </div>
+                         <div className="grid grid-cols-2 gap-2 items-end">
                            <div>
                              <Label>Importe (€)</Label>
                              <Input type="number" step="0.01" value={(edit.amount_cents / 100).toFixed(2)} onChange={(e) => handleGiftChange(o.id, 'amount_cents', Math.round(parseFloat(e.target.value || '0') * 100))} />
                            </div>
-                          <div>
-                            <Label>Estado</Label>
-                            <Select value={String(edit.is_active)} onValueChange={(v) => handleGiftChange(o.id, 'is_active', v === 'true')}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent className="z-50 bg-background">
-                                <SelectItem value="true">Activo</SelectItem>
-                                <SelectItem value="false">Inactivo</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="col-span-2 flex justify-between">
-                            <Button variant="outline" size="sm" onClick={() => deleteGift(o.id)}>Eliminar</Button>
-                            <Button size="sm" onClick={() => saveGift(o.id)}>Guardar</Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : giftDenoms.length > 0 ? (
-                  giftDenoms.map((d) => (
-                    <div key={d.amount_cents} className="border rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">Tarjeta regalo</div>
-                          <div className="text-xs text-muted-foreground">{d.count} en base de datos</div>
-                        </div>
-                        <div className="text-sm font-semibold">{currency(d.amount_cents / 100)}</div>
-                      </div>
+                           <div>
+                             <Label>Estado</Label>
+                             <Select value={String(edit.is_active)} onValueChange={(v) => handleGiftChange(o.id, 'is_active', v === 'true')}>
+                               <SelectTrigger><SelectValue /></SelectTrigger>
+                               <SelectContent className="z-50 bg-background">
+                                 <SelectItem value="true">Activo</SelectItem>
+                                 <SelectItem value="false">Inactivo</SelectItem>
+                               </SelectContent>
+                             </Select>
+                           </div>
+                           <div className="col-span-2 flex justify-between">
+                             <Button variant="outline" size="sm" onClick={() => deleteGift(o.id)}>Eliminar</Button>
+                             <Button size="sm" onClick={() => saveGift(o.id)}>Guardar</Button>
+                           </div>
+                         </div>
+                       </div>
+                     );
+                   })
+                 ) : giftDenoms.length > 0 ? (
+                   giftDenoms.map((d) => (
+                     <div key={d.amount_cents} className="border rounded-lg p-3">
+                       <div className="flex items-center justify-between">
+                         <div>
+                           <h3 className="font-semibold">Tarjeta Regalo</h3>
+                           <div className="text-xs text-muted-foreground">{d.count} vendidas</div>
+                         </div>
+                         <div className="text-sm font-semibold">{currency(d.amount_cents / 100)}</div>
+                       </div>
+                     </div>
+                   ))
+                  ) : (
+                    <div className="text-center p-6 text-muted-foreground">
+                      <p>No hay tarjetas regalo configuradas</p>
+                      <p className="text-xs mt-1">Crea una nueva opción abajo</p>
                     </div>
-                  ))
-                 ) : (
-                   <div className="text-sm text-muted-foreground">Error: no se pudieron cargar las tarjetas. Inténtalo de nuevo.</div>
-                 )}
+                  )}
               </CardContent>
             </Card>
 
