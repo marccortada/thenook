@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -2227,14 +2227,14 @@ export type Database = {
     }
     Functions: {
       calculate_operational_metrics: {
-        Args: { start_date: string; end_date: string; center_id_param?: string }
+        Args: { center_id_param?: string; end_date: string; start_date: string }
         Returns: {
-          total_clients: number
-          new_clients: number
-          returning_clients: number
-          occupancy_rate: number
-          no_show_rate: number
           avg_session_duration: number
+          new_clients: number
+          no_show_rate: number
+          occupancy_rate: number
+          returning_clients: number
+          total_clients: number
         }[]
       }
       calculate_real_time_metrics: {
@@ -2242,13 +2242,13 @@ export type Database = {
         Returns: undefined
       }
       calculate_revenue_metrics: {
-        Args: { start_date: string; end_date: string; center_id_param?: string }
+        Args: { center_id_param?: string; end_date: string; start_date: string }
         Returns: {
-          total_revenue: number
           average_ticket: number
-          total_bookings: number
-          revenue_by_service: Json
           revenue_by_day: Json
+          revenue_by_service: Json
+          total_bookings: number
+          total_revenue: number
         }[]
       }
       create_booking_reminders: {
@@ -2270,164 +2270,164 @@ export type Database = {
       get_active_client_alerts: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
+          category: string
+          client_email: string
           client_id: string
           client_name: string
-          client_email: string
-          title: string
           content: string
-          category: string
-          priority: string
           created_at: string
+          id: string
+          priority: string
           staff_name: string
+          title: string
         }[]
       }
       get_analysis_stats: {
         Args: { days_back?: number }
         Returns: {
-          total_notes: number
+          active_alerts: number
           analyzed_notes: number
-          positive_sentiment: number
-          negative_sentiment: number
-          neutral_sentiment: number
+          avg_risk_level: number
           critical_urgency: number
           high_urgency: number
-          medium_urgency: number
           low_urgency: number
-          avg_risk_level: number
-          active_alerts: number
+          medium_urgency: number
+          negative_sentiment: number
+          neutral_sentiment: number
+          positive_sentiment: number
+          total_notes: number
         }[]
       }
       get_business_intelligence: {
         Args: {
-          start_date?: string
-          end_date?: string
           center_id_param?: string
+          end_date?: string
+          start_date?: string
         }
         Returns: Json
       }
       get_client_notes_with_details: {
         Args: {
-          target_client_id?: string
           category_filter?: string
-          search_query?: string
           limit_count?: number
+          search_query?: string
+          target_client_id?: string
         }
         Returns: {
-          id: string
-          client_id: string
-          staff_id: string
-          title: string
-          content: string
           category: string
-          priority: string
-          is_private: boolean
-          is_alert: boolean
-          created_at: string
-          updated_at: string
-          client_name: string
           client_email: string
-          staff_name: string
+          client_id: string
+          client_name: string
+          content: string
+          created_at: string
+          id: string
+          is_alert: boolean
+          is_private: boolean
+          priority: string
           staff_email: string
+          staff_id: string
+          staff_name: string
+          title: string
+          updated_at: string
         }[]
       }
       get_code_assignments_with_details: {
-        Args: { target_entity_type?: string; target_entity_id?: string }
+        Args: { target_entity_id?: string; target_entity_type?: string }
         Returns: {
-          id: string
-          code_id: string
-          entity_type: string
-          entity_id: string
           assigned_at: string
           assigned_by: string
-          notes: string
-          code: string
-          code_name: string
-          code_color: string
-          code_category: string
           assigner_name: string
+          code: string
+          code_category: string
+          code_color: string
+          code_id: string
+          code_name: string
+          entity_id: string
+          entity_type: string
+          id: string
+          notes: string
         }[]
       }
       get_codes_with_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          code: string
-          name: string
-          description: string
-          color: string
           category: string
+          code: string
+          color: string
           created_at: string
-          updated_at: string
           created_by: string
           creator_name: string
-          usage_count: number
+          description: string
+          id: string
           last_used: string
+          name: string
+          updated_at: string
+          usage_count: number
         }[]
       }
       get_expiring_packages: {
         Args: { days_ahead?: number }
         Returns: {
-          id: string
+          client_email: string
           client_id: string
           client_name: string
-          client_email: string
-          package_name: string
-          voucher_code: string
-          expiry_date: string
-          remaining_sessions: number
           days_to_expiry: number
+          expiry_date: string
+          id: string
+          package_name: string
+          remaining_sessions: number
+          voucher_code: string
         }[]
       }
       get_inventory_movements_with_details: {
         Args: {
           item_id_param?: string
-          movement_type_param?: string
           limit_count?: number
+          movement_type_param?: string
         }
         Returns: {
+          created_at: string
           id: string
           item_id: string
           item_name: string
           item_sku: string
           movement_type: string
-          quantity: number
-          unit_cost: number
-          total_cost: number
-          reason: string
           notes: string
           performed_by: string
           performer_name: string
-          created_at: string
+          quantity: number
+          reason: string
+          total_cost: number
+          unit_cost: number
         }[]
       }
       get_inventory_stats: {
         Args: { center_id_param?: string }
         Returns: {
-          total_items: number
+          average_stock: number
           low_stock_items: number
           out_of_stock_items: number
+          total_items: number
           total_value: number
-          average_stock: number
         }[]
       }
       get_low_stock_alerts_with_details: {
         Args: Record<PropertyKey, never>
         Returns: {
+          alert_level: string
+          created_at: string
+          current_stock: number
           id: string
           item_id: string
           item_name: string
           item_sku: string
-          current_stock: number
           min_stock: number
-          alert_level: string
-          created_at: string
         }[]
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["user_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -2437,20 +2437,20 @@ export type Database = {
       }
       log_activity: {
         Args: {
-          p_user_id: string
           p_action: string
-          p_entity_type: string
           p_entity_id: string
-          p_old_values?: Json
+          p_entity_type: string
           p_new_values?: Json
+          p_old_values?: Json
+          p_user_id: string
         }
         Returns: undefined
       }
       redeem_voucher_code: {
         Args: {
-          p_code: string
-          p_booking_id?: string
           p_amount_cents?: number
+          p_booking_id?: string
+          p_code: string
           p_notes?: string
         }
         Returns: Json
@@ -2458,17 +2458,17 @@ export type Database = {
       search_entities_by_codes: {
         Args: { codes: string[] }
         Returns: {
-          entity_type: string
-          entity_id: string
           codes_assigned: string[]
+          entity_id: string
+          entity_type: string
         }[]
       }
       toggle_note_alert: {
-        Args: { note_id: string; is_alert_value: boolean }
+        Args: { is_alert_value: boolean; note_id: string }
         Returns: boolean
       }
       use_client_package_session: {
-        Args: { package_id: string; booking_id?: string }
+        Args: { booking_id?: string; package_id: string }
         Returns: boolean
       }
       validate_user_role: {
