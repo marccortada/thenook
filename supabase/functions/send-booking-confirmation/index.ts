@@ -32,11 +32,12 @@ serve(async (req) => {
         booking_id,
         subject,
         message,
+        type,
         profiles!client_id(email, first_name, last_name),
         bookings(booking_datetime, total_price_cents, services(name))
       `)
       .eq('status', 'pending')
-      .eq('type', 'appointment_confirmation')
+      .in('type', ['appointment_confirmation', 'booking_reminder'])
       .limit(10);
 
     if (fetchError) {
@@ -45,14 +46,14 @@ serve(async (req) => {
     }
 
     if (!notifications || notifications.length === 0) {
-      console.log('✅ No pending booking confirmations to send');
+      console.log('✅ No pending notifications to send');
       return new Response(
-        JSON.stringify({ message: 'No pending emails', processed: 0 }),
+        JSON.stringify({ message: 'No pending notifications', processed: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`📬 Found ${notifications.length} booking confirmations to send`);
+    console.log(`📬 Found ${notifications.length} notifications to send`);
 
     let successCount = 0;
 
@@ -78,12 +79,12 @@ serve(async (req) => {
         const emailResponse = await resend.emails.send({
           from: 'The Nook Madrid <noreply@thenookmadrid.com>',
           to: [client.email],
-          subject: notification.subject || 'Confirmación de tu reserva',
+          subject: notification.subject || (notification.type === 'booking_reminder' ? 'Recordatorio de tu cita' : 'Confirmación de tu reserva'),
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <div style="text-align: center; margin-bottom: 30px;">
                 <h1 style="color: #2c3e50; margin-bottom: 10px;">The Nook Madrid</h1>
-                <h2 style="color: #e67e22; font-weight: normal;">Confirmación de Reserva</h2>
+                <h2 style="color: #e67e22; font-weight: normal;">${notification.type === 'booking_reminder' ? 'Recordatorio de Reserva' : 'Confirmación de Reserva'}</h2>
               </div>
               
               <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -91,7 +92,10 @@ serve(async (req) => {
                   Hola <strong>${client.first_name || ''} ${client.last_name || ''}</strong>,
                 </p>
                 <p style="margin: 0 0 15px 0;">
-                  Tu reserva ha sido confirmada exitosamente. Aquí tienes los detalles:
+                  ${notification.type === 'booking_reminder' 
+                    ? 'Te recordamos que tienes una cita próximamente. Aquí tienes los detalles:'
+                    : 'Tu reserva ha sido confirmada exitosamente. Aquí tienes los detalles:'
+                  }
                 </p>
                 
                 <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
@@ -165,7 +169,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        message: 'Booking confirmations processed', 
+        message: 'Notifications processed', 
         processed: notifications.length,
         successful: successCount
       }),

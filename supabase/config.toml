@@ -3,5 +3,5 @@ project_id = "duedcqgrflmmmxmpdytu"
 [functions.create-checkout]
 verify_jwt = false
 
-[functions.verify-payment]
+[functions.send-booking-confirmation]
 verify_jwt = false
