@@ -66,17 +66,6 @@ const UnifiedDashboard = () => {
       ]
     },
     {
-      id: 'metrics',
-      title: 'Métricas en Tiempo Real',
-      description: 'Monitoreo de KPIs y estadísticas del negocio',
-      icon: Activity,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      components: [
-        { id: 'realtime', title: 'Métricas en Vivo', component: RealTimeMetrics },
-      ]
-    },
-    {
       id: 'codes',
       title: 'Códigos Internos',
       description: 'Gestión de códigos promocionales y descuentos',
@@ -96,7 +85,7 @@ const UnifiedDashboard = () => {
       <div className="flex flex-col gap-4">
 
         {/* Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {sections.map((section) => {
             const Icon = section.icon;
             const isActive = activeSection === section.id;

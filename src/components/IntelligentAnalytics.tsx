@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIntelligentAnalysis } from '@/hooks/useIntelligentAnalysis';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
 import { Brain, TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, Zap, Calendar, Euro, Activity, RefreshCw, LineChart } from 'lucide-react';
@@ -34,10 +33,6 @@ const IntelligentAnalytics = () => {
   const {
     kpiMetrics,
     periodComparison,
-    therapistMetrics,
-    serviceMetrics,
-    timeSeriesData,
-    centerMetrics,
     loading: analyticsLoading,
     loadAnalytics
   } = useAdvancedAnalytics();
@@ -45,7 +40,6 @@ const IntelligentAnalytics = () => {
   // Real-time metrics state
   const [realTimeMetrics, setRealTimeMetrics] = useState<RealTimeMetric[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState('daily');
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -67,7 +61,6 @@ const IntelligentAnalytics = () => {
       if (error) throw error;
       
       setRealTimeMetrics(data || []);
-      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching metrics:', error);
     } finally {
@@ -79,40 +72,46 @@ const IntelligentAnalytics = () => {
     try {
       setMetricsLoading(true);
       
-      // Calculate metrics manually without the database function
       const currentDay = new Date().toISOString().split('T')[0];
       
-      // Daily bookings
-      const { data: dailyBookings } = await supabase
-        .from('bookings')
-        .select('*')
-        .gte('booking_datetime', `${currentDay}T00:00:00`)
-        .lt('booking_datetime', `${currentDay}T23:59:59`);
+      // Get all data in parallel with proper error handling
+      const [
+        { data: dailyBookings, error: bookingsError },
+        { data: paidBookings, error: paidError },
+        { data: newClients, error: clientsError }
+      ] = await Promise.all([
+        supabase
+          .from('bookings')
+          .select('*')
+          .gte('booking_datetime', `${currentDay}T00:00:00`)
+          .lt('booking_datetime', `${currentDay}T23:59:59`),
+        supabase
+          .from('bookings')
+          .select('total_price_cents')
+          .eq('payment_status', 'paid')
+          .gte('booking_datetime', `${currentDay}T00:00:00`)
+          .lt('booking_datetime', `${currentDay}T23:59:59`),
+        supabase
+          .from('profiles')
+          .select('id')
+          .eq('role', 'client')
+          .gte('created_at', `${currentDay}T00:00:00`)
+          .lt('created_at', `${currentDay}T23:59:59`)
+      ]);
       
-      // Daily revenue (using 'paid' instead of 'completed')
-      const { data: paidBookings } = await supabase
-        .from('bookings')
-        .select('total_price_cents')
-        .eq('payment_status', 'paid')
-        .gte('booking_datetime', `${currentDay}T00:00:00`)
-        .lt('booking_datetime', `${currentDay}T23:59:59`);
-      
-      // New clients today
-      const { data: newClients } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('role', 'client')
-        .gte('created_at', `${currentDay}T00:00:00`)
-        .lt('created_at', `${currentDay}T23:59:59`);
+      // Check for errors
+      if (bookingsError) throw bookingsError;
+      if (paidError) throw paidError;
+      if (clientsError) throw clientsError;
       
       const dailyBookingsCount = dailyBookings?.length || 0;
       const dailyRevenue = paidBookings?.reduce((sum, b) => sum + (b.total_price_cents / 100), 0) || 0;
       const newClientsCount = newClients?.length || 0;
-      const occupancyRate = dailyBookingsCount > 0 ? 
-        (dailyBookings?.filter(b => b.status === 'confirmed').length || 0) * 100 / dailyBookingsCount : 0;
+      const confirmedBookings = dailyBookings?.filter(b => b.status === 'confirmed').length || 0;
+      const occupancyRate = dailyBookingsCount > 0 ? (confirmedBookings * 100) / dailyBookingsCount : 0;
 
-      // Insert metrics manually
-      const metricsToInsert = [
+      // Create metrics data
+      const metricsData = [
         {
           metric_name: 'daily_bookings',
           metric_value: dailyBookingsCount,
@@ -147,12 +146,17 @@ const IntelligentAnalytics = () => {
         }
       ];
 
-      for (const metric of metricsToInsert) {
-        await supabase
+      // Insert metrics one by one with proper error handling
+      for (const metric of metricsData) {
+        const { error } = await supabase
           .from('real_time_metrics')
           .upsert(metric, {
             onConflict: 'metric_name,period_type,period_start'
           });
+        
+        if (error) {
+          console.error('Error inserting metric:', metric.metric_name, error);
+        }
       }
       
       toast({
@@ -165,7 +169,7 @@ const IntelligentAnalytics = () => {
       console.error('Error calculating metrics:', error);
       toast({
         title: "Error",
-        description: "No se pudieron calcular las métricas",
+        description: "Error en el cálculo de métricas: " + (error as any)?.message,
         variant: "destructive",
       });
     } finally {
@@ -233,265 +237,55 @@ const IntelligentAnalytics = () => {
     }
   };
 
-  if (isLoadingStats) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
-              Análisis Inteligente
-            </CardTitle>
-            <CardDescription>
-              Cargando estadísticas de análisis...
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="intelligent" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="intelligent">Análisis Inteligente</TabsTrigger>
-          <TabsTrigger value="metrics">Métricas en Tiempo Real</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics Avanzados</TabsTrigger>
-        </TabsList>
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5" />
+            Analytics Completo - IA y Métricas
+          </CardTitle>
+          <CardDescription>
+            Análisis inteligente, métricas en tiempo real y analytics avanzados
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
-        <TabsContent value="intelligent" className="space-y-6">
-          {/* AI Analysis Header */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5" />
-                Análisis Inteligente de Notas de Clientes
-              </CardTitle>
-              <CardDescription>
-                Análisis automático con IA para identificar patrones, sentimientos y situaciones críticas
-              </CardDescription>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={runBatchAnalysis}
-                  disabled={isAnalyzing}
-                  size="sm"
-                >
-                  <Zap className="h-4 w-4 mr-2" />
-                  {isAnalyzing ? 'Analizando...' : 'Analizar Notas Pendientes'}
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => loadAnalysisStats()}
-                  disabled={isLoadingStats}
-                  size="sm"
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Actualizar Estadísticas
-                </Button>
-              </div>
-            </CardHeader>
-          </Card>
-
-      {stats && (
-        <>
-          {/* Overview Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total de Notas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.total_notes}</div>
-                <p className="text-xs text-muted-foreground">
-                  {stats.analyzed_notes} analizadas ({Math.round((stats.analyzed_notes / stats.total_notes) * 100)}%)
-                </p>
-                <Progress 
-                  value={(stats.analyzed_notes / stats.total_notes) * 100} 
-                  className="mt-2"
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Riesgo Promedio</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{Math.round(stats.avg_risk_level)}%</div>
-                <p className="text-xs text-muted-foreground">
-                  Nivel de riesgo general
-                </p>
-                <Progress 
-                  value={stats.avg_risk_level} 
-                  className="mt-2"
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-1">
-                  <AlertTriangle className="h-4 w-4" />
-                  Alertas Activas
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">{stats.active_alerts}</div>
-                <p className="text-xs text-muted-foreground">
-                  Requieren atención inmediata
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Situaciones Críticas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">{stats.critical_urgency}</div>
-                <p className="text-xs text-muted-foreground">
-                  Notas marcadas como críticas
-                </p>
-              </CardContent>
-            </Card>
+      {/* Métricas en Tiempo Real */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Métricas en Tiempo Real
+          </CardTitle>
+          <CardDescription>
+            Indicadores de rendimiento actualizados
+          </CardDescription>
+          <div className="flex items-center gap-2">
+            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Diario</SelectItem>
+                <SelectItem value="weekly">Semanal</SelectItem>
+                <SelectItem value="monthly">Mensual</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={calculateRealTimeMetrics}
+              disabled={metricsLoading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {metricsLoading ? 'Calculando...' : 'Calcular'}
+            </Button>
           </div>
-
-          {/* Sentiment Analysis */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Análisis de Sentimientos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-green-600">{stats.positive_sentiment}</div>
-                  <Badge variant="secondary" className={getSentimentColor('positive')}>
-                    Positivo
-                  </Badge>
-                  <Progress 
-                    value={(stats.positive_sentiment / stats.analyzed_notes) * 100} 
-                    className="mt-2"
-                  />
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-600">{stats.neutral_sentiment}</div>
-                  <Badge variant="secondary" className={getSentimentColor('neutral')}>
-                    Neutral
-                  </Badge>
-                  <Progress 
-                    value={(stats.neutral_sentiment / stats.analyzed_notes) * 100} 
-                    className="mt-2"
-                  />
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-red-600">{stats.negative_sentiment}</div>
-                  <Badge variant="secondary" className={getSentimentColor('negative')}>
-                    Negativo
-                  </Badge>
-                  <Progress 
-                    value={(stats.negative_sentiment / stats.analyzed_notes) * 100} 
-                    className="mt-2"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Urgency Analysis */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Distribución de Urgencia
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-red-600">{stats.critical_urgency}</div>
-                  <Badge variant="secondary" className={getUrgencyColor('critical')}>
-                    Crítico
-                  </Badge>
-                  <Progress 
-                    value={(stats.critical_urgency / stats.analyzed_notes) * 100} 
-                    className="mt-2"
-                  />
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-orange-600">{stats.high_urgency}</div>
-                  <Badge variant="secondary" className={getUrgencyColor('high')}>
-                    Alto
-                  </Badge>
-                  <Progress 
-                    value={(stats.high_urgency / stats.analyzed_notes) * 100} 
-                    className="mt-2"
-                  />
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-yellow-600">{stats.medium_urgency}</div>
-                  <Badge variant="secondary" className={getUrgencyColor('medium')}>
-                    Medio
-                  </Badge>
-                  <Progress 
-                    value={(stats.medium_urgency / stats.analyzed_notes) * 100} 
-                    className="mt-2"
-                  />
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-green-600">{stats.low_urgency}</div>
-                  <Badge variant="secondary" className={getUrgencyColor('low')}>
-                    Bajo
-                  </Badge>
-                  <Progress 
-                    value={(stats.low_urgency / stats.analyzed_notes) * 100} 
-                    className="mt-2"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          </>
-        )}
-        </TabsContent>
-
-        <TabsContent value="metrics" className="space-y-6">
-          {/* Real-time Metrics Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Métricas en Tiempo Real</h2>
-              <p className="text-muted-foreground">
-                {lastUpdated && `Última actualización: ${lastUpdated.toLocaleTimeString()}`}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hourly">Por Hora</SelectItem>
-                  <SelectItem value="daily">Diario</SelectItem>
-                  <SelectItem value="weekly">Semanal</SelectItem>
-                  <SelectItem value="monthly">Mensual</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={calculateRealTimeMetrics}
-                disabled={metricsLoading}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                {metricsLoading ? 'Calculando...' : 'Calcular'}
-              </Button>
-            </div>
-          </div>
-
+        </CardHeader>
+        <CardContent>
           {/* Real-time Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {Object.values(latestMetrics).map((metric) => {
@@ -525,7 +319,6 @@ const IntelligentAnalytics = () => {
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {selectedPeriod === 'daily' && 'Hoy'}
-                      {selectedPeriod === 'hourly' && 'Última hora'}
                       {selectedPeriod === 'weekly' && 'Esta semana'}
                       {selectedPeriod === 'monthly' && 'Este mes'}
                     </p>
@@ -540,44 +333,41 @@ const IntelligentAnalytics = () => {
           </div>
 
           {Object.keys(latestMetrics).length === 0 && (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No hay métricas disponibles</h3>
-                <p className="text-muted-foreground mb-4">
-                  Haz clic en "Calcular" para generar métricas en tiempo real.
-                </p>
-                <Button onClick={calculateRealTimeMetrics} disabled={metricsLoading}>
-                  {metricsLoading ? 'Calculando...' : 'Calcular Métricas'}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-6">
-          {/* Advanced Analytics */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <LineChart className="h-5 w-5" />
-                Analytics Avanzados
-              </CardTitle>
-              <CardDescription>
-                Métricas de negocio y comparativas de períodos
-              </CardDescription>
-              <Button 
-                variant="outline"
-                onClick={() => loadAnalytics('month')}
-                disabled={analyticsLoading}
-                size="sm"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                {analyticsLoading ? 'Cargando...' : 'Actualizar Analytics'}
+            <div className="text-center py-8">
+              <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No hay métricas disponibles</h3>
+              <p className="text-muted-foreground mb-4">
+                Haz clic en "Calcular" para generar métricas en tiempo real.
+              </p>
+              <Button onClick={calculateRealTimeMetrics} disabled={metricsLoading}>
+                {metricsLoading ? 'Calculando...' : 'Calcular Métricas'}
               </Button>
-            </CardHeader>
-          </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
+      {/* Analytics Avanzados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <LineChart className="h-5 w-5" />
+            Analytics Avanzados
+          </CardTitle>
+          <CardDescription>
+            Métricas de negocio y comparativas de períodos
+          </CardDescription>
+          <Button 
+            variant="outline"
+            onClick={() => loadAnalytics('month')}
+            disabled={analyticsLoading}
+            size="sm"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            {analyticsLoading ? 'Cargando...' : 'Actualizar Analytics'}
+          </Button>
+        </CardHeader>
+        <CardContent>
           {analyticsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
@@ -671,7 +461,7 @@ const IntelligentAnalytics = () => {
               </div>
 
               {/* Additional metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Nuevos Clientes</CardTitle>
@@ -704,8 +494,212 @@ const IntelligentAnalytics = () => {
               </div>
             </>
           )}
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Análisis IA */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5" />
+            Análisis Inteligente de Notas
+          </CardTitle>
+          <CardDescription>
+            Análisis automático con IA para identificar patrones y situaciones críticas
+          </CardDescription>
+          <div className="flex gap-2">
+            <Button 
+              onClick={runBatchAnalysis}
+              disabled={isAnalyzing}
+              size="sm"
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              {isAnalyzing ? 'Analizando...' : 'Analizar Notas Pendientes'}
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => loadAnalysisStats()}
+              disabled={isLoadingStats}
+              size="sm"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Actualizar Estadísticas
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoadingStats ? (
+            <div className="text-center py-4">
+              <div className="animate-pulse space-y-4">
+                <div className="h-4 bg-muted rounded w-1/2 mx-auto"></div>
+                <div className="h-8 bg-muted rounded w-1/3 mx-auto"></div>
+              </div>
+            </div>
+          ) : stats && (
+            <>
+              {/* Overview Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total de Notas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.total_notes}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stats.analyzed_notes} analizadas ({Math.round((stats.analyzed_notes / stats.total_notes) * 100)}%)
+                    </p>
+                    <Progress 
+                      value={(stats.analyzed_notes / stats.total_notes) * 100} 
+                      className="mt-2"
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Riesgo Promedio</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{Math.round(stats.avg_risk_level)}%</div>
+                    <p className="text-xs text-muted-foreground">
+                      Nivel de riesgo general
+                    </p>
+                    <Progress 
+                      value={stats.avg_risk_level} 
+                      className="mt-2"
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-1">
+                      <AlertTriangle className="h-4 w-4" />
+                      Alertas Activas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-600">{stats.active_alerts}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Requieren atención inmediata
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Situaciones Críticas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-600">{stats.critical_urgency}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Notas marcadas como críticas
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Sentiment Analysis */}
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Análisis de Sentimientos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-green-600">{stats.positive_sentiment}</div>
+                      <Badge variant="secondary" className={getSentimentColor('positive')}>
+                        Positivo
+                      </Badge>
+                      <Progress 
+                        value={(stats.positive_sentiment / stats.analyzed_notes) * 100} 
+                        className="mt-2"
+                      />
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-gray-600">{stats.neutral_sentiment}</div>
+                      <Badge variant="secondary" className={getSentimentColor('neutral')}>
+                        Neutral
+                      </Badge>
+                      <Progress 
+                        value={(stats.neutral_sentiment / stats.analyzed_notes) * 100} 
+                        className="mt-2"
+                      />
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-red-600">{stats.negative_sentiment}</div>
+                      <Badge variant="secondary" className={getSentimentColor('negative')}>
+                        Negativo
+                      </Badge>
+                      <Progress 
+                        value={(stats.negative_sentiment / stats.analyzed_notes) * 100} 
+                        className="mt-2"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Urgency Analysis */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Distribución de Urgencia
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-red-600">{stats.critical_urgency}</div>
+                      <Badge variant="secondary" className={getUrgencyColor('critical')}>
+                        Crítico
+                      </Badge>
+                      <Progress 
+                        value={(stats.critical_urgency / stats.analyzed_notes) * 100} 
+                        className="mt-2"
+                      />
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-orange-600">{stats.high_urgency}</div>
+                      <Badge variant="secondary" className={getUrgencyColor('high')}>
+                        Alto
+                      </Badge>
+                      <Progress 
+                        value={(stats.high_urgency / stats.analyzed_notes) * 100} 
+                        className="mt-2"
+                      />
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-yellow-600">{stats.medium_urgency}</div>
+                      <Badge variant="secondary" className={getUrgencyColor('medium')}>
+                        Medio
+                      </Badge>
+                      <Progress 
+                        value={(stats.medium_urgency / stats.analyzed_notes) * 100} 
+                        className="mt-2"
+                      />
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-green-600">{stats.low_urgency}</div>
+                      <Badge variant="secondary" className={getUrgencyColor('low')}>
+                        Bajo
+                      </Badge>
+                      <Progress 
+                        value={(stats.low_urgency / stats.analyzed_notes) * 100} 
+                        className="mt-2"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
