@@ -401,28 +401,13 @@ const ReservationSystem = () => {
               </div>
             )}
 
-            {/* Service Selection */}
+            {/* Center Selection - FIRST */}
             <div className="space-y-4">
-              <h3 className="font-medium">Selección de Servicio</h3>
+              <h3 className="font-medium flex items-center space-x-2">
+                <MapPin className="h-4 w-4" />
+                <span>Selección de Centro</span>
+              </h3>
               
-              <div>
-                <Label htmlFor="service">Servicio *</Label>
-                {servicesLoading ? (
-                  <div className="flex items-center justify-center p-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                    <span className="ml-2">Cargando servicios...</span>
-                  </div>
-                ) : (
-                  <ServiceSelectorGrouped
-                    mode="individual"
-                    services={services}
-                    packages={[]}
-                    selectedId={formData.service}
-                    onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: 'individual' })}
-                  />
-                )}
-              </div>
-
               <div>
                 <Label htmlFor="center">Centro *</Label>
                 <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value, service: "", employee: "", lane: "" })}>
@@ -442,6 +427,31 @@ const ReservationSystem = () => {
                 </Select>
               </div>
             </div>
+
+            {/* Service Selection - SECOND (only after center is selected) */}
+            {formData.center && (
+              <div className="space-y-4">
+                <h3 className="font-medium">Selección de Servicio</h3>
+                
+                <div>
+                  <Label htmlFor="service">Servicio *</Label>
+                  {servicesLoading ? (
+                    <div className="flex items-center justify-center p-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <span className="ml-2">Cargando servicios...</span>
+                    </div>
+                  ) : (
+                    <ServiceSelectorGrouped
+                      mode="individual"
+                      services={services}
+                      packages={[]}
+                      selectedId={formData.service}
+                      onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: 'individual' })}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Date & Time */}
             <div className="space-y-4">
