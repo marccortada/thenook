@@ -405,22 +405,20 @@ const ReservationSystem = () => {
             <div className="space-y-4">
               <h3 className="font-medium">Selección de Servicio</h3>
               
-              {/* Selector combinado (Bonos + Servicios) - se muestran ambos, no hace falta alternar */}
-
               <div>
-                <Label htmlFor="service">Servicio o Bono *</Label>
-                {servicesLoading || packagesLoading ? (
+                <Label htmlFor="service">Servicio *</Label>
+                {servicesLoading ? (
                   <div className="flex items-center justify-center p-4">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     <span className="ml-2">Cargando servicios...</span>
                   </div>
                 ) : (
                   <ServiceSelectorGrouped
-                    mode="combined"
+                    mode="individual"
                     services={services}
-                    packages={packages}
+                    packages={[]}
                     selectedId={formData.service}
-                    onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: kind === 'package' ? 'voucher' : 'individual' })}
+                    onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: 'individual' })}
                   />
                 )}
               </div>
@@ -499,48 +497,19 @@ const ReservationSystem = () => {
               </div>
             </div>
 
-            {/* Staff Selection */}
+            {/* Asignación automática de especialista y sala */}
             {formData.center && (
               <div className="space-y-4">
                 <h3 className="font-medium flex items-center space-x-2">
                   <User className="h-4 w-4" />
-                  <span>Asignación de Personal</span>
+                  <span>Asignación de Personal y Sala</span>
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="employee">Especialista</Label>
-                    <Select value={formData.employee} onValueChange={(value) => setFormData({ ...formData, employee: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona especialista" />
-                      </SelectTrigger>
-                      <SelectContent className="z-[100] bg-background border shadow-lg">
-                        <SelectItem value="any">Cualquier especialista disponible</SelectItem>
-                        {availableEmployees.map((employee) => (
-                          <SelectItem key={employee.id} value={employee.id}>
-                            {employee.profiles?.first_name} {employee.profiles?.last_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="lane">Sala/Espacio</Label>
-                    <Select value={formData.lane} onValueChange={(value) => setFormData({ ...formData, lane: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona sala" />
-                      </SelectTrigger>
-                      <SelectContent className="z-[100] bg-background border shadow-lg">
-                        <SelectItem value="any">Cualquier sala disponible</SelectItem>
-                        {availableLanes.map((lane) => (
-                          <SelectItem key={lane.id} value={lane.id}>
-                            {lane.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="p-4 bg-accent/20 rounded-lg">
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>El especialista y la sala serán asignados automáticamente por el jefe según disponibilidad</span>
+                  </p>
                 </div>
               </div>
             )}
