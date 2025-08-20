@@ -309,6 +309,26 @@ const ClientReservation = () => {
     }
   };
 
+  // Debug información para diagnosticar
+  console.log('🔍 ClientReservation Debug:', {
+    centers: centers?.length || 0,
+    formData,
+    selection,
+    showExistingBookings,
+    existingBookings: existingBookings?.length || 0
+  });
+
+  // Loading state
+  if (!centers || centers.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground">Cargando centros...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
