@@ -22,8 +22,6 @@ import {
   Database
 } from "lucide-react";
 import Layout from "@/components/Layout";
-import InventoryManagement from "@/components/InventoryManagement";
-import HappyHourManagement from "@/components/HappyHourManagement";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,13 +39,13 @@ const AdminSettings = () => {
     currency: "EUR",
     timezone: "Europe/Madrid",
     workingHours: {
-      monday: { open: "09:00", close: "21:00", closed: false },
-      tuesday: { open: "09:00", close: "21:00", closed: false },
-      wednesday: { open: "09:00", close: "21:00", closed: false },
-      thursday: { open: "09:00", close: "21:00", closed: false },
-      friday: { open: "09:00", close: "21:00", closed: false },
-      saturday: { open: "10:00", close: "20:00", closed: false },
-      sunday: { open: "10:00", close: "18:00", closed: false }
+      monday: { open: "10:00", close: "22:00", closed: false },
+      tuesday: { open: "10:00", close: "22:00", closed: false },
+      wednesday: { open: "10:00", close: "22:00", closed: false },
+      thursday: { open: "10:00", close: "22:00", closed: false },
+      friday: { open: "10:00", close: "22:00", closed: false },
+      saturday: { open: "10:00", close: "22:00", closed: false },
+      sunday: { open: "10:00", close: "22:00", closed: false }
     }
   });
 
@@ -89,29 +87,21 @@ const AdminSettings = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6 px-4 sm:px-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Configuración del Sistema</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold">Configuración del Sistema</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
               Gestiona todos los aspectos de tu negocio desde un solo lugar
             </p>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               <span className="hidden sm:inline">General</span>
-            </TabsTrigger>
-            <TabsTrigger value="inventory" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              <span className="hidden sm:inline">Inventario</span>
-            </TabsTrigger>
-            <TabsTrigger value="happy-hours" className="flex items-center gap-2">
-              <Percent className="h-4 w-4" />
-              <span className="hidden sm:inline">Happy Hours</span>
             </TabsTrigger>
             <TabsTrigger value="codes" className="flex items-center gap-2">
               <Hash className="h-4 w-4" />
@@ -139,7 +129,7 @@ const AdminSettings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="businessName">Nombre del Negocio</Label>
                     <Input
@@ -200,7 +190,7 @@ const AdminSettings = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 {daysOfWeek.map((day) => (
-                  <div key={day.key} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={day.key} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-2">
                     <div className="flex items-center gap-4">
                       <span className="font-medium w-20">{day.label}</span>
                       <Switch
@@ -217,7 +207,7 @@ const AdminSettings = () => {
                       />
                     </div>
                     {!generalSettings.workingHours[day.key as keyof typeof generalSettings.workingHours].closed && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mt-2 sm:mt-0">
                         <Input
                           type="time"
                           value={generalSettings.workingHours[day.key as keyof typeof generalSettings.workingHours].open}
@@ -230,7 +220,7 @@ const AdminSettings = () => {
                               }
                             }))
                           }
-                          className="w-24"
+                          className="w-20 sm:w-24"
                         />
                         <span>-</span>
                         <Input
@@ -245,7 +235,7 @@ const AdminSettings = () => {
                               }
                             }))
                           }
-                          className="w-24"
+                          className="w-20 sm:w-24"
                         />
                       </div>
                     )}
@@ -256,14 +246,6 @@ const AdminSettings = () => {
                 </Button>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="inventory">
-            <InventoryManagement />
-          </TabsContent>
-
-          <TabsContent value="happy-hours">
-            <HappyHourManagement />
           </TabsContent>
 
           <TabsContent value="codes">
