@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Bell, Brain } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Bell, Brain, Package, Settings, Activity } from "lucide-react";
 import Layout from "@/components/Layout";
 import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
@@ -10,6 +10,9 @@ import PackageManagement from "@/components/PackageManagement";
 import ClientManagement from "@/components/ClientManagement";
 import SpecialistClients from "@/components/SpecialistClients";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
+import InventoryManagement from "@/components/InventoryManagement";
+import HappyHourManagement from "@/components/HappyHourManagement";
+import RealTimeMetrics from "@/components/RealTimeMetrics";
 
 import AdvancedDashboard from "@/components/AdvancedDashboard";
 import ReportsCenter from "@/components/ReportsCenter";
@@ -91,7 +94,11 @@ const Index = () => {
               <option value="clients">👥 Gestión de Clientes</option>
               
               {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
-              {(isAdmin || isOwner) && <option value="analytics">📊 Analytics</option>}
+              {(isAdmin || isOwner) && <option value="inventory">📦 Inventario</option>}
+              {(isAdmin || isOwner) && <option value="happy-hours">🎯 Happy Hours</option>}
+              {(isAdmin || isOwner) && <option value="codes">🏷️ Códigos</option>}
+              {(isAdmin || isOwner) && <option value="metrics">📊 Métricas</option>}
+              {(isAdmin || isOwner) && <option value="analytics">📈 Analytics</option>}
               {(isAdmin || isOwner) && <option value="control">🎛️ Centro de Control</option>}
             </select>
           </div>
@@ -125,6 +132,60 @@ const Index = () => {
               <span className="text-sm font-medium">Gestión de Clientes</span>
             </Button>
             
+            {(isAdmin || isEmployee) && (
+              <Button
+                variant={activeTab === "packages" ? "default" : "outline"}
+                onClick={() => setActiveTab("packages")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Gift className="h-5 w-5" />
+                <span className="text-sm font-medium">Bonos</span>
+              </Button>
+            )}
+
+            {(isAdmin || isOwner) && (
+              <Button
+                variant={activeTab === "inventory" ? "default" : "outline"}
+                onClick={() => setActiveTab("inventory")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Package className="h-5 w-5" />
+                <span className="text-sm font-medium">Inventario</span>
+              </Button>
+            )}
+
+            {(isAdmin || isOwner) && (
+              <Button
+                variant={activeTab === "happy-hours" ? "default" : "outline"}
+                onClick={() => setActiveTab("happy-hours")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Percent className="h-5 w-5" />
+                <span className="text-sm font-medium">Happy Hours</span>
+              </Button>
+            )}
+
+            {(isAdmin || isOwner) && (
+              <Button
+                variant={activeTab === "codes" ? "default" : "outline"}
+                onClick={() => setActiveTab("codes")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Hash className="h-5 w-5" />
+                <span className="text-sm font-medium">Códigos</span>
+              </Button>
+            )}
+
+            {(isAdmin || isOwner) && (
+              <Button
+                variant={activeTab === "metrics" ? "default" : "outline"}
+                onClick={() => setActiveTab("metrics")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Activity className="h-5 w-5" />
+                <span className="text-sm font-medium">Métricas</span>
+              </Button>
+            )}
             
             {(isAdmin || isOwner) && (
               <Button
@@ -136,20 +197,6 @@ const Index = () => {
                 <span className="text-sm font-medium">Analytics</span>
               </Button>
             )}
-            
-            {(isAdmin || isEmployee) && (
-              <Button
-                variant={activeTab === "packages" ? "default" : "outline"}
-                onClick={() => setActiveTab("packages")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Gift className="h-5 w-5" />
-                <span className="text-sm font-medium">Bonos</span>
-              </Button>
-            )}
-            
-            
-            
             
             {(isAdmin || isOwner) && (
               <Button
@@ -187,8 +234,29 @@ const Index = () => {
             </TabsContent>
           )}
 
+          {(isAdmin || isOwner) && (
+            <TabsContent value="inventory" className="mt-6">
+              <InventoryManagement />
+            </TabsContent>
+          )}
 
+          {(isAdmin || isOwner) && (
+            <TabsContent value="happy-hours" className="mt-6">
+              <HappyHourManagement />
+            </TabsContent>
+          )}
 
+          {(isAdmin || isOwner) && (
+            <TabsContent value="codes" className="mt-6">
+              <InternalCodesManagement />
+            </TabsContent>
+          )}
+
+          {(isAdmin || isOwner) && (
+            <TabsContent value="metrics" className="mt-6">
+              <RealTimeMetrics />
+            </TabsContent>
+          )}
 
           {(isAdmin || isOwner) && (
             <TabsContent value="control" className="mt-0">

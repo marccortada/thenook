@@ -110,6 +110,17 @@ const Layout = ({ children }: LayoutProps) => {
                             <Settings className="mr-2 h-4 w-4" />
                             <span>Precios y Promos</span>
                           </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="justify-start"
+                            onClick={() => {
+                              navigate("/panel-gestion-nook-madrid-2024/configuracion");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Configuración</span>
+                          </Button>
                           <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4">
                             Comunicación
                           </div>
@@ -154,6 +165,10 @@ const Layout = ({ children }: LayoutProps) => {
                         <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/precios-promos")}>
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Precios y Promos</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/configuracion")}>
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Configuración</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

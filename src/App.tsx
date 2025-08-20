@@ -15,6 +15,7 @@ import NotificationDashboard from "./pages/NotificationDashboard";
 import ReportsCenter from "./pages/ReportsCenter";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminPricingPromos from "./pages/AdminPricingPromos";
+import AdminSettings from "./pages/AdminSettings";
 import RedeemCode from "./pages/RedeemCode";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
@@ -79,6 +80,14 @@ const App = () => (
             element={
               <ProtectedRoute requireEmployee={true}>
                 <RedeemCode />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/panel-gestion-nook-madrid-2024/configuracion" 
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <AdminSettings />
               </ProtectedRoute>
             } 
           />
