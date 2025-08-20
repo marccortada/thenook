@@ -401,11 +401,11 @@ const ReservationSystem = () => {
               </div>
             )}
 
-            {/* Center Selection - FIRST PRIORITY */}
+            {/* ✅ CENTER SELECTION FIRST */}
             <div className="space-y-4">
               <h3 className="font-medium flex items-center space-x-2">
                 <MapPin className="h-4 w-4" />
-                <span>Selección de Centro</span>
+                <span>📍 Selección de Centro</span>
               </h3>
               
               <div>
