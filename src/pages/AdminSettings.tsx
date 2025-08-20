@@ -98,27 +98,42 @@ const AdminSettings = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
-            <TabsTrigger value="general" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 sm:p-3 h-auto min-h-[60px] sm:min-h-[auto]">
-              <Building2 className="h-4 w-4 shrink-0" />
-              <span className="text-xs sm:text-sm font-medium">General</span>
+          {/* Mobile Tab Selector */}
+          <div className="lg:hidden mb-4">
+            <select 
+              value={activeTab} 
+              onChange={(e) => setActiveTab(e.target.value)}
+              className="w-full p-3 border rounded-lg bg-background text-sm font-medium shadow-sm"
+            >
+              <option value="general">🏢 General</option>
+              <option value="codes">🏷️ Códigos</option>
+              <option value="payments">💳 Pagos</option>
+              <option value="notifications">🔔 Notificaciones</option>
+            </select>
+          </div>
+
+          {/* Desktop Tabs */}
+          <TabsList className="hidden lg:grid w-full grid-cols-4 h-auto mb-6">
+            <TabsTrigger value="general" className="flex items-center gap-2 p-3">
+              <Building2 className="h-4 w-4" />
+              <span>General</span>
             </TabsTrigger>
-            <TabsTrigger value="codes" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 sm:p-3 h-auto min-h-[60px] sm:min-h-[auto]">
-              <Hash className="h-4 w-4 shrink-0" />
-              <span className="text-xs sm:text-sm font-medium">Códigos</span>
+            <TabsTrigger value="codes" className="flex items-center gap-2 p-3">
+              <Hash className="h-4 w-4" />
+              <span>Códigos</span>
             </TabsTrigger>
-            <TabsTrigger value="payments" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 sm:p-3 h-auto min-h-[60px] sm:min-h-[auto]">
-              <CreditCard className="h-4 w-4 shrink-0" />
-              <span className="text-xs sm:text-sm font-medium">Pagos</span>
+            <TabsTrigger value="payments" className="flex items-center gap-2 p-3">
+              <CreditCard className="h-4 w-4" />
+              <span>Pagos</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 sm:p-3 h-auto min-h-[60px] sm:min-h-[auto]">
-              <Settings className="h-4 w-4 shrink-0" />
-              <span className="text-xs sm:text-sm font-medium">Notific.</span>
+            <TabsTrigger value="notifications" className="flex items-center gap-2 p-3">
+              <Settings className="h-4 w-4" />
+              <span>Notificaciones</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
-            <Card className="shadow-sm">
+          <TabsContent value="general" className="space-y-4 sm:space-y-6">
+            <Card className="shadow-sm border-2">
               <CardHeader className="pb-3 sm:pb-6">
                 <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -183,21 +198,21 @@ const AdminSettings = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
+            <Card className="shadow-sm border-2">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
                   Horarios de Atención
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm sm:text-base">
                   Configura los horarios de trabajo por día de la semana
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4">
                 {daysOfWeek.map((day) => (
-                  <div key={day.key} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-2">
-                    <div className="flex items-center gap-4">
-                      <span className="font-medium w-20">{day.label}</span>
+                  <div key={day.key} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3 sm:gap-2 bg-accent/10">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <span className="font-medium w-16 sm:w-20 text-sm sm:text-base">{day.label}</span>
                       <Switch
                         checked={!generalSettings.workingHours[day.key as keyof typeof generalSettings.workingHours].closed}
                         onCheckedChange={(checked) => 
@@ -212,7 +227,7 @@ const AdminSettings = () => {
                       />
                     </div>
                     {!generalSettings.workingHours[day.key as keyof typeof generalSettings.workingHours].closed && (
-                      <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                      <div className="flex items-center gap-2">
                         <Input
                           type="time"
                           value={generalSettings.workingHours[day.key as keyof typeof generalSettings.workingHours].open}
@@ -225,9 +240,9 @@ const AdminSettings = () => {
                               }
                             }))
                           }
-                          className="w-20 sm:w-24"
+                          className="w-20 sm:w-24 h-9 text-sm"
                         />
-                        <span>-</span>
+                        <span className="text-muted-foreground">-</span>
                         <Input
                           type="time"
                           value={generalSettings.workingHours[day.key as keyof typeof generalSettings.workingHours].close}
@@ -240,31 +255,31 @@ const AdminSettings = () => {
                               }
                             }))
                           }
-                          className="w-20 sm:w-24"
+                          className="w-20 sm:w-24 h-9 text-sm"
                         />
                       </div>
                     )}
                   </div>
                 ))}
-                <Button onClick={() => handleSaveSettings("horarios")}>
+                <Button onClick={() => handleSaveSettings("horarios")} className="w-full sm:w-auto mt-4">
                   Guardar Horarios
                 </Button>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="codes">
+          <TabsContent value="codes" className="space-y-4 sm:space-y-6">
             <InternalCodesManagement />
           </TabsContent>
 
-          <TabsContent value="payments" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
+          <TabsContent value="payments" className="space-y-4 sm:space-y-6">
+            <Card className="shadow-sm border-2">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
                   Configuración de Pagos
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm sm:text-base">
                   Gestiona los métodos de pago y políticas
                 </CardDescription>
               </CardHeader>
@@ -343,8 +358,8 @@ const AdminSettings = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="notifications" className="space-y-6">
-            <Card>
+          <TabsContent value="notifications" className="space-y-4 sm:space-y-6">
+            <Card className="shadow-sm border-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
