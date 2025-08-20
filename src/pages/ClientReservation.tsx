@@ -309,14 +309,6 @@ const ClientReservation = () => {
     }
   };
 
-  // Debug información para diagnosticar
-  console.log('🔍 ClientReservation Debug:', {
-    centers: centers?.length || 0,
-    formData,
-    selection,
-    showExistingBookings,
-    existingBookings: existingBookings?.length || 0
-  });
 
   // Loading state
   if (!centers || centers.length === 0) {
