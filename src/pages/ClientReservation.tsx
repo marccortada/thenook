@@ -515,58 +515,61 @@ const ClientReservation = () => {
                       ))}
                    </div>
                  </div>
-              )}
-              {/* Service Selection */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                  <CalendarDays className="h-4 w-4" />
-                  <span>Selección de Servicio</span>
-                </h3>
-                <div>
-                  <Label className="text-sm">Servicio *</Label>
-                  {servicesLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      <span className="ml-2">Cargando opciones...</span>
-                    </div>
-                  ) : (
-                    <ServiceSelectorGrouped
-                      mode="individual"
-                      services={services}
-                      packages={[]}
-                      selectedId={selection?.id}
-                      onSelect={(id) => setSelection({ id, kind: "service" })}
-                    />
-                  )}
-                </div>
-              </div>
+               )}
 
-              {/* Center Selection */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                  <MapPin className="h-4 w-4" />
-                  <span>Centro</span>
-                </h3>
-                
-                <div>
-                  <Label htmlFor="center" className="text-sm">Centro *</Label>
-                  <Select value={formData.center} onValueChange={(value) => { setFormData({ ...formData, center: value }); setSelection(null); }}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Selecciona un centro" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100] bg-background border shadow-lg">
-                      {centers.map((center) => (
-                        <SelectItem key={center.id} value={center.id}>
-                          <div className="flex items-center space-x-2">
-                            <MapPin className="h-3 w-3" />
-                            <span>{center.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+               {/* 📍 CENTER SELECTION FIRST */}
+               <div className="space-y-3 sm:space-y-4">
+                 <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                   <MapPin className="h-4 w-4" />
+                   <span>📍 Selección de Centro</span>
+                 </h3>
+                 
+                 <div>
+                   <Label htmlFor="center" className="text-sm">Centro *</Label>
+                   <Select value={formData.center} onValueChange={(value) => { setFormData({ ...formData, center: value }); setSelection(null); }}>
+                     <SelectTrigger className="mt-1">
+                       <SelectValue placeholder="Selecciona un centro" />
+                     </SelectTrigger>
+                     <SelectContent className="z-[100] bg-background border shadow-lg">
+                       {centers.map((center) => (
+                         <SelectItem key={center.id} value={center.id}>
+                           <div className="flex items-center space-x-2">
+                             <MapPin className="h-3 w-3" />
+                             <span>{center.name}</span>
+                           </div>
+                         </SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </div>
+
+               {/* Service Selection - ONLY after center is selected */}
+               {formData.center && (
+                 <div className="space-y-3 sm:space-y-4">
+                   <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                     <CalendarDays className="h-4 w-4" />
+                     <span>Selección de Servicio</span>
+                   </h3>
+                   <div>
+                     <Label className="text-sm">Servicio *</Label>
+                     {servicesLoading ? (
+                       <div className="flex items-center justify-center p-4">
+                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                         <span className="ml-2">Cargando opciones...</span>
+                       </div>
+                     ) : (
+                       <ServiceSelectorGrouped
+                         mode="individual"
+                         services={services}
+                         packages={[]}
+                         selectedId={selection?.id}
+                         onSelect={(id) => setSelection({ id, kind: "service" })}
+                       />
+                     )}
+                   </div>
+                 </div>
+               )}
 
               {/* Date & Time */}
               <div className="space-y-3 sm:space-y-4">
