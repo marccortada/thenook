@@ -47,7 +47,7 @@ const Index = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-2 sm:px-0">
         {/* Mostrar estado de carga */}
         {loading && (
           <div className="mb-8 text-center">
@@ -70,11 +70,11 @@ const Index = () => {
         )}
 
         {activeTab !== "control" && !loading && isAuthenticated && (
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
               ¡Bienvenido, {user?.name || 'Usuario'}!
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
             </p>
             {/* Debug info visible - removed */}
@@ -87,10 +87,10 @@ const Index = () => {
             <select 
               value={activeTab} 
               onChange={(e) => setActiveTab(e.target.value)}
-              className="w-full p-3 border rounded-lg bg-background text-sm"
+              className="w-full p-3 border rounded-lg bg-background text-sm font-medium"
             >
-              <option value="bookings">📅 Calendario</option>
               <option value="reservations">📅 Nueva Reserva</option>
+              <option value="bookings">📅 Calendario</option>
               <option value="clients">👥 Gestión de Clientes</option>
               
               {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
@@ -100,7 +100,7 @@ const Index = () => {
           </div>
 
           {/* Desktop Grid */}
-          <div className="hidden lg:grid grid-cols-4 gap-4 mb-6">
+          <div className="hidden lg:grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             <Button
               variant={activeTab === "reservations" ? "default" : "outline"}
               onClick={() => setActiveTab("reservations")}
@@ -167,8 +167,13 @@ const Index = () => {
             <ReservationSystem />
           </TabsContent>
 
-          <TabsContent value="bookings" className="mt-6 space-y-6 -mx-4 sm:mx-0">
-            <AdvancedCalendarView />
+          <TabsContent value="bookings" className="mt-6 space-y-6 -mx-2 sm:-mx-4 lg:mx-0">
+            <div className="lg:hidden">
+              <AdvancedCalendarView />
+            </div>
+            <div className="hidden lg:block">
+              <AdvancedCalendarView />
+            </div>
           </TabsContent>
 
           <TabsContent value="clients" className="mt-6 space-y-6">

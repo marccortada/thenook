@@ -171,7 +171,7 @@ All colors MUST be HSL.
     box-shadow: var(--shadow-strong);
   }
 
-  /* Fix mobile scrollbar issues */
+  /* Mobile responsive improvements */
   @media (max-width: 768px) {
     /* Hide scrollbars on mobile but keep functionality */
     .scrollbar-hidden {
@@ -200,6 +200,57 @@ All colors MUST be HSL.
 
     [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] {
       height: 6px !important;
+    }
+
+    /* Mobile optimizations */
+    .mobile-safe-area {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Improve touch targets on mobile */
+    button, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Better modal sizing on mobile */
+    [data-radix-dialog-content] {
+      max-width: calc(100vw - 2rem) !important;
+      max-height: calc(100vh - 2rem) !important;
+    }
+
+    /* Prevent zoom on input focus */
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+
+    /* Better dropdown positioning on mobile */
+    [data-radix-select-content],
+    [data-radix-dropdown-menu-content],
+    [data-radix-popover-content] {
+      max-width: calc(100vw - 2rem) !important;
+      transform-origin: center !important;
+    }
+  }
+
+  /* Tablet optimizations */
+  @media (max-width: 1024px) and (min-width: 769px) {
+    .tablet-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+
+  /* Small mobile screens */
+  @media (max-width: 480px) {
+    .container {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    /* Ensure cards don't overflow on small screens */
+    .responsive-card {
+      margin: 0.5rem 0;
+      padding: 1rem;
     }
   }
 }

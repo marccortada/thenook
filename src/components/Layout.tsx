@@ -57,18 +57,19 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-        <div className="container mx-auto px-4 py-4">
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <div className="container mx-auto px-2 sm:px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/")}
-                className="text-xl font-bold hover:bg-transparent"
+                className="text-lg sm:text-xl font-bold hover:bg-transparent p-1 sm:p-2"
               >
                 <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-extrabold tracking-tight">
-                  The Nook Madrid
+                  <span className="hidden sm:inline">The Nook Madrid</span>
+                  <span className="sm:hidden">Nook</span>
                 </span>
               </Button>
               
@@ -78,12 +79,12 @@ const Layout = ({ children }: LayoutProps) => {
                   {isMobile ? (
                     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                       <SheetTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <Menu className="h-4 w-4 mr-2" />
-                          Centro de Control
+                        <Button variant="ghost" size="sm" className="px-2">
+                          <Menu className="h-4 w-4 mr-1" />
+                          <span className="text-xs">Control</span>
                         </Button>
                       </SheetTrigger>
-                      <SheetContent side="left" className="w-64">
+                      <SheetContent side="left" className="w-72 sm:w-80">
                         <div className="flex flex-col space-y-4 mt-8">
                           <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             Gestión
@@ -179,7 +180,7 @@ const Layout = ({ children }: LayoutProps) => {
               {/* Panel de administración accesible vía URL secreta */}
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {isAuthenticated && (isAdmin || isOwner) && <NotificationBell />}
               {isAuthenticated && isAdmin ? (
                 <DropdownMenu>
@@ -236,7 +237,7 @@ const Layout = ({ children }: LayoutProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {children}
       </main>
       

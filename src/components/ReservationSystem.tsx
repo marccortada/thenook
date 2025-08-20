@@ -294,7 +294,7 @@ const ReservationSystem = () => {
   const selectedItem = getSelectedItem();
 
   return (
-    <div className="max-w-4xl mx-auto px-4">
+    <div className="max-w-4xl mx-auto px-2 sm:px-4">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -312,7 +312,7 @@ const ReservationSystem = () => {
                   <span>Información del Cliente</span>
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="clientName">Nombre Completo *</Label>
                     <Input
