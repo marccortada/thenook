@@ -94,10 +94,6 @@ const Index = () => {
               <option value="clients">👥 Gestión de Clientes</option>
               
               {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
-              {(isAdmin || isOwner) && <option value="inventory">📦 Inventario</option>}
-              {(isAdmin || isOwner) && <option value="happy-hours">🎯 Happy Hours</option>}
-              {(isAdmin || isOwner) && <option value="codes">🏷️ Códigos</option>}
-              {(isAdmin || isOwner) && <option value="metrics">📊 Métricas</option>}
               {(isAdmin || isOwner) && <option value="analytics">📈 Analytics</option>}
               {(isAdmin || isOwner) && <option value="control">🎛️ Centro de Control</option>}
             </select>
@@ -143,49 +139,6 @@ const Index = () => {
               </Button>
             )}
 
-            {(isAdmin || isOwner) && (
-              <Button
-                variant={activeTab === "inventory" ? "default" : "outline"}
-                onClick={() => setActiveTab("inventory")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Package className="h-5 w-5" />
-                <span className="text-sm font-medium">Inventario</span>
-              </Button>
-            )}
-
-            {(isAdmin || isOwner) && (
-              <Button
-                variant={activeTab === "happy-hours" ? "default" : "outline"}
-                onClick={() => setActiveTab("happy-hours")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Percent className="h-5 w-5" />
-                <span className="text-sm font-medium">Happy Hours</span>
-              </Button>
-            )}
-
-            {(isAdmin || isOwner) && (
-              <Button
-                variant={activeTab === "codes" ? "default" : "outline"}
-                onClick={() => setActiveTab("codes")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Hash className="h-5 w-5" />
-                <span className="text-sm font-medium">Códigos</span>
-              </Button>
-            )}
-
-            {(isAdmin || isOwner) && (
-              <Button
-                variant={activeTab === "metrics" ? "default" : "outline"}
-                onClick={() => setActiveTab("metrics")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Activity className="h-5 w-5" />
-                <span className="text-sm font-medium">Métricas</span>
-              </Button>
-            )}
             
             {(isAdmin || isOwner) && (
               <Button
@@ -234,29 +187,6 @@ const Index = () => {
             </TabsContent>
           )}
 
-          {(isAdmin || isOwner) && (
-            <TabsContent value="inventory" className="mt-6">
-              <InventoryManagement />
-            </TabsContent>
-          )}
-
-          {(isAdmin || isOwner) && (
-            <TabsContent value="happy-hours" className="mt-6">
-              <HappyHourManagement />
-            </TabsContent>
-          )}
-
-          {(isAdmin || isOwner) && (
-            <TabsContent value="codes" className="mt-6">
-              <InternalCodesManagement />
-            </TabsContent>
-          )}
-
-          {(isAdmin || isOwner) && (
-            <TabsContent value="metrics" className="mt-6">
-              <RealTimeMetrics />
-            </TabsContent>
-          )}
 
           {(isAdmin || isOwner) && (
             <TabsContent value="control" className="mt-0">

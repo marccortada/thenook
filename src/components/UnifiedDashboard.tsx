@@ -14,7 +14,8 @@ import {
   Settings,
   Send,
   Plus,
-  Clock
+  Clock,
+  Hash
 } from 'lucide-react';
 
 // Import existing components
@@ -23,6 +24,8 @@ import ReportsCenter from './ReportsCenter';
 import AdvancedReports from './AdvancedReports';
 import IntelligentAnalytics from './IntelligentAnalytics';
 import AdvancedScheduleManagement from './AdvancedScheduleManagement';
+import RealTimeMetrics from './RealTimeMetrics';
+import InternalCodesManagement from './InternalCodesManagement';
 
 const UnifiedDashboard = () => {
   const [activeSection, setActiveSection] = useState('schedule');
@@ -60,6 +63,28 @@ const UnifiedDashboard = () => {
       components: [
         { id: 'basic', title: 'Reportes Básicos', component: ReportsCenter },
         { id: 'advanced', title: 'Reportes Avanzados', component: AdvancedReports },
+      ]
+    },
+    {
+      id: 'metrics',
+      title: 'Métricas en Tiempo Real',
+      description: 'Monitoreo de KPIs y estadísticas del negocio',
+      icon: Activity,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      components: [
+        { id: 'realtime', title: 'Métricas en Vivo', component: RealTimeMetrics },
+      ]
+    },
+    {
+      id: 'codes',
+      title: 'Códigos Internos',
+      description: 'Gestión de códigos promocionales y descuentos',
+      icon: Hash,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+      components: [
+        { id: 'management', title: 'Gestión de Códigos', component: InternalCodesManagement },
       ]
     },
   ];

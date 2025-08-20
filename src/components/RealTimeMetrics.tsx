@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import MetricsExplanation from "./MetricsExplanation";
 
 interface Metric {
   id: string;
@@ -252,18 +253,21 @@ const RealTimeMetrics = () => {
       </div>
 
       {Object.keys(latestMetrics).length === 0 && (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No hay métricas disponibles</h3>
-            <p className="text-muted-foreground mb-4">
-              Las métricas se calculan automáticamente. Haz clic en "Actualizar" para generar nuevas métricas.
-            </p>
-            <Button onClick={calculateMetrics}>
-              Calcular Métricas
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No hay métricas disponibles</h3>
+              <p className="text-muted-foreground mb-4">
+                Las métricas se calculan automáticamente. Haz clic en "Actualizar" para generar nuevas métricas.
+              </p>
+              <Button onClick={calculateMetrics}>
+                Calcular Métricas
+              </Button>
+            </CardContent>
+          </Card>
+          <MetricsExplanation />
+        </div>
       )}
 
       {/* Historical data preview */}

@@ -398,6 +398,7 @@ export default function AdminPricingPromos() {
             <TabsTrigger value="packages">Bonos</TabsTrigger>
             <TabsTrigger value="giftcards">Tarjetas regalo</TabsTrigger>
             <TabsTrigger value="promotions">Promociones</TabsTrigger>
+            <TabsTrigger value="happy-hours">Happy Hours</TabsTrigger>
           </TabsList>
 
           <TabsContent value="services" className="mt-6 space-y-4">
@@ -639,7 +640,6 @@ export default function AdminPricingPromos() {
           </TabsContent>
 
           <TabsContent value="promotions" className="mt-6 space-y-4">
-            <HappyHourManagement />
             <Card>
               <CardHeader>
                 <CardTitle>Nueva promoción</CardTitle>
@@ -709,6 +709,10 @@ export default function AdminPricingPromos() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="happy-hours" className="mt-6">
+            <HappyHourManagement />
           </TabsContent>
         </Tabs>
       </div>
