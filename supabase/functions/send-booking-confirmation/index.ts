@@ -22,6 +22,7 @@ serve(async (req) => {
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
     console.log('📧 Processing booking confirmation emails...');
+    const nowIso = new Date().toISOString();
 
     // Get pending email notifications
     const { data: notifications, error: fetchError } = await supabaseClient
@@ -33,11 +34,13 @@ serve(async (req) => {
         subject,
         message,
         type,
+        scheduled_for,
         profiles!client_id(email, first_name, last_name),
         bookings(booking_datetime, total_price_cents, services(name))
       `)
       .eq('status', 'pending')
       .in('type', ['appointment_confirmation', 'booking_reminder'])
+      .lte('scheduled_for', nowIso)
       .limit(10);
 
     if (fetchError) {
