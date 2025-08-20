@@ -35,10 +35,9 @@ const ClientReservation = () => {
     notes: "",
   });
 
-  const [selection, setSelection] = useState<{ id: string; kind: "service" | "package" } | null>(null);
+  const [selection, setSelection] = useState<{ id: string; kind: "service" } | null>(null);
 
   const { services, loading: servicesLoading } = useServices(formData.center);
-  const { packages, loading: packagesLoading } = usePackages(formData.center);
 
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const [showExistingBookings, setShowExistingBookings] = useState(false);
@@ -180,7 +179,7 @@ const ClientReservation = () => {
         profileToUse = newProfile;
       }
 
-      // Configuración según selección (servicio/bono)
+      // Configuración según selección de servicio
       let duration_minutes = 60;
       let price_cents = 0; // No cobramos aquí; se gestiona en el centro
       let service_id: string | null = null;
@@ -191,13 +190,7 @@ const ClientReservation = () => {
         if (s) {
           duration_minutes = s.duration_minutes;
           service_id = s.id;
-        }
-      } else if (selection?.kind === 'package') {
-        const pkg = packages.find((x) => x.id === selection.id);
-        if (pkg) {
-          duration_minutes = pkg.services?.duration_minutes || 60;
-          service_id = pkg.service_id || null;
-          notesText = [notesText || '', `Bono seleccionado: ${pkg.name}`].filter(Boolean).join(' | ');
+          price_cents = s.price_cents;
         }
       }
 
@@ -206,12 +199,19 @@ const ClientReservation = () => {
       const [hours, minutes] = formData.time.split(':');
       bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
+      // Asignar lane y employee aleatorio de los disponibles
+      const availableLanes = lanes.filter(l => l.center_id === formData.center && l.active);
+      const availableEmployees = employees.filter(e => e.center_id === formData.center && e.active);
+      
+      const randomLane = availableLanes.length > 0 ? availableLanes[Math.floor(Math.random() * availableLanes.length)] : null;
+      const randomEmployee = availableEmployees.length > 0 ? availableEmployees[Math.floor(Math.random() * availableEmployees.length)] : null;
+
       const bookingData = {
         client_id: profileToUse?.id,
         service_id,
         center_id: formData.center,
-        lane_id: null, // Admin asignará
-        employee_id: null, // Admin asignará
+        lane_id: randomLane?.id || null,
+        employee_id: randomEmployee?.id || null,
         booking_datetime: bookingDate.toISOString(),
         duration_minutes,
         total_price_cents: price_cents,
