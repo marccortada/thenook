@@ -401,7 +401,7 @@ const ReservationSystem = () => {
               </div>
             )}
 
-            {/* Center Selection - FIRST */}
+            {/* Center Selection - FIRST PRIORITY */}
             <div className="space-y-4">
               <h3 className="font-medium flex items-center space-x-2">
                 <MapPin className="h-4 w-4" />
@@ -428,7 +428,7 @@ const ReservationSystem = () => {
               </div>
             </div>
 
-            {/* Service Selection - SECOND (only after center is selected) */}
+            {/* Service Selection - ONLY after center is selected */}
             {formData.center && (
               <div className="space-y-4">
                 <h3 className="font-medium">Selección de Servicio</h3>
