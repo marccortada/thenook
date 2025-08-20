@@ -87,92 +87,97 @@ const AdminSettings = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto space-y-6 px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Configuración del Sistema</h1>
-            <p className="text-muted-foreground text-sm sm:text-base">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Configuración del Sistema</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm lg:text-base mt-1">
               Gestiona todos los aspectos de tu negocio desde un solo lugar
             </p>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-            <TabsTrigger value="general" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              <span className="hidden sm:inline">General</span>
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
+            <TabsTrigger value="general" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 sm:p-3 h-auto min-h-[60px] sm:min-h-[auto]">
+              <Building2 className="h-4 w-4 shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">General</span>
             </TabsTrigger>
-            <TabsTrigger value="codes" className="flex items-center gap-2">
-              <Hash className="h-4 w-4" />
-              <span className="hidden sm:inline">Códigos</span>
+            <TabsTrigger value="codes" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 sm:p-3 h-auto min-h-[60px] sm:min-h-[auto]">
+              <Hash className="h-4 w-4 shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">Códigos</span>
             </TabsTrigger>
-            <TabsTrigger value="payments" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Pagos</span>
+            <TabsTrigger value="payments" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 sm:p-3 h-auto min-h-[60px] sm:min-h-[auto]">
+              <CreditCard className="h-4 w-4 shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">Pagos</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Notific.</span>
+            <TabsTrigger value="notifications" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 sm:p-3 h-auto min-h-[60px] sm:min-h-[auto]">
+              <Settings className="h-4 w-4 shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">Notific.</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
+          <TabsContent value="general" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
                   Información General del Negocio
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm sm:text-base">
                   Configura los datos básicos de tu centro
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="businessName">Nombre del Negocio</Label>
+              <CardContent className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="businessName" className="text-sm font-medium">Nombre del Negocio</Label>
                     <Input
                       id="businessName"
                       value={generalSettings.businessName}
                       onChange={(e) => setGeneralSettings(prev => ({ ...prev, businessName: e.target.value }))}
+                      className="h-10 sm:h-11"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="phone">Teléfono</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-sm font-medium">Teléfono</Label>
                     <Input
                       id="phone"
                       value={generalSettings.phone}
                       onChange={(e) => setGeneralSettings(prev => ({ ...prev, phone: e.target.value }))}
+                      className="h-10 sm:h-11"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                     <Input
                       id="email"
                       type="email"
                       value={generalSettings.email}
                       onChange={(e) => setGeneralSettings(prev => ({ ...prev, email: e.target.value }))}
+                      className="h-10 sm:h-11"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="website">Sitio Web</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="website" className="text-sm font-medium">Sitio Web</Label>
                     <Input
                       id="website"
                       value={generalSettings.website}
                       onChange={(e) => setGeneralSettings(prev => ({ ...prev, website: e.target.value }))}
+                      className="h-10 sm:h-11"
                     />
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="address">Dirección</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="text-sm font-medium">Dirección</Label>
                   <Textarea
                     id="address"
                     value={generalSettings.address}
                     onChange={(e) => setGeneralSettings(prev => ({ ...prev, address: e.target.value }))}
+                    className="min-h-[80px] sm:min-h-[100px]"
                   />
                 </div>
-                <Button onClick={() => handleSaveSettings("general")}>
+                <Button onClick={() => handleSaveSettings("general")} className="w-full sm:w-auto">
                   Guardar Configuración General
                 </Button>
               </CardContent>
