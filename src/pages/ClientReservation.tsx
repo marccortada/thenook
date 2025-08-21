@@ -529,7 +529,10 @@ const ClientReservation = () => {
                         <Calendar
                           mode="single"
                           selected={formData.date}
-                          onSelect={(date) => setFormData({ ...formData, date })}
+                          onSelect={(date) => {
+                            console.log('Calendar date selected:', date);
+                            setFormData({ ...formData, date });
+                          }}
                           disabled={(date) => date < new Date()}
                           initialFocus
                           className="p-3 pointer-events-auto"
@@ -561,7 +564,10 @@ const ClientReservation = () => {
                   
                   <div>
                     <Label htmlFor="time" className="text-sm">Hora *</Label>
-                    <Select value={formData.time} onValueChange={(value) => setFormData({ ...formData, time: value })}>
+                    <Select value={formData.time} onValueChange={(value) => {
+                      console.log('Time selected:', value);
+                      setFormData({ ...formData, time: value });
+                    }}>
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Selecciona una hora" />
                       </SelectTrigger>
@@ -601,51 +607,49 @@ const ClientReservation = () => {
                 />
               </div>
 
-              {/* Summary */}
+              {/* Summary - Inline without modal */}
               {formData.center && formData.date && formData.time && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                  <div className="bg-background border-2 border-primary/20 rounded-xl p-6 sm:p-8 max-w-md w-full mx-auto shadow-2xl">
-                    <h4 className="font-bold text-lg sm:text-xl mb-6 text-center text-primary">Resumen de la Reserva</h4>
-                    <div className="space-y-4 text-sm sm:text-base">
-                      {selection && (() => {
-                        const selectedService = services.find(s => s.id === selection.id);
-                        return selectedService && (
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-muted-foreground">Tratamiento:</span>
-                            <span className="font-medium">{selectedService.name}</span>
-                          </div>
-                        );
-                      })()}
-                      <div className="flex justify-between py-2 border-b">
-                        <span className="text-muted-foreground">Centro:</span>
-                        <span className="font-medium">{selectedCenter?.name}</span>
-                      </div>
-                      <div className="flex justify-between py-2 border-b">
-                        <span className="text-muted-foreground">Dirección:</span>
-                        <span className="font-medium text-right">{selectedCenter?.address}</span>
-                      </div>
-                      <div className="flex justify-between py-2 border-b">
-                        <span className="text-muted-foreground">Fecha:</span>
-                        <span className="font-medium">{format(formData.date, "PPP", { locale: es })}</span>
-                      </div>
-                      <div className="flex justify-between py-2">
-                        <span className="text-muted-foreground">Hora:</span>
-                        <span className="font-medium">{formData.time}</span>
-                      </div>
+                <div className="bg-accent/20 border-2 border-primary/20 rounded-xl p-6 space-y-4">
+                  <h4 className="font-bold text-lg text-center text-primary">Resumen de la Reserva</h4>
+                  <div className="space-y-3 text-sm">
+                    {selection && (() => {
+                      const selectedService = services.find(s => s.id === selection.id);
+                      return selectedService && (
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-muted-foreground">Tratamiento:</span>
+                          <span className="font-medium">{selectedService.name}</span>
+                        </div>
+                      );
+                    })()}
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-muted-foreground">Centro:</span>
+                      <span className="font-medium">{selectedCenter?.name}</span>
                     </div>
-                    <div className="flex gap-3 mt-8">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => setFormData(prev => ({ ...prev, center: "", date: undefined, time: "" }))}
-                        className="flex-1"
-                      >
-                        Editar
-                      </Button>
-                      <Button type="submit" className="flex-1 font-medium">
-                        Confirmar Reserva
-                      </Button>
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-muted-foreground">Dirección:</span>
+                      <span className="font-medium text-right">{selectedCenter?.address}</span>
                     </div>
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-muted-foreground">Fecha:</span>
+                      <span className="font-medium">{format(formData.date, "PPP", { locale: es })}</span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="text-muted-foreground">Hora:</span>
+                      <span className="font-medium">{formData.time}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setFormData(prev => ({ ...prev, center: "", date: undefined, time: "" }))}
+                      className="flex-1"
+                    >
+                      Editar
+                    </Button>
+                    <Button type="submit" className="flex-1 font-medium">
+                      Confirmar Reserva
+                    </Button>
                   </div>
                 </div>
               )}
