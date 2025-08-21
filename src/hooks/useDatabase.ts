@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 
 export interface Center {
   id: string;
@@ -102,10 +103,17 @@ export const useCenters = () => {
   const [centers, setCenters] = useState<Center[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, loading: authLoading } = useSimpleAuth();
 
   useEffect(() => {
-    fetchCenters();
-  }, []);
+    // Solo cargar datos si está autenticado
+    if (!authLoading && isAuthenticated) {
+      fetchCenters();
+    } else if (!authLoading && !isAuthenticated) {
+      // Si no está autenticado, dejar de cargar
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading]);
 
   const fetchCenters = async () => {
     try {
@@ -132,10 +140,16 @@ export const useServices = (centerId?: string) => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, loading: authLoading } = useSimpleAuth();
 
   useEffect(() => {
-    fetchServices();
-  }, [centerId]);
+    // Solo cargar datos si está autenticado
+    if (!authLoading && isAuthenticated) {
+      fetchServices();
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading, centerId]);
 
   const fetchServices = async () => {
     try {
@@ -167,10 +181,16 @@ export const useEmployees = (centerId?: string) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, loading: authLoading } = useSimpleAuth();
 
   useEffect(() => {
-    fetchEmployees();
-  }, [centerId]);
+    // Solo cargar datos si está autenticado
+    if (!authLoading && isAuthenticated) {
+      fetchEmployees();
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading, centerId]);
 
   const fetchEmployees = async () => {
     try {
@@ -210,10 +230,16 @@ export const useLanes = (centerId?: string) => {
   const [lanes, setLanes] = useState<Lane[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, loading: authLoading } = useSimpleAuth();
 
   useEffect(() => {
-    fetchLanes();
-  }, [centerId]);
+    // Solo cargar datos si está autenticado
+    if (!authLoading && isAuthenticated) {
+      fetchLanes();
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading, centerId]);
 
   const fetchLanes = async () => {
     try {
@@ -245,10 +271,16 @@ export const useBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, loading: authLoading } = useSimpleAuth();
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    // Solo cargar datos si está autenticado
+    if (!authLoading && isAuthenticated) {
+      fetchBookings();
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading]);
 
   const fetchBookings = async () => {
     try {
@@ -334,10 +366,16 @@ export const usePackages = (centerId?: string) => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, loading: authLoading } = useSimpleAuth();
 
   useEffect(() => {
-    fetchPackages();
-  }, [centerId]);
+    // Solo cargar datos si está autenticado
+    if (!authLoading && isAuthenticated) {
+      fetchPackages();
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading, centerId]);
 
   const fetchPackages = async () => {
     try {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ import SimpleCenterCalendar from "@/components/SimpleCenterCalendar";
 import AdvancedCalendarView from "@/components/AdvancedCalendarView";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
-import { useCenters } from "@/hooks/useDatabase";
+import PublicLandingPage from "@/pages/PublicLandingPage";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("bookings");
@@ -35,51 +35,38 @@ const Index = () => {
 
   const isOwner = !!user && user.email === 'work@thenookmadrid.com';
 
-  // Debug logs para diagnosticar el problema
-  console.log('🔍 Index Component Debug:', {
-    user,
-    isAdmin,
-    isEmployee, 
-    isAuthenticated,
-    loading,
-    activeTab
-  });
+  // Mostrar página pública si no está autenticado y no está cargando
+  if (!loading && !isAuthenticated) {
+    return <PublicLandingPage />;
+  }
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (loading) {
+    return (
+      <Layout>
+        <div className="max-w-7xl mx-auto px-2 sm:px-0">
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="text-center space-y-4">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+              <p className="text-muted-foreground">Verificando sesión...</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-2 sm:px-0">
-        {/* Mostrar estado de carga */}
-        {loading && (
-          <div className="mb-8 text-center">
-            <p className="text-muted-foreground">Cargando panel de administración...</p>
-          </div>
-        )}
-        
-        {/* Mostrar mensaje si no hay autenticación */}
-        {!loading && !isAuthenticated && (
-          <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-            <p className="text-destructive">⚠️ Sesión no válida. Por favor, inicia sesión nuevamente.</p>
-            <Button 
-              onClick={() => navigate('/admin-login')} 
-              variant="outline" 
-              className="mt-2"
-            >
-              Ir a Login
-            </Button>
-          </div>
-        )}
-
-        {activeTab !== "control" && !loading && isAuthenticated && (
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-              ¡Bienvenido, {user?.name || 'Usuario'}!
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
-            </p>
-            {/* Debug info visible - removed */}
-          </div>
-        )}
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+            ¡Bienvenido, {user?.name || 'Usuario'}!
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
+          </p>
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Mobile Menu */}
