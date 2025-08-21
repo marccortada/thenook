@@ -24,7 +24,7 @@ import {
 import { useReports, ReportData, ReportFilter } from "@/hooks/useReports";
 import { useCenters, useServices, useEmployees } from "@/hooks/useDatabase";
 import { useToast } from "@/hooks/use-toast";
-import Layout from "@/components/Layout";
+
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import CustomReportBuilder from '@/components/CustomReportBuilder';

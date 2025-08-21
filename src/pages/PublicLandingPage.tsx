@@ -1,33 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, Calendar, Users, Star, MapPin, Clock, Phone, Mail } from "lucide-react";
+import { Gift, Calendar, Star, MapPin, Phone, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import { useTranslation } from "@/hooks/useTranslation";
+import { SimpleNavbar } from "@/components/SimpleNavbar";
 
 export default function PublicLandingPage() {
   const { t } = useTranslation();
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
-      {/* Header */}
-      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                The Nook Madrid
-              </h1>
-            </div>
-            <div className="flex items-center space-x-3">
-              <LanguageSelector />
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/admin-login">{t('admin')}</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <SimpleNavbar />
 
       {/* Main Widgets */}
       <section className="container mx-auto px-4 py-12">

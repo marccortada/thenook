@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import Layout from '@/components/Layout';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NotificationCenter from '@/components/NotificationCenter';
 import NotificationDashboard from '@/components/NotificationDashboard';

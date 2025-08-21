@@ -21,7 +21,7 @@ import {
   BarChart3,
   Database
 } from "lucide-react";
-import Layout from "@/components/Layout";
+
 import InternalCodesManagement from "@/components/InternalCodesManagement";
 import { useToast } from "@/hooks/use-toast";
 

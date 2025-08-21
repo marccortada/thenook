@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TranslationProvider } from "@/components/TranslationProvider";
-import Layout from "@/components/Layout";
+
 import Index from "./pages/Index";
 import ManageBooking from "./pages/ManageBooking";
 import ClientReservation from "./pages/ClientReservation";
@@ -31,8 +31,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Layout>
-            <Routes>
+          <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/client-reservation" element={<ClientReservation />} />
           <Route path="/manage-booking" element={<ManageBooking />} />
@@ -100,7 +99,6 @@ const App = () => (
           <Route path="/pago-cancelado" element={<PaymentCanceled />} />
           <Route path="*" element={<NotFound />} />
           </Routes>
-          </Layout>
         </BrowserRouter>
       </TooltipProvider>
     </TranslationProvider>
