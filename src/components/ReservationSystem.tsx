@@ -507,23 +507,6 @@ const ReservationSystem = () => {
               </div>
             </div>
 
-            {/* Asignación automática de especialista y sala */}
-            {formData.center && (
-              <div className="space-y-4">
-                <h3 className="font-medium flex items-center space-x-2">
-                  <User className="h-4 w-4" />
-                  <span>Asignación de Personal y Sala</span>
-                </h3>
-                
-                <div className="p-4 bg-accent/20 rounded-lg">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    <span>El especialista y la sala serán asignados automáticamente por el jefe según disponibilidad</span>
-                  </p>
-                </div>
-              </div>
-            )}
-
             {/* Notes */}
             <div>
               <Label htmlFor="notes">Notas Adicionales</Label>

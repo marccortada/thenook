@@ -124,7 +124,6 @@ const translations = {
     "additional_notes": "Notas Adicionales",
     "notes_placeholder_form": "Cualquier información adicional que consideres importante...",
     "booking_summary": "Resumen de la Reserva",
-    "admin_assignment": "El administrador asignará el especialista y tipo de servicio cuando llegues al centro.",
     "confirm_booking": "Confirmar Reserva",
     "select_service_error": "Selecciona un servicio",
     "complete_required_fields": "Por favor completa todos los campos obligatorios",
