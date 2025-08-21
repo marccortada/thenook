@@ -3,14 +3,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Gift, Calendar, Star, MapPin, Phone, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
-import { SimpleNavbar } from "@/components/SimpleNavbar";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 export default function PublicLandingPage() {
   const { t } = useTranslation();
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
-      <SimpleNavbar />
+      {/* Simple Header */}
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              The Nook Madrid
+            </h1>
+            <div className="flex items-center space-x-3">
+              <LanguageSelector />
+              {/* Secret admin access */}
+              <Link to="/panel-gestion-nook-madrid-2024" className="opacity-5 hover:opacity-100 transition-opacity">
+                <span className="text-xs text-muted-foreground">•</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* Main Widgets */}
       <section className="container mx-auto px-4 py-12">

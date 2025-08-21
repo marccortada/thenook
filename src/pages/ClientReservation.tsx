@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 import { useTranslation } from "@/hooks/useTranslation";
-import { SimpleNavbar } from "@/components/SimpleNavbar";
+import { LanguageSelector } from "@/components/LanguageSelector";
 const ClientReservation = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -304,7 +304,17 @@ const ClientReservation = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
-      <SimpleNavbar />
+      {/* Simple Header */}
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
+              ← The Nook Madrid
+            </Link>
+            <LanguageSelector />
+          </div>
+        </div>
+      </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-4 sm:py-6 md:py-8">

@@ -220,22 +220,11 @@ const GiftCardsPage = () => {
         <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <p className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent" aria-label="The Nook Madrid">
-                The Nook Madrid
-              </p>
+              <Link to="/" className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
+                ← The Nook Madrid
+              </Link>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <LanguageSelector />
-              <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm">
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  {t('back')}
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm">
-                <Link to="/admin-login">{t('admin')}</Link>
-              </Button>
-            </div>
+            <LanguageSelector />
           </div>
         </div>
       </header>
