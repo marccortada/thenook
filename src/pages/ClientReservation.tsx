@@ -19,6 +19,39 @@ import { Link } from "react-router-dom";
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
+
+// Add CSS to ensure popovers stay anchored
+const globalStyles = `
+  [data-radix-popper-content-wrapper] {
+    z-index: 9999 !important;
+  }
+  
+  [data-radix-select-content] {
+    z-index: 9999 !important;
+  }
+  
+  .calendar-popover {
+    position: absolute !important;
+    z-index: 9999 !important;
+  }
+  
+  .time-select-content {
+    position: absolute !important;
+    z-index: 9999 !important;
+  }
+  
+  body {
+    scroll-behavior: auto !important;
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.type = 'text/css';
+  styleSheet.innerText = globalStyles;
+  document.head.appendChild(styleSheet);
+}
 const ClientReservation = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -304,7 +337,7 @@ const ClientReservation = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10 prevent-scroll">
       {/* Simple Header */}
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
