@@ -495,98 +495,127 @@ const ClientReservation = () => {
                  </div>
                )}
 
-              {/* Date & Time */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                  <Clock className="h-4 w-4" />
-                  <span>Fecha y Hora</span>
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <Label htmlFor="date" className="text-sm">Fecha *</Label>
-                    <Popover onOpenChange={(open) => {
-                      if (open) {
-                        // Prevent any scroll when opening
-                        document.body.style.overflow = 'hidden';
-                      } else {
-                        document.body.style.overflow = 'unset';
-                      }
-                    }}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal mt-1",
-                            !formData.date && "text-muted-foreground"
-                          )}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent 
-                        className="w-auto p-0 z-[300] bg-background border shadow-xl" 
-                        align="start"
-                        side="bottom"
-                        sideOffset={4}
-                        avoidCollisions={false}
-                        onOpenAutoFocus={(e) => e.preventDefault()}
-                      >
-                        <Calendar
-                          mode="single"
-                          selected={formData.date}
-                          onSelect={(date) => {
-                            console.log('Calendar date selected:', date);
-                            setFormData({ ...formData, date });
-                          }}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                          classNames={{
-                            months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                            month: "space-y-4",
-                            caption: "flex justify-center pt-1 relative items-center",
-                            caption_label: "text-sm font-medium",
-                            nav: "space-x-1 flex items-center",
-                            nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                            nav_button_previous: "absolute left-1",
-                            nav_button_next: "absolute right-1",
-                            table: "w-full border-collapse space-y-1",
-                            head_row: "flex",
-                            head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                            row: "flex w-full mt-2",
-                            cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md",
-                            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                            day_today: "bg-accent text-accent-foreground",
-                            day_outside: "text-muted-foreground opacity-50",
-                            day_disabled: "text-muted-foreground opacity-50",
-                            day_hidden: "invisible",
-                          }}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+               {/* Date & Time */}
+               <div className="space-y-3 sm:space-y-4">
+                 <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                   <Clock className="h-4 w-4" />
+                   <span>Fecha y Hora</span>
+                 </h3>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                   <div className="relative">
+                     <Label htmlFor="date" className="text-sm">Fecha *</Label>
+                     <Popover 
+                       modal={false}
+                       onOpenChange={(open) => {
+                         if (open) {
+                           // Prevent any automatic scrolling
+                           const preventDefault = (e: Event) => e.preventDefault();
+                           window.addEventListener('scroll', preventDefault, { passive: false });
+                           document.addEventListener('scroll', preventDefault, { passive: false });
+                           setTimeout(() => {
+                             window.removeEventListener('scroll', preventDefault);
+                             document.removeEventListener('scroll', preventDefault);
+                           }, 100);
+                         }
+                       }}
+                     >
+                       <PopoverTrigger asChild>
+                         <Button
+                           variant="outline"
+                           className={cn(
+                             "w-full justify-start text-left font-normal mt-1",
+                             !formData.date && "text-muted-foreground"
+                           )}
+                           onFocus={(e) => e.preventDefault()}
+                           onMouseDown={(e) => e.preventDefault()}
+                         >
+                           <CalendarIcon className="mr-2 h-4 w-4" />
+                           {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                         </Button>
+                       </PopoverTrigger>
+                       <PopoverContent 
+                         className="w-auto p-0 bg-background border shadow-lg" 
+                         align="start"
+                         side="bottom"
+                         sideOffset={2}
+                         alignOffset={0}
+                         collisionPadding={10}
+                         onOpenAutoFocus={(e) => e.preventDefault()}
+                         onCloseAutoFocus={(e) => e.preventDefault()}
+                         style={{ zIndex: 9999, position: 'absolute' }}
+                       >
+                         <Calendar
+                           mode="single"
+                           selected={formData.date}
+                           onSelect={(date) => {
+                             console.log('Calendar date selected:', date);
+                             setFormData({ ...formData, date });
+                           }}
+                           disabled={(date) => date < new Date()}
+                           initialFocus={false}
+                           className="p-3"
+                           classNames={{
+                             months: "flex flex-col space-y-4",
+                             month: "space-y-4",
+                             caption: "flex justify-center pt-1 relative items-center",
+                             caption_label: "text-sm font-medium",
+                             nav: "space-x-1 flex items-center",
+                             nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                             nav_button_previous: "absolute left-1",
+                             nav_button_next: "absolute right-1",
+                             table: "w-full border-collapse space-y-1",
+                             head_row: "flex",
+                             head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                             row: "flex w-full mt-2",
+                             cell: "text-center text-sm p-0 relative",
+                             day: "h-9 w-9 p-0 font-normal hover:bg-accent hover:text-accent-foreground rounded-md",
+                             day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+                             day_today: "bg-accent text-accent-foreground",
+                             day_outside: "text-muted-foreground opacity-50",
+                             day_disabled: "text-muted-foreground opacity-50",
+                             day_hidden: "invisible",
+                           }}
+                         />
+                       </PopoverContent>
+                     </Popover>
+                   </div>
                   
-                  <div>
-                    <Label htmlFor="time" className="text-sm">Hora *</Label>
-                    <Select value={formData.time} onValueChange={(value) => {
-                      console.log('Time selected:', value);
-                      setFormData({ ...formData, time: value });
-                    }}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Selecciona una hora" />
-                      </SelectTrigger>
+                   <div className="relative">
+                     <Label htmlFor="time" className="text-sm">Hora *</Label>
+                     <Select 
+                       value={formData.time} 
+                       onValueChange={(value) => {
+                         console.log('Time selected:', value);
+                         setFormData({ ...formData, time: value });
+                       }}
+                       onOpenChange={(open) => {
+                         if (open) {
+                           // Prevent scroll on time selector opening
+                           const preventDefault = (e: Event) => e.preventDefault();
+                           window.addEventListener('scroll', preventDefault, { passive: false });
+                           setTimeout(() => {
+                             window.removeEventListener('scroll', preventDefault);
+                           }, 100);
+                         }
+                       }}
+                     >
+                       <SelectTrigger 
+                         className="mt-1"
+                         onFocus={(e) => e.preventDefault()}
+                       >
+                         <SelectValue placeholder="Selecciona una hora" />
+                       </SelectTrigger>
                        <SelectContent 
-                         className="z-[300] bg-background border shadow-xl max-h-60 overflow-y-auto"
+                         className="bg-background border shadow-lg max-h-60 overflow-y-auto"
                          position="popper"
                          side="bottom"
                          align="start"
-                         sideOffset={4}
-                         avoidCollisions={false}
+                         sideOffset={2}
+                         alignOffset={0}
+                         collisionPadding={10}
                          onCloseAutoFocus={(e) => e.preventDefault()}
+                         style={{ zIndex: 9999, position: 'absolute' }}
                        >
                         {timeSlots.map((time) => (
                           <SelectItem key={time} value={time}>
