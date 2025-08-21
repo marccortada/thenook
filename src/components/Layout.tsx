@@ -1,248 +1,37 @@
-import { ReactNode, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { useSimpleAuth } from "@/hooks/useSimpleAuth";
-import { useNavigate } from "react-router-dom";
-import { LogOut, User, Calendar, Settings, Menu, Home, Bell, X, Hash } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useIsMobile } from "@/hooks/use-mobile";
-
-import NotificationBell from "@/components/NotificationBell";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { Menu } from "lucide-react";
 
 interface LayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-const Layout = ({ children }: LayoutProps) => {
-  const { user, signOut, isAdmin, isAuthenticated } = useSimpleAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isOwner = !!user && user.email === 'work@thenookmadrid.com';
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Sesión cerrada",
-        description: "Has cerrado sesión correctamente",
-      });
-      navigate("/");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo cerrar la sesión",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getUserInitials = () => {
-    if (user?.name) {
-      const nameParts = user.name.split(' ');
-      if (nameParts.length >= 2) {
-        return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
-      }
-    }
-    return user?.email?.charAt(0).toUpperCase() || "?";
-  };
-
-  const getUserDisplayName = () => {
-    return user?.name || user?.email || "Usuario";
-  };
-
+export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
-        <div className="container mx-auto px-2 sm:px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/")}
-                className="text-lg sm:text-xl font-bold hover:bg-transparent p-1 sm:p-2"
-              >
-                <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-extrabold tracking-tight">
-                  <span className="hidden sm:inline">The Nook Madrid</span>
-                  <span className="sm:hidden">Nook</span>
-                </span>
-              </Button>
-              
-              {/* Menú de navegación principal - Admin/Owner */}
-              {isAuthenticated && (isAdmin || isOwner) && (
-                <>
-                  {isMobile ? (
-                    <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                      <SheetTrigger asChild>
-                        <Button variant="ghost" size="sm" className="px-2">
-                          <Menu className="h-4 w-4 mr-1" />
-                          <span className="text-xs">Control</span>
-                        </Button>
-                      </SheetTrigger>
-                      <SheetContent side="left" className="w-72 sm:w-80">
-                        <div className="flex flex-col space-y-4 mt-8">
-                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Gestión
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            className="justify-start" 
-                            onClick={() => {
-                              navigate("/panel-gestion-nook-madrid-2024");
-                              setMobileMenuOpen(false);
-                            }}
-                          >
-                            <Home className="mr-2 h-4 w-4" />
-                            <span>Panel Admin</span>
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            className="justify-start"
-                            onClick={() => {
-                              navigate("/panel-gestion-nook-madrid-2024/precios-promos");
-                              setMobileMenuOpen(false);
-                            }}
-                          >
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>Precios y Promos</span>
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            className="justify-start"
-                            onClick={() => {
-                              navigate("/panel-gestion-nook-madrid-2024/configuracion");
-                              setMobileMenuOpen(false);
-                            }}
-                          >
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>Configuración</span>
-                          </Button>
-                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4">
-                            Comunicación
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            className="justify-start"
-                            onClick={() => {
-                              navigate("/panel-gestion-nook-madrid-2024/notifications");
-                              setMobileMenuOpen(false);
-                            }}
-                          >
-                            <Bell className="mr-2 h-4 w-4" />
-                            <span>Notificaciones</span>
-                          </Button>
-                        </div>
-                      </SheetContent>
-                    </Sheet>
-                  ) : (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <Menu className="h-4 w-4 mr-2" />
-                          Centro de Control
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56 z-[100] bg-background border shadow-lg">
-                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Gestión
-                        </div>
-                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024")}>
-                          <Home className="mr-2 h-4 w-4" />
-                          <span>Panel Admin</span>
-                        </DropdownMenuItem>
-                        
-                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Comunicación
-                        </div>
-                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/notifications")}>
-                          <Bell className="mr-2 h-4 w-4" />
-                          <span>Notificaciones</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/precios-promos")}>
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Precios y Promos</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/configuracion")}>
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Configuración</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </>
-              )}
-              
-              {/* Panel de administración accesible vía URL secreta */}
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col">
+          {/* Header with menu trigger and language selector */}
+          <header className="h-14 flex items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 px-4">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger className="hover:bg-muted p-2 rounded-md">
+                <Menu className="h-4 w-4" />
+              </SidebarTrigger>
+              <h1 className="font-bold text-primary hidden sm:block">
+                The Nook Madrid
+              </h1>
             </div>
+            <LanguageSelector />
+          </header>
 
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              {isAuthenticated && (isAdmin || isOwner) && <NotificationBell />}
-              {isAuthenticated && isAdmin ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          {getUserInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 z-[100] bg-background border shadow-lg" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1 max-w-[220px] sm:max-w-[280px]">
-                        <p className="text-sm font-medium leading-none truncate">
-                          {getUserDisplayName()}
-                        </p>
-                        <p className="text-xs leading-none text-muted-foreground truncate">
-                          {user?.email}
-                        </p>
-                        <div className="pt-1">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                            {user?.role === 'admin' ? 'Administrador' : 'Empleado'}
-                          </span>
-                        </div>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024")}>
-                      <Calendar className="mr-2 h-4 w-4" />
-                      <span>Panel Admin</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/panel-gestion-nook-madrid-2024/notifications")}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Notificaciones</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Mi Perfil</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Cerrar sesión</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
-            </div>
-          </div>
+          {/* Main content */}
+          <main className="flex-1">
+            {children}
+          </main>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
-        {children}
-      </main>
-      
-    </div>
+      </div>
+    </SidebarProvider>
   );
-};
-
-export default Layout;
+}
