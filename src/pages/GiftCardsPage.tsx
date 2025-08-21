@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -303,104 +304,120 @@ const GiftCardsPage = () => {
           </header>
 
           <section aria-label="Listado de tarjetas de regalo">
-            {([
-              ["🧘 Masajes Individuales", groups.individuales],
-              ["✋ Masajes a Cuatro Manos", groups.cuatro],
-              ["🌸 Rituales", groups.rituales],
-              ["💑 Para Dos Personas", groups.paraDos],
-            ] as [string, GiftCardItem[]][])
-              .filter(([, list]) => list.length > 0)
-              .map(([label, list]) => (
-                <div key={label} className="mb-8">
-                  <h2 className="text-xl font-bold mb-4 text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{label}</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    {list.map((item) => (
-                      <Card key={item.id} className="flex flex-col">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base leading-snug md:line-clamp-2" title={item.name}>
-                            {item.name}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-1 flex flex-col gap-3">
-                          {item.imageUrl && (
-                            <img
-                              src={item.imageUrl}
-                              alt={`Tarjeta de regalo ${item.name}`}
-                              className="h-auto w-full object-cover rounded-md"
-                              loading="lazy"
-                            />
-                          )}
-                          <p className="text-xs text-muted-foreground min-h-8">
-                            {item.description || item.name}
-                          </p>
-                          <p className="font-semibold">{euro(item.priceCents!)}</p>
-                        </CardContent>
-                        <CardFooter>
-                          <Button className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300" onClick={() => add({ name: item.name, priceCents: item.priceCents! })}>
-                            Añadir al Carrito
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            {/* Personalizado */}
-            <div className="mb-8">
-              <h2 className="text-xl font-bold mb-4 text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">💰 Importe Personalizado</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                <Card key={custom.id} className="flex flex-col">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base leading-snug md:line-clamp-2" title={custom.name}>
-                      {custom.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col gap-3">
-                    <p className="text-xs text-muted-foreground min-h-8">{custom.description}</p>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        {presets.map((p) => (
-                          <Button
-                            key={p}
-                            variant={selectedPreset === p ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setSelectedPreset((prev) => (prev === p ? null : p))}
-                          >
-                            {euro(p * 100)}
-                          </Button>
+            <Accordion type="multiple" defaultValue={[]} className="w-full">
+              {([
+                ["masajes-individuales", "🧘 Masajes Individuales", groups.individuales],
+                ["masajes-cuatro-manos", "✋ Masajes a Cuatro Manos", groups.cuatro],
+                ["rituales", "🌸 Rituales", groups.rituales],
+                ["para-dos-personas", "💑 Para Dos Personas", groups.paraDos],
+              ] as [string, string, GiftCardItem[]][])
+                .filter(([, , list]) => list.length > 0)
+                .map(([key, label, list]) => (
+                  <AccordionItem key={key} value={key}>
+                    <AccordionTrigger className="px-3 text-lg font-bold text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                      {label}
+                    </AccordionTrigger>
+                    <AccordionContent className="px-3 py-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        {list.map((item) => (
+                          <Card key={item.id} className="flex flex-col">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-base leading-snug md:line-clamp-2" title={item.name}>
+                                {item.name}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1 flex flex-col gap-3">
+                              {item.imageUrl && (
+                                <img
+                                  src={item.imageUrl}
+                                  alt={`Tarjeta de regalo ${item.name}`}
+                                  className="h-auto w-full object-cover rounded-md"
+                                  loading="lazy"
+                                />
+                              )}
+                              <p className="text-xs text-muted-foreground min-h-8">
+                                {item.description || item.name}
+                              </p>
+                              <p className="font-semibold">{euro(item.priceCents!)}</p>
+                            </CardContent>
+                            <CardFooter>
+                              <Button className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300" onClick={() => add({ name: item.name, priceCents: item.priceCents! })}>
+                                Añadir al Carrito
+                              </Button>
+                            </CardFooter>
+                          </Card>
                         ))}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          inputMode="numeric"
-                          min={1}
-                          step={1}
-                          value={customAmount === "" ? "" : customAmount}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            if (v === "") {
-                              setCustomAmount("");
-                              return;
-                            }
-                            const n = Number(v);
-                            if (!Number.isNaN(n)) setCustomAmount(n);
-                          }}
-                          placeholder="Otro importe (€)"
-                          className="h-9"
-                        />
-                        <Button size="sm" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={addCustomToCart}>
-                          Añadir
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              
+              {/* Personalizado */}
+              <AccordionItem value="importe-personalizado">
+                <AccordionTrigger className="px-3 text-lg font-bold text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  💰 Importe Personalizado
+                </AccordionTrigger>
+                <AccordionContent className="px-3 py-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                    <Card key={custom.id} className="flex flex-col">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base leading-snug md:line-clamp-2" title={custom.name}>
+                          {custom.name}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex-1 flex flex-col gap-3">
+                        <p className="text-xs text-muted-foreground min-h-8">{custom.description}</p>
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
+                            {presets.map((p) => (
+                              <Button
+                                key={p}
+                                variant={selectedPreset === p ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setSelectedPreset((prev) => (prev === p ? null : p))}
+                              >
+                                {euro(p * 100)}
+                              </Button>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              min={1}
+                              step={1}
+                              value={customAmount === "" ? "" : customAmount}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === "") {
+                                  setCustomAmount("");
+                                  return;
+                                }
+                                const n = Number(v);
+                                if (!Number.isNaN(n)) setCustomAmount(n);
+                              }}
+                              placeholder="Otro importe (€)"
+                              className="h-9"
+                            />
+                            <Button size="sm" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={addCustomToCart}>
+                              Añadir
+                            </Button>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            Consejo: puedes elegir un importe fijo o escribir otro importe.
+                          </p>
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300" onClick={addCustomToCart}>
+                          Añadir al Carrito
                         </Button>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground">
-                        Consejo: puedes elegir un importe fijo o escribir otro importe.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+                      </CardFooter>
+                    </Card>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </section>
         </article>
       </main>
