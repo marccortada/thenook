@@ -71,28 +71,30 @@ const Index = () => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* Mobile Menu */}
-            <div className="lg:hidden mb-4">
-              <select 
-                value={activeTab} 
-                onChange={(e) => setActiveTab(e.target.value)}
-                className="w-full p-3 border rounded-lg bg-background text-sm font-medium"
-              >
-                <option value="reservations">📅 Nueva Reserva</option>
-                <option value="bookings">📅 Calendario</option>
-                <option value="clients">👥 Gestión de Clientes</option>
-                
-                {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
-                {(isAdmin || isOwner) && <option value="analytics">📈 Analytics</option>}
-                {(isAdmin || isOwner) && <option value="control">🎛️ Centro de Control</option>}
-              </select>
+            <div className="lg:hidden mb-4 sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+              <div className="p-3">
+                <select 
+                  value={activeTab} 
+                  onChange={(e) => setActiveTab(e.target.value)}
+                  className="w-full p-3 border rounded-lg bg-background text-sm font-medium shadow-sm"
+                >
+                  <option value="reservations">📅 Nueva Reserva</option>
+                  <option value="bookings">📅 Calendario</option>
+                  <option value="clients">👥 Gestión de Clientes</option>
+                  
+                  {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
+                  {(isAdmin || isOwner) && <option value="analytics">📈 Analytics</option>}
+                  {(isAdmin || isOwner) && <option value="control">🎛️ Centro de Control</option>}
+                </select>
+              </div>
             </div>
 
             {/* Desktop Grid */}
-            <div className="hidden lg:grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <div className="hidden lg:grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6 sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-6 pt-4">
               <Button
                 variant={activeTab === "reservations" ? "default" : "outline"}
                 onClick={() => setActiveTab("reservations")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
               >
                 <CalendarDays className="h-5 w-5" />
                 <span className="text-sm font-medium">Nueva Reserva</span>
@@ -101,7 +103,7 @@ const Index = () => {
               <Button
                 variant={activeTab === "bookings" ? "default" : "outline"}
                 onClick={() => setActiveTab("bookings")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
               >
                 <CalendarDays className="h-5 w-5" />
                 <span className="text-sm font-medium">Calendario</span>
@@ -110,7 +112,7 @@ const Index = () => {
               <Button
                 variant={activeTab === "clients" ? "default" : "outline"}
                 onClick={() => setActiveTab("clients")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
               >
                 <Users className="h-5 w-5" />
                 <span className="text-sm font-medium">Gestión de Clientes</span>
@@ -120,7 +122,7 @@ const Index = () => {
                 <Button
                   variant={activeTab === "packages" ? "default" : "outline"}
                   onClick={() => setActiveTab("packages")}
-                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
                 >
                   <Gift className="h-5 w-5" />
                   <span className="text-sm font-medium">Bonos</span>
@@ -132,7 +134,7 @@ const Index = () => {
                 <Button
                   variant={activeTab === "analytics" ? "default" : "outline"}
                   onClick={() => setActiveTab("analytics")}
-                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
                 >
                   <TrendingUp className="h-5 w-5" />
                   <span className="text-sm font-medium">Analytics</span>
@@ -143,7 +145,7 @@ const Index = () => {
                 <Button
                   variant={activeTab === "control" ? "default" : "outline"}
                   onClick={() => setActiveTab("control")}
-                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
                 >
                   <BarChart3 className="h-5 w-5" />
                   <span className="text-sm font-medium">Centro Control</span>

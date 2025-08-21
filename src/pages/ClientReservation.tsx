@@ -404,9 +404,6 @@ const ClientReservation = () => {
                      placeholder={t('email_placeholder')}
                      className="mt-1"
                    />
-                   <p className="text-xs text-muted-foreground mt-1">
-                     {t('email_help')}
-                   </p>
                  </div>
               </div>
 
@@ -521,16 +518,16 @@ const ClientReservation = () => {
                           {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[100] bg-background border shadow-lg" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={formData.date}
-                          onSelect={(date) => setFormData({ ...formData, date })}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                          className="p-3"
-                        />
-                      </PopoverContent>
+                       <PopoverContent className="w-auto p-0 z-[100] bg-background border shadow-lg" align="start">
+                         <Calendar
+                           mode="single"
+                           selected={formData.date}
+                           onSelect={(date) => setFormData({ ...formData, date })}
+                           disabled={(date) => date < new Date()}
+                           initialFocus
+                           className="p-3 pointer-events-auto"
+                         />
+                       </PopoverContent>
                     </Popover>
                   </div>
                   
