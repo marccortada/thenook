@@ -86,8 +86,16 @@ const AdminSettings = () => {
   ];
 
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 lg:px-6">
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            Configuración del Sistema - The Nook Madrid
+          </h1>
+        </div>
+      </header>
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Configuración del Sistema</h1>
@@ -420,8 +428,9 @@ const AdminSettings = () => {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
-    </Layout>
+        </div>
+      </main>
+    </div>
   );
 };
 

@@ -43,7 +43,7 @@ const Index = () => {
   // Mostrar loading mientras se verifica la autenticación
   if (loading) {
     return (
-      <Layout>
+      <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-2 sm:px-0">
           <div className="flex items-center justify-center min-h-[50vh]">
             <div className="text-center space-y-4">
@@ -52,143 +52,152 @@ const Index = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto px-2 sm:px-0">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-            ¡Bienvenido, {user?.name || 'Usuario'}!
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            Panel Admin - The Nook Madrid
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
-          </p>
         </div>
+      </header>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Mobile Menu */}
-          <div className="lg:hidden mb-4">
-            <select 
-              value={activeTab} 
-              onChange={(e) => setActiveTab(e.target.value)}
-              className="w-full p-3 border rounded-lg bg-background text-sm font-medium"
-            >
-              <option value="reservations">📅 Nueva Reserva</option>
-              <option value="bookings">📅 Calendario</option>
-              <option value="clients">👥 Gestión de Clientes</option>
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-0">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+              ¡Bienvenido, {user?.name || 'Usuario'}!
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
+            </p>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {/* Mobile Menu */}
+            <div className="lg:hidden mb-4">
+              <select 
+                value={activeTab} 
+                onChange={(e) => setActiveTab(e.target.value)}
+                className="w-full p-3 border rounded-lg bg-background text-sm font-medium"
+              >
+                <option value="reservations">📅 Nueva Reserva</option>
+                <option value="bookings">📅 Calendario</option>
+                <option value="clients">👥 Gestión de Clientes</option>
+                
+                {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
+                {(isAdmin || isOwner) && <option value="analytics">📈 Analytics</option>}
+                {(isAdmin || isOwner) && <option value="control">🎛️ Centro de Control</option>}
+              </select>
+            </div>
+
+            {/* Desktop Grid */}
+            <div className="hidden lg:grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+              <Button
+                variant={activeTab === "reservations" ? "default" : "outline"}
+                onClick={() => setActiveTab("reservations")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <CalendarDays className="h-5 w-5" />
+                <span className="text-sm font-medium">Nueva Reserva</span>
+              </Button>
               
-              {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
-              {(isAdmin || isOwner) && <option value="analytics">📈 Analytics</option>}
-              {(isAdmin || isOwner) && <option value="control">🎛️ Centro de Control</option>}
-            </select>
-          </div>
+              <Button
+                variant={activeTab === "bookings" ? "default" : "outline"}
+                onClick={() => setActiveTab("bookings")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <CalendarDays className="h-5 w-5" />
+                <span className="text-sm font-medium">Calendario</span>
+              </Button>
+              
+              <Button
+                variant={activeTab === "clients" ? "default" : "outline"}
+                onClick={() => setActiveTab("clients")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+              >
+                <Users className="h-5 w-5" />
+                <span className="text-sm font-medium">Gestión de Clientes</span>
+              </Button>
+              
+              {(isAdmin || isEmployee) && (
+                <Button
+                  variant={activeTab === "packages" ? "default" : "outline"}
+                  onClick={() => setActiveTab("packages")}
+                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                >
+                  <Gift className="h-5 w-5" />
+                  <span className="text-sm font-medium">Bonos</span>
+                </Button>
+              )}
 
-          {/* Desktop Grid */}
-          <div className="hidden lg:grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-            <Button
-              variant={activeTab === "reservations" ? "default" : "outline"}
-              onClick={() => setActiveTab("reservations")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <CalendarDays className="h-5 w-5" />
-              <span className="text-sm font-medium">Nueva Reserva</span>
-            </Button>
-            
-            <Button
-              variant={activeTab === "bookings" ? "default" : "outline"}
-              onClick={() => setActiveTab("bookings")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <CalendarDays className="h-5 w-5" />
-              <span className="text-sm font-medium">Calendario</span>
-            </Button>
-            
-            <Button
-              variant={activeTab === "clients" ? "default" : "outline"}
-              onClick={() => setActiveTab("clients")}
-              className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-            >
-              <Users className="h-5 w-5" />
-              <span className="text-sm font-medium">Gestión de Clientes</span>
-            </Button>
-            
+              
+              {(isAdmin || isOwner) && (
+                <Button
+                  variant={activeTab === "analytics" ? "default" : "outline"}
+                  onClick={() => setActiveTab("analytics")}
+                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                >
+                  <TrendingUp className="h-5 w-5" />
+                  <span className="text-sm font-medium">Analytics</span>
+                </Button>
+              )}
+              
+              {(isAdmin || isOwner) && (
+                <Button
+                  variant={activeTab === "control" ? "default" : "outline"}
+                  onClick={() => setActiveTab("control")}
+                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                >
+                  <BarChart3 className="h-5 w-5" />
+                  <span className="text-sm font-medium">Centro Control</span>
+                </Button>
+              )}
+            </div>
+
+            <TabsContent value="reservations" className="mt-6 space-y-6">
+              <ReservationSystem />
+            </TabsContent>
+
+            <TabsContent value="bookings" className="mt-6 space-y-6 -mx-2 sm:-mx-4 lg:mx-0">
+              <div className="lg:hidden">
+                <AdvancedCalendarView />
+              </div>
+              <div className="hidden lg:block">
+                <AdvancedCalendarView />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="clients" className="mt-6 space-y-6">
+              <ClientManagement />
+            </TabsContent>
+
+            {(isAdmin || isOwner) && (
+              <TabsContent value="analytics" className="mt-6">
+                <AdvancedDashboard />
+              </TabsContent>
+            )}
+
             {(isAdmin || isEmployee) && (
-              <Button
-                variant={activeTab === "packages" ? "default" : "outline"}
-                onClick={() => setActiveTab("packages")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <Gift className="h-5 w-5" />
-                <span className="text-sm font-medium">Bonos</span>
-              </Button>
+              <TabsContent value="packages" className="mt-6">
+                <PackageManagement />
+              </TabsContent>
             )}
 
-            
+
             {(isAdmin || isOwner) && (
-              <Button
-                variant={activeTab === "analytics" ? "default" : "outline"}
-                onClick={() => setActiveTab("analytics")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <TrendingUp className="h-5 w-5" />
-                <span className="text-sm font-medium">Analytics</span>
-              </Button>
+              <TabsContent value="control" className="mt-0">
+                <UnifiedDashboard />
+              </TabsContent>
             )}
-            
-            {(isAdmin || isOwner) && (
-              <Button
-                variant={activeTab === "control" ? "default" : "outline"}
-                onClick={() => setActiveTab("control")}
-                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
-              >
-                <BarChart3 className="h-5 w-5" />
-                <span className="text-sm font-medium">Centro Control</span>
-              </Button>
-            )}
-          </div>
-
-          <TabsContent value="reservations" className="mt-6 space-y-6">
-            <ReservationSystem />
-          </TabsContent>
-
-          <TabsContent value="bookings" className="mt-6 space-y-6 -mx-2 sm:-mx-4 lg:mx-0">
-            <div className="lg:hidden">
-              <AdvancedCalendarView />
-            </div>
-            <div className="hidden lg:block">
-              <AdvancedCalendarView />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="clients" className="mt-6 space-y-6">
-            <ClientManagement />
-          </TabsContent>
-
-          {(isAdmin || isOwner) && (
-            <TabsContent value="analytics" className="mt-6">
-              <AdvancedDashboard />
-            </TabsContent>
-          )}
-
-          {(isAdmin || isEmployee) && (
-            <TabsContent value="packages" className="mt-6">
-              <PackageManagement />
-            </TabsContent>
-          )}
-
-
-          {(isAdmin || isOwner) && (
-            <TabsContent value="control" className="mt-0">
-              <UnifiedDashboard />
-            </TabsContent>
-          )}
-        </Tabs>
-      </div>
-      
-    </Layout>
+          </Tabs>
+        </div>
+      </main>
+    </div>
   );
 };
 

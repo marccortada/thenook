@@ -20,8 +20,16 @@ const NotificationDashboardPage = () => {
 
   return (
     <ProtectedRoute>
-      <Layout>
-        <div className="space-y-6">
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              Centro de Notificaciones - The Nook Madrid
+            </h1>
+          </div>
+        </header>
+        <main className="container mx-auto px-4 py-8">
+          <div className="space-y-6">
           <Tabs defaultValue="dashboard" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
@@ -41,8 +49,9 @@ const NotificationDashboardPage = () => {
               <NotificationCenter />
             </TabsContent>
           </Tabs>
-        </div>
-      </Layout>
+          </div>
+        </main>
+      </div>
     </ProtectedRoute>
   );
 };

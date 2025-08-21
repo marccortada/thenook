@@ -47,8 +47,16 @@ export default function RedeemCode() {
     } finally { setLoading(false); }
   };
   return (
-    <Layout>
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            Canjear Código - The Nook Madrid
+          </h1>
+        </div>
+      </header>
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Canjear código</h1>
           <Button variant="outline" onClick={() => navigate('/panel-gestion-nook-madrid-2024')}>
@@ -87,7 +95,8 @@ export default function RedeemCode() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </Layout>
+        </div>
+      </main>
+    </div>
   );
 }
