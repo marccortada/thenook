@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Gift, ArrowLeft, ChevronDown } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
+import { useTranslation } from "@/hooks/useTranslation";
 const currency = (cents?: number) =>
   typeof cents === "number" ? (cents / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" }) : "";
 
@@ -20,6 +21,7 @@ export default function BuyVoucherPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { packages } = usePackages();
+  const { t } = useTranslation();
   const [pkgId, setPkgId] = useState<string>("");
   const [mode, setMode] = useState<"self" | "gift">("self");
   const [buyer, setBuyer] = useState({ name: "", email: "", phone: "" });
@@ -71,24 +73,24 @@ export default function BuyVoucherPage() {
   }, [packages]);
 
   useEffect(() => {
-    document.title = "Comprar Bono | The Nook Madrid";
-  }, []);
+    document.title = `${t('buy_voucher')} | The Nook Madrid`;
+  }, [t]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pkgId) {
-      toast({ title: "Selecciona un bono", variant: "destructive" });
+      toast({ title: t('select_voucher_error'), variant: "destructive" });
       return;
     }
     if (!buyer.name || !buyer.email) {
-      toast({ title: "Datos del comprador requeridos", variant: "destructive" });
+      toast({ title: t('buyer_data_required'), variant: "destructive" });
       return;
     }
     const rec = mode === "self" ? buyer : recipient;
-                    if (!rec.name || !rec.email) {
-                      toast({ title: "Datos del beneficiario requeridos", variant: "destructive" });
-                      return;
-                    }
+                      if (!rec.name || !rec.email) {
+                        toast({ title: t('beneficiary_data_required'), variant: "destructive" });
+                        return;
+                      }
 
     try {
       const payload = {
@@ -134,11 +136,11 @@ export default function BuyVoucherPage() {
               <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm">
                 <Link to="/">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver
+                  {t('back')}
                 </Link>
               </Button>
               <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm">
-                <Link to="/admin-login">Admin</Link>
+                <Link to="/admin-login">{t('admin')}</Link>
               </Button>
             </div>
           </div>
@@ -152,25 +154,25 @@ export default function BuyVoucherPage() {
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
                 <Gift className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>Comprar Bono</span>
+                <span>{t('buy_voucher')}</span>
               </CardTitle>
-              <p className="text-sm text-muted-foreground">Elige el bono y completa los datos del beneficiario</p>
+              <p className="text-sm text-muted-foreground">{t('voucher_subtitle')}</p>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
               <form onSubmit={submit} className="space-y-6">
                 <div>
-                  <Label>Bono</Label>
+                  <Label>{t('voucher')}</Label>
                   <Select value={pkgId} onValueChange={setPkgId}>
                     <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Selecciona un bono" />
+                      <SelectValue placeholder={t('select_voucher')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectLabel className="text-primary font-semibold text-sm">🧘 Masajes Individuales</SelectLabel>
+                        <SelectLabel className="text-primary font-semibold text-sm">🧘 {t('individual_massages')}</SelectLabel>
                         {categorized.individuales.length > 0 ? (
                           categorized.individuales.map((p: any) => (
                             <SelectItem key={p.id} value={p.id} className="pl-6">
-                              {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
+                              {p.name} · {p.sessions_count} {t('sessions')} · {currency(p.price_cents)}
                             </SelectItem>
                           ))
                         ) : (
@@ -229,13 +231,13 @@ export default function BuyVoucherPage() {
                 </div>
 
                 <div>
-                  <Label>¿Para quién es?</Label>
+                  <Label>{t('who_for')}</Label>
                   <RadioGroup value={mode} onValueChange={(v) => setMode(v as any)} className="mt-2 grid grid-cols-2 gap-2">
                     <Label className="border rounded-md p-3 flex items-center gap-2 cursor-pointer">
-                      <RadioGroupItem value="self" /> Para mí
+                      <RadioGroupItem value="self" /> {t('for_me')}
                     </Label>
                     <Label className="border rounded-md p-3 flex items-center gap-2 cursor-pointer">
-                      <RadioGroupItem value="gift" /> Es un regalo
+                      <RadioGroupItem value="gift" /> {t('its_gift')}
                     </Label>
                   </RadioGroup>
                 </div>

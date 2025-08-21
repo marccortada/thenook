@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { TranslationProvider } from "@/components/TranslationProvider";
 import Index from "./pages/Index";
 import ManageBooking from "./pages/ManageBooking";
 import ClientReservation from "./pages/ClientReservation";
@@ -24,10 +25,11 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+    <TranslationProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<ClientReservation />} />
           <Route path="/manage-booking" element={<ManageBooking />} />
@@ -97,7 +99,8 @@ const App = () => (
         </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </QueryClientProvider>
-  );
+    </TranslationProvider>
+  </QueryClientProvider>
+);
 
 export default App;

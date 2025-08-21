@@ -3,8 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Gift, Calendar, Users, Star, MapPin, Clock, Phone, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function PublicLandingPage() {
+  const { t } = useTranslation();
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
       {/* Header */}
@@ -19,7 +22,7 @@ export default function PublicLandingPage() {
             <div className="flex items-center space-x-3">
               <LanguageSelector />
               <Button variant="outline" size="sm" asChild>
-                <Link to="/admin-login">Admin</Link>
+                <Link to="/admin-login">{t('admin')}</Link>
               </Button>
             </div>
           </div>
@@ -30,22 +33,22 @@ export default function PublicLandingPage() {
       <section className="container mx-auto px-4 py-12 md:py-20">
         <div className="text-center space-y-6 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-            Centro de Bienestar
+            {t('wellness_center')}
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-            Descubre la armonía perfecta entre relajación y bienestar en nuestro exclusivo centro de masajes
+            {t('landing_subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
             <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground px-8 py-4 text-lg" asChild>
               <Link to="/client-reservation">
                 <Calendar className="mr-2 h-5 w-5" />
-                Reservar Cita
+                {t('book_appointment')}
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="px-8 py-4 text-lg" asChild>
-              <Link to="/gift-cards">
+              <Link to="/tarjetas-regalo">
                 <Gift className="mr-2 h-5 w-5" />
-                Tarjetas Regalo
+                {t('gift_cards')}
               </Link>
             </Button>
           </div>
@@ -55,9 +58,9 @@ export default function PublicLandingPage() {
       {/* Services Grid */}
       <section className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Nuestros Servicios</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('our_services')}</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Ofrecemos una amplia gama de tratamientos diseñados para tu bienestar
+            {t('services_subtitle')}
           </p>
         </div>
         
@@ -66,10 +69,10 @@ export default function PublicLandingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                Masajes Individuales
+                {t('individual_massages')}
               </CardTitle>
               <CardDescription>
-                Tratamientos personalizados para tu bienestar personal
+                {t('individual_description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -86,10 +89,10 @@ export default function PublicLandingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Gift className="h-5 w-5 text-primary" />
-                Masajes para Parejas
+                {t('couples_massages')}
               </CardTitle>
               <CardDescription>
-                Momentos especiales para compartir en pareja
+                {t('couples_description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -106,10 +109,10 @@ export default function PublicLandingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Star className="h-5 w-5 text-primary" />
-                Rituales Especiales
+                {t('special_rituals')}
               </CardTitle>
               <CardDescription>
-                Experiencias únicas para una relajación profunda
+                {t('rituals_description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -128,9 +131,9 @@ export default function PublicLandingPage() {
       <section className="bg-gradient-to-r from-primary/5 to-accent/5 py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Contáctanos</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('contact_us')}</h2>
             <p className="text-lg text-muted-foreground">
-              Estamos aquí para ayudarte a encontrar tu momento de bienestar
+              {t('contact_subtitle')}
             </p>
           </div>
           
@@ -139,15 +142,15 @@ export default function PublicLandingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-primary" />
-                  Ubicación
+                  {t('location')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <p className="text-muted-foreground">
-                  Encuentra nuestro centro de bienestar en el corazón de Madrid
+                  {t('location_description')}
                 </p>
                 <Button variant="outline" className="w-full">
-                  Ver en Maps
+                  {t('view_maps')}
                 </Button>
               </CardContent>
             </Card>
@@ -156,7 +159,7 @@ export default function PublicLandingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-primary" />
-                  Horarios
+                  {t('hours')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -167,7 +170,7 @@ export default function PublicLandingPage() {
                 <Button variant="outline" className="w-full" asChild>
                   <Link to="/client-reservation">
                     <Calendar className="mr-2 h-4 w-4" />
-                    Reservar Ahora
+                    {t('book_now')}
                   </Link>
                 </Button>
               </CardContent>
@@ -190,7 +193,7 @@ export default function PublicLandingPage() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
-            © 2024 The Nook Madrid. Todos los derechos reservados.
+            © 2024 The Nook Madrid. {t('rights_reserved')}.
           </p>
         </div>
       </footer>

@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
+import { useTranslation } from "@/hooks/useTranslation";
 interface CartItem {
   id: string;
   name: string;
@@ -138,6 +139,7 @@ const useLocalCart = () => {
 
 const GiftCardsPage = () => {
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
+  const { t } = useTranslation();
 
   useEffect(() => {
     (async () => {
@@ -227,11 +229,11 @@ const GiftCardsPage = () => {
               <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm">
                 <Link to="/">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver
+                  {t('back')}
                 </Link>
               </Button>
               <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm">
-                <Link to="/admin-login">Admin</Link>
+                <Link to="/admin-login">{t('admin')}</Link>
               </Button>
             </div>
           </div>
