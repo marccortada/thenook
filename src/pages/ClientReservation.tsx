@@ -8,9 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search, Gift } from "lucide-react";
+import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
+import { useCenters, useServices, useEmployees, useLanes, useBookings } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -90,29 +90,7 @@ const ClientReservation = () => {
           .gte('booking_datetime', new Date().toISOString())
           .order('booking_datetime', { ascending: true });
 
-        // Get active packages/vouchers
-        const { data: clientPackages } = await supabase
-          .from('client_packages')
-          .select(`
-            *,
-            packages(name, services(name))
-          `)
-          .eq('client_id', existingProfile.id)
-          .eq('status', 'active')
-          .gt('expiry_date', new Date().toISOString())
-          .order('expiry_date', { ascending: true });
-
-        const combinedBookings = [
-          ...(bookings || []),
-          ...(clientPackages || []).map(pkg => ({
-            ...pkg,
-            type: 'package',
-            booking_datetime: pkg.expiry_date,
-            services: { name: `Bono: ${pkg.packages?.name}` },
-            centers: { name: 'Válido en todos los centros' },
-            remaining_sessions: pkg.total_sessions - pkg.used_sessions
-          }))
-        ];
+        const combinedBookings = bookings || [];
 
         if (combinedBookings.length > 0) {
           setExistingBookings(combinedBookings);
@@ -352,51 +330,7 @@ const ClientReservation = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
-        {/* Quick Access Buttons */}
-        <div className="max-w-4xl mx-auto mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-
-            <Card className="hover-lift glass-effect border-primary/20 cursor-pointer transition-all duration-200 hover:scale-105">
-              <Link to="/comprar-bono" className="block">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <div className="flex flex-col items-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Gift className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-primary">
-                        {t('buy_voucher')}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Compra un bono para ti o para regalar
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Link>
-            </Card>
-
-            <Card className="hover-lift glass-effect border-primary/20 cursor-pointer transition-all duration-200 hover:scale-105">
-              <Link to="/tarjetas-regalo" className="block">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <div className="flex flex-col items-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Gift className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-primary">
-                        {t('gift_cards')}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Elige una tarjeta regalo
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Link>
-            </Card>
-          </div>
-        </div>
+        {/* Reservation Form */}
         
         <div className="max-w-4xl mx-auto">
         <Card className="hover-lift glass-effect border-primary/20">
@@ -508,25 +442,12 @@ const ClientReservation = () => {
                           <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                             <div className="flex-1">
                               <p className="font-medium text-sm sm:text-base">{booking.services?.name}</p>
-                              {booking.type === 'package' ? (
-                                <>
-                                  <p className="text-xs sm:text-sm text-muted-foreground">
-                                    {booking.remaining_sessions} sesiones restantes
-                                  </p>
-                                  <p className="text-xs sm:text-sm text-orange-600">
-                                    Vence: {format(new Date(booking.booking_datetime), "PPP", { locale: es })}
-                                  </p>
-                                </>
-                              ) : (
-                                <>
-                                  <p className="text-xs sm:text-sm text-muted-foreground">
-                                    {format(new Date(booking.booking_datetime), "PPP 'a las' HH:mm", { locale: es })}
-                                  </p>
-                                  <p className="text-xs sm:text-sm text-muted-foreground">
-                                    {booking.centers?.name}
-                                  </p>
-                                </>
-                              )}
+                               <p className="text-xs sm:text-sm text-muted-foreground">
+                                 {format(new Date(booking.booking_datetime), "PPP 'a las' HH:mm", { locale: es })}
+                               </p>
+                               <p className="text-xs sm:text-sm text-muted-foreground">
+                                 {booking.centers?.name}
+                               </p>
                             </div>
                           </div>
                         </Card>

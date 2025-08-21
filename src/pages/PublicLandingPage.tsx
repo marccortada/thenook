@@ -66,7 +66,7 @@ export default function PublicLandingPage() {
             </CardHeader>
             <CardContent className="text-center">
               <Button size="lg" variant="outline" className="w-full" asChild>
-                <Link to="/bonos">
+                <Link to="/comprar-bono">
                   <Gift className="mr-2 h-5 w-5" />
                   {t('buy_voucher')}
                 </Link>
@@ -178,58 +178,6 @@ export default function PublicLandingPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section className="bg-gradient-to-r from-primary/5 to-accent/5 py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('contact_us')}</h2>
-            <p className="text-lg text-muted-foreground">
-              {t('contact_subtitle')}
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <Card className="glass-effect border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  {t('location')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-muted-foreground">
-                  {t('location_description')}
-                </p>
-                <Button variant="outline" className="w-full">
-                  {t('view_maps')}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-effect border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary" />
-                  {t('hours')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="text-sm text-muted-foreground space-y-1">
-                  <p>Lun - Vie: 9:00 - 21:00</p>
-                  <p>Sáb - Dom: 10:00 - 20:00</p>
-                </div>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to="/client-reservation">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {t('book_now')}
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </section>
 
