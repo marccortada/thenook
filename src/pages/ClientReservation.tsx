@@ -519,7 +519,7 @@ const ClientReservation = () => {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent 
-                        className="w-auto p-0 z-[200] bg-background border shadow-xl" 
+                        className="w-auto p-0 z-[300] bg-background border shadow-xl" 
                         align="start"
                         side="bottom"
                         sideOffset={4}
@@ -566,7 +566,7 @@ const ClientReservation = () => {
                         <SelectValue placeholder="Selecciona una hora" />
                       </SelectTrigger>
                        <SelectContent 
-                         className="z-[200] bg-background border shadow-xl max-h-60 overflow-y-auto"
+                         className="z-[300] bg-background border shadow-xl max-h-60 overflow-y-auto"
                          position="popper"
                          side="bottom"
                          align="start"
@@ -603,7 +603,7 @@ const ClientReservation = () => {
 
               {/* Summary */}
               {formData.center && formData.date && formData.time && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
                   <div className="bg-background border-2 border-primary/20 rounded-xl p-6 sm:p-8 max-w-md w-full mx-auto shadow-2xl">
                     <h4 className="font-bold text-lg sm:text-xl mb-6 text-center text-primary">Resumen de la Reserva</h4>
                     <div className="space-y-4 text-sm sm:text-base">
