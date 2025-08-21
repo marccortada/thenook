@@ -581,55 +581,40 @@ const ClientReservation = () => {
                      </Popover>
                    </div>
                   
-                   <div className="relative">
-                     <Label htmlFor="time" className="text-sm">Hora *</Label>
-                     <Select 
-                       value={formData.time} 
-                       onValueChange={(value) => {
-                         console.log('Time selected:', value);
-                         setFormData({ ...formData, time: value });
-                       }}
-                       onOpenChange={(open) => {
-                         if (open) {
-                           // Prevent scroll on time selector opening
-                           const preventDefault = (e: Event) => e.preventDefault();
-                           window.addEventListener('scroll', preventDefault, { passive: false });
-                           setTimeout(() => {
-                             window.removeEventListener('scroll', preventDefault);
-                           }, 100);
-                         }
-                       }}
-                     >
-                       <SelectTrigger 
-                         className="mt-1"
-                         onFocus={(e) => e.preventDefault()}
-                       >
-                         <SelectValue placeholder="Selecciona una hora" />
-                       </SelectTrigger>
-                       <SelectContent 
-                         className="bg-background border shadow-lg max-h-60 overflow-y-auto"
-                         position="popper"
-                         side="bottom"
-                         align="start"
-                         sideOffset={2}
-                         alignOffset={0}
-                         collisionPadding={10}
-                         onCloseAutoFocus={(e) => e.preventDefault()}
-                         style={{ zIndex: 9999, position: 'absolute' }}
-                       >
-                        {timeSlots.map((time) => (
-                          <SelectItem key={time} value={time}>
-                            <div className="flex items-center space-x-2">
-                              <Clock className="h-3 w-3" />
-                              <span>{time}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="relative">
+                      <Label htmlFor="time" className="text-sm">Hora *</Label>
+                      <div className="relative">
+                        <Select 
+                          value={formData.time} 
+                          onValueChange={(value) => {
+                            console.log('Time selected:', value);
+                            setFormData({ ...formData, time: value });
+                          }}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Selecciona una hora" />
+                          </SelectTrigger>
+                          <SelectContent 
+                            className="bg-background border shadow-lg max-h-60 overflow-y-auto"
+                            position="popper"
+                            side="bottom"
+                            align="start"
+                            sideOffset={4}
+                          >
+                            {timeSlots.map((time) => (
+                              <SelectItem key={time} value={time}>
+                                <div className="flex items-center space-x-2">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{time}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
 
               {/* Notes */}
