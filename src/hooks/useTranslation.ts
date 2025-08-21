@@ -136,6 +136,15 @@ const translations = {
     "cancel_booking_error": "No se pudo cancelar la reserva.",
     "client_found": "Cliente encontrado",
     "client_data_loaded": "Datos del cliente cargados automáticamente",
+    
+    // Landing page widgets
+    "book_description": "Reserva tu cita de masaje relajante",
+    "vouchers": "Bonos",
+    "vouchers_description": "Compra paquetes de sesiones con descuento",
+    "gift_description": "Regala experiencias de bienestar únicas",
+    "our_locations": "Nuestras Ubicaciones",
+    "locations_subtitle": "Encuéntranos en Madrid",
+    "open_maps": "Abrir en Mapas",
   },
   
   en: {
@@ -234,6 +243,53 @@ const translations = {
     "beneficiary_data_required": "Beneficiary data required",
     "error": "Error",
     "payment_init_error": "Could not initiate payment",
+    
+    // Client Reservation Page  
+    "loading_centers": "Loading centers...",
+    "personal_information": "Personal Information",
+    "full_name": "Full Name",
+    "full_name_placeholder": "First and Last Name",
+    "phone_placeholder": "+34 600 000 000",
+    "email_placeholder": "client@email.com",
+    "email_help": "Enter your email or phone to see your previous bookings and vouchers",
+    "your_bookings_vouchers": "Your Bookings and Vouchers",
+    "sessions_remaining": "sessions remaining",
+    "expires": "Expires",
+    "center_selection": "Center Selection",
+    "center": "Center",
+    "select_center": "Select a center",
+    "service_selection": "Service Selection",
+    "service": "Service",
+    "loading_options": "Loading options...",
+    "date_time": "Date and Time",
+    "date": "Date",
+    "select_date": "Select a date",
+    "time": "Time",
+    "select_time": "Select a time",
+    "additional_notes": "Additional Notes",
+    "notes_placeholder_form": "Any additional information you consider important...",
+    "booking_summary": "Booking Summary",
+    "admin_assignment": "The administrator will assign the specialist and service type when you arrive at the center.",
+    "confirm_booking": "Confirm Booking",
+    "select_service_error": "Select a service",
+    "complete_required_fields": "Please complete all required fields",
+    "booking_created": "✅ Booking Created",
+    "booking_confirmed": "confirmed successfully. ID:",
+    "booking_error": "Could not create booking. Try again.",
+    "booking_cancelled": "Booking Cancelled",
+    "booking_cancelled_success": "The booking has been cancelled successfully.",
+    "cancel_booking_error": "Could not cancel booking.",
+    "client_found": "Client found",
+    "client_data_loaded": "Client data loaded automatically",
+    
+    // Landing page widgets
+    "book_description": "Book your relaxing massage appointment",
+    "vouchers": "Vouchers",
+    "vouchers_description": "Buy session packages with discount",
+    "gift_description": "Give unique wellness experiences",
+    "our_locations": "Our Locations",
+    "locations_subtitle": "Find us in Madrid",
+    "open_maps": "Open in Maps",
   },
   
   fr: {
@@ -293,6 +349,15 @@ const translations = {
     "cart_empty": "Votre panier est vide.",
     "add_to_cart": "Ajouter au Panier",
     "added_to_cart": "Ajouté au panier",
+    
+    // Landing page widgets
+    "book_description": "Réservez votre rendez-vous de massage relaxant",
+    "vouchers": "Bons",
+    "vouchers_description": "Achetez des forfaits de séances avec remise",
+    "gift_description": "Offrez des expériences de bien-être uniques",
+    "our_locations": "Nos Emplacements",
+    "locations_subtitle": "Trouvez-nous à Madrid",
+    "open_maps": "Ouvrir dans Maps",
   },
   
   de: {
@@ -344,6 +409,15 @@ const translations = {
     "cart": "Warenkorb",
     "add_to_cart": "In den Warenkorb",
     "added_to_cart": "Zum Warenkorb hinzugefügt",
+    
+    // Landing page widgets
+    "book_description": "Buchen Sie Ihren entspannenden Massage-Termin",
+    "vouchers": "Gutscheine",
+    "vouchers_description": "Kaufen Sie Sitzungspakete mit Rabatt",
+    "gift_description": "Schenken Sie einzigartige Wellness-Erlebnisse",
+    "our_locations": "Unsere Standorte",
+    "locations_subtitle": "Finden Sie uns in Madrid",
+    "open_maps": "In Maps öffnen",
   },
   
   it: {
@@ -395,6 +469,15 @@ const translations = {
     "cart": "Carrello",
     "add_to_cart": "Aggiungi al Carrello",
     "added_to_cart": "Aggiunto al carrello",
+    
+    // Landing page widgets
+    "book_description": "Prenota il tuo appuntamento per massaggio rilassante",
+    "vouchers": "Buoni",
+    "vouchers_description": "Acquista pacchetti di sessioni con sconto",
+    "gift_description": "Regala esperienze di benessere uniche",
+    "our_locations": "Le Nostre Sedi",
+    "locations_subtitle": "Trovaci a Madrid",
+    "open_maps": "Apri in Maps",
   },
   
   pt: {
@@ -446,6 +529,15 @@ const translations = {
     "cart": "Carrinho",
     "add_to_cart": "Adicionar ao Carrinho",
     "added_to_cart": "Adicionado ao carrinho",
+    
+    // Landing page widgets
+    "book_description": "Reserve a sua consulta de massagem relaxante",
+    "vouchers": "Vouchers",
+    "vouchers_description": "Compre pacotes de sessões com desconto",
+    "gift_description": "Ofereça experiências de bem-estar únicas",
+    "our_locations": "As Nossas Localizações",
+    "locations_subtitle": "Encontre-nos em Madrid",
+    "open_maps": "Abrir no Maps",
   }
 } as const;
 
