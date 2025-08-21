@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
+import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -19,6 +20,10 @@ serve(async (req) => {
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 
+  const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+  const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
+
   try {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("Falta STRIPE_SECRET_KEY en Supabase Secrets");
@@ -29,6 +34,7 @@ serve(async (req) => {
 
     const session = await stripe.checkout.sessions.retrieve(session_id);
     const paymentStatus = session.payment_status;
+    const buyerEmail = (session.customer_details?.email || (session as any).customer_email || null) as string | null;
 
     if (paymentStatus !== "paid") {
       return new Response(JSON.stringify({ paid: false, status: paymentStatus }), {
@@ -66,8 +72,50 @@ serve(async (req) => {
           }
         }
         results.gift_cards = created;
+
+        // Enviar emails (cliente y administrador)
+        try {
+          const codesHtml = created
+            .map((c) => `<li><strong>${(c.amount_cents / 100).toFixed(2)}€</strong> — Código: <code>${c.code}</code></li>`) 
+            .join("");
+
+          if (buyerEmail) {
+            await resend.emails.send({
+              from: fromEmail,
+              to: [buyerEmail],
+              subject: "Confirmación de compra: Tarjetas regalo",
+              html: `
+                <div style="font-family: Arial, sans-serif;">
+                  <h2>¡Gracias por tu compra!</h2>
+                  <p>Has adquirido las siguientes tarjetas regalo:</p>
+                  <ul>${codesHtml}</ul>
+                  <p>Puedes canjearlas presentando el código en The Nook Madrid.</p>
+                </div>
+              `,
+            });
+          }
+
+          if (adminEmail) {
+            await resend.emails.send({
+              from: fromEmail,
+              to: [adminEmail],
+              subject: "Nueva compra de tarjetas regalo",
+              html: `
+                <div style="font-family: Arial, sans-serif;">
+                  <h3>Nueva compra de tarjetas regalo</h3>
+                  <p>Total: ${created.length} tarjeta(s)</p>
+                  <ul>${codesHtml}</ul>
+                  <p>Comprador: ${buyerEmail || "desconocido"}</p>
+                </div>
+              `,
+            });
+          }
+        } catch (e) {
+          console.error("[verify-payment] error enviando emails gift_cards:", e);
+        }
       }
     }
+
 
     if (intent === "package_voucher") {
       const pvRaw = session.metadata?.pv_payload;
@@ -141,8 +189,73 @@ serve(async (req) => {
         if (insertErr) throw insertErr;
 
         results.client_package = createdPkg;
+
+        // Enviar emails (destinatario, comprador y admin)
+        try {
+          const recipientEmail = (pv.mode === "gift" ? pv.recipient?.email : pv.buyer?.email) || null;
+          const recipientName = (pv.mode === "gift" ? pv.recipient?.name : pv.buyer?.name) || "";
+          const buyerEmailFinal = pv.buyer?.email || buyerEmail;
+
+          const detailsHtml = `
+            <div style="font-family: Arial, sans-serif;">
+              <h2>Tu bono ${pkg.name}</h2>
+              <p>Hola ${recipientName || ""}, aquí tienes tu bono:</p>
+              <ul>
+                <li>Código del bono: <strong>${createdPkg.voucher_code}</strong></li>
+                <li>Sesiones incluidas: ${pkg.sessions_count}</li>
+              </ul>
+              <p>¡Gracias por tu compra!</p>
+            </div>`;
+
+          if (recipientEmail) {
+            await resend.emails.send({
+              from: fromEmail,
+              to: [recipientEmail],
+              subject: `Tu bono ${pkg.name} — Código ${createdPkg.voucher_code}`,
+              html: detailsHtml,
+            });
+          }
+
+          if (buyerEmailFinal && (!recipientEmail || buyerEmailFinal.toLowerCase() !== recipientEmail.toLowerCase())) {
+            await resend.emails.send({
+              from: fromEmail,
+              to: [buyerEmailFinal],
+              subject: `Confirmación: Bono ${pkg.name}`,
+              html: `
+                <div style="font-family: Arial, sans-serif;">
+                  <h3>Confirmación de compra</h3>
+                  <p>Se ha generado el bono <strong>${pkg.name}</strong> con código <strong>${createdPkg.voucher_code}</strong>.</p>
+                  <p>Destinatario: ${recipientName || buyerEmailFinal}</p>
+                </div>
+              `,
+            });
+          }
+
+          if (adminEmail) {
+            await resend.emails.send({
+              from: fromEmail,
+              to: [adminEmail],
+              subject: `Nueva compra de bono: ${pkg.name}`,
+              html: `
+                <div style="font-family: Arial, sans-serif;">
+                  <h3>Nueva compra de bono</h3>
+                  <ul>
+                    <li>Paquete: ${pkg.name}</li>
+                    <li>Código: ${createdPkg.voucher_code}</li>
+                    <li>Sesiones: ${pkg.sessions_count}</li>
+                    <li>Comprador: ${pv.buyer?.name || ""} &lt;${pv.buyer?.email || buyerEmail || ""}&gt;</li>
+                    <li>Modo: ${pv.mode || "self"}</li>
+                  </ul>
+                </div>
+              `,
+            });
+          }
+        } catch (e) {
+          console.error("[verify-payment] error enviando emails package_voucher:", e);
+        }
       }
     }
+
 
     if (intent === "booking_payment") {
       const bpRaw = session.metadata?.bp_payload;
@@ -154,6 +267,25 @@ serve(async (req) => {
           .eq("id", bp.booking_id);
         if (error) throw error;
         results.booking_updated = true;
+
+        // Enviar emails de confirmación de pago de reserva
+        try {
+          const subject = "Pago de reserva confirmado";
+          const html = `
+            <div style=\"font-family: Arial, sans-serif;\"> 
+              <h3>Pago confirmado</h3>
+              <p>Tu pago de la reserva se ha confirmado correctamente.</p>
+              <p>ID de sesión Stripe: ${session.id}</p>
+            </div>`;
+          if (buyerEmail) {
+            await resend.emails.send({ from: fromEmail, to: [buyerEmail], subject, html });
+          }
+          if (adminEmail) {
+            await resend.emails.send({ from: fromEmail, to: [adminEmail], subject: `ADMIN · ${subject}`, html });
+          }
+        } catch (e) {
+          console.error("[verify-payment] error enviando emails booking_payment:", e);
+        }
       }
     }
 

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -24,6 +25,10 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
+
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
+    const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+    const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
 
     // Obtener info del paquete
     const { data: pkg, error: pkgErr } = await supabaseAdmin
@@ -90,6 +95,65 @@ serve(async (req) => {
       .select("id, voucher_code")
       .single();
     if (insertErr) throw insertErr;
+
+    // Enviar emails (destinatario, comprador y admin)
+    try {
+      const recipientEmail = target.email;
+      const recipientName = target.name;
+      await resend.emails.send({
+        from: fromEmail,
+        to: [recipientEmail],
+        subject: `Tu bono ${pkg.name} — Código ${createdPkg.voucher_code}`,
+        html: `
+          <div style="font-family: Arial, sans-serif;">
+            <h2>Tu bono ${pkg.name}</h2>
+            <p>Hola ${recipientName}, aquí tienes tu bono:</p>
+            <ul>
+              <li>Código del bono: <strong>${createdPkg.voucher_code}</strong></li>
+              <li>Sesiones incluidas: ${pkg.sessions_count}</li>
+            </ul>
+            <p>¡Gracias por tu compra!</p>
+          </div>
+        `,
+      });
+
+      if (buyer?.email && buyer.email.toLowerCase() !== recipientEmail.toLowerCase()) {
+        await resend.emails.send({
+          from: fromEmail,
+          to: [buyer.email],
+          subject: `Confirmación: Bono ${pkg.name}`,
+          html: `
+            <div style="font-family: Arial, sans-serif;">
+              <h3>Confirmación de compra</h3>
+              <p>Se ha generado el bono <strong>${pkg.name}</strong> con código <strong>${createdPkg.voucher_code}</strong>.</p>
+              <p>Destinatario: ${recipientName} &lt;${recipientEmail}&gt;</p>
+            </div>
+          `,
+        });
+      }
+
+      if (adminEmail) {
+        await resend.emails.send({
+          from: fromEmail,
+          to: [adminEmail],
+          subject: `Nueva compra de bono: ${pkg.name}`,
+          html: `
+            <div style="font-family: Arial, sans-serif;">
+              <h3>Nueva compra de bono</h3>
+              <ul>
+                <li>Paquete: ${pkg.name}</li>
+                <li>Código: ${createdPkg.voucher_code}</li>
+                <li>Sesiones: ${pkg.sessions_count}</li>
+                <li>Comprador: ${buyer?.name || ""} &lt;${buyer?.email || ""}&gt;</li>
+                <li>Modo: ${mode || "self"}</li>
+              </ul>
+            </div>
+          `,
+        });
+      }
+    } catch (e) {
+      console.error("[purchase-voucher] error enviando emails:", e);
+    }
 
     return new Response(
       JSON.stringify({ success: true, voucher_code: createdPkg.voucher_code }),
