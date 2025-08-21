@@ -17,8 +17,11 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useTranslation } from "@/hooks/useTranslation";
 const ClientReservation = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { centers } = useCenters();
   const { employees } = useEmployees();
   const { lanes } = useLanes();
@@ -127,8 +130,8 @@ const ClientReservation = () => {
     // Basic validation
     if (!formData.clientName || !formData.center || !formData.date || !formData.time || !selection) {
       toast({
-        title: "Error",
-        description: !selection ? "Selecciona un servicio" : "Por favor completa todos los campos obligatorios",
+        title: t('error'),
+        description: !selection ? t('select_service_error') : t('complete_required_fields'),
         variant: "destructive",
       });
       return;
@@ -332,14 +335,17 @@ const ClientReservation = () => {
                 The Nook Madrid
               </h1>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="text-xs sm:text-sm"
-            >
-              <Link to="/admin-login">Admin</Link>
-            </Button>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <LanguageSelector />
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="text-xs sm:text-sm"
+              >
+                <Link to="/admin-login">{t('admin')}</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -359,7 +365,7 @@ const ClientReservation = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-primary">
-                        Comprar Bono
+                        {t('buy_voucher')}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Compra un bono para ti o para regalar
@@ -379,7 +385,7 @@ const ClientReservation = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-primary">
-                        Tarjetas Regalo
+                        {t('gift_cards')}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Elige una tarjeta regalo
@@ -397,7 +403,7 @@ const ClientReservation = () => {
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
               <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span>Reservar Cita</span>
+              <span>{t('book_appointment')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
@@ -406,12 +412,12 @@ const ClientReservation = () => {
               <div className="space-y-3 sm:space-y-4">
                 <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
                   <User className="h-4 w-4" />
-                  <span>Información Personal</span>
+                  <span>{t('personal_information')}</span>
                 </h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="col-span-full sm:col-span-1">
-                    <Label htmlFor="clientName" className="text-sm">Nombre Completo *</Label>
+                    <Label htmlFor="clientName" className="text-sm">{t('full_name')} *</Label>
                     <Input
                       id="clientName"
                       value={formData.clientName}
@@ -432,12 +438,12 @@ const ClientReservation = () => {
                           } catch {}
                         }
                       }}
-                      placeholder="Nombre y apellidos"
+                      placeholder={t('full_name_placeholder')}
                       className="mt-1"
                     />
                   </div>
                   <div className="col-span-full sm:col-span-1">
-                    <Label htmlFor="clientPhone" className="text-sm">Teléfono</Label>
+                    <Label htmlFor="clientPhone" className="text-sm">{t('phone')}</Label>
                     <Input
                       id="clientPhone"
                       value={formData.clientPhone}
@@ -459,25 +465,25 @@ const ClientReservation = () => {
                         }
                         await checkExistingBookings();
                       }}
-                      placeholder="+34 600 000 000"
+                      placeholder={t('phone_placeholder')}
                       className="mt-1"
                     />
                   </div>
                 </div>
                 
                  <div>
-                   <Label htmlFor="clientEmail" className="text-sm">Email</Label>
+                   <Label htmlFor="clientEmail" className="text-sm">{t('email')}</Label>
                    <Input
                      id="clientEmail"
                      type="email"
                      value={formData.clientEmail}
                      onChange={(e) => handleEmailChange(e.target.value)}
                      onBlur={checkExistingBookings}
-                     placeholder="cliente@email.com"
+                     placeholder={t('email_placeholder')}
                      className="mt-1"
                    />
                    <p className="text-xs text-muted-foreground mt-1">
-                     Introduce tu email o teléfono para ver tus reservas anteriores y bonos
+                     {t('email_help')}
                    </p>
                  </div>
               </div>
@@ -486,7 +492,7 @@ const ClientReservation = () => {
               {showExistingBookings && existingBookings.length > 0 && (
                  <div className="space-y-3 sm:space-y-4">
                    <div className="flex items-center justify-between">
-                     <h3 className="font-medium text-sm sm:text-base">Tus Reservas y Bonos</h3>
+                     <h3 className="font-medium text-sm sm:text-base">{t('your_bookings_vouchers')}</h3>
                      <Button
                        type="button"
                        variant="ghost"

@@ -31,7 +31,8 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
         <Routes>
-          <Route path="/" element={<ClientReservation />} />
+          <Route path="/" element={<Index />} />
+          <Route path="/client-reservation" element={<ClientReservation />} />
           <Route path="/manage-booking" element={<ManageBooking />} />
           <Route path="/comprar-bono" element={<BuyVoucherPage />} />
           <Route path="/tarjetas-regalo" element={<GiftCardsPage />} />
