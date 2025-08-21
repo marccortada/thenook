@@ -220,6 +220,7 @@ const ClientReservation = () => {
         time: "",
         notes: "",
       });
+      setSelection(null);
       setShowExistingBookings(false);
       setExistingBookings([]);
     } catch (error) {
@@ -339,7 +340,7 @@ const ClientReservation = () => {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="col-span-full sm:col-span-1">
-                    <Label htmlFor="clientName" className="text-sm">{t('full_name')} *</Label>
+                    <Label htmlFor="clientName" className="text-sm">Nombre</Label>
                     <Input
                       id="clientName"
                       value={formData.clientName}
@@ -360,7 +361,6 @@ const ClientReservation = () => {
                           } catch {}
                         }
                       }}
-                      placeholder={t('full_name_placeholder')}
                       className="mt-1"
                     />
                   </div>
@@ -558,44 +558,71 @@ const ClientReservation = () => {
 
               {/* Notes */}
               <div>
-                <Label htmlFor="notes" className="text-sm">Notas Adicionales</Label>
+                <Label htmlFor="notes" className="text-sm">Notas (opcional)</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Cualquier información adicional que consideres importante..."
+                  placeholder="Escribe aquí si quieres comentarnos cualquier cosa"
                   className="mt-1 min-h-[80px] resize-none"
                 />
               </div>
 
               {/* Summary */}
               {formData.center && formData.date && formData.time && (
-                <div className="bg-accent/20 rounded-lg p-3 sm:p-4 space-y-2">
-                  <h4 className="font-medium text-sm sm:text-base">Resumen de la Reserva</h4>
-                  <div className="space-y-1 text-xs sm:text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Centro:</span>
-                      <span>{selectedCenter?.name}</span>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                  <div className="bg-background border-2 border-primary/20 rounded-xl p-6 sm:p-8 max-w-md w-full mx-auto shadow-2xl">
+                    <h4 className="font-bold text-lg sm:text-xl mb-6 text-center text-primary">Resumen de la Reserva</h4>
+                    <div className="space-y-4 text-sm sm:text-base">
+                      {selection && (() => {
+                        const selectedService = services.find(s => s.id === selection.id);
+                        return selectedService && (
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-muted-foreground">Tratamiento:</span>
+                            <span className="font-medium">{selectedService.name}</span>
+                          </div>
+                        );
+                      })()}
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">Centro:</span>
+                        <span className="font-medium">{selectedCenter?.name}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">Dirección:</span>
+                        <span className="font-medium text-right">{selectedCenter?.address}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">Fecha:</span>
+                        <span className="font-medium">{format(formData.date, "PPP", { locale: es })}</span>
+                      </div>
+                      <div className="flex justify-between py-2">
+                        <span className="text-muted-foreground">Hora:</span>
+                        <span className="font-medium">{formData.time}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Fecha:</span>
-                      <span>{format(formData.date, "PPP", { locale: es })}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Hora:</span>
-                      <span>{formData.time}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-2">
-                      El administrador asignará el especialista y tipo de servicio cuando llegues al centro.
+                    <div className="flex gap-3 mt-8">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setFormData(prev => ({ ...prev, center: "", date: undefined, time: "" }))}
+                        className="flex-1"
+                      >
+                        Editar
+                      </Button>
+                      <Button type="submit" className="flex-1 font-medium">
+                        Confirmar Reserva
+                      </Button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Submit Button */}
-              <Button type="submit" className="w-full h-11 text-sm sm:text-base font-medium">
-                Confirmar Reserva
-              </Button>
+              {/* Submit Button - Only show if summary is not visible */}
+              {!(formData.center && formData.date && formData.time) && (
+                <Button type="submit" className="w-full h-11 text-sm sm:text-base font-medium">
+                  Continuar
+                </Button>
+              )}
             </form>
           </CardContent>
         </Card>
