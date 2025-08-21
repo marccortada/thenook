@@ -727,7 +727,15 @@ const AdvancedCalendarView = () => {
                     <SelectTrigger className="h-11 min-w-[140px]">
                       <SelectValue placeholder="Hora" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent 
+                      className="z-[200] bg-background border shadow-xl"
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      sideOffset={4}
+                      avoidCollisions={true}
+                      sticky="always"
+                    >
                       {timeOptions5m.map((t) => (
                         <SelectItem key={t} value={t}>{t}</SelectItem>
                       ))}

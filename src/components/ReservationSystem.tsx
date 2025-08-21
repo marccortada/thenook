@@ -495,7 +495,15 @@ const ReservationSystem = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona una hora" />
                     </SelectTrigger>
-                    <SelectContent className="z-[100] bg-background border shadow-lg">
+                    <SelectContent 
+                      className="z-[200] bg-background border shadow-xl max-h-60 overflow-y-auto"
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      sideOffset={4}
+                      avoidCollisions={true}
+                      sticky="always"
+                    >
                       {timeSlots.map((time) => (
                         <SelectItem key={time} value={time}>
                           {time}

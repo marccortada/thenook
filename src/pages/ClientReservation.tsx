@@ -565,7 +565,15 @@ const ClientReservation = () => {
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Selecciona una hora" />
                       </SelectTrigger>
-                      <SelectContent className="z-[100] bg-background border shadow-lg max-h-60 overflow-y-auto">
+                       <SelectContent 
+                         className="z-[200] bg-background border shadow-xl max-h-60 overflow-y-auto"
+                         position="popper"
+                         side="bottom"
+                         align="start"
+                         sideOffset={4}
+                         avoidCollisions={true}
+                         sticky="always"
+                       >
                         {timeSlots.map((time) => (
                           <SelectItem key={time} value={time}>
                             <div className="flex items-center space-x-2">
