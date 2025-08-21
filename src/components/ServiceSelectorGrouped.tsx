@@ -164,10 +164,12 @@ function ServicesAccordions({
 
   // Mostrar SIEMPRE todos los grupos (aunque estén vacíos)
   return (
-    <Accordion type="multiple" defaultValue={[]} className="w-full" style={{ scrollBehavior: 'auto' }}>
+    <Accordion type="multiple" defaultValue={[]} className="w-full" onValueChange={() => {}}>
       {groups.map((group) => (
-        <AccordionItem key={group.key} value={group.key}>
-          <AccordionTrigger className="px-3">{group.title}</AccordionTrigger>
+        <AccordionItem key={group.key} value={group.key} className="border-none">
+          <AccordionTrigger className="px-3 hover:no-underline" onClick={(e) => e.stopPropagation()}>
+            {group.title}
+          </AccordionTrigger>
           <AccordionContent className="space-y-2">
             {group.items.length === 0 ? (
               <p className="text-sm text-muted-foreground px-3">No hay servicios en esta categoría.</p>

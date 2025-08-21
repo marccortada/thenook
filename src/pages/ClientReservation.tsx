@@ -505,7 +505,14 @@ const ClientReservation = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <Label htmlFor="date" className="text-sm">Fecha *</Label>
-                    <Popover>
+                    <Popover onOpenChange={(open) => {
+                      if (open) {
+                        // Prevent any scroll when opening
+                        document.body.style.overflow = 'hidden';
+                      } else {
+                        document.body.style.overflow = 'unset';
+                      }
+                    }}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
@@ -513,6 +520,7 @@ const ClientReservation = () => {
                             "w-full justify-start text-left font-normal mt-1",
                             !formData.date && "text-muted-foreground"
                           )}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
@@ -523,8 +531,8 @@ const ClientReservation = () => {
                         align="start"
                         side="bottom"
                         sideOffset={4}
-                        avoidCollisions={true}
-                        sticky="always"
+                        avoidCollisions={false}
+                        onOpenAutoFocus={(e) => e.preventDefault()}
                       >
                         <Calendar
                           mode="single"
@@ -577,8 +585,8 @@ const ClientReservation = () => {
                          side="bottom"
                          align="start"
                          sideOffset={4}
-                         avoidCollisions={true}
-                         sticky="always"
+                         avoidCollisions={false}
+                         onCloseAutoFocus={(e) => e.preventDefault()}
                        >
                         {timeSlots.map((time) => (
                           <SelectItem key={time} value={time}>
