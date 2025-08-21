@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 interface CartItem {
   id: string;
   name: string;
@@ -220,7 +222,8 @@ const GiftCardsPage = () => {
                 The Nook Madrid
               </p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <LanguageSelector />
               <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm">
                 <Link to="/">
                   <ArrowLeft className="h-4 w-4 mr-2" />
@@ -274,11 +277,12 @@ const GiftCardsPage = () => {
                         <span className="text-sm text-muted-foreground">Total</span>
                         <span className="font-semibold">{euro(totalCents)}</span>
                       </div>
+                      <PaymentMethodsInfo />
                       <div className="flex gap-2 pt-1">
                         <Button variant="secondary" onClick={clear} className="flex-1">
                           Vaciar
                         </Button>
-                        <Button className="flex-1" onClick={async () => {
+                        <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
                           if (items.length === 0) return;
                           try {
                             const payload = {
@@ -291,13 +295,13 @@ const GiftCardsPage = () => {
                             const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
                             if (error) throw error;
                             if (data?.url) {
-                              window.open(data.url, "_blank");
+                              window.location.href = data.url;
                             }
                           } catch (e: any) {
                             toast.error(e.message || "No se pudo iniciar el pago");
                           }
                         }}>
-                          Continuar
+                          Proceder al Pago
                         </Button>
                       </div>
                     </div>
@@ -309,15 +313,15 @@ const GiftCardsPage = () => {
 
           <section aria-label="Listado de tarjetas de regalo">
             {([
-              ["Individuales", groups.individuales],
-              ["A cuatro manos", groups.cuatro],
-              ["Rituales", groups.rituales],
-              ["Para dos", groups.paraDos],
+              ["🧘 Masajes Individuales", groups.individuales],
+              ["✋ Masajes a Cuatro Manos", groups.cuatro],
+              ["🌸 Rituales", groups.rituales],
+              ["💑 Para Dos Personas", groups.paraDos],
             ] as [string, GiftCardItem[]][])
               .filter(([, list]) => list.length > 0)
               .map(([label, list]) => (
                 <div key={label} className="mb-8">
-                  <h2 className="text-xl font-semibold mb-3">{label}</h2>
+                  <h2 className="text-xl font-bold mb-4 text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{label}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {list.map((item) => (
                       <Card key={item.id} className="flex flex-col">
@@ -341,8 +345,8 @@ const GiftCardsPage = () => {
                           <p className="font-semibold">{euro(item.priceCents!)}</p>
                         </CardContent>
                         <CardFooter>
-                          <Button className="w-full" onClick={() => add({ name: item.name, priceCents: item.priceCents! })}>
-                            Comprar
+                          <Button className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300" onClick={() => add({ name: item.name, priceCents: item.priceCents! })}>
+                            Añadir al Carrito
                           </Button>
                         </CardFooter>
                       </Card>
@@ -352,7 +356,7 @@ const GiftCardsPage = () => {
               ))}
             {/* Personalizado */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-3">Personalizado</h2>
+              <h2 className="text-xl font-bold mb-4 text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">💰 Importe Personalizado</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 <Card key={custom.id} className="flex flex-col">
                   <CardHeader className="pb-2">
@@ -394,8 +398,8 @@ const GiftCardsPage = () => {
                           placeholder="Otro importe (€)"
                           className="h-9"
                         />
-                        <Button size="sm" onClick={addCustomToCart}>
-                          Comprar
+                        <Button size="sm" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={addCustomToCart}>
+                          Añadir
                         </Button>
                       </div>
                       <p className="text-[11px] text-muted-foreground">

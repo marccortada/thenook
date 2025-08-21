@@ -10,7 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePackages } from "@/hooks/useDatabase";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Gift, ArrowLeft } from "lucide-react";
+import { Gift, ArrowLeft, ChevronDown } from "lucide-react";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 const currency = (cents?: number) =>
   typeof cents === "number" ? (cents / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" }) : "";
 
@@ -23,6 +25,7 @@ export default function BuyVoucherPage() {
   const [buyer, setBuyer] = useState({ name: "", email: "", phone: "" });
   const [recipient, setRecipient] = useState({ name: "", email: "", phone: "" });
   const [notes, setNotes] = useState("");
+  const [showPayment, setShowPayment] = useState(false);
   const selectedPkg = useMemo(() => packages.find(p => p.id === pkgId), [packages, pkgId]);
 
   const isDuo = (name?: string) => {
@@ -82,10 +85,10 @@ export default function BuyVoucherPage() {
       return;
     }
     const rec = mode === "self" ? buyer : recipient;
-    if (!rec.name || !rec.email) {
-      toast({ title: "Datos del destinatario requeridos", variant: "destructive" });
-      return;
-    }
+                    if (!rec.name || !rec.email) {
+                      toast({ title: "Datos del beneficiario requeridos", variant: "destructive" });
+                      return;
+                    }
 
     try {
       const payload = {
@@ -102,7 +105,11 @@ export default function BuyVoucherPage() {
       const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
       if (error) throw error;
       if (data?.url) {
-        window.open(data.url, "_blank");
+        setShowPayment(true);
+        // Scroll to payment section
+        setTimeout(() => {
+          document.getElementById("payment-section")?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
       } else {
         toast({ title: "Error", description: "No se pudo iniciar el pago" , variant: "destructive"});
       }
@@ -122,7 +129,8 @@ export default function BuyVoucherPage() {
                 The Nook Madrid
               </h1>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <LanguageSelector />
               <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm">
                 <Link to="/">
                   <ArrowLeft className="h-4 w-4 mr-2" />
@@ -140,13 +148,13 @@ export default function BuyVoucherPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
         <div className="max-w-4xl mx-auto">
-          <Card className="hover-lift glass-effect border-primary/20">
+          <Card className="hover-lift glass-effect border-primary/20 shadow-lg">
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
                 <Gift className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span>Comprar Bono</span>
               </CardTitle>
-              <p className="text-sm text-muted-foreground">Elige el bono y completa los datos del destinatario</p>
+              <p className="text-sm text-muted-foreground">Elige el bono y completa los datos del beneficiario</p>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
               <form onSubmit={submit} className="space-y-6">
@@ -158,10 +166,10 @@ export default function BuyVoucherPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectLabel>Individuales</SelectLabel>
+                        <SelectLabel className="text-primary font-semibold text-sm">🧘 Masajes Individuales</SelectLabel>
                         {categorized.individuales.length > 0 ? (
                           categorized.individuales.map((p: any) => (
-                            <SelectItem key={p.id} value={p.id}>
+                            <SelectItem key={p.id} value={p.id} className="pl-6">
                               {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
                             </SelectItem>
                           ))
@@ -173,10 +181,10 @@ export default function BuyVoucherPage() {
                       </SelectGroup>
 
                       <SelectGroup>
-                        <SelectLabel>A cuatro manos</SelectLabel>
+                        <SelectLabel className="text-primary font-semibold text-sm">✋ Masajes a Cuatro Manos</SelectLabel>
                         {categorized.cuatro.length > 0 ? (
                           categorized.cuatro.map((p: any) => (
-                            <SelectItem key={p.id} value={p.id}>
+                            <SelectItem key={p.id} value={p.id} className="pl-6">
                               {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
                             </SelectItem>
                           ))
@@ -188,10 +196,10 @@ export default function BuyVoucherPage() {
                       </SelectGroup>
 
                       <SelectGroup>
-                        <SelectLabel>Rituales</SelectLabel>
+                        <SelectLabel className="text-primary font-semibold text-sm">🌸 Rituales</SelectLabel>
                         {categorized.rituales.length > 0 ? (
                           categorized.rituales.map((p: any) => (
-                            <SelectItem key={p.id} value={p.id}>
+                            <SelectItem key={p.id} value={p.id} className="pl-6">
                               {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
                             </SelectItem>
                           ))
@@ -203,10 +211,10 @@ export default function BuyVoucherPage() {
                       </SelectGroup>
 
                       <SelectGroup>
-                        <SelectLabel>Para dos</SelectLabel>
+                        <SelectLabel className="text-primary font-semibold text-sm">💑 Bonos para Dos Personas</SelectLabel>
                         {categorized.paraDos.length > 0 ? (
                           categorized.paraDos.map((p: any) => (
-                            <SelectItem key={p.id} value={p.id}>
+                            <SelectItem key={p.id} value={p.id} className="pl-6">
                               {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
                             </SelectItem>
                           ))
@@ -244,7 +252,7 @@ export default function BuyVoucherPage() {
                   </div>
                   {mode === 'gift' && (
                     <div>
-                      <h3 className="font-medium mb-2">Destinatario</h3>
+                      <h3 className="font-medium mb-2">Beneficiario</h3>
                       <Label>Nombre</Label>
                       <Input value={recipient.name} onChange={(e) => setRecipient({ ...recipient, name: e.target.value })} className="mb-2" />
                       <Label>Email</Label>
@@ -266,9 +274,60 @@ export default function BuyVoucherPage() {
                   </div>
                 )}
 
+                <PaymentMethodsInfo />
+
                 <div className="flex justify-end">
-                  <Button type="submit">Confirmar compra</Button>
+                  <Button type="submit" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground px-8 py-2 font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                    Confirmar compra
+                  </Button>
                 </div>
+
+                {/* Payment Section */}
+                {showPayment && (
+                  <div id="payment-section" className="mt-8 p-6 bg-gradient-to-r from-accent/10 to-primary/10 rounded-lg border border-primary/20 animate-fade-in">
+                    <div className="text-center space-y-4">
+                      <h3 className="text-lg font-semibold text-primary">Proceder al Pago</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Se abrirá una nueva ventana segura para completar tu compra.
+                        El bono se enviará automáticamente por email al comprador y beneficiario.
+                      </p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+                          <span>✉️ Email al comprador</span>
+                          <span>✉️ Email al beneficiario</span>
+                          <span>✉️ Notificación al centro</span>
+                        </div>
+                        <Button 
+                          onClick={async () => {
+                            try {
+                              const payload = {
+                                intent: "package_voucher" as const,
+                                package_voucher: {
+                                  package_id: pkgId,
+                                  mode,
+                                  buyer,
+                                  recipient: mode === "self" ? buyer : recipient,
+                                  notes,
+                                },
+                                currency: "eur",
+                              };
+                              const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
+                              if (error) throw error;
+                              if (data?.url) {
+                                window.open(data.url, "_blank");
+                              }
+                            } catch (err: any) {
+                              toast({ title: "Error", description: err.message || "No se pudo iniciar el pago", variant: "destructive" });
+                            }
+                          }}
+                          className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                        >
+                          Abrir Página de Pago Seguro
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </form>
             </CardContent>
           </Card>
