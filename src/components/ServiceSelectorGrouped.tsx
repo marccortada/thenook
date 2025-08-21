@@ -164,7 +164,7 @@ function ServicesAccordions({
 
   // Mostrar SIEMPRE todos los grupos (aunque estén vacíos)
   return (
-    <Accordion type="multiple" defaultValue={[]} className="w-full">
+    <Accordion type="multiple" defaultValue={[]} className="w-full" style={{ scrollBehavior: 'auto' }}>
       {groups.map((group) => (
         <AccordionItem key={group.key} value={group.key}>
           <AccordionTrigger className="px-3">{group.title}</AccordionTrigger>
@@ -178,7 +178,16 @@ function ServicesAccordions({
                   title={s.name}
                   subtitle={`${s.duration_minutes} min · ${currency(s.price_cents)}`}
                   right={
-                    <Button type="button" size="sm" variant={selectedId === s.id ? "default" : "outline"} onClick={() => onSelect(s.id)}>
+                    <Button 
+                      type="button" 
+                      size="sm" 
+                      variant={selectedId === s.id ? "default" : "outline"} 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSelect(s.id);
+                      }}
+                    >
                       {selectedId === s.id ? "Seleccionado" : "Seleccionar"}
                     </Button>
                   }

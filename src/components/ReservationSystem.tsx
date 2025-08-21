@@ -555,9 +555,9 @@ const ReservationSystem = () => {
               />
             </div>
 
-            {/* Summary */}
+            {/* Summary - with smooth appearance */}
             {selectedItem && (
-              <div className="p-4 bg-accent/20 rounded-lg">
+              <div className="p-4 bg-accent/20 rounded-lg transition-all duration-300 ease-in-out">
                 <h4 className="font-medium mb-2">Resumen de la Reserva</h4>
                 <div className="text-sm space-y-1">
                   {formData.serviceType === "individual" && selectedService ? (
