@@ -434,40 +434,40 @@ const SimpleCenterCalendar = () => {
     
     return (
       <div className="space-y-4">
-        {/* Stats for this center */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card className="p-3">
+        {/* Stats for this center - Responsive */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+          <Card className="p-2 sm:p-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{centerBookings.length}</div>
-              <div className="text-sm text-muted-foreground">Total Reservas</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{centerBookings.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Total Reservas</div>
             </div>
           </Card>
-          <Card className="p-3">
+          <Card className="p-2 sm:p-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">
                 {centerBookings.filter(b => b.status === 'confirmed').length}
               </div>
-              <div className="text-sm text-muted-foreground">Confirmadas</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Confirmadas</div>
             </div>
           </Card>
-          <Card className="p-3">
+          <Card className="p-2 sm:p-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
+              <div className="text-xl sm:text-2xl font-bold text-primary">
                 {centerBookings.reduce((sum, b) => sum + ((b.total_price_cents || 0) / 100), 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
               </div>
-              <div className="text-sm text-muted-foreground">Ingresos</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Ingresos</div>
             </div>
           </Card>
         </div>
 
-        {/* Employee and Status filters */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span className="text-sm font-medium">Especialista:</span>
+        {/* Employee and Status filters - Responsive */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 p-2 sm:p-0">
+          <div className="flex items-center gap-2 text-xs sm:text-sm">
+            <User className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="font-medium">Especialista:</span>
           </div>
           <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="w-full sm:w-64">
               <SelectValue placeholder="Todos los especialistas" />
             </SelectTrigger>
             <SelectContent>
@@ -480,11 +480,11 @@ const SimpleCenterCalendar = () => {
             </SelectContent>
           </Select>
           
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Estado:</span>
+          <div className="flex items-center gap-2 text-xs sm:text-sm">
+            <span className="font-medium">Estado:</span>
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Todos los estados" />
             </SelectTrigger>
             <SelectContent>
@@ -500,79 +500,94 @@ const SimpleCenterCalendar = () => {
             </SelectContent>
           </Select>
           
-          <Button size="sm" onClick={() => handleNewBooking(center.id)}>
+          <Button size="sm" onClick={() => handleNewBooking(center.id)} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Nueva Reserva
+            <span className="hidden sm:inline">Nueva Reserva</span>
+            <span className="sm:hidden">Nueva</span>
           </Button>
         </div>
 
-        {/* Calendar Grid */}
-        <Card>
+        {/* Calendar Grid - Responsive */}
+        <Card className="w-full">
           <CardContent className="p-0">
-            <ScrollArea className="h-[400px]">
-              <div className="grid grid-cols-[80px_1fr] gap-0">
-                {/* Time labels */}
-                <div className="border-r bg-muted/30">
-                  <div className="h-12 border-b flex items-center justify-center font-medium text-sm">
-                    Hora
-                  </div>
-                  {timeSlots.map((timeSlot, index) => (
-                    <div key={index} className="h-16 border-b flex items-center justify-center text-sm font-medium">
-                      {format(timeSlot, 'HH:mm')}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Appointments column */}
-                <div>
-                  <div className="h-12 border-b flex items-center justify-center font-medium bg-muted/30">
-                    Reservas del día
-                  </div>
-                  {timeSlots.map((timeSlot, timeIndex) => {
-                    const booking = getBookingForTimeAndEmployee(center.id, timeSlot, selectedEmployeeId === 'all' ? undefined : selectedEmployeeId);
-                    const isFirstSlotOfBooking = booking && 
-                      format(timeSlot, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
-
-                    return (
-                      <div
-                        key={timeIndex}
-                        className="relative h-16 border-b hover:bg-muted/20 transition-colors"
-                      >
-                        {booking && isFirstSlotOfBooking && (
-                          <div
-                            className={cn(
-                              "absolute inset-1 rounded border-l-4 p-2 cursor-pointer transition-all hover:shadow-md",
-                              getStatusColor(booking.status)
-                            )}
-                            style={{
-                              height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 64 - 4}px`
-                            }}
-                            onClick={() => handleBookingClick(booking)}
-                          >
-                            <div className="text-sm font-semibold truncate">
-                              {booking.profiles?.first_name} {booking.profiles?.last_name}
-                            </div>
-                            <div className="text-xs text-muted-foreground truncate">
-                              {booking.services?.name}
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
-                              </Badge>
-                              {booking.employee_id && (
-                                <div className="text-xs text-muted-foreground truncate">
-                                  {employees.find(e => e.id === booking.employee_id)?.profiles?.first_name}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
+            <div className="bg-background border-b p-2 sm:p-4">
+              <h3 className="font-semibold text-sm sm:text-lg">
+                Agenda del {format(selectedDate, "d MMM", { locale: es })}
+              </h3>
+            </div>
+            
+            <div className="overflow-hidden">
+              <ScrollArea className="h-[60vh] sm:h-[70vh] w-full">
+                <div className="min-w-full">
+                  {/* Header */}
+                  <div className="sticky top-0 z-10 bg-background border-b">
+                    <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-0">
+                      <div className="p-2 text-center font-medium border-r bg-muted/50 text-xs sm:text-sm">
+                        Hora
                       </div>
-                    );
-                  })}
+                      <div className="p-2 text-center font-medium bg-muted/50">
+                        <span className="text-xs sm:text-sm font-semibold">Reservas del día</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Time slots */}
+                  <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-0">
+                    {timeSlots.map((timeSlot, timeIndex) => {
+                      const booking = getBookingForTimeAndEmployee(center.id, timeSlot, selectedEmployeeId === 'all' ? undefined : selectedEmployeeId);
+                      const isFirstSlotOfBooking = booking && 
+                        format(timeSlot, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
+
+                      return (
+                        <React.Fragment key={timeIndex}>
+                          {/* Time label */}
+                          <div className="p-1 sm:p-2 text-center text-xs sm:text-sm border-r border-b bg-muted/30 font-medium min-h-[50px] sm:min-h-[64px] flex items-center justify-center">
+                            {format(timeSlot, 'HH:mm')}
+                          </div>
+
+                          {/* Booking slot */}
+                          <div className="relative border-b min-h-[50px] sm:min-h-[64px] hover:bg-muted/20 transition-colors">
+                            {booking && isFirstSlotOfBooking && (
+                              <div
+                                className={cn(
+                                  "absolute inset-1 rounded border-l-4 p-1 sm:p-2 cursor-pointer transition-all hover:shadow-md w-[calc(100%-8px)]",
+                                  getStatusColor(booking.status)
+                                )}
+                                style={{
+                                  height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 50 - 4}px`,
+                                  minHeight: '46px'
+                                }}
+                                onClick={() => handleBookingClick(booking)}
+                              >
+                                <div className="text-xs sm:text-sm font-semibold truncate">
+                                  {booking.profiles?.first_name} {booking.profiles?.last_name}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate hidden sm:block">
+                                  {booking.services?.name}
+                                </div>
+                                <div className="flex items-center gap-1 sm:gap-2 mt-1">
+                                  <Badge variant="secondary" className="text-xs px-1 py-0">
+                                    {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
+                                  </Badge>
+                                  {booking.employee_id && (
+                                    <div className="text-xs text-muted-foreground truncate hidden sm:block">
+                                      {employees.find(e => e.id === booking.employee_id)?.profiles?.first_name}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-xs text-primary font-medium mt-1">
+                                  Click para gestionar
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </ScrollArea>
+              </ScrollArea>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -589,50 +604,52 @@ const SimpleCenterCalendar = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with date navigation */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={goToPreviousDay}>
+    <div className="min-h-screen bg-background p-2 sm:p-4 lg:p-6">
+      {/* Header with date navigation - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={goToPreviousDay}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={goToNextDay}>
+            <Button variant="outline" size="sm" onClick={goToNextDay}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <div className="text-2xl font-bold text-foreground">
-            {format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+          <div className="text-lg sm:text-2xl font-bold text-foreground">
+            {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
           </div>
         </div>
       </div>
 
-      {/* Calendars by Center */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-          {centers.map((center) => (
-            <TabsTrigger key={center.id} value={center.id} className="text-sm">
-              {center.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {/* Calendars by Center - Responsive */}
+      <div className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-auto gap-1">
+            {centers.map((center) => (
+              <TabsTrigger key={center.id} value={center.id} className="text-xs sm:text-sm py-2">
+                {center.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-      {centers.map((center) => (
-        <TabsContent key={center.id} value={center.id} className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Calendario - {center.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {renderCenterCalendar(center)}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      ))}
-    </Tabs>
+        {centers.map((center) => (
+          <TabsContent key={center.id} value={center.id} className="mt-4 sm:mt-6">
+            <Card className="w-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                  {center.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 sm:p-6 sm:pt-0">
+                {renderCenterCalendar(center)}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
 
     {/* New Booking Modal */}
     <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
