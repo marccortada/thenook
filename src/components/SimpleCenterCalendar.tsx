@@ -421,19 +421,8 @@ const SimpleCenterCalendar = () => {
     const centerEmployees = getEmployeesForCenter(center.id);
     const centerBookings = getBookingsForDate(center.id);
     
-    // Debug: Log center bookings
-    console.log(`Rendering calendar for ${center.name}:`, {
-      centerId: center.id,
-      centerBookings: centerBookings.length,
-      bookingDetails: centerBookings.map(b => ({
-        client: `${b.profiles?.first_name} ${b.profiles?.last_name}`,
-        datetime: b.booking_datetime,
-        center_id: b.center_id
-      }))
-    });
-    
     return (
-      <div className="space-y-4">
+      <div className="h-full flex flex-col space-y-4">
         {/* Stats for this center - Responsive */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
           <Card className="p-2 sm:p-3">
@@ -507,89 +496,87 @@ const SimpleCenterCalendar = () => {
           </Button>
         </div>
 
-        {/* Calendar Grid - Responsive */}
-        <Card className="w-full">
-          <CardContent className="p-0">
-            <div className="bg-background border-b p-2 sm:p-4">
-              <h3 className="font-semibold text-sm sm:text-lg">
-                Agenda del {format(selectedDate, "d MMM", { locale: es })}
-              </h3>
-            </div>
-            
-            <div className="overflow-hidden">
-              <ScrollArea className="h-[60vh] sm:h-[70vh] w-full">
-                <div className="min-w-full">
-                  {/* Header */}
-                  <div className="sticky top-0 z-10 bg-background border-b">
-                    <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-0">
-                      <div className="p-2 text-center font-medium border-r bg-muted/50 text-xs sm:text-sm">
-                        Hora
-                      </div>
-                      <div className="p-2 text-center font-medium bg-muted/50">
-                        <span className="text-xs sm:text-sm font-semibold">Reservas del día</span>
-                      </div>
+        {/* Calendar Grid - takes full height */}
+        <div className="flex-1 min-h-0">
+          <div className="bg-background border-b p-2 sm:p-3">
+            <h3 className="font-semibold text-sm sm:text-base">
+              Agenda del {format(selectedDate, "d MMM", { locale: es })}
+            </h3>
+          </div>
+          
+          <div className="overflow-hidden h-[calc(100%-60px)]">
+            <ScrollArea className="h-full w-full">
+              <div className="min-w-full">
+                {/* Header */}
+                <div className="sticky top-0 z-10 bg-background border-b">
+                  <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-0">
+                    <div className="p-2 text-center font-medium border-r bg-muted/50 text-xs sm:text-sm">
+                      Hora
+                    </div>
+                    <div className="p-2 text-center font-medium bg-muted/50">
+                      <span className="text-xs sm:text-sm font-semibold">Reservas del día</span>
                     </div>
                   </div>
-
-                  {/* Time slots */}
-                  <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-0">
-                    {timeSlots.map((timeSlot, timeIndex) => {
-                      const booking = getBookingForTimeAndEmployee(center.id, timeSlot, selectedEmployeeId === 'all' ? undefined : selectedEmployeeId);
-                      const isFirstSlotOfBooking = booking && 
-                        format(timeSlot, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
-
-                      return (
-                        <React.Fragment key={timeIndex}>
-                          {/* Time label */}
-                          <div className="p-1 sm:p-2 text-center text-xs sm:text-sm border-r border-b bg-muted/30 font-medium min-h-[50px] sm:min-h-[64px] flex items-center justify-center">
-                            {format(timeSlot, 'HH:mm')}
-                          </div>
-
-                          {/* Booking slot */}
-                          <div className="relative border-b min-h-[50px] sm:min-h-[64px] hover:bg-muted/20 transition-colors">
-                            {booking && isFirstSlotOfBooking && (
-                              <div
-                                className={cn(
-                                  "absolute inset-1 rounded border-l-4 p-1 sm:p-2 cursor-pointer transition-all hover:shadow-md w-[calc(100%-8px)]",
-                                  getStatusColor(booking.status)
-                                )}
-                                style={{
-                                  height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 50 - 4}px`,
-                                  minHeight: '46px'
-                                }}
-                                onClick={() => handleBookingClick(booking)}
-                              >
-                                <div className="text-xs sm:text-sm font-semibold truncate">
-                                  {booking.profiles?.first_name} {booking.profiles?.last_name}
-                                </div>
-                                <div className="text-xs text-muted-foreground truncate hidden sm:block">
-                                  {booking.services?.name}
-                                </div>
-                                <div className="flex items-center gap-1 sm:gap-2 mt-1">
-                                  <Badge variant="secondary" className="text-xs px-1 py-0">
-                                    {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
-                                  </Badge>
-                                  {booking.employee_id && (
-                                    <div className="text-xs text-muted-foreground truncate hidden sm:block">
-                                      {employees.find(e => e.id === booking.employee_id)?.profiles?.first_name}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="text-xs text-primary font-medium mt-1">
-                                  Click para gestionar
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </React.Fragment>
-                      );
-                    })}
-                  </div>
                 </div>
-              </ScrollArea>
-            </div>
-          </CardContent>
-        </Card>
+
+                {/* Time slots */}
+                <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-0">
+                  {timeSlots.map((timeSlot, timeIndex) => {
+                    const booking = getBookingForTimeAndEmployee(center.id, timeSlot, selectedEmployeeId === 'all' ? undefined : selectedEmployeeId);
+                    const isFirstSlotOfBooking = booking && 
+                      format(timeSlot, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
+
+                    return (
+                      <React.Fragment key={timeIndex}>
+                        {/* Time label */}
+                        <div className="p-1 sm:p-2 text-center text-xs sm:text-sm border-r border-b bg-muted/30 font-medium min-h-[50px] sm:min-h-[64px] flex items-center justify-center">
+                          {format(timeSlot, 'HH:mm')}
+                        </div>
+
+                        {/* Booking slot */}
+                        <div className="relative border-b min-h-[50px] sm:min-h-[64px] hover:bg-muted/20 transition-colors">
+                          {booking && isFirstSlotOfBooking && (
+                            <div
+                              className={cn(
+                                "absolute inset-1 rounded border-l-4 p-1 sm:p-2 cursor-pointer transition-all hover:shadow-md w-[calc(100%-8px)]",
+                                getStatusColor(booking.status)
+                              )}
+                              style={{
+                                height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 50 - 4}px`,
+                                minHeight: '46px'
+                              }}
+                              onClick={() => handleBookingClick(booking)}
+                            >
+                              <div className="text-xs sm:text-sm font-semibold truncate">
+                                {booking.profiles?.first_name} {booking.profiles?.last_name}
+                              </div>
+                              <div className="text-xs text-muted-foreground truncate hidden sm:block">
+                                {booking.services?.name}
+                              </div>
+                              <div className="flex items-center gap-1 sm:gap-2 mt-1">
+                                <Badge variant="secondary" className="text-xs px-1 py-0">
+                                  {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
+                                </Badge>
+                                {booking.employee_id && (
+                                  <div className="text-xs text-muted-foreground truncate hidden sm:block">
+                                    {employees.find(e => e.id === booking.employee_id)?.profiles?.first_name}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-xs text-primary font-medium mt-1">
+                                Click para gestionar
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
       </div>
     );
   };
@@ -604,27 +591,27 @@ const SimpleCenterCalendar = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4 lg:p-6">
-      {/* Header with date navigation - Responsive */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2 sm:gap-4">
-          <div className="flex items-center gap-1 sm:gap-2">
-            <Button variant="outline" size="sm" onClick={goToPreviousDay}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={goToNextDay}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="text-lg sm:text-2xl font-bold text-foreground">
-            {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
+    <div className="h-screen overflow-hidden bg-background">
+      {/* Fixed Header - compact and always visible */}
+      <div className="sticky top-0 z-50 bg-background border-b p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="sm" onClick={goToPreviousDay}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={goToNextDay}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="text-base sm:text-xl font-bold text-foreground">
+              {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Calendars by Center - Responsive */}
-      <div className="space-y-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Center Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-3">
           <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-auto gap-1">
             {centers.map((center) => (
               <TabsTrigger key={center.id} value={center.id} className="text-xs sm:text-sm py-2">
@@ -632,24 +619,19 @@ const SimpleCenterCalendar = () => {
               </TabsTrigger>
             ))}
           </TabsList>
+        </Tabs>
+      </div>
 
-        {centers.map((center) => (
-          <TabsContent key={center.id} value={center.id} className="mt-4 sm:mt-6">
-            <Card className="w-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
-                  {center.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 sm:p-6 sm:pt-0">
-                {renderCenterCalendar(center)}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
+      {/* Calendar Content - takes remaining height */}
+      <div className="h-[calc(100vh-140px)] overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+          {centers.map((center) => (
+            <TabsContent key={center.id} value={center.id} className="h-full m-0 p-3 sm:p-4">
+              {renderCenterCalendar(center)}
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
 
     {/* New Booking Modal */}
     <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
@@ -658,7 +640,7 @@ const SimpleCenterCalendar = () => {
           <DialogHeader className="px-4 pt-4 pb-2 border-b">
             <DialogTitle>Nueva Reserva</DialogTitle>
             <DialogDescription>
-              Crear una nueva reserva para {format(selectedDate, "d 'de' MMMM", { locale: es })}
+              Crear una nueva reserva para el {format(selectedDate, "d 'de' MMMM", { locale: es })} a las 10:00
             </DialogDescription>
           </DialogHeader>
           
@@ -670,7 +652,7 @@ const SimpleCenterCalendar = () => {
                   id="clientName"
                   value={newBookingForm.clientName}
                   onChange={(e) => setNewBookingForm({...newBookingForm, clientName: e.target.value})}
-                  placeholder="Nombre completo"
+                  placeholder="Buscar por nombre, email o teléfono..."
                 />
               </div>
               <div>
@@ -697,7 +679,7 @@ const SimpleCenterCalendar = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="service">Servicio</Label>
+                <Label htmlFor="service">Servicio *</Label>
                 <Select value={newBookingForm.serviceId} onValueChange={(value) => setNewBookingForm({...newBookingForm, serviceId: value})}>
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="Seleccionar servicio" />
@@ -717,7 +699,7 @@ const SimpleCenterCalendar = () => {
                 <Label htmlFor="time">Hora</Label>
                 <Select value={newBookingForm.time} onValueChange={(value) => setNewBookingForm({...newBookingForm, time: value})}>
                   <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Hora" />
+                    <SelectValue placeholder="10:00" />
                   </SelectTrigger>
                   <SelectContent>
                     {timeOptions.map((opt) => (
@@ -756,6 +738,42 @@ const SimpleCenterCalendar = () => {
                 placeholder="Notas adicionales..."
                 rows={4}
               />
+            </div>
+
+            <div className="p-4 bg-muted rounded">
+              <h4 className="font-semibold mb-2">Canjear código (opcional)</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="redeemCode">Código</Label>
+                  <Input
+                    id="redeemCode"
+                    placeholder="ABCD1234"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="redeemAmount">Importe (€) solo si es tarjeta</Label>
+                  <div className="flex items-center">
+                    <Input
+                      id="redeemAmount"
+                      placeholder="Ej. 50.00"
+                      className="flex-1"
+                    />
+                    <Input
+                      type="checkbox"
+                      className="ml-2 w-4 h-4"
+                    />
+                    <Label className="ml-1 text-sm">Canjear al crear</Label>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-2">
+                <Label htmlFor="redeemNotes">Notas de canje</Label>
+                <Textarea
+                  id="redeemNotes"
+                  placeholder="Observaciones del canje"
+                  rows={2}
+                />
+              </div>
             </div>
           </div>
 
@@ -877,6 +895,10 @@ const SimpleCenterCalendar = () => {
 
             {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => setShowPaymentModal(true)} className="flex items-center">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Cobrar Cita
+              </Button>
               <Button 
                 variant="outline" 
                 onClick={() => {
@@ -884,39 +906,22 @@ const SimpleCenterCalendar = () => {
                   setNewBookingTime(format(parseISO(selectedBooking.booking_datetime), 'HH:mm'));
                   setShowRescheduleModal(true);
                 }}
+                className="flex items-center"
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 Reagendar
               </Button>
-              <Button 
-                variant="default"
-                onClick={() => {
-                  setPaymentMethod('');
-                  setPaymentNotes('');
-                  setShowPaymentModal(true);
-                }}
-                disabled={selectedBooking.payment_status === 'paid'}
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Cobrar Cita
-              </Button>
-            </div>
-
-            <div className="flex gap-2 pt-4 border-t">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowEditBookingModal(false)} 
-                className="flex-1"
-              >
+              <Button variant="outline" onClick={() => setShowEditBookingModal(false)}>
+                <Edit className="h-4 w-4 mr-2" />
                 Cerrar
               </Button>
               <Button 
                 variant="destructive" 
-                onClick={() => deleteBooking(selectedBooking.id)} 
-                className="flex-1"
+                onClick={() => deleteBooking(selectedBooking.id)}
+                className="flex items-center"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Borrar Cita
+                Borrar
               </Button>
             </div>
           </div>
@@ -926,7 +931,7 @@ const SimpleCenterCalendar = () => {
 
     {/* Payment Modal */}
     <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-      <DialogContent className="max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Cobrar Cita</DialogTitle>
           <DialogDescription>
@@ -942,18 +947,17 @@ const SimpleCenterCalendar = () => {
                 <SelectValue placeholder="Seleccionar forma de pago" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="efectivo">💵 Efectivo</SelectItem>
+                <SelectItem value="efectivo">💰 Efectivo</SelectItem>
                 <SelectItem value="tarjeta">💳 Tarjeta</SelectItem>
+                <SelectItem value="online">🌐 Online</SelectItem>
                 <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
                 <SelectItem value="bizum">📱 Bizum</SelectItem>
-                <SelectItem value="online">🌐 Online</SelectItem>
-                <SelectItem value="voucher">🎟️ Voucher</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="paymentNotes">Notas de Pago (opcional)</Label>
+            <Label htmlFor="paymentNotes">Notas del Pago (opcional)</Label>
             <Textarea
               id="paymentNotes"
               value={paymentNotes}
@@ -967,9 +971,9 @@ const SimpleCenterCalendar = () => {
             <Button variant="outline" onClick={() => setShowPaymentModal(false)} className="flex-1">
               Cancelar
             </Button>
-            <Button onClick={processPayment} disabled={!paymentMethod} className="flex-1">
+            <Button onClick={processPayment} className="flex-1">
               <DollarSign className="h-4 w-4 mr-2" />
-              Confirmar Pago
+              Registrar Pago
             </Button>
           </div>
         </div>
@@ -978,11 +982,11 @@ const SimpleCenterCalendar = () => {
 
     {/* Reschedule Modal */}
     <Dialog open={showRescheduleModal} onOpenChange={setShowRescheduleModal}>
-      <DialogContent className="max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Reagendar Cita</DialogTitle>
           <DialogDescription>
-            Seleccionar nueva fecha y hora
+            Seleccionar nueva fecha y hora para la reserva
           </DialogDescription>
         </DialogHeader>
         
@@ -1017,7 +1021,7 @@ const SimpleCenterCalendar = () => {
             <Button variant="outline" onClick={() => setShowRescheduleModal(false)} className="flex-1">
               Cancelar
             </Button>
-            <Button onClick={rescheduleBooking} disabled={!newBookingTime} className="flex-1">
+            <Button onClick={rescheduleBooking} className="flex-1">
               <Calendar className="h-4 w-4 mr-2" />
               Reagendar
             </Button>
@@ -1025,7 +1029,7 @@ const SimpleCenterCalendar = () => {
         </div>
       </DialogContent>
     </Dialog>
-    </div>
+  </div>
   );
 };
 
