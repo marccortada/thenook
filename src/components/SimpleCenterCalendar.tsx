@@ -61,7 +61,7 @@ const SimpleCenterCalendar = () => {
   const { bookings, loading: bookingsLoading, refetch: refetchBookings } = useBookings();
   const { centers } = useCenters();
   const { employees } = useEmployees();
-  const { services: allServices } = useServices(); // Load all services
+  const { services: allServices } = useServices();
 
   // Set initial tab when centers load
   useEffect(() => {
@@ -247,14 +247,7 @@ const SimpleCenterCalendar = () => {
 
       setShowNewBookingModal(false);
       
-      // Immediate refresh multiple times to ensure data consistency
       await refetchBookings();
-      setTimeout(async () => {
-        await refetchBookings();
-      }, 500);
-      setTimeout(async () => {
-        await refetchBookings();
-      }, 1000);
     } catch (error) {
       console.error('Error creating booking:', error);
       toast({
@@ -633,73 +626,50 @@ const SimpleCenterCalendar = () => {
         </Tabs>
       </div>
 
-    {/* New Booking Modal */}
-    <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
-      <DialogContent className="w-[98vw] sm:max-w-lg md:max-w-xl p-0">
-        <div className="flex flex-col min-h-[70vh] max-h-[95vh]">
-          <DialogHeader className="px-4 pt-4 pb-2 border-b">
+      {/* New Booking Modal */}
+      <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
+        <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
             <DialogTitle>Nueva Reserva</DialogTitle>
             <DialogDescription>
-              Crear una nueva reserva para el {format(selectedDate, "d 'de' MMMM", { locale: es })} a las 10:00
+              Crear una nueva reserva para el {format(selectedDate, "d 'de' MMMM", { locale: es })}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="px-4 py-3 overflow-auto flex-1 space-y-4 pb-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="clientName">Nombre del Cliente</Label>
-                <Input
-                  id="clientName"
-                  value={newBookingForm.clientName}
-                  onChange={(e) => setNewBookingForm({...newBookingForm, clientName: e.target.value})}
-                  placeholder="Buscar por nombre, email o teléfono..."
-                />
-              </div>
-              <div>
-                <Label htmlFor="clientPhone">Teléfono</Label>
-                <Input
-                  id="clientPhone"
-                  value={newBookingForm.clientPhone}
-                  onChange={(e) => setNewBookingForm({...newBookingForm, clientPhone: e.target.value})}
-                  placeholder="+34 600 000 000"
-                />
-              </div>
-            </div>
-            
+          <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="clientEmail">Email</Label>
+              <Label htmlFor="clientName">Buscar Cliente</Label>
               <Input
-                id="clientEmail"
-                type="email"
-                value={newBookingForm.clientEmail}
-                onChange={(e) => setNewBookingForm({...newBookingForm, clientEmail: e.target.value})}
-                placeholder="cliente@email.com"
+                id="clientName"
+                value={newBookingForm.clientName}
+                onChange={(e) => setNewBookingForm({...newBookingForm, clientName: e.target.value})}
+                placeholder="Buscar por nombre, email o teléfono..."
               />
             </div>
-
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="service">Servicio *</Label>
                 <Select value={newBookingForm.serviceId} onValueChange={(value) => setNewBookingForm({...newBookingForm, serviceId: value})}>
-                  <SelectTrigger className="h-11">
+                  <SelectTrigger>
                     <SelectValue placeholder="Seleccionar servicio" />
                   </SelectTrigger>
-                   <SelectContent>
-                     {allServices && allServices
-                       .filter(service => service.center_id === activeTab || !service.center_id)
-                       .map((service) => (
-                       <SelectItem key={service.id} value={service.id}>
-                          {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)}
-                       </SelectItem>
-                     ))}
+                  <SelectContent>
+                    {allServices && allServices
+                      .filter(service => service.center_id === activeTab || !service.center_id)
+                      .map((service) => (
+                      <SelectItem key={service.id} value={service.id}>
+                         {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="time">Hora</Label>
                 <Select value={newBookingForm.time} onValueChange={(value) => setNewBookingForm({...newBookingForm, time: value})}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="10:00" />
+                  <SelectTrigger>
+                    <SelectValue placeholder="10:30" />
                   </SelectTrigger>
                   <SelectContent>
                     {timeOptions.map((opt) => (
@@ -713,72 +683,28 @@ const SimpleCenterCalendar = () => {
             </div>
 
             <div>
-              <Label htmlFor="employee">Especialista</Label>
-              <Select value={newBookingForm.employeeId} onValueChange={(value) => setNewBookingForm({...newBookingForm, employeeId: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar especialista" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="auto">Asignar automáticamente</SelectItem>
-                  {getEmployeesForCenter(activeTab).map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.profiles?.first_name} {employee.profiles?.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
               <Label htmlFor="notes">Notas (opcional)</Label>
               <Textarea
                 id="notes"
                 value={newBookingForm.notes}
                 onChange={(e) => setNewBookingForm({...newBookingForm, notes: e.target.value})}
                 placeholder="Notas adicionales..."
-                rows={4}
+                rows={3}
               />
             </div>
 
-            <div className="p-4 bg-muted rounded">
+            <div className="p-3 bg-muted rounded">
               <h4 className="font-semibold mb-2">Canjear código (opcional)</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="redeemCode">Código</Label>
-                  <Input
-                    id="redeemCode"
-                    placeholder="ABCD1234"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="redeemAmount">Importe (€) solo si es tarjeta</Label>
-                  <div className="flex items-center">
-                    <Input
-                      id="redeemAmount"
-                      placeholder="Ej. 50.00"
-                      className="flex-1"
-                    />
-                    <Input
-                      type="checkbox"
-                      className="ml-2 w-4 h-4"
-                    />
-                    <Label className="ml-1 text-sm">Canjear al crear</Label>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-2">
-                <Label htmlFor="redeemNotes">Notas de canje</Label>
-                <Textarea
-                  id="redeemNotes"
-                  placeholder="Observaciones del canje"
-                  rows={2}
+              <div>
+                <Label htmlFor="redeemCode">Código</Label>
+                <Input
+                  id="redeemCode"
+                  placeholder="ABCD1234"
                 />
               </div>
             </div>
-          </div>
 
-          <div className="mt-auto px-4 py-3 border-t bg-background">
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-4">
               <Button variant="outline" onClick={() => setShowNewBookingModal(false)} className="flex-1">
                 Cancelar
               </Button>
@@ -788,248 +714,247 @@ const SimpleCenterCalendar = () => {
               </Button>
             </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
 
-    {/* Edit Booking Modal */}
-    <Dialog open={showEditBookingModal} onOpenChange={setShowEditBookingModal}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Gestionar Reserva</DialogTitle>
-          <DialogDescription>
-            Gestión completa de la reserva seleccionada
-          </DialogDescription>
-        </DialogHeader>
-        
-        {selectedBooking && (
-          <div className="space-y-6">
-            {/* Booking Info */}
-            <div className="p-4 bg-muted rounded-lg">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="font-semibold text-lg">
-                    {selectedBooking.profiles?.first_name} {selectedBooking.profiles?.last_name}
+      {/* Edit Booking Modal */}
+      <Dialog open={showEditBookingModal} onOpenChange={setShowEditBookingModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Gestionar Reserva</DialogTitle>
+            <DialogDescription>
+              Gestión completa de la reserva seleccionada
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedBooking && (
+            <div className="space-y-6">
+              {/* Booking Info */}
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="font-semibold text-lg">
+                      {selectedBooking.profiles?.first_name} {selectedBooking.profiles?.last_name}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {selectedBooking.profiles?.email}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {selectedBooking.profiles?.phone}
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {selectedBooking.profiles?.email}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {selectedBooking.profiles?.phone}
+                  <div className="text-right">
+                    <div className="text-lg font-semibold">
+                      {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format((selectedBooking.total_price_cents || 0) / 100)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {selectedBooking.services?.name}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-semibold">
-                    {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format((selectedBooking.total_price_cents || 0) / 100)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {selectedBooking.services?.name}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
-                  </div>
+                <div className="flex gap-2 mt-3">
+                  <Badge className={cn(getStatusColor(selectedBooking.status))}>
+                    Estado: {selectedBooking.status}
+                  </Badge>
+                  <Badge variant={selectedBooking.payment_status === 'paid' ? 'default' : 'secondary'}>
+                    Pago: {selectedBooking.payment_status}
+                  </Badge>
+                  {selectedBooking.payment_method && (
+                    <Badge variant="outline">
+                      {selectedBooking.payment_method}
+                    </Badge>
+                  )}
                 </div>
               </div>
-              <div className="flex gap-2 mt-3">
-                <Badge className={cn(getStatusColor(selectedBooking.status))}>
-                  Estado: {selectedBooking.status}
-                </Badge>
-                <Badge variant={selectedBooking.payment_status === 'paid' ? 'default' : 'secondary'}>
-                  Pago: {selectedBooking.payment_status}
-                </Badge>
-                {selectedBooking.payment_method && (
-                  <Badge variant="outline">
-                    {selectedBooking.payment_method}
-                  </Badge>
-                )}
+
+              {/* Status Management */}
+              <div>
+                <Label htmlFor="editStatus">Cambiar Estado</Label>
+                <Select 
+                  defaultValue={selectedBooking.status} 
+                  onValueChange={(value: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'requested' | 'new' | 'online') => updateBookingStatus(selectedBooking.id, value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">🆕 Nueva</SelectItem>
+                    <SelectItem value="requested">📋 Solicitada</SelectItem>
+                    <SelectItem value="confirmed">✅ Confirmada</SelectItem>
+                    <SelectItem value="pending">⏳ Pendiente</SelectItem>
+                    <SelectItem value="online">🌐 Online</SelectItem>
+                    <SelectItem value="completed">✔️ Completada</SelectItem>
+                    <SelectItem value="cancelled">❌ Cancelada</SelectItem>
+                    <SelectItem value="no_show">❌ No Show</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Employee Assignment */}
+              <div>
+                <Label htmlFor="editEmployee">Cambiar Especialista</Label>
+                <Select 
+                  defaultValue={selectedBooking.employee_id || "none"} 
+                  onValueChange={(value) => {
+                    if (value !== "none") {
+                      updateBookingEmployee(selectedBooking.id, value);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar especialista" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin especialista asignado</SelectItem>
+                    {employees.filter(emp => emp.center_id === selectedBooking.center_id).map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.profiles?.first_name} {employee.profiles?.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button onClick={() => setShowPaymentModal(true)} className="flex items-center">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Cobrar Cita
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setNewBookingDate(parseISO(selectedBooking.booking_datetime));
+                    setNewBookingTime(format(parseISO(selectedBooking.booking_datetime), 'HH:mm'));
+                    setShowRescheduleModal(true);
+                  }}
+                  className="flex items-center"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Reagendar
+                </Button>
+                <Button variant="outline" onClick={() => setShowEditBookingModal(false)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Cerrar
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => deleteBooking(selectedBooking.id)}
+                  className="flex items-center"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Borrar
+                </Button>
               </div>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-            {/* Status Management */}
+      {/* Payment Modal */}
+      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cobrar Cita</DialogTitle>
+            <DialogDescription>
+              Registrar el pago de la reserva
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="editStatus">Cambiar Estado</Label>
-              <Select 
-                defaultValue={selectedBooking.status} 
-                onValueChange={(value: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'requested' | 'new' | 'online') => updateBookingStatus(selectedBooking.id, value)}
-              >
+              <Label htmlFor="paymentMethod">Forma de Pago</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar estado" />
+                  <SelectValue placeholder="Seleccionar forma de pago" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="new">🆕 Nueva</SelectItem>
-                  <SelectItem value="requested">📋 Solicitada</SelectItem>
-                  <SelectItem value="confirmed">✅ Confirmada</SelectItem>
-                  <SelectItem value="pending">⏳ Pendiente</SelectItem>
+                  <SelectItem value="efectivo">💰 Efectivo</SelectItem>
+                  <SelectItem value="tarjeta">💳 Tarjeta</SelectItem>
                   <SelectItem value="online">🌐 Online</SelectItem>
-                  <SelectItem value="completed">✔️ Completada</SelectItem>
-                  <SelectItem value="cancelled">❌ Cancelada</SelectItem>
-                  <SelectItem value="no_show">❌ No Show</SelectItem>
+                  <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
+                  <SelectItem value="bizum">📱 Bizum</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Employee Assignment */}
             <div>
-              <Label htmlFor="editEmployee">Cambiar Especialista</Label>
-              <Select 
-                defaultValue={selectedBooking.employee_id || "none"} 
-                onValueChange={(value) => {
-                  if (value !== "none") {
-                    updateBookingEmployee(selectedBooking.id, value);
-                  }
-                }}
-              >
+              <Label htmlFor="paymentNotes">Notas del Pago (opcional)</Label>
+              <Textarea
+                id="paymentNotes"
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+                placeholder="Notas adicionales sobre el pago..."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowPaymentModal(false)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button onClick={processPayment} className="flex-1">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Registrar Pago
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reschedule Modal */}
+      <Dialog open={showRescheduleModal} onOpenChange={setShowRescheduleModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reagendar Cita</DialogTitle>
+            <DialogDescription>
+              Seleccionar nueva fecha y hora para la reserva
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newDate">Nueva Fecha</Label>
+              <Input
+                id="newDate"
+                type="date"
+                value={format(newBookingDate, 'yyyy-MM-dd')}
+                onChange={(e) => setNewBookingDate(new Date(e.target.value))}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="newTime">Nueva Hora</Label>
+              <Select value={newBookingTime} onValueChange={setNewBookingTime}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar especialista" />
+                  <SelectValue placeholder="Seleccionar hora" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Sin especialista asignado</SelectItem>
-                  {employees.filter(emp => emp.center_id === selectedBooking.center_id).map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.profiles?.first_name} {employee.profiles?.last_name}
+                  {timeOptions.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => setShowPaymentModal(true)} className="flex items-center">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Cobrar Cita
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowRescheduleModal(false)} className="flex-1">
+                Cancelar
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setNewBookingDate(parseISO(selectedBooking.booking_datetime));
-                  setNewBookingTime(format(parseISO(selectedBooking.booking_datetime), 'HH:mm'));
-                  setShowRescheduleModal(true);
-                }}
-                className="flex items-center"
-              >
+              <Button onClick={rescheduleBooking} className="flex-1">
                 <Calendar className="h-4 w-4 mr-2" />
                 Reagendar
               </Button>
-              <Button variant="outline" onClick={() => setShowEditBookingModal(false)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Cerrar
-              </Button>
-              <Button 
-                variant="destructive" 
-                onClick={() => deleteBooking(selectedBooking.id)}
-                className="flex items-center"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Borrar
-              </Button>
             </div>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
-
-    {/* Payment Modal */}
-    <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Cobrar Cita</DialogTitle>
-          <DialogDescription>
-            Registrar el pago de la reserva
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="paymentMethod">Forma de Pago</Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar forma de pago" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="efectivo">💰 Efectivo</SelectItem>
-                <SelectItem value="tarjeta">💳 Tarjeta</SelectItem>
-                <SelectItem value="online">🌐 Online</SelectItem>
-                <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
-                <SelectItem value="bizum">📱 Bizum</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="paymentNotes">Notas del Pago (opcional)</Label>
-            <Textarea
-              id="paymentNotes"
-              value={paymentNotes}
-              onChange={(e) => setPaymentNotes(e.target.value)}
-              placeholder="Notas adicionales sobre el pago..."
-              rows={3}
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowPaymentModal(false)} className="flex-1">
-              Cancelar
-            </Button>
-            <Button onClick={processPayment} className="flex-1">
-              <DollarSign className="h-4 w-4 mr-2" />
-              Registrar Pago
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-
-    {/* Reschedule Modal */}
-    <Dialog open={showRescheduleModal} onOpenChange={setShowRescheduleModal}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Reagendar Cita</DialogTitle>
-          <DialogDescription>
-            Seleccionar nueva fecha y hora para la reserva
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="newDate">Nueva Fecha</Label>
-            <Input
-              id="newDate"
-              type="date"
-              value={format(newBookingDate, 'yyyy-MM-dd')}
-              onChange={(e) => setNewBookingDate(new Date(e.target.value))}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="newTime">Nueva Hora</Label>
-            <Select value={newBookingTime} onValueChange={setNewBookingTime}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar hora" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeOptions.map((opt) => (
-                  <SelectItem key={opt} value={opt}>
-                    {opt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowRescheduleModal(false)} className="flex-1">
-              Cancelar
-            </Button>
-            <Button onClick={rescheduleBooking} className="flex-1">
-              <Calendar className="h-4 w-4 mr-2" />
-              Reagendar
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 
