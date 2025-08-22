@@ -115,13 +115,46 @@ export const useAdvancedAnalytics = () => {
   };
 
   const getPreviousDateRange = (period: PeriodType) => {
-    const current = getDateRange(period);
-    const duration = current.end.getTime() - current.start.getTime();
+    const now = new Date();
     
-    return {
-      start: new Date(current.start.getTime() - duration),
-      end: new Date(current.end.getTime() - duration)
-    };
+    switch (period) {
+      case 'today':
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        return {
+          start: new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()),
+          end: new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59)
+        };
+      case 'week':
+        const lastWeekStart = new Date(now);
+        lastWeekStart.setDate(now.getDate() - now.getDay() - 7);
+        const lastWeekEnd = new Date(lastWeekStart);
+        lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+        lastWeekEnd.setHours(23, 59, 59);
+        return { start: lastWeekStart, end: lastWeekEnd };
+      case 'month':
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        return { start: lastMonth, end: lastMonthEnd };
+      case 'quarter':
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        const lastQuarter = currentQuarter === 0 ? 3 : currentQuarter - 1;
+        const lastQuarterYear = currentQuarter === 0 ? now.getFullYear() - 1 : now.getFullYear();
+        const lastQuarterStart = new Date(lastQuarterYear, lastQuarter * 3, 1);
+        const lastQuarterEnd = new Date(lastQuarterYear, lastQuarter * 3 + 3, 0, 23, 59, 59);
+        return { start: lastQuarterStart, end: lastQuarterEnd };
+      case 'year':
+        const lastYear = new Date(now.getFullYear() - 1, 0, 1);
+        const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+        return { start: lastYear, end: lastYearEnd };
+      default:
+        const current = getDateRange(period);
+        const duration = current.end.getTime() - current.start.getTime();
+        return {
+          start: new Date(current.start.getTime() - duration),
+          end: new Date(current.end.getTime() - duration)
+        };
+    }
   };
 
   const calculateKPIMetrics = async (startDate: Date, endDate: Date): Promise<KPIMetrics> => {

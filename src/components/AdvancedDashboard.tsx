@@ -20,6 +20,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { useAdvancedAnalytics } from "@/hooks/useAdvancedAnalytics";
+import { PeriodComparisonChart } from "@/components/PeriodComparisonChart";
 import { cn } from "@/lib/utils";
 
 type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year';
@@ -247,12 +248,58 @@ const AdvancedDashboard = () => {
         </TabsList>
 
         <TabsContent value="trends" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-3">
+            {/* Period Comparison Chart */}
+            <div className="lg:col-span-2">
+              {periodComparison && (
+                <PeriodComparisonChart
+                  title="Comparación de Períodos"
+                  periodLabel={{
+                    current: `${selectedPeriod === 'today' ? 'Hoy' : 
+                             selectedPeriod === 'week' ? 'Esta semana' :
+                             selectedPeriod === 'month' ? 'Este mes' :
+                             selectedPeriod === 'quarter' ? 'Este trimestre' : 'Este año'}`,
+                    previous: `${selectedPeriod === 'today' ? 'Ayer' : 
+                              selectedPeriod === 'week' ? 'Semana anterior' :
+                              selectedPeriod === 'month' ? 'Mes anterior' :
+                              selectedPeriod === 'quarter' ? 'Trimestre anterior' : 'Año anterior'}`
+                  }}
+                  data={[
+                    {
+                      label: 'Reservas Totales',
+                      current: periodComparison.current.totalBookings,
+                      previous: periodComparison.previous.totalBookings,
+                      format: 'number'
+                    },
+                    {
+                      label: 'Ingresos Totales',
+                      current: periodComparison.current.totalRevenue,
+                      previous: periodComparison.previous.totalRevenue,
+                      format: 'currency'
+                    },
+                    {
+                      label: 'Ticket Medio',
+                      current: periodComparison.current.averageTicket,
+                      previous: periodComparison.previous.averageTicket,
+                      format: 'currency'
+                    },
+                    {
+                      label: 'Nuevos Clientes',
+                      current: periodComparison.current.newClients,
+                      previous: periodComparison.previous.newClients,
+                      format: 'number'
+                    }
+                  ]}
+                />
+              )}
+            </div>
+
+            {/* Daily Evolution */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
-                  Evolución Diaria - Últimos 7 días
+                  Últimos 7 días
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -285,42 +332,48 @@ const AdvancedDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Resumen del Período
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {kpiMetrics?.totalBookings || 0}
-                    </div>
-                    <div className="text-sm text-blue-600">Total Reservas</div>
-                  </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(kpiMetrics?.totalRevenue || 0)}
-                    </div>
-                    <div className="text-sm text-green-600">Ingresos</div>
-                  </div>
-                  <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {kpiMetrics?.newClients || 0}
-                    </div>
-                    <div className="text-sm text-purple-600">Nuevos Clientes</div>
-                  </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">
-                      {formatPercentage(kpiMetrics?.attendanceRate || 0)}
-                    </div>
-                    <div className="text-sm text-orange-600">Asistencia</div>
-                  </div>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="text-center p-4 bg-blue-50">
+              <div className="text-2xl font-bold text-blue-600">
+                {kpiMetrics?.totalBookings || 0}
+              </div>
+              <div className="text-sm text-blue-600">Total Reservas</div>
+              {periodComparison && (
+                <div className="text-xs text-blue-500 mt-1">
+                  {periodComparison.growth.totalBookings >= 0 ? '+' : ''}{periodComparison.growth.totalBookings.toFixed(1)}% vs anterior
                 </div>
-              </CardContent>
+              )}
+            </Card>
+            <Card className="text-center p-4 bg-green-50">
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(kpiMetrics?.totalRevenue || 0)}
+              </div>
+              <div className="text-sm text-green-600">Ingresos</div>
+              {periodComparison && (
+                <div className="text-xs text-green-500 mt-1">
+                  {periodComparison.growth.totalRevenue >= 0 ? '+' : ''}{periodComparison.growth.totalRevenue.toFixed(1)}% vs anterior
+                </div>
+              )}
+            </Card>
+            <Card className="text-center p-4 bg-purple-50">
+              <div className="text-2xl font-bold text-purple-600">
+                {kpiMetrics?.newClients || 0}
+              </div>
+              <div className="text-sm text-purple-600">Nuevos Clientes</div>
+            </Card>
+            <Card className="text-center p-4 bg-orange-50">
+              <div className="text-2xl font-bold text-orange-600">
+                {formatPercentage(kpiMetrics?.attendanceRate || 0)}
+              </div>
+              <div className="text-sm text-orange-600">Asistencia</div>
+              {periodComparison && (
+                <div className="text-xs text-orange-500 mt-1">
+                  {periodComparison.growth.attendanceRate >= 0 ? '+' : ''}{periodComparison.growth.attendanceRate.toFixed(1)}% vs anterior
+                </div>
+              )}
             </Card>
           </div>
         </TabsContent>
