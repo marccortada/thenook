@@ -112,7 +112,7 @@ const NotificationAutomation = () => {
   const getTriggerTypeLabel = (type: string) => {
     const labels = {
       booking_reminder: 'Recordatorio de Cita',
-      package_expiry: 'Vencimiento de Paquete',
+      // package_expiry: eliminado - los bonos no caducan
       appointment_confirmation: 'Confirmación de Cita',
       birthday: 'Cumpleaños',
       no_show_follow_up: 'Seguimiento No Show'
@@ -175,7 +175,7 @@ const NotificationAutomation = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="booking_reminder">Recordatorio de Cita</SelectItem>
-                    <SelectItem value="package_expiry">Vencimiento de Paquete</SelectItem>
+                    {/* Opción eliminada - los bonos no caducan */}
                     <SelectItem value="appointment_confirmation">Confirmación de Cita</SelectItem>
                     <SelectItem value="birthday">Cumpleaños</SelectItem>
                     <SelectItem value="no_show_follow_up">Seguimiento No Show</SelectItem>
@@ -183,7 +183,7 @@ const NotificationAutomation = () => {
                 </Select>
               </div>
 
-              {(ruleForm.trigger_type === 'booking_reminder' || ruleForm.trigger_type === 'package_expiry') && (
+              {(ruleForm.trigger_type === 'booking_reminder') && (
                 <div className="grid gap-2">
                   <Label htmlFor="days_before">Días de Anticipación</Label>
                   <Input

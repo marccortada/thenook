@@ -87,7 +87,7 @@ const PackageManagement = () => {
     const packageData = {
       client_id: createClientId,
       package_id: selectedPackageId,
-      expiry_date: (formData.get('expiry_date') as string) || undefined,
+      // expiry_date eliminado - los bonos no caducan
       purchase_price_cents: selectedPkg?.price_cents ?? 0,
       total_sessions: selectedPkg?.sessions_count ?? 1,
       notes: (formData.get('notes') as string) || undefined,
@@ -237,14 +237,7 @@ const PackageManagement = () => {
                     </p>
                   )}
                 </div>
-                <div>
-                  <Label htmlFor="expiry_date">Fecha de Vencimiento (opcional)</Label>
-                  <Input 
-                    id="expiry_date" 
-                    name="expiry_date" 
-                    type="datetime-local"
-                  />
-                </div>
+                {/* Campo de fecha de vencimiento eliminado - los bonos no caducan */}
                 <div>
                   <Label htmlFor="notes">Notas (opcional)</Label>
                   <Textarea 
@@ -424,12 +417,7 @@ const PackageManagement = () => {
                         </div>
                         
                         <div>
-                          <div className="flex items-center space-x-2">
-                            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">
-                              Vence: {format(new Date(pkg.expiry_date), 'PPP', { locale: es })}
-                            </span>
-                          </div>
+                          {/* Información de fecha de vencimiento eliminada - los bonos no caducan */}
                           <div className="flex items-center space-x-2 mt-1">
                             <Euro className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm font-medium">
@@ -603,12 +591,7 @@ const PackageManagement = () => {
                         </div>
                         
                         <div>
-                          <div className="flex items-center space-x-2">
-                            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">
-                              Vence: {format(new Date(pkg.expiry_date), 'PPP', { locale: es })}
-                            </span>
-                          </div>
+                          {/* Información de fecha de vencimiento eliminada - los bonos no caducan */}
                           <div className="flex items-center space-x-2 mt-1">
                             <Euro className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm font-medium">

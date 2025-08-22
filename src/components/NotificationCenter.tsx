@@ -43,7 +43,7 @@ const NotificationCenter = () => {
   const triggerTypes = [
     { value: 'booking_reminder', label: 'Recordatorio de Reserva' },
     { value: 'birthday', label: 'Cumpleaños' },
-    { value: 'package_expiry', label: 'Expiración de Bono' },
+    // { value: 'package_expiry', label: 'Expiración de Bono' }, // Eliminado - los bonos no caducan
     { value: 'appointment_confirmation', label: 'Confirmación de Cita' },
     { value: 'no_show_follow_up', label: 'Seguimiento No Show' },
   ];

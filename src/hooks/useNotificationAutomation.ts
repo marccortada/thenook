@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface NotificationRule {
   id: string;
   name: string;
-  trigger_type: 'booking_reminder' | 'package_expiry' | 'appointment_confirmation' | 'birthday' | 'no_show_follow_up';
+  trigger_type: 'booking_reminder' | 'appointment_confirmation' | 'birthday' | 'no_show_follow_up'; // package_expiry eliminado
   trigger_days_before?: number;
   is_active: boolean;
   message_template: string;

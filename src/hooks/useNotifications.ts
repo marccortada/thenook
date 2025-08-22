@@ -61,7 +61,7 @@ export const useNotifications = () => {
           profiles!inner(first_name, last_name)
         `)
         .eq('status', 'active')
-        .lte('expiry_date', weekFromNow.toISOString())
+        // .lte('expiry_date', weekFromNow.toISOString()) // Eliminado - los bonos no caducan
         .gt('used_sessions', 0);
 
       if (expiringPackages && expiringPackages.length > 0) {

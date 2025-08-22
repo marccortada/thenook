@@ -465,7 +465,6 @@ export type Database = {
         Row: {
           client_id: string
           created_at: string
-          expiry_date: string | null
           id: string
           notes: string | null
           package_id: string
@@ -480,7 +479,6 @@ export type Database = {
         Insert: {
           client_id: string
           created_at?: string
-          expiry_date?: string | null
           id?: string
           notes?: string | null
           package_id: string
@@ -495,7 +493,6 @@ export type Database = {
         Update: {
           client_id?: string
           created_at?: string
-          expiry_date?: string | null
           id?: string
           notes?: string | null
           package_id?: string
@@ -2255,10 +2252,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      create_package_expiry_notifications: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       generate_po_number: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -2363,20 +2356,6 @@ export type Database = {
           name: string
           updated_at: string
           usage_count: number
-        }[]
-      }
-      get_expiring_packages: {
-        Args: { days_ahead?: number }
-        Returns: {
-          client_email: string
-          client_id: string
-          client_name: string
-          days_to_expiry: number
-          expiry_date: string
-          id: string
-          package_name: string
-          remaining_sessions: number
-          voucher_code: string
         }[]
       }
       get_inventory_movements_with_details: {

@@ -7,7 +7,7 @@ export interface ClientPackage {
   client_id: string;
   package_id: string;
   purchase_date: string;
-  expiry_date: string;
+  // expiry_date eliminado - los bonos no caducan
   purchase_price_cents: number;
   total_sessions: number;
   used_sessions: number;
@@ -33,6 +33,7 @@ export interface ClientPackage {
   };
 }
 
+// Interface mantenido para compatibilidad pero ya no se usa (bonos no caducan)
 export interface ExpiringPackage {
   id: string;
   client_id: string;
@@ -99,7 +100,7 @@ export const useClientPackages = (clientId?: string) => {
   const createPackage = async (packageData: {
     client_id: string;
     package_id: string;
-    expiry_date?: string; // opcional
+    // expiry_date eliminado - los bonos no caducan
     purchase_price_cents: number;
     total_sessions: number;
     notes?: string;
@@ -111,12 +112,11 @@ export const useClientPackages = (clientId?: string) => {
 
       if (voucherError) throw voucherError;
 
-      // Preparar datos, omitiendo expiry_date si no se proporciona
+      // Datos de creación del paquete (expiry_date eliminado - los bonos no caducan)
       const insertData: any = {
         ...packageData,
         voucher_code: voucherData,
       };
-      if (!packageData.expiry_date) delete insertData.expiry_date;
 
       const { data, error } = await supabase
         .from('client_packages')
@@ -178,7 +178,7 @@ export const useClientPackages = (clientId?: string) => {
       } else {
         toast({
           title: "Error",
-          description: "No se pudo usar la sesión del bono (puede estar expirado o agotado)",
+          description: "No se pudo usar la sesión del bono (puede estar agotado)",
           variant: "destructive",
         });
         return false;
@@ -262,43 +262,22 @@ export const useClientPackages = (clientId?: string) => {
   };
 };
 
+// Hook para obtener bonos próximos a vencer - DESHABILITADO (los bonos no caducan)
 export const useExpiringPackages = (daysAhead: number = 7) => {
   const [expiringPackages, setExpiringPackages] = useState<ExpiringPackage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
-  const fetchExpiringPackages = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
-        .rpc('get_expiring_packages', { days_ahead: daysAhead });
-
-      if (fetchError) throw fetchError;
-
-      setExpiringPackages(data || []);
-    } catch (error) {
-      console.error('Error fetching expiring packages:', error);
-      setError('Error al cargar bonos próximos a vencer');
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los bonos próximos a vencer",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const refetch = () => {
+    // Los bonos no caducan, devolver array vacío
+    setLoading(false);
+    setExpiringPackages([]);
+    setError(null);
   };
 
   useEffect(() => {
-    fetchExpiringPackages();
+    refetch();
   }, [daysAhead]);
-
-  const refetch = () => {
-    fetchExpiringPackages();
-  };
 
   return {
     expiringPackages,
@@ -332,8 +311,8 @@ export const useAvailablePackages = (clientId: string) => {
         .eq('client_id', clientId)
         .eq('status', 'active')
         .filter('used_sessions', 'lt', 'total_sessions')
-        .gt('expiry_date', new Date().toISOString())
-        .order('expiry_date', { ascending: true });
+        // expiry_date eliminado - los bonos no caducan
+        .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
 
