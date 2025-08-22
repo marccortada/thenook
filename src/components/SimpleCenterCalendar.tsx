@@ -18,7 +18,10 @@ import {
   Edit,
   Trash2,
   Save,
-  Ban
+  Ban,
+  CreditCard,
+  Calendar,
+  DollarSign
 } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -36,6 +39,12 @@ const SimpleCenterCalendar = () => {
   const [showEditBookingModal, setShowEditBookingModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<string>('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [newBookingDate, setNewBookingDate] = useState(new Date());
+  const [newBookingTime, setNewBookingTime] = useState('');
   
   // Form states
   const [newBookingForm, setNewBookingForm] = useState({
@@ -139,6 +148,10 @@ const SimpleCenterCalendar = () => {
       case 'pending': return 'bg-yellow-100 border-yellow-500 text-yellow-700';
       case 'cancelled': return 'bg-red-100 border-red-500 text-red-700';
       case 'completed': return 'bg-blue-100 border-blue-500 text-blue-700';
+      case 'requested': return 'bg-purple-100 border-purple-500 text-purple-700';
+      case 'new': return 'bg-orange-100 border-orange-500 text-orange-700';
+      case 'online': return 'bg-cyan-100 border-cyan-500 text-cyan-700';
+      case 'no_show': return 'bg-gray-100 border-gray-500 text-gray-700';
       default: return 'bg-gray-100 border-gray-500 text-gray-700';
     }
   };
@@ -279,28 +292,125 @@ const SimpleCenterCalendar = () => {
     }
   };
 
-  // Cancel booking
-  const cancelBooking = async (bookingId: string) => {
+  // Update booking status
+  const updateBookingStatus = async (bookingId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'requested' | 'new' | 'online') => {
     try {
       const { error } = await supabase
         .from('bookings')
-        .update({ status: 'cancelled' })
+        .update({ status })
         .eq('id', bookingId);
 
       if (error) throw error;
 
       toast({
-        title: "✅ Reserva Cancelada",
-        description: "La reserva ha sido cancelada exitosamente.",
+        title: "✅ Estado Actualizado",
+        description: `Estado de la reserva actualizado a ${status}.`,
       });
 
       refetchBookings();
       setShowEditBookingModal(false);
     } catch (error) {
-      console.error('Error cancelling booking:', error);
+      console.error('Error updating booking status:', error);
       toast({
         title: "Error",
-        description: "No se pudo cancelar la reserva.",
+        description: "No se pudo actualizar el estado.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Process payment
+  const processPayment = async () => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          payment_status: 'paid',
+          payment_method: paymentMethod,
+          payment_notes: paymentNotes
+        })
+        .eq('id', selectedBooking.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Pago Registrado",
+        description: `Pago procesado exitosamente con ${paymentMethod}.`,
+      });
+
+      refetchBookings();
+      setShowPaymentModal(false);
+      setShowEditBookingModal(false);
+      setPaymentMethod('');
+      setPaymentNotes('');
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo procesar el pago.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete booking completely
+  const deleteBooking = async (bookingId: string) => {
+    if (!confirm('¿Estás seguro de que quieres borrar completamente esta reserva? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Reserva Borrada",
+        description: "La reserva ha sido borrada completamente.",
+      });
+
+      refetchBookings();
+      setShowEditBookingModal(false);
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo borrar la reserva.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Reschedule booking
+  const rescheduleBooking = async () => {
+    try {
+      const bookingDate = new Date(newBookingDate);
+      const [hours, minutes] = newBookingTime.split(':');
+      bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+      const { error } = await supabase
+        .from('bookings')
+        .update({ booking_datetime: bookingDate.toISOString() })
+        .eq('id', selectedBooking.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Reserva Reagendada",
+        description: `Reserva reagendada para ${format(bookingDate, "d 'de' MMMM 'a las' HH:mm", { locale: es })}.`,
+      });
+
+      refetchBookings();
+      setShowRescheduleModal(false);
+      setShowEditBookingModal(false);
+    } catch (error) {
+      console.error('Error rescheduling booking:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo reagendar la reserva.",
         variant: "destructive",
       });
     }
@@ -381,8 +491,12 @@ const SimpleCenterCalendar = () => {
               <SelectItem value="all">Todos los estados</SelectItem>
               <SelectItem value="confirmed">✅ Confirmadas</SelectItem>
               <SelectItem value="pending">⏳ Pendientes</SelectItem>
+              <SelectItem value="requested">📋 Solicitadas</SelectItem>
+              <SelectItem value="new">🆕 Nuevas</SelectItem>
+              <SelectItem value="online">🌐 Online</SelectItem>
               <SelectItem value="cancelled">❌ Canceladas</SelectItem>
               <SelectItem value="completed">✔️ Completadas</SelectItem>
+              <SelectItem value="no_show">❌ No Show</SelectItem>
             </SelectContent>
           </Select>
           
@@ -645,31 +759,81 @@ const SimpleCenterCalendar = () => {
 
     {/* Edit Booking Modal */}
     <Dialog open={showEditBookingModal} onOpenChange={setShowEditBookingModal}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Editar Reserva</DialogTitle>
+          <DialogTitle>Gestionar Reserva</DialogTitle>
           <DialogDescription>
-            Gestionar la reserva seleccionada
+            Gestión completa de la reserva seleccionada
           </DialogDescription>
         </DialogHeader>
         
         {selectedBooking && (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Booking Info */}
             <div className="p-4 bg-muted rounded-lg">
-              <div className="font-semibold text-lg">
-                {selectedBooking.profiles?.first_name} {selectedBooking.profiles?.last_name}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="font-semibold text-lg">
+                    {selectedBooking.profiles?.first_name} {selectedBooking.profiles?.last_name}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {selectedBooking.profiles?.email}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {selectedBooking.profiles?.phone}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-semibold">
+                    {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format((selectedBooking.total_price_cents || 0) / 100)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {selectedBooking.services?.name}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+                  </div>
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground">
-                {selectedBooking.services?.name}
+              <div className="flex gap-2 mt-3">
+                <Badge className={cn(getStatusColor(selectedBooking.status))}>
+                  Estado: {selectedBooking.status}
+                </Badge>
+                <Badge variant={selectedBooking.payment_status === 'paid' ? 'default' : 'secondary'}>
+                  Pago: {selectedBooking.payment_status}
+                </Badge>
+                {selectedBooking.payment_method && (
+                  <Badge variant="outline">
+                    {selectedBooking.payment_method}
+                  </Badge>
+                )}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
-              </div>
-              <Badge className={cn("mt-2", getStatusColor(selectedBooking.status))}>
-                {selectedBooking.status}
-              </Badge>
             </div>
 
+            {/* Status Management */}
+            <div>
+              <Label htmlFor="editStatus">Cambiar Estado</Label>
+              <Select 
+                defaultValue={selectedBooking.status} 
+                onValueChange={(value: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'requested' | 'new' | 'online') => updateBookingStatus(selectedBooking.id, value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">🆕 Nueva</SelectItem>
+                  <SelectItem value="requested">📋 Solicitada</SelectItem>
+                  <SelectItem value="confirmed">✅ Confirmada</SelectItem>
+                  <SelectItem value="pending">⏳ Pendiente</SelectItem>
+                  <SelectItem value="online">🌐 Online</SelectItem>
+                  <SelectItem value="completed">✔️ Completada</SelectItem>
+                  <SelectItem value="cancelled">❌ Cancelada</SelectItem>
+                  <SelectItem value="no_show">❌ No Show</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Employee Assignment */}
             <div>
               <Label htmlFor="editEmployee">Cambiar Especialista</Label>
               <Select 
@@ -694,7 +858,34 @@ const SimpleCenterCalendar = () => {
               </Select>
             </div>
 
-            <div className="flex gap-2">
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setNewBookingDate(parseISO(selectedBooking.booking_datetime));
+                  setNewBookingTime(format(parseISO(selectedBooking.booking_datetime), 'HH:mm'));
+                  setShowRescheduleModal(true);
+                }}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Reagendar
+              </Button>
+              <Button 
+                variant="default"
+                onClick={() => {
+                  setPaymentMethod('');
+                  setPaymentNotes('');
+                  setShowPaymentModal(true);
+                }}
+                disabled={selectedBooking.payment_status === 'paid'}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Cobrar Cita
+              </Button>
+            </div>
+
+            <div className="flex gap-2 pt-4 border-t">
               <Button 
                 variant="outline" 
                 onClick={() => setShowEditBookingModal(false)} 
@@ -704,15 +895,117 @@ const SimpleCenterCalendar = () => {
               </Button>
               <Button 
                 variant="destructive" 
-                onClick={() => cancelBooking(selectedBooking.id)} 
+                onClick={() => deleteBooking(selectedBooking.id)} 
                 className="flex-1"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Cancelar Reserva
+                Borrar Cita
               </Button>
             </div>
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+
+    {/* Payment Modal */}
+    <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Cobrar Cita</DialogTitle>
+          <DialogDescription>
+            Registrar el pago de la reserva
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="paymentMethod">Forma de Pago</Label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar forma de pago" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="efectivo">💵 Efectivo</SelectItem>
+                <SelectItem value="tarjeta">💳 Tarjeta</SelectItem>
+                <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
+                <SelectItem value="bizum">📱 Bizum</SelectItem>
+                <SelectItem value="online">🌐 Online</SelectItem>
+                <SelectItem value="voucher">🎟️ Voucher</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="paymentNotes">Notas de Pago (opcional)</Label>
+            <Textarea
+              id="paymentNotes"
+              value={paymentNotes}
+              onChange={(e) => setPaymentNotes(e.target.value)}
+              placeholder="Notas adicionales sobre el pago..."
+              rows={3}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowPaymentModal(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button onClick={processPayment} disabled={!paymentMethod} className="flex-1">
+              <DollarSign className="h-4 w-4 mr-2" />
+              Confirmar Pago
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Reschedule Modal */}
+    <Dialog open={showRescheduleModal} onOpenChange={setShowRescheduleModal}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Reagendar Cita</DialogTitle>
+          <DialogDescription>
+            Seleccionar nueva fecha y hora
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="newDate">Nueva Fecha</Label>
+            <Input
+              id="newDate"
+              type="date"
+              value={format(newBookingDate, 'yyyy-MM-dd')}
+              onChange={(e) => setNewBookingDate(new Date(e.target.value))}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="newTime">Nueva Hora</Label>
+            <Select value={newBookingTime} onValueChange={setNewBookingTime}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar hora" />
+              </SelectTrigger>
+              <SelectContent>
+                {timeOptions.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowRescheduleModal(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button onClick={rescheduleBooking} disabled={!newBookingTime} className="flex-1">
+              <Calendar className="h-4 w-4 mr-2" />
+              Reagendar
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
     </div>

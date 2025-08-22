@@ -143,6 +143,8 @@ export type Database = {
           id: string
           lane_id: string | null
           notes: string | null
+          payment_method: string | null
+          payment_notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"] | null
           service_id: string | null
           status: Database["public"]["Enums"]["booking_status"] | null
@@ -161,6 +163,8 @@ export type Database = {
           id?: string
           lane_id?: string | null
           notes?: string | null
+          payment_method?: string | null
+          payment_notes?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           service_id?: string | null
           status?: Database["public"]["Enums"]["booking_status"] | null
@@ -179,6 +183,8 @@ export type Database = {
           id?: string
           lane_id?: string | null
           notes?: string | null
+          payment_method?: string | null
+          payment_notes?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           service_id?: string | null
           status?: Database["public"]["Enums"]["booking_status"] | null
@@ -2463,6 +2469,9 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
+        | "requested"
+        | "new"
+        | "online"
       payment_status:
         | "pending"
         | "paid"
@@ -2605,6 +2614,9 @@ export const Constants = {
         "completed",
         "cancelled",
         "no_show",
+        "requested",
+        "new",
+        "online",
       ],
       payment_status: [
         "pending",

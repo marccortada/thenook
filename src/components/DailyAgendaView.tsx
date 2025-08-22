@@ -38,7 +38,7 @@ interface BookingSlot {
   serviceName: string;
   startTime: Date;
   endTime: Date;
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
+  status: 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'requested' | 'new' | 'online' | 'no_show';
   price: number;
   employeeId: string;
   laneId: string;
@@ -154,6 +154,10 @@ const DailyAgendaView = () => {
       case 'pending': return 'bg-yellow-500/20 border-yellow-500 text-yellow-700';
       case 'cancelled': return 'bg-red-500/20 border-red-500 text-red-700';
       case 'completed': return 'bg-blue-500/20 border-blue-500 text-blue-700';
+      case 'requested': return 'bg-purple-500/20 border-purple-500 text-purple-700';
+      case 'new': return 'bg-orange-500/20 border-orange-500 text-orange-700';
+      case 'online': return 'bg-cyan-500/20 border-cyan-500 text-cyan-700';
+      case 'no_show': return 'bg-gray-500/20 border-gray-500 text-gray-700';
       default: return 'bg-gray-500/20 border-gray-500 text-gray-700';
     }
   };
