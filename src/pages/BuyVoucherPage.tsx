@@ -243,7 +243,7 @@ export default function BuyVoucherPage() {
                   </div>
                   {mode === 'gift' && (
                     <div>
-                      <h3 className="font-medium mb-2">Beneficiario</h3>
+                      <h3 className="font-medium mb-2">Destinatario</h3>
                       <Label>Nombre</Label>
                       <Input value={recipient.name} onChange={(e) => setRecipient({ ...recipient, name: e.target.value })} className="mb-2" />
                       <Label>Email</Label>
