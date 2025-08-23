@@ -628,87 +628,102 @@ const SimpleCenterCalendar = () => {
 
       {/* New Booking Modal */}
       <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
-        <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Nueva Reserva</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-[100vw] h-[100vh] max-w-none max-h-none m-0 rounded-none border-0 flex flex-col bg-background">
+          <DialogHeader className="flex-shrink-0 p-4 border-b bg-background sticky top-0 z-10">
+            <DialogTitle className="text-xl font-semibold">Nueva Reserva</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
               Crear una nueva reserva para el {format(selectedDate, "d 'de' MMMM", { locale: es })}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="clientName">Buscar Cliente</Label>
-              <Input
-                id="clientName"
-                value={newBookingForm.clientName}
-                onChange={(e) => setNewBookingForm({...newBookingForm, clientName: e.target.value})}
-                placeholder="Buscar por nombre, email o teléfono..."
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="service">Servicio *</Label>
-                <Select value={newBookingForm.serviceId} onValueChange={(value) => setNewBookingForm({...newBookingForm, serviceId: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar servicio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allServices && allServices
-                      .filter(service => service.center_id === activeTab || !service.center_id)
-                      .map((service) => (
-                      <SelectItem key={service.id} value={service.id}>
-                         {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="time">Hora</Label>
-                <Select value={newBookingForm.time} onValueChange={(value) => setNewBookingForm({...newBookingForm, time: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="10:30" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeOptions.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="notes">Notas (opcional)</Label>
-              <Textarea
-                id="notes"
-                value={newBookingForm.notes}
-                onChange={(e) => setNewBookingForm({...newBookingForm, notes: e.target.value})}
-                placeholder="Notas adicionales..."
-                rows={3}
-              />
-            </div>
-
-            <div className="p-3 bg-muted rounded">
-              <h4 className="font-semibold mb-2">Canjear código (opcional)</h4>
-              <div>
-                <Label htmlFor="redeemCode">Código</Label>
+          <ScrollArea className="flex-1 overflow-auto">
+            <div className="p-4 max-w-lg mx-auto space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="clientName" className="text-sm font-medium">Buscar Cliente</Label>
                 <Input
-                  id="redeemCode"
-                  placeholder="ABCD1234"
+                  id="clientName"
+                  value={newBookingForm.clientName}
+                  onChange={(e) => setNewBookingForm({...newBookingForm, clientName: e.target.value})}
+                  placeholder="Buscar por nombre, email o teléfono..."
+                  className="w-full"
                 />
               </div>
-            </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="service" className="text-sm font-medium">Servicio *</Label>
+                  <Select value={newBookingForm.serviceId} onValueChange={(value) => setNewBookingForm({...newBookingForm, serviceId: value})}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Seleccionar servicio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allServices && allServices
+                        .filter(service => service.center_id === activeTab || !service.center_id)
+                        .map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                           {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="time" className="text-sm font-medium">Hora</Label>
+                  <Select value={newBookingForm.time} onValueChange={(value) => setNewBookingForm({...newBookingForm, time: value})}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="10:30" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeOptions.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-            <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowNewBookingModal(false)} className="flex-1">
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="text-sm font-medium">Notas (opcional)</Label>
+                <Textarea
+                  id="notes"
+                  value={newBookingForm.notes}
+                  onChange={(e) => setNewBookingForm({...newBookingForm, notes: e.target.value})}
+                  placeholder="Notas adicionales..."
+                  rows={3}
+                  className="w-full resize-none"
+                />
+              </div>
+
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3 text-sm">Canjear código (opcional)</h4>
+                <div className="space-y-2">
+                  <Label htmlFor="redeemCode" className="text-sm font-medium">Código</Label>
+                  <Input
+                    id="redeemCode"
+                    placeholder="ABCD1234"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+
+          <div className="flex-shrink-0 p-4 border-t bg-background sticky bottom-0">
+            <div className="flex gap-3 max-w-lg mx-auto">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowNewBookingModal(false)} 
+                className="flex-1 h-12"
+              >
                 Cancelar
               </Button>
-              <Button onClick={createBooking} className="flex-1">
+              <Button 
+                onClick={createBooking} 
+                className="flex-1 h-12"
+                disabled={!newBookingForm.serviceId || !newBookingForm.time}
+              >
                 <Save className="h-4 w-4 mr-2" />
                 Crear Reserva
               </Button>
