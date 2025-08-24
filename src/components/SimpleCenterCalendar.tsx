@@ -628,7 +628,7 @@ const SimpleCenterCalendar = () => {
 
       {/* New Booking Modal */}
       <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
-        <DialogContent className="w-[100vw] h-[100vh] max-w-none max-h-none m-0 rounded-none border-0 flex flex-col bg-background">
+        <DialogContent className="max-w-md sm:max-w-lg mx-auto my-4 max-h-[85vh] overflow-hidden rounded-lg border flex flex-col bg-background">
           <DialogHeader className="flex-shrink-0 p-4 border-b bg-background sticky top-0 z-10">
             <DialogTitle className="text-xl font-semibold">Nueva Reserva</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
