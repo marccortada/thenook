@@ -21,7 +21,9 @@ import {
   Mail,
   Save,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Ban,
+  Trash2
 } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -31,6 +33,8 @@ import { useClients } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ClientSelector from '@/components/ClientSelector';
+import { useLaneBlocks } from '@/hooks/useLaneBlocks';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 
 interface TimeSlot {
   time: Date;
@@ -51,11 +55,17 @@ interface BookingFormData {
 
 const AdvancedCalendarView = () => {
   const { toast } = useToast();
+  const { isAdmin, isEmployee } = useSimpleAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [selectedCenter, setSelectedCenter] = useState<string>('');
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
+  
+  // Lane blocking state
+  const [blockingMode, setBlockingMode] = useState(false);
+  const [blockStartSlot, setBlockStartSlot] = useState<{ laneId: string; timeSlot: Date } | null>(null);
+  const [blockEndSlot, setBlockEndSlot] = useState<{ laneId: string; timeSlot: Date } | null>(null);
 
   const [createClientId, setCreateClientId] = useState<string | null>(null);
 
@@ -95,6 +105,7 @@ const AdvancedCalendarView = () => {
   const { lanes } = useLanes();
   const { services } = useServices();
   const { updateClient } = useClients();
+  const { laneBlocks, createLaneBlock, deleteLaneBlock, isLaneBlocked } = useLaneBlocks();
 
   // Set initial center when centers load
   useEffect(() => {
@@ -174,8 +185,40 @@ const AdvancedCalendarView = () => {
     });
   };
 
+  // Calculate availability for a time slot considering both bookings and blocks
+  const getSlotAvailability = (centerId: string, date: Date, timeSlot: Date) => {
+    const centerLanes = getCenterLanes(centerId);
+    const totalLanes = centerLanes.length;
+    
+    // Count booked lanes for this time slot
+    const bookedLanes = centerLanes.filter(lane => 
+      getBookingForSlot(centerId, lane.id, date, timeSlot)
+    ).length;
+    
+    // Count blocked lanes for this time slot
+    const blockedLanes = centerLanes.filter(lane => 
+      isLaneBlocked(lane.id, timeSlot)
+    ).length;
+    
+    const availableLanes = totalLanes - bookedLanes - blockedLanes;
+    
+    return {
+      total: totalLanes,
+      booked: bookedLanes,
+      blocked: blockedLanes,
+      available: Math.max(0, availableLanes),
+      isFullyBooked: availableLanes <= 0
+    };
+  };
+
   // Handle slot click
   const handleSlotClick = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
+    // Si estamos en modo bloqueo
+    if (blockingMode) {
+      handleBlockingSlotClick(laneId, timeSlot);
+      return;
+    }
+
     const existingBooking = getBookingForSlot(centerId, laneId, date, timeSlot);
     
     if (existingBooking) {
@@ -206,6 +249,31 @@ const AdvancedCalendarView = () => {
     setShowBookingModal(true);
   };
 
+  // Handle blocking mode slot clicks
+  const handleBlockingSlotClick = (laneId: string, timeSlot: Date) => {
+    if (!blockStartSlot) {
+      setBlockStartSlot({ laneId, timeSlot });
+    } else if (blockStartSlot.laneId === laneId) {
+      // Same lane, set end slot and create block
+      const startTime = blockStartSlot.timeSlot < timeSlot ? blockStartSlot.timeSlot : timeSlot;
+      const endTime = blockStartSlot.timeSlot < timeSlot ? timeSlot : blockStartSlot.timeSlot;
+      
+      // Add 30 minutes to end time to make it a proper time range
+      const blockEndTime = new Date(endTime);
+      blockEndTime.setMinutes(blockEndTime.getMinutes() + 30);
+      
+      createLaneBlock(selectedCenter, laneId, startTime, blockEndTime, 'Bloqueo manual');
+      
+      // Reset blocking mode
+      setBlockingMode(false);
+      setBlockStartSlot(null);
+      setBlockEndSlot(null);
+    } else {
+      // Different lane, reset and start new selection
+      setBlockStartSlot({ laneId, timeSlot });
+    }
+  };
+
   // Create booking
   const createBooking = async () => {
     try {
@@ -215,6 +283,17 @@ const AdvancedCalendarView = () => {
       }
       if (!createClientId && !bookingForm.clientEmail) {
         toast({ title: 'Error', description: 'Selecciona un cliente o introduce email', variant: 'destructive' });
+        return;
+      }
+
+      // Check availability before creating booking
+      const availability = getSlotAvailability(bookingForm.centerId, bookingForm.date, bookingForm.timeSlot);
+      if (availability.isFullyBooked) {
+        toast({ 
+          title: 'No disponible', 
+          description: 'No hay carriles disponibles en esta hora. Selecciona otra hora.', 
+          variant: 'destructive' 
+        });
         return;
       }
 
@@ -402,6 +481,12 @@ const AdvancedCalendarView = () => {
 
   const goToToday = () => setSelectedDate(new Date());
 
+  // Handle unblock lane
+  const handleUnblockLane = async (blockId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    await deleteLaneBlock(blockId);
+  };
+
   // Render day view
   const renderDayView = () => {
     if (!selectedCenter) return null;
@@ -412,13 +497,34 @@ const AdvancedCalendarView = () => {
     return (
       <Card className="w-full rounded-none border-0 sm:rounded-md sm:border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Calendario - {centerName}
-            <Badge variant="secondary" className="ml-2">
-              {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
-            </Badge>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Calendario - {centerName}
+              <Badge variant="secondary" className="ml-2">
+                {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
+              </Badge>
+            </div>
+            {(isAdmin || isEmployee) && (
+              <Button
+                variant={blockingMode ? "destructive" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setBlockingMode(!blockingMode);
+                  setBlockStartSlot(null);
+                  setBlockEndSlot(null);
+                }}
+              >
+                <Ban className="w-4 h-4 mr-2" />
+                {blockingMode ? 'Cancelar Bloqueo' : 'Bloquear Carriles'}
+              </Button>
+            )}
           </CardTitle>
+          {blockingMode && (
+            <div className="text-sm text-muted-foreground">
+              Haz clic en una franja horaria para empezar a bloquear, luego haz clic en otra para definir el rango.
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[60vh] md:h-[70vh]">
@@ -446,20 +552,21 @@ const AdvancedCalendarView = () => {
                     {timeSlot.hour}
                   </div>
 
-                  {/* Lane slots */}
-                  {centerLanes.map((lane) => {
-                    let booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, timeSlot.time);
-                    if (!booking && lane.id === centerLanes[0].id) {
-                      const fallback = bookings.find(b => {
-                        if (!b.booking_datetime || b.center_id !== selectedCenter || b.lane_id) return false;
-                        const start = parseISO(b.booking_datetime);
-                        const end = addMinutes(start, b.duration_minutes || 60);
-                        const sameDay = isSameDay(start, selectedDate);
-                        return sameDay && timeSlot.time >= start && timeSlot.time < end;
-                      });
-                      if (fallback) booking = fallback;
-                    }
-                    const isFirstSlotOfBooking = booking && 
+                   {/* Lane slots */}
+                   {centerLanes.map((lane) => {
+                     let booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, timeSlot.time);
+                     if (!booking && lane.id === centerLanes[0].id) {
+                       const fallback = bookings.find(b => {
+                         if (!b.booking_datetime || b.center_id !== selectedCenter || b.lane_id) return false;
+                         const start = parseISO(b.booking_datetime);
+                         const end = addMinutes(start, b.duration_minutes || 60);
+                         const sameDay = isSameDay(start, selectedDate);
+                         return sameDay && timeSlot.time >= start && timeSlot.time < end;
+                       });
+                       if (fallback) booking = fallback;
+                     }
+                     const isBlocked = isLaneBlocked(lane.id, timeSlot.time);
+                     const isFirstSlotOfBooking = booking &&
                       format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
                     return (
@@ -500,11 +607,38 @@ const AdvancedCalendarView = () => {
                             </div>
                           </div>
                         )}
-                        {!booking && (
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                            <Plus className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
+                         {isBlocked && !booking && (
+                           <div className="absolute inset-1 rounded bg-red-500/20 border border-red-500/50 flex items-center justify-center">
+                             <div className="flex items-center gap-1">
+                               <Ban className="h-4 w-4 text-red-600" />
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 className="h-6 w-6 p-0 hover:bg-red-600 hover:text-white"
+                                 onClick={(e) => handleUnblockLane(isBlocked.id, e)}
+                               >
+                                 <Trash2 className="h-3 w-3" />
+                               </Button>
+                             </div>
+                           </div>
+                         )}
+                         {!booking && !isBlocked && (
+                           <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                             <Plus className="h-4 w-4 text-muted-foreground" />
+                           </div>
+                         )}
+                         {blockingMode && !booking && !isBlocked && (
+                           <div className={cn(
+                             "absolute inset-1 rounded border-2 border-dashed transition-all",
+                             blockStartSlot?.laneId === lane.id && blockStartSlot?.timeSlot.getTime() === timeSlot.time.getTime() 
+                               ? "border-blue-500 bg-blue-500/10" 
+                               : "border-blue-300 hover:border-blue-500 hover:bg-blue-500/5"
+                           )}>
+                             <div className="absolute inset-0 flex items-center justify-center">
+                               <Ban className="h-4 w-4 text-blue-600" />
+                             </div>
+                           </div>
+                         )}
                       </div>
                     );
                   })}
