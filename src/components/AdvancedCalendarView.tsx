@@ -496,13 +496,13 @@ const AdvancedCalendarView = () => {
 
     return (
       <Card className="w-full rounded-none border-0 sm:rounded-md sm:border">
-        <CardHeader>
+        <CardHeader className="p-3">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Calendario - {centerName}
-              <Badge variant="secondary" className="ml-2">
-                {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm">{centerName}</span>
+              <Badge variant="secondary" className="ml-2 text-xs">
+                {format(selectedDate, "d MMM", { locale: es })}
               </Badge>
             </div>
             {(isAdmin || isEmployee) && (
@@ -515,31 +515,31 @@ const AdvancedCalendarView = () => {
                   setBlockEndSlot(null);
                 }}
               >
-                <Ban className="w-4 h-4 mr-2" />
-                {blockingMode ? 'Cancelar Bloqueo' : 'Bloquear Carriles'}
+                <Ban className="w-3 h-3 mr-1" />
+                {blockingMode ? 'Cancelar' : 'Bloquear'}
               </Button>
             )}
           </CardTitle>
           {blockingMode && (
-            <div className="text-sm text-muted-foreground">
-              Haz clic en una franja horaria para empezar a bloquear, luego haz clic en otra para definir el rango.
+            <div className="text-xs text-muted-foreground">
+              Haz clic en una franja para empezar, luego en otra para definir el rango.
             </div>
           )}
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="h-[70vh] md:h-[80vh]">
-            <div className="grid grid-cols-[60px_repeat(4,1fr)] gap-0 min-w-[800px]">
+          <ScrollArea className="h-[85vh]">
+            <div className="grid grid-cols-[50px_repeat(4,1fr)] gap-0 min-w-[600px]">
               {/* Header */}
               <div className="sticky top-0 z-10 bg-background border-b">
-                <div className="p-2 text-center font-medium border-r bg-muted/50 text-xs">
+                <div className="p-1 text-center font-medium border-r bg-muted/50 text-xs">
                   Hora
                 </div>
               </div>
               {centerLanes.map((lane) => (
                 <div key={lane.id} className="sticky top-0 z-10 bg-background border-b">
-                  <div className="p-2 text-center font-medium border-r bg-muted/50">
+                  <div className="p-1 text-center font-medium border-r bg-muted/50">
                     <div className="font-semibold text-xs">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
-                    <div className="text-[10px] text-muted-foreground">Cap: {lane.capacity}</div>
+                    <div className="text-[9px] text-muted-foreground">Cap: {lane.capacity}</div>
                   </div>
                 </div>
               ))}
@@ -548,7 +548,7 @@ const AdvancedCalendarView = () => {
               {timeSlots.map((timeSlot, timeIndex) => (
                 <React.Fragment key={timeIndex}>
                   {/* Time label */}
-                  <div className="p-1 text-center text-xs border-r border-b bg-muted/30 font-medium h-8 flex items-center justify-center">
+                  <div className="p-0.5 text-center text-[10px] border-r border-b bg-muted/30 font-medium h-6 flex items-center justify-center">
                     {timeSlot.hour}
                   </div>
 
@@ -570,11 +570,11 @@ const AdvancedCalendarView = () => {
                       format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
                      return (
-                       <div
-                         key={lane.id}
-                         className="relative h-8 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
-                         onClick={() => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time)}
-                       >
+                        <div
+                          key={lane.id}
+                          className="relative h-6 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
+                          onClick={() => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time)}
+                        >
                         {booking && isFirstSlotOfBooking && (
                           <div
                              className={cn(
