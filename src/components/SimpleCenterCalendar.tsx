@@ -34,6 +34,11 @@ import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 const SimpleCenterCalendar = () => {
   const { toast } = useToast();
   const { user, isAdmin, isEmployee } = useSimpleAuth();
+  
+  // Debug logs
+  console.log('SimpleCenterCalendar - user:', user);
+  console.log('SimpleCenterCalendar - isAdmin:', isAdmin);
+  console.log('SimpleCenterCalendar - isEmployee:', isEmployee);
   const [selectedDate, setSelectedDate] = useState(new Date('2025-08-06'));
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
