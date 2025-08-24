@@ -961,6 +961,38 @@ const AdvancedCalendarView = () => {
                 </ClientSelectionModal>
               </div>
 
+              {/* Client Information Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="clientName">Nombre del cliente *</Label>
+                  <Input
+                    id="clientName"
+                    value={bookingForm.clientName}
+                    onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
+                    placeholder="Nombre y apellidos"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="clientPhone">Teléfono</Label>
+                  <Input
+                    id="clientPhone"
+                    value={bookingForm.clientPhone}
+                    onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
+                    placeholder="+34 600 000 000"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="clientEmail">Email</Label>
+                  <Input
+                    id="clientEmail"
+                    type="email"
+                    value={bookingForm.clientEmail}
+                    onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
+                    placeholder="cliente@example.com"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="serviceId">Servicio *</Label>
                 <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
