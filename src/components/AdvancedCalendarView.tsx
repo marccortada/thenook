@@ -63,6 +63,9 @@ const AdvancedCalendarView = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
   
+  // Filter state
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  
   // Lane blocking state
   const [blockingMode, setBlockingMode] = useState(false);
   const [blockStartSlot, setBlockStartSlot] = useState<{ laneId: string; timeSlot: Date } | null>(null);
@@ -165,9 +168,9 @@ const AdvancedCalendarView = () => {
       .slice(0, 4); // Ensure exactly 4 lanes
   };
 
-  // Get booking for specific slot
+  // Get booking for specific slot - now with filtering
   const getBookingForSlot = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
-    return bookings.find(booking => {
+    const booking = bookings.find(booking => {
       if (!booking.booking_datetime || booking.center_id !== centerId || booking.lane_id !== laneId) {
         return false;
       }
@@ -185,6 +188,13 @@ const AdvancedCalendarView = () => {
       
       return timeSlot >= bookingStart && timeSlot < bookingEnd;
     });
+
+    // Apply status filters - if filters are active, only show matching bookings
+    if (booking && statusFilters.length > 0) {
+      return statusFilters.includes(booking.status) ? booking : null;
+    }
+
+    return booking;
   };
 
   // Calculate availability for a time slot considering both bookings and blocks
@@ -854,10 +864,29 @@ const AdvancedCalendarView = () => {
                 {blockingMode ? 'Cancelar Bloqueo' : 'Bloquear Carriles'}
               </Button>
               
-              <Button variant="outline" size="sm">
-                <User className="w-4 h-4 mr-2" />
-                Filtros No-Shows
-              </Button>
+              {/* Status Filter Dropdown */}
+              <Select value={statusFilters.join(',')} onValueChange={(value) => {
+                if (value === '') {
+                  setStatusFilters([]);
+                } else {
+                  setStatusFilters(value.split(',').filter(Boolean));
+                }
+              }}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filtrar por estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos los estados</SelectItem>
+                  <SelectItem value="no_show">Solo No Shows</SelectItem>
+                  <SelectItem value="cancelled">Solo Canceladas</SelectItem>
+                  <SelectItem value="pending">Solo Pendientes</SelectItem>
+                  <SelectItem value="confirmed">Solo Confirmadas</SelectItem>
+                  <SelectItem value="requested">Solo Solicitadas</SelectItem>
+                  <SelectItem value="new">Solo Nuevas</SelectItem>
+                  <SelectItem value="online">Solo Online</SelectItem>
+                  <SelectItem value="completed">Solo Completadas</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
           
