@@ -209,10 +209,13 @@ const Analytics = ({ startDate, endDate, centerId }: AnalyticsProps) => {
         </TabsList>
 
         <TabsContent value="trends" className="space-y-4">
-          {/* Controles de comparación */}
-          <Card>
+          {/* Controles de comparación - SIEMPRE VISIBLE */}
+          <Card className="border-2 border-primary/20">
             <CardHeader>
-              <CardTitle>Comparar Períodos</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                Comparar Períodos Personalizados
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4 items-end">
