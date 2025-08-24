@@ -114,13 +114,13 @@ const AdvancedCalendarView = () => {
     }
   }, [centers, selectedCenter]);
 
-  // Generate time slots from 8:00 to 22:00 every 30 minutes
+  // Generate time slots from 9:00 to 23:00 every 5 minutes (like client's current system)
   const generateTimeSlots = (): TimeSlot[] => {
     const slots: TimeSlot[] = [];
     const base = startOfDay(selectedDate);
-      for (let hour = 10; hour <= 22; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          if (hour === 22 && minute > 0) break; // Stop at 22:00
+    for (let hour = 9; hour <= 23; hour++) {
+      for (let minute = 0; minute < 60; minute += 5) {
+        if (hour === 23 && minute > 0) break; // Stop at 23:00
         const time = new Date(base);
         time.setHours(hour, minute, 0, 0);
         slots.push({
@@ -134,12 +134,12 @@ const AdvancedCalendarView = () => {
 
   const timeSlots = generateTimeSlots();
 
-  // Time options for selects: every 5 minutes from 10:00 to 22:00
+  // Time options for selects: every 5 minutes from 9:00 to 23:00
   const timeOptions5m = React.useMemo(() => {
     const opts: string[] = [];
     const base = startOfDay(selectedDate);
-    const start = new Date(base); start.setHours(10, 0, 0, 0);
-    const end = new Date(base); end.setHours(22, 0, 0, 0);
+    const start = new Date(base); start.setHours(9, 0, 0, 0);
+    const end = new Date(base); end.setHours(23, 0, 0, 0);
     const cur = new Date(start);
     while (cur <= end) {
       opts.push(format(cur, 'HH:mm'));
@@ -527,19 +527,19 @@ const AdvancedCalendarView = () => {
           )}
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="h-[60vh] md:h-[70vh]">
-            <div className="grid grid-cols-[80px_repeat(4,1fr)] gap-0 min-w-[800px]">
+          <ScrollArea className="h-[70vh] md:h-[80vh]">
+            <div className="grid grid-cols-[60px_repeat(4,1fr)] gap-0 min-w-[800px]">
               {/* Header */}
               <div className="sticky top-0 z-10 bg-background border-b">
-                <div className="p-3 text-center font-medium border-r bg-muted/50 text-sm">
+                <div className="p-2 text-center font-medium border-r bg-muted/50 text-xs">
                   Hora
                 </div>
               </div>
               {centerLanes.map((lane) => (
                 <div key={lane.id} className="sticky top-0 z-10 bg-background border-b">
-                  <div className="p-3 text-center font-medium border-r bg-muted/50">
-                    <div className="font-semibold text-sm">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
-                    <div className="text-xs text-muted-foreground">Capacidad: {lane.capacity}</div>
+                  <div className="p-2 text-center font-medium border-r bg-muted/50">
+                    <div className="font-semibold text-xs">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
+                    <div className="text-[10px] text-muted-foreground">Cap: {lane.capacity}</div>
                   </div>
                 </div>
               ))}
@@ -548,7 +548,7 @@ const AdvancedCalendarView = () => {
               {timeSlots.map((timeSlot, timeIndex) => (
                 <React.Fragment key={timeIndex}>
                   {/* Time label */}
-                  <div className="p-2 text-center text-sm border-r border-b bg-muted/30 font-medium">
+                  <div className="p-1 text-center text-xs border-r border-b bg-muted/30 font-medium h-8 flex items-center justify-center">
                     {timeSlot.hour}
                   </div>
 
@@ -569,55 +569,44 @@ const AdvancedCalendarView = () => {
                      const isFirstSlotOfBooking = booking &&
                       format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
-                    return (
-                      <div
-                        key={`${lane.id}-${timeIndex}`}
-                        className="relative border-r border-b min-h-[60px] hover:bg-muted/20 transition-colors cursor-pointer"
-                        onClick={() => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time)}
-                      >
+                     return (
+                       <div
+                         key={lane.id}
+                         className="relative h-8 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
+                         onClick={() => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time)}
+                       >
                         {booking && isFirstSlotOfBooking && (
                           <div
-                            className={cn(
-                              "absolute inset-1 rounded border-l-4 p-2 transition-all hover:shadow-md",
-                              getStatusColor(booking.status)
-                            )}
-                            style={{
-                              height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 60 - 4}px`
-                            }}
-                          >
-                            <div className="text-sm font-semibold truncate">
-                              {booking.profiles?.first_name} {booking.profiles?.last_name}
-                            </div>
-                            {booking.payment_status === 'paid' && (
-                              <div className="absolute top-1 right-1">
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                              </div>
-                            )}
-                            <div className="text-xs text-muted-foreground truncate">
-                              {booking.services?.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground truncate">
-                              {booking.profiles?.phone}
-                            </div>
-                            <div className="text-xs font-medium mt-1">
-                              {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {format(parseISO(booking.booking_datetime), 'HH:mm')}
-                            </div>
+                             className={cn(
+                               "absolute inset-1 rounded border-l-4 p-1 transition-all hover:shadow-md text-xs",
+                               getStatusColor(booking.status)
+                             )}
+                             style={{
+                               height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 32 - 4}px`
+                             }}
+                           >
+                             <div className="text-xs font-semibold truncate">{booking.profiles?.first_name}</div>
+                             {booking.payment_status === 'paid' && (
+                               <div className="absolute top-0 right-0">
+                                 <CheckCircle2 className="h-3 w-3 text-green-600" />
+                               </div>
+                             )}
+                             <div className="text-[10px] text-muted-foreground truncate">
+                               {format(parseISO(booking.booking_datetime), 'HH:mm')}
+                             </div>
                           </div>
                         )}
                          {isBlocked && !booking && (
-                           <div className="absolute inset-1 rounded bg-red-500/20 border border-red-500/50 flex items-center justify-center">
+                           <div className="absolute inset-1 rounded bg-gray-400/40 border border-gray-500/60 flex items-center justify-center">
                              <div className="flex items-center gap-1">
-                               <Ban className="h-4 w-4 text-red-600" />
+                               <span className="text-[10px] font-bold text-gray-700">BLOCKED</span>
                                <Button
                                  variant="ghost"
                                  size="sm"
-                                 className="h-6 w-6 p-0 hover:bg-red-600 hover:text-white"
+                                 className="h-4 w-4 p-0 hover:bg-red-600 hover:text-white"
                                  onClick={(e) => handleUnblockLane(isBlocked.id, e)}
                                >
-                                 <Trash2 className="h-3 w-3" />
+                                 <X className="h-2 w-2" />
                                </Button>
                              </div>
                            </div>
@@ -635,7 +624,7 @@ const AdvancedCalendarView = () => {
                                : "border-blue-300 hover:border-blue-500 hover:bg-blue-500/5"
                            )}>
                              <div className="absolute inset-0 flex items-center justify-center">
-                               <Ban className="h-4 w-4 text-blue-600" />
+                               <Ban className="h-3 w-3 text-blue-600" />
                              </div>
                            </div>
                          )}
