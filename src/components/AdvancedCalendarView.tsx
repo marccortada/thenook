@@ -940,7 +940,7 @@ const AdvancedCalendarView = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="serviceId">Servicio *</Label>
-                <Select value={bookingForm.serviceId} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
+                <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="Seleccionar servicio" />
                   </SelectTrigger>
