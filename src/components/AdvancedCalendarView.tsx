@@ -34,6 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ClientSelector from '@/components/ClientSelector';
 import RepeatClientSelector from './RepeatClientSelector';
+import ClientSelectionModal from './ClientSelectionModal';
 import { useLaneBlocks } from '@/hooks/useLaneBlocks';
 import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 
@@ -934,8 +935,24 @@ const AdvancedCalendarView = () => {
                 />
               </div>
 
-              <div className="text-xs text-muted-foreground mb-2">
-                O crear nueva reserva para cliente nuevo:
+              <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
+                <span>O crear nueva reserva para cliente nuevo:</span>
+                <ClientSelectionModal
+                  onSelect={(c) => {
+                    setCreateClientId(c.id);
+                    setBookingForm((prev) => ({
+                      ...prev,
+                      clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                      clientPhone: c.phone || '',
+                      clientEmail: c.email || '',
+                    }));
+                  }}
+                >
+                  <Button variant="outline" size="sm" type="button">
+                    <User className="w-4 h-4 mr-2" />
+                    Ver todos los clientes
+                  </Button>
+                </ClientSelectionModal>
               </div>
 
               <div className="space-y-2">
