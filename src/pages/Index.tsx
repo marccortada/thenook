@@ -15,7 +15,6 @@ import HappyHourManagement from "@/components/HappyHourManagement";
 import RealTimeMetrics from "@/components/RealTimeMetrics";
 
 import AdvancedDashboard from "@/components/AdvancedDashboard";
-import AdvancedAnalytics from "@/components/AdvancedAnalytics";
 import ReportsCenter from "@/components/ReportsCenter";
 
 import AdvancedReports from "@/components/AdvancedReports";
@@ -31,45 +30,10 @@ import PublicLandingPage from "@/pages/PublicLandingPage";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("bookings");
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const { user, isAdmin, isEmployee, isAuthenticated, loading } = useSimpleAuth();
   const navigate = useNavigate();
 
   const isOwner = !!user && user.email === 'work@thenookmadrid.com';
-
-  // Handle scroll to hide/show header
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Hide header when scrolling down more than 50px
-      if (currentScrollY > 50 && currentScrollY > lastScrollY) {
-        setIsHeaderVisible(false);
-      } 
-      // Show header when scrolling up or at top
-      else if (currentScrollY < lastScrollY || currentScrollY <= 50) {
-        setIsHeaderVisible(true);
-      }
-      
-      setLastScrollY(currentScrollY);
-    };
-
-    // Also listen to scroll events on the main container
-    const mainContainer = document.querySelector('main');
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    if (mainContainer) {
-      mainContainer.addEventListener('scroll', handleScroll, { passive: true });
-    }
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (mainContainer) {
-        mainContainer.removeEventListener('scroll', handleScroll);
-      }
-    };
-  }, [lastScrollY]);
 
   // Mostrar página pública si no está autenticado y no está cargando
   if (!loading && !isAuthenticated) {
@@ -94,7 +58,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8 overflow-y-auto" style={{ maxHeight: '100vh' }}>
+      <main className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto px-2 sm:px-0">
           <div className="mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">
@@ -106,10 +70,8 @@ const Index = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {/* Mobile Menu - Auto Hide Header */}
-            <div className={`lg:hidden mb-4 fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b transition-transform duration-300 ${
-              isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
-            }`}>
+            {/* Mobile Menu */}
+            <div className="lg:hidden mb-4 sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
               <div className="p-3">
                 <select 
                   value={activeTab} 
@@ -127,77 +89,70 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Desktop Grid - Auto Hide Header */}
-            <div className={`hidden lg:grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6 fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-6 pt-4 px-4 transition-transform duration-300 ${
-              isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
-            }`}>
-              <div className="max-w-7xl mx-auto w-full grid grid-cols-2 xl:grid-cols-4 gap-4">
+            {/* Desktop Grid */}
+            <div className="hidden lg:grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6 sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-6 pt-4">
+              <Button
+                variant={activeTab === "reservations" ? "default" : "outline"}
+                onClick={() => setActiveTab("reservations")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
+              >
+                <CalendarDays className="h-5 w-5" />
+                <span className="text-sm font-medium">Nueva Reserva</span>
+              </Button>
+              
+              <Button
+                variant={activeTab === "bookings" ? "default" : "outline"}
+                onClick={() => setActiveTab("bookings")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
+              >
+                <CalendarDays className="h-5 w-5" />
+                <span className="text-sm font-medium">Calendario</span>
+              </Button>
+              
+              <Button
+                variant={activeTab === "clients" ? "default" : "outline"}
+                onClick={() => setActiveTab("clients")}
+                className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
+              >
+                <Users className="h-5 w-5" />
+                <span className="text-sm font-medium">Gestión de Clientes</span>
+              </Button>
+              
+              {(isAdmin || isEmployee) && (
                 <Button
-                  variant={activeTab === "reservations" ? "default" : "outline"}
-                  onClick={() => setActiveTab("reservations")}
+                  variant={activeTab === "packages" ? "default" : "outline"}
+                  onClick={() => setActiveTab("packages")}
                   className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
                 >
-                  <CalendarDays className="h-5 w-5" />
-                  <span className="text-sm font-medium">Nueva Reserva</span>
+                  <Gift className="h-5 w-5" />
+                  <span className="text-sm font-medium">Bonos</span>
                 </Button>
-                
-                <Button
-                  variant={activeTab === "bookings" ? "default" : "outline"}
-                  onClick={() => setActiveTab("bookings")}
-                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
-                >
-                  <CalendarDays className="h-5 w-5" />
-                  <span className="text-sm font-medium">Calendario</span>
-                </Button>
-                
-                <Button
-                  variant={activeTab === "clients" ? "default" : "outline"}
-                  onClick={() => setActiveTab("clients")}
-                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
-                >
-                  <Users className="h-5 w-5" />
-                  <span className="text-sm font-medium">Gestión de Clientes</span>
-                </Button>
-                
-                {(isAdmin || isEmployee) && (
-                  <Button
-                    variant={activeTab === "packages" ? "default" : "outline"}
-                    onClick={() => setActiveTab("packages")}
-                    className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
-                  >
-                    <Gift className="h-5 w-5" />
-                    <span className="text-sm font-medium">Bonos</span>
-                  </Button>
-                )}
+              )}
 
-                
-                {(isAdmin || isOwner) && (
-                  <Button
-                    variant={activeTab === "analytics" ? "default" : "outline"}
-                    onClick={() => setActiveTab("analytics")}
-                    className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
-                  >
-                    <TrendingUp className="h-5 w-5" />
-                    <span className="text-sm font-medium">Analytics</span>
-                  </Button>
-                )}
-                
-                {(isAdmin || isOwner) && (
-                  <Button
-                    variant={activeTab === "control" ? "default" : "outline"}
-                    onClick={() => setActiveTab("control")}
-                    className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
-                  >
-                    <BarChart3 className="h-5 w-5" />
-                    <span className="text-sm font-medium">Centro Control</span>
-                  </Button>
-                )}
-              </div>
+              
+              {(isAdmin || isOwner) && (
+                <Button
+                  variant={activeTab === "analytics" ? "default" : "outline"}
+                  onClick={() => setActiveTab("analytics")}
+                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
+                >
+                  <TrendingUp className="h-5 w-5" />
+                  <span className="text-sm font-medium">Analytics</span>
+                </Button>
+              )}
+              
+              {(isAdmin || isOwner) && (
+                <Button
+                  variant={activeTab === "control" ? "default" : "outline"}
+                  onClick={() => setActiveTab("control")}
+                  className="h-auto p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm"
+                >
+                  <BarChart3 className="h-5 w-5" />
+                  <span className="text-sm font-medium">Centro Control</span>
+                </Button>
+              )}
             </div>
 
-            <div className="lg:hidden h-20"></div> {/* Spacer for mobile fixed header */}
-            <div className="hidden lg:block h-24"></div> {/* Spacer for desktop fixed header */}
-            
             <TabsContent value="reservations" className="mt-6 space-y-6">
               <ReservationSystem />
             </TabsContent>
@@ -217,7 +172,7 @@ const Index = () => {
 
             {(isAdmin || isOwner) && (
               <TabsContent value="analytics" className="mt-6">
-                <AdvancedAnalytics />
+                <AdvancedDashboard />
               </TabsContent>
             )}
 
