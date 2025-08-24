@@ -73,7 +73,8 @@ const AdvancedCalendarView = () => {
   const [editingBooking, setEditingBooking] = useState<any | null>(null);
   const [editClientId, setEditClientId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
-  const [editPaymentStatus, setEditPaymentStatus] = useState<'pending' | 'paid'>('pending');
+  const [editPaymentStatus, setEditPaymentStatus] = useState<'pending' | 'paid' | 'failed' | 'refunded' | 'partial_refund'>('pending');
+  const [editBookingStatus, setEditBookingStatus] = useState<'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'requested' | 'new' | 'online'>('pending');
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
@@ -225,7 +226,8 @@ const AdvancedCalendarView = () => {
       setEditingBooking(existingBooking);
       setEditClientId(existingBooking.client_id || null);
       setEditNotes(existingBooking.notes || '');
-      setEditPaymentStatus(existingBooking.payment_status === 'paid' ? 'paid' : 'pending');
+      setEditPaymentStatus(existingBooking.payment_status || 'pending');
+      setEditBookingStatus(existingBooking.status || 'pending');
       setEditServiceId(existingBooking.service_id || '');
       setEditDuration(existingBooking.duration_minutes || 60);
       const dt = parseISO(existingBooking.booking_datetime);
@@ -429,6 +431,7 @@ const AdvancedCalendarView = () => {
       const updates: any = {
         notes: editNotes || null,
         payment_status: editPaymentStatus,
+        status: editBookingStatus,
         service_id: editServiceId || editingBooking.service_id,
         duration_minutes: editDuration || editingBooking.duration_minutes,
         booking_datetime: newDateTime.toISOString(),
@@ -640,7 +643,7 @@ const AdvancedCalendarView = () => {
     );
   };
 
-  // Render week view
+  // Render week view - now with full functionality like day view
   const renderWeekView = () => {
     if (!selectedCenter) return null;
 
@@ -650,78 +653,130 @@ const AdvancedCalendarView = () => {
 
     return (
       <Card className="w-full rounded-none border-0 sm:rounded-md sm:border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Vista Semanal - {centerName}
-            <Badge variant="secondary" className="ml-2">
-              {format(weekDates[0], "d MMM", { locale: es })} - {format(weekDates[6], "d MMM yyyy", { locale: es })}
-            </Badge>
+        <CardHeader className="p-3">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm">Vista Semanal - {centerName}</span>
+              <Badge variant="secondary" className="ml-2 text-xs">
+                {format(weekDates[0], "d MMM", { locale: es })} - {format(weekDates[6], "d MMM", { locale: es })}
+              </Badge>
+            </div>
+            {(isAdmin || isEmployee) && (
+              <Button
+                variant={blockingMode ? "destructive" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setBlockingMode(!blockingMode);
+                  setBlockStartSlot(null);
+                  setBlockEndSlot(null);
+                }}
+              >
+                <Ban className="w-3 h-3 mr-1" />
+                {blockingMode ? 'Cancelar' : 'Bloquear'}
+              </Button>
+            )}
           </CardTitle>
+          {blockingMode && (
+            <div className="text-xs text-muted-foreground">
+              Haz clic en una franja para empezar, luego en otra para definir el rango.
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="h-[600px]">
-            <div className="min-w-[1200px]">
+          <ScrollArea className="h-[85vh]">
+            <div className="grid grid-cols-[50px_repeat(28,1fr)] gap-0 min-w-[1200px]">
               {/* Week header */}
-              <div className="grid grid-cols-8 gap-0 border-b bg-muted/50">
-                <div className="p-3 text-center font-medium border-r text-sm">Hora</div>
-                {weekDates.map((date) => (
-                  <div key={date.toISOString()} className="p-3 text-center font-medium border-r">
-                    <div className="font-semibold text-sm">
-                      {format(date, "EEE", { locale: es })}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {format(date, "d MMM", { locale: es })}
+              <div className="sticky top-0 z-10 bg-background border-b">
+                <div className="p-1 text-center font-medium border-r bg-muted/50 text-xs">Hora</div>
+              </div>
+              {weekDates.map((date) => 
+                centerLanes.map((lane) => (
+                  <div key={`${date.toISOString()}-${lane.id}`} className="sticky top-0 z-10 bg-background border-b">
+                    <div className="p-1 text-center font-medium border-r bg-muted/50">
+                      <div className="font-semibold text-[9px]">
+                        {format(date, "EEE", { locale: es })} - {(lane.name || '').replace(/ra[ií]l/gi, 'C')}
+                      </div>
+                      <div className="text-[8px] text-muted-foreground">
+                        {format(date, "d/M", { locale: es })}
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
 
-              {/* Time slots for week view - simplified */}
-              {timeSlots.filter((_, index) => index % 2 === 0).map((timeSlot, timeIndex) => (
-                <div key={timeIndex} className="grid grid-cols-8 gap-0 border-b">
-                  <div className="p-2 text-center text-sm border-r bg-muted/30 font-medium">
+              {/* Time slots for week view */}
+              {timeSlots.map((timeSlot, timeIndex) => (
+                <React.Fragment key={timeIndex}>
+                  {/* Time label */}
+                  <div className="p-0.5 text-center text-[10px] border-r border-b bg-muted/30 font-medium h-6 flex items-center justify-center">
                     {timeSlot.hour}
                   </div>
-                  {weekDates.map((date) => {
-                    const dayBookings = bookings.filter(booking => {
-                      if (!booking.booking_datetime || booking.center_id !== selectedCenter) return false;
-                      const bookingDate = parseISO(booking.booking_datetime);
-                      return isSameDay(bookingDate, date);
-                    });
 
-                    return (
-                      <div key={date.toISOString()} className="border-r min-h-[40px] p-1">
-                        {dayBookings.map((booking) => {
-                          const bookingTime = parseISO(booking.booking_datetime);
-                          const isInThisHour = Math.abs(timeSlot.time.getHours() - bookingTime.getHours()) <= 1;
-                          
-                          if (!isInThisHour) return null;
+                  {/* Week day-lane slots */}
+                  {weekDates.map((date) => 
+                    centerLanes.map((lane) => {
+                      const booking = getBookingForSlot(selectedCenter, lane.id, date, timeSlot.time);
+                      const isBlocked = isLaneBlocked(lane.id, timeSlot.time);
+                      const isFirstSlotOfBooking = booking &&
+                        format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
-                          return (
+                      return (
+                        <div
+                          key={`${date.toISOString()}-${lane.id}`}
+                          className="relative h-6 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
+                          onClick={() => handleSlotClick(selectedCenter, lane.id, date, timeSlot.time)}
+                        >
+                          {booking && isFirstSlotOfBooking && (
                             <div
-                              key={booking.id}
                               className={cn(
-                                "text-xs p-1 rounded mb-1 border-l-2 truncate",
+                                "absolute inset-0 rounded-sm text-[8px] p-0.5 border-l-2 truncate z-10",
                                 getStatusColor(booking.status)
                               )}
+                              style={{ 
+                                height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
+                                minHeight: '24px'
+                              }}
                             >
-                              <div className="font-medium">
-                                {booking.profiles?.first_name} {booking.profiles?.last_name}
+                              <div className="font-medium truncate">
+                                {booking.profiles?.first_name?.[0]}{booking.profiles?.last_name?.[0]}
                               </div>
-                              <div className="text-xs opacity-75 flex items-center gap-1">
-                                {format(bookingTime, 'HH:mm')}
-                                {booking.payment_status === 'paid' && (
-                                  <CheckCircle2 className="h-3 w-3 text-green-600" />
-                                )}
-                              </div>
+                              {booking.payment_status === 'paid' && (
+                                <CheckCircle2 className="h-2 w-2 text-green-600" />
+                              )}
                             </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
+                          )}
+                          
+                          {isBlocked && !booking && (
+                            <div className="absolute inset-0 bg-gray-400/30 rounded-sm flex items-center justify-center">
+                              <span className="text-[8px] font-medium text-gray-600 rotate-45">BLOCK</span>
+                              {(isAdmin || isEmployee) && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute top-0 right-0 w-4 h-4 p-0 hover:bg-red-100"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const block = laneBlocks.find(block => 
+                                      block.lane_id === lane.id && 
+                                      timeSlot.time >= new Date(block.start_datetime) && 
+                                      timeSlot.time < new Date(block.end_datetime)
+                                    );
+                                    if (block) {
+                                      deleteLaneBlock(block.id);
+                                    }
+                                  }}
+                                >
+                                  <X className="h-2 w-2" />
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </React.Fragment>
               ))}
             </div>
           </ScrollArea>
@@ -755,31 +810,57 @@ const AdvancedCalendarView = () => {
               Hoy
             </Button>
           </div>
-          <div className="text-2xl font-bold">
+          
+          <div className="text-lg font-semibold">
             {viewMode === 'day' 
-              ? format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })
-              : `Semana del ${format(startOfWeek(selectedDate, { weekStartsOn: 1 }), "d 'de' MMMM", { locale: es })}`
+              ? format(selectedDate, "EEEE, d 'de' MMMM yyyy", { locale: es })
+              : `${format(getWeekDates()[0], "d MMM", { locale: es })} - ${format(getWeekDates()[6], "d MMM yyyy", { locale: es })}`
             }
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Center selector */}
+          {/* Center Selection */}
           <Select value={selectedCenter} onValueChange={setSelectedCenter}>
             <SelectTrigger className="w-48">
-              <MapPin className="h-4 w-4 mr-1" />
-              <SelectValue placeholder="Seleccionar centro" />
+              <SelectValue placeholder="Selecciona centro" />
             </SelectTrigger>
             <SelectContent>
               {centers.map((center) => (
                 <SelectItem key={center.id} value={center.id}>
-                  {center.name}
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    {center.name}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {/* View mode toggle */}
+          {/* Lane Blocking & Filters */}
+          {(isAdmin || isEmployee) && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant={blockingMode ? "destructive" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setBlockingMode(!blockingMode);
+                  setBlockStartSlot(null);
+                  setBlockEndSlot(null);
+                }}
+              >
+                <Ban className="w-4 h-4 mr-2" />
+                {blockingMode ? 'Cancelar Bloqueo' : 'Bloquear Carriles'}
+              </Button>
+              
+              <Button variant="outline" size="sm">
+                <User className="w-4 h-4 mr-2" />
+                Filtros No-Shows
+              </Button>
+            </div>
+          )}
+          
+          {/* View Mode Toggle */}
           <Select value={viewMode} onValueChange={(value: 'day' | 'week') => setViewMode(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -991,17 +1072,41 @@ const AdvancedCalendarView = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="payment">Estado de pago</Label>
-                <Select value={editPaymentStatus} onValueChange={(v: 'pending' | 'paid') => setEditPaymentStatus(v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="paid">Pagado</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="payment">Estado de pago</Label>
+                  <Select value={editPaymentStatus} onValueChange={(v) => setEditPaymentStatus(v as any)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendiente</SelectItem>
+                      <SelectItem value="paid">Pagado</SelectItem>
+                      <SelectItem value="failed">Fallido</SelectItem>
+                      <SelectItem value="refunded">Reembolsado</SelectItem>
+                      <SelectItem value="partial_refund">Reembolso Parcial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="bookingStatus">Estado de reserva</Label>
+                  <Select value={editBookingStatus} onValueChange={(v) => setEditBookingStatus(v as any)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendiente</SelectItem>
+                      <SelectItem value="requested">Solicitada</SelectItem>
+                      <SelectItem value="confirmed">Confirmada</SelectItem>
+                      <SelectItem value="new">Nueva</SelectItem>
+                      <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="completed">Completada</SelectItem>
+                      <SelectItem value="cancelled">Cancelada</SelectItem>
+                      <SelectItem value="no_show">No Show</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -1015,13 +1120,27 @@ const AdvancedCalendarView = () => {
                 />
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button size="sm" variant="outline" onClick={() => { setShowEditModal(false); setEditingBooking(null); }}>
-                  <X className="h-4 w-4 mr-2" /> Cancelar
-                </Button>
-                <Button size="sm" onClick={saveBookingEdits}>
-                  <Save className="h-4 w-4 mr-2" /> Guardar cambios
-                </Button>
+              <div className="flex justify-between gap-2">
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="default"
+                    onClick={() => {
+                      setEditPaymentStatus('paid');
+                      setEditBookingStatus('confirmed');
+                    }}
+                  >
+                    💳 Cobrar
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => { setShowEditModal(false); setEditingBooking(null); }}>
+                    <X className="h-4 w-4 mr-2" /> Cancelar
+                  </Button>
+                  <Button size="sm" onClick={saveBookingEdits}>
+                    <Save className="h-4 w-4 mr-2" /> Guardar
+                  </Button>
+                </div>
               </div>
             </div>
           )}
