@@ -939,6 +939,7 @@ const AdvancedCalendarView = () => {
                 <span>O crear nueva reserva para cliente nuevo:</span>
                 <ClientSelectionModal
                   onSelect={(c) => {
+                    console.log('Cliente seleccionado desde modal:', c); // Debug log
                     setCreateClientId(c.id);
                     setBookingForm((prev) => ({
                       ...prev,
@@ -948,7 +949,12 @@ const AdvancedCalendarView = () => {
                     }));
                   }}
                 >
-                  <Button variant="outline" size="sm" type="button">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    type="button"
+                    onClick={() => console.log('Botón Ver todos los clientes clickeado')} // Debug log
+                  >
                     <User className="w-4 h-4 mr-2" />
                     Ver todos los clientes
                   </Button>

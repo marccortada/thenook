@@ -45,13 +45,17 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
   });
 
   const handleClientSelect = (client: Client) => {
+    console.log('Cliente seleccionado:', client); // Debug log
     onSelect(client);
     setOpen(false);
     setSearchQuery("");
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      console.log('Modal abriéndose/cerrándose:', newOpen); // Debug log
+      setOpen(newOpen);
+    }}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -59,7 +63,7 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Seleccionar Cliente ({filteredClients.length})
+            Seleccionar Cliente ({filteredClients.length} clientes)
           </DialogTitle>
         </DialogHeader>
         
