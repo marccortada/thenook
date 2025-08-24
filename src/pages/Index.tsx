@@ -43,19 +43,32 @@ const Index = () => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down and past 100px
+      // Hide header when scrolling down more than 50px
+      if (currentScrollY > 50 && currentScrollY > lastScrollY) {
         setIsHeaderVisible(false);
-      } else {
-        // Scrolling up
+      } 
+      // Show header when scrolling up or at top
+      else if (currentScrollY < lastScrollY || currentScrollY <= 50) {
         setIsHeaderVisible(true);
       }
       
       setLastScrollY(currentScrollY);
     };
 
+    // Also listen to scroll events on the main container
+    const mainContainer = document.querySelector('main');
+    
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    if (mainContainer) {
+      mainContainer.addEventListener('scroll', handleScroll, { passive: true });
+    }
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (mainContainer) {
+        mainContainer.removeEventListener('scroll', handleScroll);
+      }
+    };
   }, [lastScrollY]);
 
   // Mostrar página pública si no está autenticado y no está cargando
@@ -81,7 +94,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 overflow-y-auto" style={{ maxHeight: '100vh' }}>
         <div className="max-w-7xl mx-auto px-2 sm:px-0">
           <div className="mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">
