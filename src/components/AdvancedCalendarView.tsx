@@ -865,8 +865,8 @@ const AdvancedCalendarView = () => {
               </Button>
               
               {/* Status Filter Dropdown */}
-              <Select value={statusFilters.join(',')} onValueChange={(value) => {
-                if (value === '') {
+              <Select value={statusFilters.length === 0 ? "all" : statusFilters.join(',')} onValueChange={(value) => {
+                if (value === "all") {
                   setStatusFilters([]);
                 } else {
                   setStatusFilters(value.split(',').filter(Boolean));
@@ -876,7 +876,7 @@ const AdvancedCalendarView = () => {
                   <SelectValue placeholder="Filtrar por estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los estados</SelectItem>
+                  <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="no_show">Solo No Shows</SelectItem>
                   <SelectItem value="cancelled">Solo Canceladas</SelectItem>
                   <SelectItem value="pending">Solo Pendientes</SelectItem>
