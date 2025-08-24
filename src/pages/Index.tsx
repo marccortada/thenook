@@ -159,10 +159,10 @@ const Index = () => {
 
             <TabsContent value="bookings" className="mt-6 space-y-6 -mx-2 sm:-mx-4 lg:mx-0">
               <div className="lg:hidden">
-                <SimpleCenterCalendar />
+                <AdvancedCalendarView />
               </div>
               <div className="hidden lg:block">
-                <SimpleCenterCalendar />
+                <AdvancedCalendarView />
               </div>
             </TabsContent>
 

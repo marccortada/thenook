@@ -1367,42 +1367,6 @@ export type Database = {
           },
         ]
       }
-      lane_blocks: {
-        Row: {
-          center_id: string
-          created_at: string
-          created_by: string
-          end_datetime: string
-          id: string
-          lane_id: string
-          reason: string | null
-          start_datetime: string
-          updated_at: string
-        }
-        Insert: {
-          center_id: string
-          created_at?: string
-          created_by: string
-          end_datetime: string
-          id?: string
-          lane_id: string
-          reason?: string | null
-          start_datetime: string
-          updated_at?: string
-        }
-        Update: {
-          center_id?: string
-          created_at?: string
-          created_by?: string
-          end_datetime?: string
-          id?: string
-          lane_id?: string
-          reason?: string | null
-          start_datetime?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       lanes: {
         Row: {
           active: boolean | null

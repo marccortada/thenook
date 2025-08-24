@@ -98,18 +98,6 @@ export interface Package {
   services?: Service;
 }
 
-export interface LaneBlock {
-  id: string;
-  lane_id: string;
-  center_id: string;
-  start_datetime: string;
-  end_datetime: string;
-  created_by: string;
-  reason?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export const useCenters = () => {
   const [centers, setCenters] = useState<Center[]>([]);
   const [loading, setLoading] = useState(true);
@@ -383,89 +371,4 @@ export const usePackages = (centerId?: string) => {
   };
 
   return { packages, loading, error, refetch: fetchPackages };
-};
-
-export const useLaneBlocks = (centerId?: string) => {
-  const [laneBlocks, setLaneBlocks] = useState<LaneBlock[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchLaneBlocks();
-  }, [centerId]);
-
-  const fetchLaneBlocks = async () => {
-    try {
-      setLoading(true);
-      let query = (supabase as any)
-        .from('lane_blocks')
-        .select('*');
-
-      if (centerId) {
-        query = query.eq('center_id', centerId);
-      }
-
-      const { data, error } = await query.order('start_datetime');
-
-      if (error) throw error;
-      setLaneBlocks(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching lane blocks');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createLaneBlock = async (blockData: Omit<LaneBlock, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('lane_blocks')
-        .insert([blockData])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      await fetchLaneBlocks(); // Refresh the list
-      return data;
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Error creating lane block');
-    }
-  };
-
-  const deleteLaneBlock = async (id: string) => {
-    try {
-      const { error } = await (supabase as any)
-        .from('lane_blocks')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      await fetchLaneBlocks(); // Refresh the list
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Error deleting lane block');
-    }
-  };
-
-  const getAvailableSlots = (laneId: string, date: Date) => {
-    // Get blocks for the specific lane and date
-    const dateStr = date.toISOString().split('T')[0];
-    const blocksForLaneAndDate = laneBlocks.filter(block => 
-      block.lane_id === laneId && 
-      block.start_datetime.includes(dateStr)
-    );
-    
-    return blocksForLaneAndDate;
-  };
-
-  return { 
-    laneBlocks, 
-    loading, 
-    error, 
-    refetch: fetchLaneBlocks, 
-    createLaneBlock,
-    deleteLaneBlock,
-    getAvailableSlots
-  };
 };

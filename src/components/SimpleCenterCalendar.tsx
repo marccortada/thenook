@@ -26,19 +26,12 @@ import {
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { useBookings, useCenters, useEmployees, useServices, useLanes, useLaneBlocks } from '@/hooks/useDatabase';
+import { useBookings, useCenters, useEmployees, useServices } from '@/hooks/useDatabase';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 
 const SimpleCenterCalendar = () => {
   const { toast } = useToast();
-  const { user, isAdmin, isEmployee } = useSimpleAuth();
-  
-  // Debug logs
-  console.log('SimpleCenterCalendar - user:', user);
-  console.log('SimpleCenterCalendar - isAdmin:', isAdmin);
-  console.log('SimpleCenterCalendar - isEmployee:', isEmployee);
   const [selectedDate, setSelectedDate] = useState(new Date('2025-08-06'));
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -52,12 +45,6 @@ const SimpleCenterCalendar = () => {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [newBookingDate, setNewBookingDate] = useState(new Date());
   const [newBookingTime, setNewBookingTime] = useState('');
-  
-  // Lane blocking states (admin only)
-  const [isBlockingMode, setIsBlockingMode] = useState(false);
-  const [dragStart, setDragStart] = useState<{timeSlot: Date, laneId: string} | null>(null);
-  const [dragEnd, setDragEnd] = useState<{timeSlot: Date, laneId: string} | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   
   // Form states
   const [newBookingForm, setNewBookingForm] = useState({
@@ -75,8 +62,6 @@ const SimpleCenterCalendar = () => {
   const { centers } = useCenters();
   const { employees } = useEmployees();
   const { services: allServices } = useServices();
-  const { lanes } = useLanes(activeTab);
-  const { laneBlocks, createLaneBlock, deleteLaneBlock, refetch: refetchLaneBlocks } = useLaneBlocks(activeTab);
 
   // Set initial tab when centers load
   useEffect(() => {
@@ -154,32 +139,6 @@ const SimpleCenterCalendar = () => {
       
       return matchesTime && matchesEmployee;
     });
-  };
-
-  // Get booking for specific time and lane
-  const getBookingForTimeAndLane = (centerId: string, timeSlot: Date, laneId: string) => {
-    const centerBookings = getBookingsForDate(centerId);
-    return centerBookings.find(booking => {
-      const bookingStart = parseISO(booking.booking_datetime);
-      const bookingEnd = addMinutes(bookingStart, booking.duration_minutes || 60);
-      
-      const matchesTime = timeSlot >= bookingStart && timeSlot < bookingEnd;
-      const matchesLane = booking.lane_id === laneId;
-      
-      return matchesTime && matchesLane;
-    });
-  };
-
-  // Calculate available slots considering blocks and bookings
-  const getAvailableCapacity = (centerId: string, timeSlot: Date, laneId: string) => {
-    const lane = lanes.find(l => l.id === laneId);
-    if (!lane) return 0;
-
-    const isBlocked = isSlotBlocked(timeSlot, laneId);
-    const hasBooking = getBookingForTimeAndLane(centerId, timeSlot, laneId);
-    
-    if (isBlocked || hasBooking) return 0;
-    return lane.capacity;
   };
 
   // Get status color
@@ -450,123 +409,6 @@ const SimpleCenterCalendar = () => {
     }
   };
 
-  // Lane blocking functions (admin only)
-  const handleSlotMouseDown = (timeSlot: Date, laneId: string) => {
-    if ((!isAdmin && !isEmployee) || !isBlockingMode) return;
-    
-    setDragStart({ timeSlot, laneId });
-    setIsDragging(true);
-  };
-
-  const handleSlotMouseEnter = (timeSlot: Date, laneId: string) => {
-    if ((!isAdmin && !isEmployee) || !isBlockingMode || !isDragging || !dragStart) return;
-    
-    // Only allow drag within the same lane
-    if (laneId === dragStart.laneId) {
-      setDragEnd({ timeSlot, laneId });
-    }
-  };
-
-  const handleSlotMouseUp = async () => {
-    if ((!isAdmin && !isEmployee) || !isBlockingMode || !isDragging || !dragStart || !dragEnd) {
-      setIsDragging(false);
-      setDragStart(null);
-      setDragEnd(null);
-      return;
-    }
-
-    const startTime = dragStart.timeSlot < dragEnd.timeSlot ? dragStart.timeSlot : dragEnd.timeSlot;
-    const endTime = dragStart.timeSlot < dragEnd.timeSlot ? dragEnd.timeSlot : dragStart.timeSlot;
-    
-    // Add 30 minutes to end time to cover the slot
-    const actualEndTime = addMinutes(endTime, 30);
-
-    // Create block datetime with selected date
-    const startDateTime = new Date(selectedDate);
-    startDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-    
-    const endDateTime = new Date(selectedDate);
-    endDateTime.setHours(actualEndTime.getHours(), actualEndTime.getMinutes(), 0, 0);
-
-    try {
-      // Check if there's already a block at this time
-      const existingBlock = laneBlocks.find(block => 
-        block.lane_id === dragStart.laneId &&
-        new Date(block.start_datetime) <= startDateTime &&
-        new Date(block.end_datetime) >= endDateTime
-      );
-
-      if (existingBlock) {
-        // Remove existing block
-        await deleteLaneBlock(existingBlock.id);
-        toast({
-          title: "🔓 Carril Desbloqueado",
-          description: "El bloqueo ha sido eliminado.",
-        });
-      } else {
-        // Create new block
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', user?.id)
-          .single();
-
-        if (!profile?.id) throw new Error('Perfil no encontrado');
-
-        await createLaneBlock({
-          lane_id: dragStart.laneId,
-          center_id: activeTab,
-          start_datetime: startDateTime.toISOString(),
-          end_datetime: endDateTime.toISOString(),
-          created_by: profile.id,
-          reason: 'Bloqueo administrativo'
-        });
-
-        toast({
-          title: "🔒 Carril Bloqueado",
-          description: `Carril bloqueado de ${format(startDateTime, 'HH:mm')} a ${format(endDateTime, 'HH:mm')}.`,
-        });
-      }
-
-      await refetchLaneBlocks();
-    } catch (error) {
-      console.error('Error managing lane block:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo gestionar el bloqueo.",
-        variant: "destructive",
-      });
-    }
-
-    setIsDragging(false);
-    setDragStart(null);
-    setDragEnd(null);
-  };
-
-  // Check if a time slot is blocked
-  const isSlotBlocked = (timeSlot: Date, laneId: string) => {
-    const slotDateTime = new Date(selectedDate);
-    slotDateTime.setHours(timeSlot.getHours(), timeSlot.getMinutes(), 0, 0);
-    
-    return laneBlocks.some(block => {
-      const blockStart = new Date(block.start_datetime);
-      const blockEnd = new Date(block.end_datetime);
-      return block.lane_id === laneId && 
-             slotDateTime >= blockStart && 
-             slotDateTime < blockEnd;
-    });
-  };
-
-  // Check if slot is in drag selection
-  const isInDragSelection = (timeSlot: Date, laneId: string) => {
-    if (!isDragging || !dragStart || !dragEnd || laneId !== dragStart.laneId) return false;
-    
-    const startTime = dragStart.timeSlot < dragEnd.timeSlot ? dragStart.timeSlot : dragEnd.timeSlot;
-    const endTime = dragStart.timeSlot < dragEnd.timeSlot ? dragEnd.timeSlot : dragStart.timeSlot;
-    
-    return timeSlot >= startTime && timeSlot <= endTime;
-  };
-
   // Render calendar for a specific center
   const renderCenterCalendar = (center: any) => {
     const centerEmployees = getEmployeesForCenter(center.id);
@@ -645,24 +487,6 @@ const SimpleCenterCalendar = () => {
             <span className="hidden sm:inline">Nueva Reserva</span>
             <span className="sm:hidden">Nueva</span>
           </Button>
-
-          {/* Admin/Employee lane blocking controls */}
-          {(isAdmin || isEmployee) && (
-            <Button 
-              size="sm" 
-              variant={isBlockingMode ? "default" : "outline"}
-              onClick={() => setIsBlockingMode(!isBlockingMode)}
-              className="w-full sm:w-auto"
-            >
-              <Ban className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">
-                {isBlockingMode ? 'Modo Bloqueo ON' : 'Bloquear Carriles'}
-              </span>
-              <span className="sm:hidden">
-                {isBlockingMode ? 'ON' : 'Bloqueo'}
-              </span>
-            </Button>
-          )}
         </div>
 
         {/* Calendar Grid - takes full height */}
@@ -676,182 +500,72 @@ const SimpleCenterCalendar = () => {
           <div className="overflow-hidden h-[calc(100%-60px)]">
             <ScrollArea className="h-full w-full">
               <div className="min-w-full">
-                {/* Lane-based calendar if lanes exist, otherwise fallback to old view */}
-                {lanes && lanes.length > 0 ? (
-                  <>
-                    {/* Header with lanes */}
-                    <div className="sticky top-0 z-10 bg-background border-b">
-                      <div className={`grid gap-0`} style={{gridTemplateColumns: `60px repeat(${lanes.length}, 1fr)`}}>
-                        <div className="p-2 text-center font-medium border-r bg-muted/50 text-xs sm:text-sm">
-                          Hora
-                        </div>
-                        {lanes.map((lane) => (
-                          <div key={lane.id} className="p-2 text-center font-medium bg-muted/50 border-r last:border-r-0">
-                            <span className="text-xs sm:text-sm font-semibold">{lane.name}</span>
-                            <div className="text-xs text-muted-foreground">Cap: {lane.capacity}</div>
-                          </div>
-                        ))}
-                      </div>
+                {/* Header */}
+                <div className="sticky top-0 z-10 bg-background border-b">
+                  <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-0">
+                    <div className="p-2 text-center font-medium border-r bg-muted/50 text-xs sm:text-sm">
+                      Hora
                     </div>
-
-                    {/* Time slots with lane columns */}
-                    <div className={`grid gap-0`} style={{gridTemplateColumns: `60px repeat(${lanes.length}, 1fr)`}} onMouseUp={handleSlotMouseUp}>
-                      {timeSlots.map((timeSlot, timeIndex) => {
-                        return (
-                          <React.Fragment key={timeIndex}>
-                            {/* Time label */}
-                            <div className="p-1 sm:p-2 text-center text-xs sm:text-sm border-r border-b bg-muted/30 font-medium min-h-[50px] sm:min-h-[64px] flex items-center justify-center">
-                              {format(timeSlot, 'HH:mm')}
-                            </div>
-
-                            {/* Lane columns */}
-                            {lanes.map((lane) => {
-                              const booking = getBookingForTimeAndLane(center.id, timeSlot, lane.id);
-                              const isFirstSlotOfBooking = booking && 
-                                format(timeSlot, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
-                              const isBlocked = isSlotBlocked(timeSlot, lane.id);
-                              const isInSelection = isInDragSelection(timeSlot, lane.id);
-                              const availableCapacity = getAvailableCapacity(center.id, timeSlot, lane.id);
-
-                              return (
-                                <div 
-                                  key={`${timeIndex}-${lane.id}`}
-                                  className={cn(
-                                    "relative border-b border-r last:border-r-0 min-h-[50px] sm:min-h-[64px] transition-colors",
-                                    isBlockingMode && (isAdmin || isEmployee) ? "cursor-pointer" : "",
-                                    isBlocked ? "bg-red-100" : "hover:bg-muted/20",
-                                    isInSelection ? "bg-blue-200" : "",
-                                    availableCapacity === 0 && !booking ? "bg-gray-100" : ""
-                                  )}
-                                  onMouseDown={() => handleSlotMouseDown(timeSlot, lane.id)}
-                                  onMouseEnter={() => handleSlotMouseEnter(timeSlot, lane.id)}
-                                >
-                                  {/* Blocked indicator */}
-                                  {isBlocked && (
-                                    <div className="absolute inset-1 bg-red-200 border border-red-400 rounded flex items-center justify-center">
-                                      <Ban className="h-4 w-4 text-red-600" />
-                                      <span className="text-xs text-red-600 ml-1">Bloqueado</span>
-                                    </div>
-                                  )}
-
-                                  {/* Booking display */}
-                                  {booking && isFirstSlotOfBooking && !isBlocked && (
-                                    <div
-                                      className={cn(
-                                        "absolute inset-1 rounded border-l-4 p-1 sm:p-2 cursor-pointer transition-all hover:shadow-md w-[calc(100%-8px)] z-10",
-                                        getStatusColor(booking.status)
-                                      )}
-                                      style={{
-                                        height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 50 - 4}px`,
-                                        minHeight: '46px'
-                                      }}
-                                      onClick={() => handleBookingClick(booking)}
-                                    >
-                                      <div className="text-xs sm:text-sm font-semibold truncate">
-                                        {booking.profiles?.first_name} {booking.profiles?.last_name}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground truncate hidden sm:block">
-                                        {booking.services?.name}
-                                      </div>
-                                      <div className="flex items-center gap-1 sm:gap-2 mt-1">
-                                        <Badge variant="secondary" className="text-xs px-1 py-0">
-                                          {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
-                                        </Badge>
-                                      </div>
-                                      <div className="text-xs text-primary font-medium mt-1">
-                                        Click para gestionar
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Available slots indicator for empty slots */}
-                                  {!booking && !isBlocked && availableCapacity > 0 && (
-                                    <div className="absolute inset-1 rounded border border-dashed border-gray-300 flex items-center justify-center opacity-50 hover:opacity-100">
-                                      <div className="text-xs text-muted-foreground text-center">
-                                        <Plus className="h-3 w-3 mx-auto mb-1" />
-                                        <div>Disponible</div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </React.Fragment>
-                        );
-                      })}
+                    <div className="p-2 text-center font-medium bg-muted/50">
+                      <span className="text-xs sm:text-sm font-semibold">Reservas del día</span>
                     </div>
-                  </>
-                ) : (
-                  /* Fallback to original single-column view if no lanes */
-                  <>
-                    {/* Header */}
-                    <div className="sticky top-0 z-10 bg-background border-b">
-                      <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-0">
-                        <div className="p-2 text-center font-medium border-r bg-muted/50 text-xs sm:text-sm">
-                          Hora
+                  </div>
+                </div>
+
+                {/* Time slots */}
+                <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-0">
+                  {timeSlots.map((timeSlot, timeIndex) => {
+                    const booking = getBookingForTimeAndEmployee(center.id, timeSlot, selectedEmployeeId === 'all' ? undefined : selectedEmployeeId);
+                    const isFirstSlotOfBooking = booking && 
+                      format(timeSlot, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
+
+                    return (
+                      <React.Fragment key={timeIndex}>
+                        {/* Time label */}
+                        <div className="p-1 sm:p-2 text-center text-xs sm:text-sm border-r border-b bg-muted/30 font-medium min-h-[50px] sm:min-h-[64px] flex items-center justify-center">
+                          {format(timeSlot, 'HH:mm')}
                         </div>
-                        <div className="p-2 text-center font-medium bg-muted/50">
-                          <span className="text-xs sm:text-sm font-semibold">Reservas del día</span>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Time slots */}
-                    <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-0">
-                      {timeSlots.map((timeSlot, timeIndex) => {
-                        const booking = getBookingForTimeAndEmployee(center.id, timeSlot, selectedEmployeeId === 'all' ? undefined : selectedEmployeeId);
-                        const isFirstSlotOfBooking = booking && 
-                          format(timeSlot, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
-
-                        return (
-                          <React.Fragment key={timeIndex}>
-                            {/* Time label */}
-                            <div className="p-1 sm:p-2 text-center text-xs sm:text-sm border-r border-b bg-muted/30 font-medium min-h-[50px] sm:min-h-[64px] flex items-center justify-center">
-                              {format(timeSlot, 'HH:mm')}
-                            </div>
-
-                            {/* Booking slot */}
-                            <div className="relative border-b min-h-[50px] sm:min-h-[64px] hover:bg-muted/20 transition-colors">
-                              {booking && isFirstSlotOfBooking && (
-                                <div
-                                  className={cn(
-                                    "absolute inset-1 rounded border-l-4 p-1 sm:p-2 cursor-pointer transition-all hover:shadow-md w-[calc(100%-8px)]",
-                                    getStatusColor(booking.status)
-                                  )}
-                                  style={{
-                                    height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 50 - 4}px`,
-                                    minHeight: '46px'
-                                  }}
-                                  onClick={() => handleBookingClick(booking)}
-                                >
-                                  <div className="text-xs sm:text-sm font-semibold truncate">
-                                    {booking.profiles?.first_name} {booking.profiles?.last_name}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground truncate hidden sm:block">
-                                    {booking.services?.name}
-                                  </div>
-                                  <div className="flex items-center gap-1 sm:gap-2 mt-1">
-                                    <Badge variant="secondary" className="text-xs px-1 py-0">
-                                      {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
-                                    </Badge>
-                                    {booking.employee_id && (
-                                      <div className="text-xs text-muted-foreground truncate hidden sm:block">
-                                        {employees.find(e => e.id === booking.employee_id)?.profiles?.first_name}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="text-xs text-primary font-medium mt-1">
-                                    Click para gestionar
-                                  </div>
-                                </div>
+                        {/* Booking slot */}
+                        <div className="relative border-b min-h-[50px] sm:min-h-[64px] hover:bg-muted/20 transition-colors">
+                          {booking && isFirstSlotOfBooking && (
+                            <div
+                              className={cn(
+                                "absolute inset-1 rounded border-l-4 p-1 sm:p-2 cursor-pointer transition-all hover:shadow-md w-[calc(100%-8px)]",
+                                getStatusColor(booking.status)
                               )}
+                              style={{
+                                height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 50 - 4}px`,
+                                minHeight: '46px'
+                              }}
+                              onClick={() => handleBookingClick(booking)}
+                            >
+                              <div className="text-xs sm:text-sm font-semibold truncate">
+                                {booking.profiles?.first_name} {booking.profiles?.last_name}
+                              </div>
+                              <div className="text-xs text-muted-foreground truncate hidden sm:block">
+                                {booking.services?.name}
+                              </div>
+                              <div className="flex items-center gap-1 sm:gap-2 mt-1">
+                                <Badge variant="secondary" className="text-xs px-1 py-0">
+                                  {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
+                                </Badge>
+                                {booking.employee_id && (
+                                  <div className="text-xs text-muted-foreground truncate hidden sm:block">
+                                    {employees.find(e => e.id === booking.employee_id)?.profiles?.first_name}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-xs text-primary font-medium mt-1">
+                                Click para gestionar
+                              </div>
                             </div>
-                          </React.Fragment>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
+                          )}
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
               </div>
             </ScrollArea>
           </div>

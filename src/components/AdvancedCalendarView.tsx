@@ -21,17 +21,15 @@ import {
   Mail,
   Save,
   X,
-  CheckCircle2,
-  Ban
+  CheckCircle2
 } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { useBookings, useCenters, useLanes, useServices, useLaneBlocks } from '@/hooks/useDatabase';
+import { useBookings, useCenters, useLanes, useServices } from '@/hooks/useDatabase';
 import { useClients } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import ClientSelector from '@/components/ClientSelector';
 
 interface TimeSlot {
@@ -53,18 +51,11 @@ interface BookingFormData {
 
 const AdvancedCalendarView = () => {
   const { toast } = useToast();
-  const { user, isAdmin, isEmployee } = useSimpleAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [selectedCenter, setSelectedCenter] = useState<string>('');
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
-
-  // Lane blocking state
-  const [isBlockingMode, setIsBlockingMode] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ timeSlot: Date; laneId: string } | null>(null);
-  const [dragEnd, setDragEnd] = useState<{ timeSlot: Date; laneId: string } | null>(null);
 
   const [createClientId, setCreateClientId] = useState<string | null>(null);
 
@@ -103,7 +94,6 @@ const AdvancedCalendarView = () => {
   const { centers } = useCenters();
   const { lanes } = useLanes();
   const { services } = useServices();
-  const { laneBlocks, refetch: refetchLaneBlocks, createLaneBlock, deleteLaneBlock } = useLaneBlocks();
   const { updateClient } = useClients();
 
   // Set initial center when centers load
@@ -412,92 +402,6 @@ const AdvancedCalendarView = () => {
 
   const goToToday = () => setSelectedDate(new Date());
 
-  // Lane blocking functions
-  const handleSlotMouseDown = (timeSlot: Date, laneId: string) => {
-    if ((!isAdmin && !isEmployee) || !isBlockingMode) return;
-    
-    setDragStart({ timeSlot, laneId });
-    setIsDragging(true);
-  };
-
-  const handleSlotMouseEnter = (timeSlot: Date, laneId: string) => {
-    if ((!isAdmin && !isEmployee) || !isBlockingMode || !isDragging || !dragStart) return;
-    
-    // Only allow drag within the same lane
-    if (laneId === dragStart.laneId) {
-      setDragEnd({ timeSlot, laneId });
-    }
-  };
-
-  const handleSlotMouseUp = async () => {
-    if ((!isAdmin && !isEmployee) || !isBlockingMode || !isDragging || !dragStart || !dragEnd) {
-      setIsDragging(false);
-      setDragStart(null);
-      setDragEnd(null);
-      return;
-    }
-
-    try {
-      const startTime = dragStart.timeSlot < dragEnd.timeSlot ? dragStart.timeSlot : dragEnd.timeSlot;
-      const endTime = dragStart.timeSlot >= dragEnd.timeSlot ? dragStart.timeSlot : dragEnd.timeSlot;
-      
-      // Add 30 minutes to end time to include the full slot
-      const adjustedEndTime = addMinutes(endTime, 30);
-
-      // Check if there's already a block for this range
-      const existingBlock = laneBlocks.find(block => 
-        block.lane_id === dragStart.laneId &&
-        block.center_id === selectedCenter &&
-        new Date(block.start_datetime) <= startTime &&
-        new Date(block.end_datetime) >= adjustedEndTime
-      );
-
-      if (existingBlock) {
-        // Delete existing block
-        await deleteLaneBlock(existingBlock.id);
-        toast({ title: 'Bloqueo eliminado', description: 'Se ha eliminado el bloqueo del carril.' });
-      } else {
-        // Create new block
-        await createLaneBlock({
-          lane_id: dragStart.laneId,
-          center_id: selectedCenter,
-          start_datetime: startTime.toISOString(),
-          end_datetime: adjustedEndTime.toISOString(),
-          reason: 'Bloqueo manual',
-          created_by: user?.id || ''
-        });
-        toast({ title: 'Carril bloqueado', description: 'Se ha bloqueado el carril correctamente.' });
-      }
-
-      await refetchLaneBlocks();
-    } catch (error) {
-      console.error('Error managing lane block:', error);
-      toast({ title: 'Error', description: 'No se pudo gestionar el bloqueo.', variant: 'destructive' });
-    }
-
-    setIsDragging(false);
-    setDragStart(null);
-    setDragEnd(null);
-  };
-
-  const isSlotBlocked = (laneId: string, timeSlot: Date) => {
-    return laneBlocks.some(block => 
-      block.lane_id === laneId &&
-      block.center_id === selectedCenter &&
-      timeSlot >= new Date(block.start_datetime) &&
-      timeSlot < new Date(block.end_datetime)
-    );
-  };
-
-  const isInDragSelection = (laneId: string, timeSlot: Date) => {
-    if (!isDragging || !dragStart || !dragEnd || laneId !== dragStart.laneId) return false;
-    
-    const start = dragStart.timeSlot < dragEnd.timeSlot ? dragStart.timeSlot : dragEnd.timeSlot;
-    const end = dragStart.timeSlot >= dragEnd.timeSlot ? dragStart.timeSlot : dragEnd.timeSlot;
-    
-    return timeSlot >= start && timeSlot <= end;
-  };
-
   // Render day view
   const renderDayView = () => {
     if (!selectedCenter) return null;
@@ -558,22 +462,11 @@ const AdvancedCalendarView = () => {
                     const isFirstSlotOfBooking = booking && 
                       format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
-                    const isBlocked = isSlotBlocked(lane.id, timeSlot.time);
-                    const isInSelection = isInDragSelection(lane.id, timeSlot.time);
-
                     return (
                       <div
                         key={`${lane.id}-${timeIndex}`}
-                        className={cn(
-                          "relative border-r border-b min-h-[60px] transition-colors cursor-pointer",
-                          isBlockingMode && (isAdmin || isEmployee) ? "cursor-pointer" : "",
-                          isBlocked ? "bg-red-100" : "hover:bg-muted/20",
-                          isInSelection ? "bg-blue-200" : ""
-                        )}
-                        onClick={() => !isBlockingMode && handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time)}
-                        onMouseDown={() => handleSlotMouseDown(timeSlot.time, lane.id)}
-                        onMouseEnter={() => handleSlotMouseEnter(timeSlot.time, lane.id)}
-                        onMouseUp={handleSlotMouseUp}
+                        className="relative border-r border-b min-h-[60px] hover:bg-muted/20 transition-colors cursor-pointer"
+                        onClick={() => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time)}
                       >
                         {booking && isFirstSlotOfBooking && (
                           <div
@@ -762,24 +655,6 @@ const AdvancedCalendarView = () => {
               ))}
             </SelectContent>
           </Select>
-
-          {/* Admin/Employee lane blocking controls */}
-          {(isAdmin || isEmployee) && (
-            <Button 
-              size="sm" 
-              variant={isBlockingMode ? "default" : "outline"}
-              onClick={() => setIsBlockingMode(!isBlockingMode)}
-              className="w-auto"
-            >
-              <Ban className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">
-                {isBlockingMode ? 'Modo Bloqueo ON' : 'Bloquear Carriles'}
-              </span>
-              <span className="sm:hidden">
-                {isBlockingMode ? 'ON' : 'Bloqueo'}
-              </span>
-            </Button>
-          )}
 
           {/* View mode toggle */}
           <Select value={viewMode} onValueChange={(value: 'day' | 'week') => setViewMode(value)}>
