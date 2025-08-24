@@ -31,10 +31,32 @@ import PublicLandingPage from "@/pages/PublicLandingPage";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("bookings");
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const { user, isAdmin, isEmployee, isAuthenticated, loading } = useSimpleAuth();
   const navigate = useNavigate();
 
   const isOwner = !!user && user.email === 'work@thenookmadrid.com';
+
+  // Handle scroll to hide/show header
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down and past 100px
+        setIsHeaderVisible(false);
+      } else {
+        // Scrolling up
+        setIsHeaderVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   // Mostrar página pública si no está autenticado y no está cargando
   if (!loading && !isAuthenticated) {
@@ -71,8 +93,10 @@ const Index = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {/* Mobile Menu - Fixed Header */}
-            <div className="lg:hidden mb-4 fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+            {/* Mobile Menu - Auto Hide Header */}
+            <div className={`lg:hidden mb-4 fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b transition-transform duration-300 ${
+              isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+            }`}>
               <div className="p-3">
                 <select 
                   value={activeTab} 
@@ -90,8 +114,10 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Desktop Grid - Fixed Header */}
-            <div className="hidden lg:grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6 fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-6 pt-4 px-4">
+            {/* Desktop Grid - Auto Hide Header */}
+            <div className={`hidden lg:grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6 fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-6 pt-4 px-4 transition-transform duration-300 ${
+              isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+            }`}>
               <div className="max-w-7xl mx-auto w-full grid grid-cols-2 xl:grid-cols-4 gap-4">
                 <Button
                   variant={activeTab === "reservations" ? "default" : "outline"}

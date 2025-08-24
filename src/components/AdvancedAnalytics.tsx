@@ -196,6 +196,35 @@ export default function AdvancedAnalytics() {
                 {period.label}
               </Button>
             ))}
+            <Popover open={showDatePicker === 'current'} onOpenChange={(open) => setShowDatePicker(open ? 'current' : null)}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  Personalizado
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={{
+                    from: currentPeriod.startDate,
+                    to: currentPeriod.endDate
+                  }}
+                  onSelect={(range) => {
+                    if (range?.from && range?.to) {
+                      setCurrentPeriod({
+                        label: "Período personalizado",
+                        startDate: range.from,
+                        endDate: range.to
+                      });
+                      setShowDatePicker(null);
+                    }
+                  }}
+                  numberOfMonths={2}
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
@@ -218,6 +247,35 @@ export default function AdvancedAnalytics() {
                   {period.label}
                 </Button>
               ))}
+              <Popover open={showDatePicker === 'comparison'} onOpenChange={(open) => setShowDatePicker(open ? 'comparison' : null)}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <CalendarIcon className="h-3 w-3 mr-1" />
+                    Personalizado
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={{
+                      from: comparisonPeriod.startDate,
+                      to: comparisonPeriod.endDate
+                    }}
+                    onSelect={(range) => {
+                      if (range?.from && range?.to) {
+                        setComparisonPeriod({
+                          label: "Período personalizado",
+                          startDate: range.from,
+                          endDate: range.to
+                        });
+                        setShowDatePicker(null);
+                      }
+                    }}
+                    numberOfMonths={2}
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         )}
