@@ -55,7 +55,7 @@ const AdvancedAnalytics = ({ startDate: initialStartDate, endDate: initialEndDat
   
   // State for period comparison
   const [granularity, setGranularity] = useState<GranularityType>('month');
-  const [selectedCenter, setSelectedCenter] = useState<string>(initialCenterId || '');
+  const [selectedCenter, setSelectedCenter] = useState<string>(initialCenterId || 'all');
   const [currentPeriod, setCurrentPeriod] = useState({
     start: new Date(initialStartDate || subMonths(new Date(), 1)),
     end: new Date(initialEndDate || new Date())
@@ -85,7 +85,7 @@ const AdvancedAnalytics = ({ startDate: initialStartDate, endDate: initialEndDat
   } = useDashboard(
     formatDateForAPI(currentPeriod.start), 
     formatDateForAPI(currentPeriod.end), 
-    selectedCenter
+    selectedCenter === 'all' ? '' : selectedCenter
   );
 
   // Get comparison period data
@@ -98,7 +98,7 @@ const AdvancedAnalytics = ({ startDate: initialStartDate, endDate: initialEndDat
   } = useDashboard(
     formatDateForAPI(comparisonPeriod.start), 
     formatDateForAPI(comparisonPeriod.end), 
-    selectedCenter
+    selectedCenter === 'all' ? '' : selectedCenter
   );
 
   // Quick period selectors
@@ -295,7 +295,7 @@ const AdvancedAnalytics = ({ startDate: initialStartDate, endDate: initialEndDat
                   <SelectValue placeholder="Todos los centros" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los centros</SelectItem>
+                  <SelectItem value="all">Todos los centros</SelectItem>
                   {centers.map((center) => (
                     <SelectItem key={center.id} value={center.id}>
                       {center.name}
