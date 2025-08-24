@@ -33,6 +33,7 @@ import { useClients } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ClientSelector from '@/components/ClientSelector';
+import RepeatClientSelector from './RepeatClientSelector';
 import { useLaneBlocks } from '@/hooks/useLaneBlocks';
 import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 
@@ -889,8 +890,9 @@ const AdvancedCalendarView = () => {
 
             <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-4">
               <div className="space-y-2">
-                <ClientSelector
-                  label="Cliente"
+                <RepeatClientSelector
+                  label="Cliente habitual (opcional)"
+                  placeholder="Buscar cliente que haya venido más de una vez..."
                   onSelect={(c) => {
                     setCreateClientId(c.id);
                     setBookingForm((prev) => ({
@@ -901,6 +903,10 @@ const AdvancedCalendarView = () => {
                     }));
                   }}
                 />
+              </div>
+
+              <div className="text-xs text-muted-foreground mb-2">
+                O crear nueva reserva para cliente nuevo:
               </div>
 
               <div className="space-y-2">
