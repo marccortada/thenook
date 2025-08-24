@@ -21,7 +21,6 @@ import AdvancedReports from "@/components/AdvancedReports";
 import NotificationCenter from "@/components/NotificationCenter";
 import UnifiedDashboard from "@/components/UnifiedDashboard";
 import IntelligentAnalytics from "@/components/IntelligentAnalytics";
-import AdvancedAnalytics from "@/components/AdvancedAnalytics";
 
 import SimpleCenterCalendar from "@/components/SimpleCenterCalendar";
 import AdvancedCalendarView from "@/components/AdvancedCalendarView";
@@ -173,7 +172,7 @@ const Index = () => {
 
             {(isAdmin || isOwner) && (
               <TabsContent value="analytics" className="mt-6">
-                <AdvancedAnalytics />
+                <AdvancedDashboard />
               </TabsContent>
             )}
 
