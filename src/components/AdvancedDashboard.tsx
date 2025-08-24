@@ -4,18 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, subDays, subWeeks, subMonths, subQuarters, subYears } from "date-fns";
-import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import { 
   TrendingUp, 
   TrendingDown, 
   Users, 
   DollarSign, 
   Calendar, 
-  CalendarIcon,
   Target,
   Clock,
   Percent,
@@ -26,21 +20,13 @@ import {
   RefreshCw
 } from "lucide-react";
 import { useAdvancedAnalytics } from "@/hooks/useAdvancedAnalytics";
-import { useDashboard } from "@/hooks/useDashboard";
 import { PeriodComparisonChart } from "@/components/PeriodComparisonChart";
+import { cn } from "@/lib/utils";
 
 type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year';
 
 const AdvancedDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
-  
-  // Estados para comparación personalizada
-  const [comparisonType, setComparisonType] = useState<'days' | 'weeks' | 'months' | 'quarters' | 'years'>('days');
-  const [comparisonAmount, setComparisonAmount] = useState<number>(7);
-  const [customStartDate, setCustomStartDate] = useState<Date>();
-  const [customEndDate, setCustomEndDate] = useState<Date>();
-  const [isCustomDateMode, setIsCustomDateMode] = useState(false);
-
   const {
     kpiMetrics,
     periodComparison,
@@ -51,26 +37,6 @@ const AdvancedDashboard = () => {
     loading,
     loadAnalytics
   } = useAdvancedAnalytics();
-
-  // Hook para datos de comparación personalizada
-  const { 
-    stats: comparisonStats,
-    bookingTrends: comparisonTrends
-  } = useDashboard(
-    isCustomDateMode && customStartDate ? format(customStartDate, 'yyyy-MM-dd') : 
-    comparisonType === 'days' ? format(subDays(new Date(), comparisonAmount), 'yyyy-MM-dd') :
-    comparisonType === 'weeks' ? format(subWeeks(new Date(), comparisonAmount), 'yyyy-MM-dd') :
-    comparisonType === 'months' ? format(subMonths(new Date(), comparisonAmount), 'yyyy-MM-dd') :
-    comparisonType === 'quarters' ? format(subQuarters(new Date(), comparisonAmount), 'yyyy-MM-dd') :
-    format(subYears(new Date(), comparisonAmount), 'yyyy-MM-dd'),
-    
-    isCustomDateMode && customEndDate ? format(customEndDate, 'yyyy-MM-dd') :
-    comparisonType === 'days' ? format(subDays(new Date(), 1), 'yyyy-MM-dd') :
-    comparisonType === 'weeks' ? format(subWeeks(new Date(), 1), 'yyyy-MM-dd') :
-    comparisonType === 'months' ? format(subMonths(new Date(), 1), 'yyyy-MM-dd') :
-    comparisonType === 'quarters' ? format(subQuarters(new Date(), 1), 'yyyy-MM-dd') :
-    format(subYears(new Date(), 1), 'yyyy-MM-dd')
-  );
 
   const handlePeriodChange = (period: PeriodType) => {
     setSelectedPeriod(period);
@@ -282,142 +248,6 @@ const AdvancedDashboard = () => {
         </TabsList>
 
         <TabsContent value="trends" className="space-y-4">
-          {/* Controles de comparación personalizada */}
-          <Card className="border-2 border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
-                Comparar Períodos Personalizados
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-4 items-end">
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant={isCustomDateMode ? "outline" : "default"}
-                    size="sm"
-                    onClick={() => setIsCustomDateMode(false)}
-                  >
-                    Período Relativo
-                  </Button>
-                  <Button
-                    variant={isCustomDateMode ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setIsCustomDateMode(true)}
-                  >
-                    Fechas Personalizadas
-                  </Button>
-                </div>
-
-                {!isCustomDateMode ? (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Cantidad</label>
-                      <Select
-                        value={comparisonAmount.toString()}
-                        onValueChange={(value) => setComparisonAmount(parseInt(value))}
-                      >
-                        <SelectTrigger className="w-24">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 7, 14, 15, 30].map((num) => (
-                            <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Período</label>
-                      <Select
-                        value={comparisonType}
-                        onValueChange={(value: 'days' | 'weeks' | 'months' | 'quarters' | 'years') => setComparisonType(value)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="days">Días</SelectItem>
-                          <SelectItem value="weeks">Semanas</SelectItem>
-                          <SelectItem value="months">Meses</SelectItem>
-                          <SelectItem value="quarters">Trimestres</SelectItem>
-                          <SelectItem value="years">Años</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Fecha Inicio</label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-40 justify-start text-left font-normal",
-                              !customStartDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {customStartDate ? format(customStartDate, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={customStartDate}
-                            onSelect={setCustomStartDate}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Fecha Fin</label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-40 justify-start text-left font-normal",
-                              !customEndDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {customEndDate ? format(customEndDate, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={customEndDate}
-                            onSelect={setCustomEndDate}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </>
-                )}
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Comparación Personalizada</label>
-                  <div className="text-sm text-muted-foreground">
-                    Actual: {kpiMetrics?.totalBookings || 0} reservas vs Comparado: {comparisonStats.totalBookings} reservas
-                    <br />
-                    Diferencia: {((kpiMetrics?.totalBookings || 0) - comparisonStats.totalBookings) > 0 ? '+' : ''}{(kpiMetrics?.totalBookings || 0) - comparisonStats.totalBookings} reservas
-                    ({comparisonStats.totalBookings > 0 ? ((((kpiMetrics?.totalBookings || 0) - comparisonStats.totalBookings) / comparisonStats.totalBookings) * 100).toFixed(1) : 0}%)
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           <div className="grid gap-4 lg:grid-cols-3">
             {/* Period Comparison Chart */}
             <div className="lg:col-span-2">
