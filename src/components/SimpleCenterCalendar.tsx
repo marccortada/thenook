@@ -33,7 +33,7 @@ import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 
 const SimpleCenterCalendar = () => {
   const { toast } = useToast();
-  const { user, isAdmin } = useSimpleAuth();
+  const { user, isAdmin, isEmployee } = useSimpleAuth();
   const [selectedDate, setSelectedDate] = useState(new Date('2025-08-06'));
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -447,14 +447,14 @@ const SimpleCenterCalendar = () => {
 
   // Lane blocking functions (admin only)
   const handleSlotMouseDown = (timeSlot: Date, laneId: string) => {
-    if (!isAdmin || !isBlockingMode) return;
+    if ((!isAdmin && !isEmployee) || !isBlockingMode) return;
     
     setDragStart({ timeSlot, laneId });
     setIsDragging(true);
   };
 
   const handleSlotMouseEnter = (timeSlot: Date, laneId: string) => {
-    if (!isAdmin || !isBlockingMode || !isDragging || !dragStart) return;
+    if ((!isAdmin && !isEmployee) || !isBlockingMode || !isDragging || !dragStart) return;
     
     // Only allow drag within the same lane
     if (laneId === dragStart.laneId) {
@@ -463,7 +463,7 @@ const SimpleCenterCalendar = () => {
   };
 
   const handleSlotMouseUp = async () => {
-    if (!isAdmin || !isBlockingMode || !isDragging || !dragStart || !dragEnd) {
+    if ((!isAdmin && !isEmployee) || !isBlockingMode || !isDragging || !dragStart || !dragEnd) {
       setIsDragging(false);
       setDragStart(null);
       setDragEnd(null);
@@ -641,8 +641,8 @@ const SimpleCenterCalendar = () => {
             <span className="sm:hidden">Nueva</span>
           </Button>
 
-          {/* Admin lane blocking controls */}
-          {isAdmin && (
+          {/* Admin/Employee lane blocking controls */}
+          {(isAdmin || isEmployee) && (
             <Button 
               size="sm" 
               variant={isBlockingMode ? "default" : "outline"}
@@ -713,7 +713,7 @@ const SimpleCenterCalendar = () => {
                                   key={`${timeIndex}-${lane.id}`}
                                   className={cn(
                                     "relative border-b border-r last:border-r-0 min-h-[50px] sm:min-h-[64px] transition-colors",
-                                    isBlockingMode && isAdmin ? "cursor-pointer" : "",
+                                    isBlockingMode && (isAdmin || isEmployee) ? "cursor-pointer" : "",
                                     isBlocked ? "bg-red-100" : "hover:bg-muted/20",
                                     isInSelection ? "bg-blue-200" : "",
                                     availableCapacity === 0 && !booking ? "bg-gray-100" : ""
