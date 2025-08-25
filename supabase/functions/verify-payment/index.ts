@@ -50,13 +50,37 @@ serve(async (req) => {
     if (intent === "gift_cards") {
       const payloadRaw = session.metadata?.gc_payload;
       if (payloadRaw) {
-        const payload = JSON.parse(payloadRaw) as { items: { amount_cents: number; quantity?: number }[] };
-        const created: Array<{ id: string; code: string; amount_cents: number }> = [];
+        const payload = JSON.parse(payloadRaw) as { 
+          items: { 
+            amount_cents: number; 
+            quantity?: number;
+            purchased_by_name?: string;
+            purchased_by_email?: string;
+            is_gift?: boolean;
+            recipient_name?: string;
+            recipient_email?: string;
+            gift_message?: string;
+          }[] 
+        };
+        
+        const created: Array<{ 
+          id: string; 
+          code: string; 
+          amount_cents: number;
+          purchased_by_name?: string;
+          purchased_by_email?: string;
+          is_gift?: boolean;
+          recipient_name?: string;
+          recipient_email?: string;
+          gift_message?: string;
+        }> = [];
+        
         for (const it of payload.items) {
           const qty = it.quantity ?? 1;
           for (let i = 0; i < qty; i++) {
             const { data: code, error: codeErr } = await supabaseAdmin.rpc("generate_voucher_code");
             if (codeErr) throw codeErr;
+            
             const { data, error } = await supabaseAdmin
               .from("gift_cards")
               .insert({
@@ -64,50 +88,199 @@ serve(async (req) => {
                 remaining_balance_cents: it.amount_cents,
                 status: "active",
                 code,
+                purchased_by_name: it.purchased_by_name,
+                purchased_by_email: it.purchased_by_email || buyerEmail,
               })
               .select("id, code")
               .single();
             if (error) throw error;
-            created.push({ id: data.id, code: data.code, amount_cents: it.amount_cents });
+            
+            created.push({ 
+              id: data.id, 
+              code: data.code, 
+              amount_cents: it.amount_cents,
+              purchased_by_name: it.purchased_by_name,
+              purchased_by_email: it.purchased_by_email,
+              is_gift: it.is_gift,
+              recipient_name: it.recipient_name,
+              recipient_email: it.recipient_email,
+              gift_message: it.gift_message
+            });
           }
         }
         results.gift_cards = created;
 
-        // Enviar emails (cliente y administrador)
+        // Enviar emails con imagen de tarjeta regalo
         try {
-          const codesHtml = created
-            .map((c) => `<li><strong>${(c.amount_cents / 100).toFixed(2)}€</strong> — Código: <code>${c.code}</code></li>`) 
-            .join("");
+          for (const card of created) {
+            // Crear imagen SVG de la tarjeta regalo
+            const giftCardImage = `data:image/svg+xml;base64,${btoa(`
+              <svg width="400" height="250" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+                  </linearGradient>
+                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="3" dy="3" stdDeviation="3" flood-opacity="0.3"/>
+                  </filter>
+                </defs>
+                
+                <!-- Card background -->
+                <rect x="10" y="10" width="380" height="230" rx="15" ry="15" 
+                      fill="url(#cardGradient)" filter="url(#shadow)"/>
+                
+                <!-- Decorative elements -->
+                <circle cx="350" cy="50" r="30" fill="white" opacity="0.2"/>
+                <circle cx="50" cy="200" r="25" fill="white" opacity="0.15"/>
+                
+                <!-- Title -->
+                <text x="200" y="50" text-anchor="middle" 
+                      font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">
+                  TARJETA REGALO
+                </text>
+                
+                <!-- Brand -->
+                <text x="200" y="75" text-anchor="middle" 
+                      font-family="Arial, sans-serif" font-size="16" fill="white" opacity="0.9">
+                  The Nook Madrid
+                </text>
+                
+                <!-- Amount -->
+                <text x="200" y="120" text-anchor="middle" 
+                      font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white">
+                  ${(card.amount_cents / 100).toFixed(2)}€
+                </text>
+                
+                <!-- Code -->
+                <rect x="80" y="150" width="240" height="40" rx="8" ry="8" fill="white" opacity="0.9"/>
+                <text x="200" y="175" text-anchor="middle" 
+                      font-family="monospace" font-size="18" font-weight="bold" fill="#333">
+                  ${card.code}
+                </text>
+                
+                <!-- Instructions -->
+                <text x="200" y="210" text-anchor="middle" 
+                      font-family="Arial, sans-serif" font-size="12" fill="white" opacity="0.8">
+                  Presenta este código en tu visita
+                </text>
+              </svg>
+            `)}`;
 
-          if (buyerEmail) {
-            await resend.emails.send({
-              from: fromEmail,
-              to: [buyerEmail],
-              subject: "Confirmación de compra: Tarjetas regalo",
-              html: `
-                <div style="font-family: Arial, sans-serif;">
-                  <h2>¡Gracias por tu compra!</h2>
-                  <p>Has adquirido las siguientes tarjetas regalo:</p>
-                  <ul>${codesHtml}</ul>
-                  <p>Puedes canjearlas presentando el código en The Nook Madrid.</p>
+            const purchaserEmail = card.purchased_by_email || buyerEmail;
+            const isGift = card.is_gift;
+            const recipientEmail = card.recipient_email;
+            const recipientName = card.recipient_name;
+            const purchaserName = card.purchased_by_name;
+            const giftMessage = card.gift_message;
+
+            // Email al destinatario (si es regalo) o comprador
+            const finalRecipientEmail = isGift ? recipientEmail : purchaserEmail;
+            const finalRecipientName = isGift ? recipientName : purchaserName;
+            
+            if (finalRecipientEmail) {
+              const recipientSubject = isGift 
+                ? `🎁 ¡Has recibido una tarjeta regalo de ${purchaserName || 'alguien especial'}!`
+                : "Tu tarjeta regalo de The Nook Madrid";
+                
+              const recipientHtml = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="text-align: center; padding: 20px;">
+                    <h2 style="color: #8B5CF6;">${isGift ? '🎁 ¡Has recibido una tarjeta regalo!' : '✨ Tu tarjeta regalo'}</h2>
+                    ${isGift ? `<p style="font-size: 18px; color: #666;">De parte de: <strong>${purchaserName || 'Alguien especial'}</strong></p>` : ''}
+                    ${giftMessage ? `<div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; font-style: italic; color: #666;">"${giftMessage}"</div>` : ''}
+                    
+                    <div style="margin: 30px 0;">
+                      <img src="${giftCardImage}" alt="Tarjeta Regalo" style="max-width: 100%; height: auto; border-radius: 15px;"/>
+                    </div>
+                    
+                    <div style="background: #f0f9ff; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                      <h3 style="color: #1e40af; margin-top: 0;">¿Cómo usar tu tarjeta regalo?</h3>
+                      <ol style="text-align: left; color: #374151;">
+                        <li>Reserva tu cita llamando al <strong>+34 XXX XXX XXX</strong></li>
+                        <li>Presenta el código <strong>${card.code}</strong> al llegar</li>
+                        <li>¡Disfruta de tu experiencia relajante!</li>
+                      </ol>
+                    </div>
+                    
+                    <p style="color: #666; font-size: 14px;">
+                      Esta tarjeta regalo tiene un valor de <strong>${(card.amount_cents / 100).toFixed(2)}€</strong><br>
+                      Válida en The Nook Madrid
+                    </p>
+                  </div>
                 </div>
-              `,
-            });
+              `;
+              
+              await resend.emails.send({
+                from: fromEmail,
+                to: [finalRecipientEmail],
+                subject: recipientSubject,
+                html: recipientHtml,
+              });
+            }
+
+            // Email al comprador (si es regalo y es diferente del destinatario)
+            if (isGift && purchaserEmail && purchaserEmail.toLowerCase() !== recipientEmail?.toLowerCase()) {
+              const purchaserHtml = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="text-align: center; padding: 20px;">
+                    <h2 style="color: #8B5CF6;">✅ Confirmación de compra</h2>
+                    <p>Tu tarjeta regalo ha sido enviada exitosamente a <strong>${recipientName}</strong> (${recipientEmail})</p>
+                    
+                    <div style="margin: 30px 0;">
+                      <img src="${giftCardImage}" alt="Tarjeta Regalo" style="max-width: 100%; height: auto; border-radius: 15px;"/>
+                    </div>
+                    
+                    <div style="background: #f0fdf4; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                      <h3 style="color: #166534; margin-top: 0;">Detalles del regalo</h3>
+                      <p style="color: #374151; margin: 5px 0;"><strong>Para:</strong> ${recipientName} (${recipientEmail})</p>
+                      <p style="color: #374151; margin: 5px 0;"><strong>Valor:</strong> ${(card.amount_cents / 100).toFixed(2)}€</p>
+                      <p style="color: #374151; margin: 5px 0;"><strong>Código:</strong> ${card.code}</p>
+                      ${giftMessage ? `<p style="color: #374151; margin: 5px 0;"><strong>Mensaje:</strong> "${giftMessage}"</p>` : ''}
+                    </div>
+                    
+                    <p style="color: #666; font-size: 14px;">
+                      Gracias por elegir The Nook Madrid para tu regalo especial.
+                    </p>
+                  </div>
+                </div>
+              `;
+              
+              await resend.emails.send({
+                from: fromEmail,
+                to: [purchaserEmail],
+                subject: "Confirmación: Tarjeta regalo enviada",
+                html: purchaserHtml,
+              });
+            }
           }
 
+          // Email al administrador
           if (adminEmail) {
+            const adminHtml = `
+              <div style="font-family: Arial, sans-serif;">
+                <h3>🎁 Nueva compra de tarjetas regalo</h3>
+                <p><strong>Total:</strong> ${created.length} tarjeta(s)</p>
+                <p><strong>Comprador:</strong> ${buyerEmail || "desconocido"}</p>
+                
+                <h4>Detalles:</h4>
+                <ul>
+                  ${created.map((c) => `
+                    <li>
+                      <strong>${(c.amount_cents / 100).toFixed(2)}€</strong> — Código: <code>${c.code}</code><br>
+                      ${c.is_gift ? `🎁 <em>Regalo para: ${c.recipient_name} (${c.recipient_email})</em>` : '📝 <em>Compra personal</em>'}
+                      ${c.gift_message ? `<br>💌 Mensaje: "${c.gift_message}"` : ''}
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            `;
+            
             await resend.emails.send({
               from: fromEmail,
               to: [adminEmail],
               subject: "Nueva compra de tarjetas regalo",
-              html: `
-                <div style="font-family: Arial, sans-serif;">
-                  <h3>Nueva compra de tarjetas regalo</h3>
-                  <p>Total: ${created.length} tarjeta(s)</p>
-                  <ul>${codesHtml}</ul>
-                  <p>Comprador: ${buyerEmail || "desconocido"}</p>
-                </div>
-              `,
+              html: adminHtml,
             });
           }
         } catch (e) {

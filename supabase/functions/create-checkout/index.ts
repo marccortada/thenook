@@ -9,7 +9,16 @@ const corsHeaders = {
 };
 
 // Types for incoming request
-interface GiftCardItemReq { amount_cents: number; quantity?: number }
+interface GiftCardItemReq { 
+  amount_cents: number; 
+  quantity?: number;
+  purchased_by_name?: string;
+  purchased_by_email?: string;
+  is_gift?: boolean;
+  recipient_name?: string;
+  recipient_email?: string;
+  gift_message?: string;
+}
 interface PackageVoucherReq {
   package_id: string;
   mode?: "self" | "gift";
