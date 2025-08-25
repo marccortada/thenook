@@ -1112,7 +1112,7 @@ const AdvancedCalendarView = () => {
 
       {/* Edit Booking Modal */}
       <Dialog open={showEditModal} onOpenChange={(open) => { setShowEditModal(open); if (!open) setEditingBooking(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg mx-4 sm:mx-auto">
           <DialogHeader>
             <DialogTitle>Editar Reserva</DialogTitle>
             <DialogDescription>Modifica notas, pago y cliente.</DialogDescription>
@@ -1229,11 +1229,14 @@ const AdvancedCalendarView = () => {
                 />
               </div>
 
-              <div className="flex justify-between gap-2">
-                <div className="flex gap-2">
+              {/* Action Buttons - Responsive Layout */}
+              <div className="space-y-3">
+                {/* Primary Actions */}
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button 
                     size="sm" 
                     variant="default"
+                    className="flex-1"
                     onClick={() => {
                       setEditPaymentStatus('paid');
                       setEditBookingStatus('confirmed');
@@ -1241,31 +1244,48 @@ const AdvancedCalendarView = () => {
                   >
                     💳 Cobrar
                   </Button>
-                </div>
-                <div className="flex gap-2">
+                  
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive">
+                      <Button size="sm" variant="destructive" className="flex-1">
                         <Trash2 className="h-4 w-4 mr-2" /> Borrar
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="mx-4 sm:mx-auto">
                       <AlertDialogHeader>
                         <AlertDialogTitle>¿Borrar reserva?</AlertDialogTitle>
                         <AlertDialogDescription>
                           Esta acción elimina la reserva definitivamente. No se puede deshacer.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deleteBooking(editingBooking.id)}>Sí, borrar</AlertDialogAction>
+                      <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => deleteBooking(editingBooking.id)}
+                          className="w-full sm:w-auto"
+                        >
+                          Sí, borrar
+                        </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  <Button size="sm" variant="outline" onClick={() => { setShowEditModal(false); setEditingBooking(null); }}>
+                </div>
+                
+                {/* Secondary Actions */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => { setShowEditModal(false); setEditingBooking(null); }}
+                  >
                     <X className="h-4 w-4 mr-2" /> Cancelar
                   </Button>
-                  <Button size="sm" onClick={saveBookingEdits}>
+                  <Button 
+                    size="sm" 
+                    onClick={saveBookingEdits}
+                    className="flex-1"
+                  >
                     <Save className="h-4 w-4 mr-2" /> Guardar
                   </Button>
                 </div>
