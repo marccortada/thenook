@@ -10,6 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { 
   Gift, 
   Clock, 
@@ -23,9 +26,12 @@ import {
   RotateCcw,
   Edit3,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Search,
+  CreditCard
 } from 'lucide-react';
 import { useClientPackages, useExpiringPackages, type ClientPackage } from '@/hooks/useClientPackages';
+import { useGiftCards, useExpiringGiftCards, type GiftCard } from '@/hooks/useGiftCards';
 import { usePackages } from '@/hooks/useDatabase';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -34,17 +40,28 @@ import ClientSelector from '@/components/ClientSelector';
 const PackageManagement = () => {
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showCreateGiftCardDialog, setShowCreateGiftCardDialog] = useState(false);
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [notesText, setNotesText] = useState('');
   const [selectedPackageId, setSelectedPackageId] = useState<string>('');
+  const [editingGiftCard, setEditingGiftCard] = useState<GiftCard | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [searchTerm, setSearchTerm] = useState('');
   
+  // Hooks para bonos
   const { packages, loading, error, refetch, createPackage, usePackageSession, cancelPackage, updatePackageNotes } = useClientPackages(selectedClient);
   const [daysAhead, setDaysAhead] = useState<number>(7);
   const { expiringPackages, loading: expiringLoading, refetch: refetchExpiring } = useExpiringPackages(daysAhead);
   const { packages: availablePackages } = usePackages();
   const [createClientId, setCreateClientId] = useState<string>("");
+  
+  // Hooks para tarjetas regalo
+  const { giftCards, loading: giftCardsLoading, error: giftCardsError, refetch: refetchGiftCards, createGiftCard, updateGiftCard, deactivateGiftCard } = useGiftCards(searchTerm);
+  const [giftCardDaysAhead, setGiftCardDaysAhead] = useState<number>(30);
+  const { expiringGiftCards, loading: expiringGiftCardsLoading, refetch: refetchExpiringGiftCards } = useExpiringGiftCards(giftCardDaysAhead);
+  const [createGiftCardClientId, setCreateGiftCardClientId] = useState<string>('');
 
-  const getStatusColor = (status: ClientPackage['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
         return 'bg-green-100 text-green-800 border-green-300';
@@ -59,16 +76,16 @@ const PackageManagement = () => {
     }
   };
 
-  const getStatusLabel = (status: ClientPackage['status']) => {
+  const getStatusLabel = (status: string) => {
     switch (status) {
       case 'active':
-        return 'Activo';
+        return 'Activo/a';
       case 'expired':
-        return 'Expirado';
+        return 'Expirado/a';
       case 'used_up':
-        return 'Agotado';
+        return 'Agotado/a';
       case 'cancelled':
-        return 'Cancelado';
+        return 'Cancelado/a';
       default:
         return status;
     }
@@ -76,6 +93,10 @@ const PackageManagement = () => {
 
   const getProgressPercentage = (used: number, total: number) => {
     return Math.round((used / total) * 100);
+  };
+
+  const getUsagePercentage = (remaining: number, initial: number) => {
+    return Math.round(((initial - remaining) / initial) * 100);
   };
 
   const handleCreatePackage = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -87,7 +108,6 @@ const PackageManagement = () => {
     const packageData = {
       client_id: createClientId,
       package_id: selectedPackageId,
-      // expiry_date eliminado - los bonos no caducan
       purchase_price_cents: selectedPkg?.price_cents ?? 0,
       total_sessions: selectedPkg?.sessions_count ?? 1,
       notes: (formData.get('notes') as string) || undefined,
@@ -103,6 +123,33 @@ const PackageManagement = () => {
       refetch();
     } catch (error) {
       console.error('Error creating package:', error);
+    }
+  };
+
+  const handleCreateGiftCard = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    const giftCardData = {
+      initial_balance_cents: Math.round(parseFloat(formData.get('amount') as string) * 100),
+      assigned_client_id: createGiftCardClientId || undefined,
+      expiry_date: selectedDate ? selectedDate.toISOString() : undefined,
+      purchased_by_name: (formData.get('purchased_by_name') as string) || undefined,
+      purchased_by_email: (formData.get('purchased_by_email') as string) || undefined,
+    };
+
+    if (!giftCardData.initial_balance_cents || giftCardData.initial_balance_cents <= 0) {
+      return;
+    }
+
+    try {
+      await createGiftCard(giftCardData);
+      setShowCreateGiftCardDialog(false);
+      setCreateGiftCardClientId('');
+      setSelectedDate(undefined);
+      refetchGiftCards();
+    } catch (error) {
+      console.error('Error creating gift card:', error);
     }
   };
 
@@ -125,16 +172,31 @@ const PackageManagement = () => {
     refetch();
   };
 
+  const handleUpdateGiftCard = async (id: string, updates: Partial<GiftCard>) => {
+    const success = await updateGiftCard(id, updates);
+    if (success) {
+      setEditingGiftCard(null);
+      refetchGiftCards();
+    }
+  };
+
+  const handleDeactivateGiftCard = async (id: string) => {
+    const success = await deactivateGiftCard(id);
+    if (success) {
+      refetchGiftCards();
+    }
+  };
+
   const startEditingNotes = (packageId: string, currentNotes: string) => {
     setEditingNotes(packageId);
     setNotesText(currentNotes || '');
   };
 
-  if (loading) {
+  if (loading || giftCardsLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
             <Card key={i}>
               <CardHeader>
                 <Skeleton className="h-6 w-32" />
@@ -146,31 +208,19 @@ const PackageManagement = () => {
             </Card>
           ))}
         </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-40" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
-  if (error) {
+  if (error || giftCardsError) {
     return (
       <div className="space-y-6">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <p className="text-red-500 mb-4">{error}</p>
-              <Button onClick={refetch} variant="outline">
+              <p className="text-red-500 mb-4">{error || giftCardsError}</p>
+              <Button onClick={() => { refetch(); refetchGiftCards(); }} variant="outline">
                 <RotateCcw className="mr-2 h-4 w-4" />
                 Reintentar
               </Button>
@@ -186,86 +236,23 @@ const PackageManagement = () => {
       {/* Header with Actions */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Bonos</h2>
-          <p className="text-muted-foreground">Administra los bonos y paquetes de sesiones</p>
+          <h2 className="text-2xl font-bold">Gestión de Bonos y Tarjetas Regalo</h2>
+          <p className="text-muted-foreground">Administra los bonos, paquetes de sesiones y tarjetas regalo</p>
         </div>
         <div className="flex space-x-2">
-          <Button onClick={refetch} variant="outline" size="sm">
+          <Button onClick={() => { refetch(); refetchGiftCards(); }} variant="outline" size="sm">
             <RotateCcw className="mr-2 h-4 w-4" />
             Actualizar
           </Button>
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Crear Bono
-              </Button>
-            </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Crear Nuevo Bono</DialogTitle>
-                  <DialogDescription>Selecciona el cliente y el paquete; el precio y sesiones se rellenan automáticamente.</DialogDescription>
-                </DialogHeader>
-              <form onSubmit={handleCreatePackage} className="space-y-4">
-                <div>
-                  <ClientSelector
-                    label="Cliente"
-                    placeholder="Busca por nombre, email o teléfono"
-                    onSelect={(c) => setCreateClientId(c.id)}
-                  />
-                  {!createClientId && (
-                    <p className="text-xs text-muted-foreground mt-1">Selecciona un cliente para continuar</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="package_id">Paquete</Label>
-                  <Select name="package_id" required value={selectedPackageId} onValueChange={setSelectedPackageId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar paquete" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availablePackages.map((pkg) => (
-                        <SelectItem key={pkg.id} value={pkg.id}>
-                          {pkg.name} - {pkg.sessions_count} sesiones
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedPackageId && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Se asignarán {availablePackages.find(p=>p.id===selectedPackageId)?.sessions_count} sesiones por €{((availablePackages.find(p=>p.id===selectedPackageId)?.price_cents||0)/100).toFixed(2)}
-                    </p>
-                  )}
-                </div>
-                {/* Campo de fecha de vencimiento eliminado - los bonos no caducan */}
-                <div>
-                  <Label htmlFor="notes">Notas (opcional)</Label>
-                  <Textarea 
-                    id="notes" 
-                    name="notes" 
-                    placeholder="Información adicional..."
-                  />
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={!createClientId || !selectedPackageId}>
-                    Crear Bono
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Combinando bonos y tarjetas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Bonos Activos</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <Gift className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -276,35 +263,20 @@ const PackageManagement = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Por Vencer</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <CardTitle className="text-sm font-medium">Tarjetas Activas</CardTitle>
+            <CreditCard className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {expiringPackages.length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Próximos {daysAhead} días
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expirados</CardTitle>
-            <XCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {packages.filter(p => p.status === 'expired').length}
+              {giftCards.filter(g => g.status === 'active').length}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
-            <Euro className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-sm font-medium">Valor Bonos</CardTitle>
+            <Euro className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -312,20 +284,105 @@ const PackageManagement = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Valor Tarjetas</CardTitle>
+            <Euro className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              €{giftCards
+                .filter(g => g.status === 'active')
+                .reduce((sum, g) => sum + (g.remaining_balance_cents / 100), 0)
+                .toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search Bar */}
+      <div className="flex items-center space-x-2">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar tarjetas por código, nombre o email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all">Todos los Bonos</TabsTrigger>
-          <TabsTrigger value="expiring">Por Vencer</TabsTrigger>
-          <TabsTrigger value="active">Solo Activos</TabsTrigger>
+      <Tabs defaultValue="bonos-all" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="bonos-all">Todos los Bonos</TabsTrigger>
+          <TabsTrigger value="bonos-expiring">Bonos por Vencer</TabsTrigger>
+          <TabsTrigger value="bonos-active">Solo Bonos Activos</TabsTrigger>
+          <TabsTrigger value="tarjetas-all">Todas las Tarjetas</TabsTrigger>
+          <TabsTrigger value="tarjetas-expiring">Tarjetas por Vencer</TabsTrigger>
+          <TabsTrigger value="tarjetas-active">Solo Tarjetas Activas</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all">
+        {/* Pestañas de Bonos */}
+        <TabsContent value="bonos-all">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Todos los Bonos</CardTitle>
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Crear Bono
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Crear Nuevo Bono</DialogTitle>
+                    <DialogDescription>Selecciona el cliente y el paquete.</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreatePackage} className="space-y-4">
+                    <div>
+                      <ClientSelector
+                        placeholder="Busca por nombre, email o teléfono"
+                        onSelect={(c) => setCreateClientId(c.id)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="package_id">Paquete</Label>
+                      <Select name="package_id" required value={selectedPackageId} onValueChange={setSelectedPackageId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar paquete" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availablePackages.map((pkg) => (
+                            <SelectItem key={pkg.id} value={pkg.id}>
+                              {pkg.name} - {pkg.sessions_count} sesiones
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="notes">Notas (opcional)</Label>
+                      <Textarea 
+                        id="notes" 
+                        name="notes" 
+                        placeholder="Información adicional..."
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={!createClientId || !selectedPackageId}>
+                        Crear Bono
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               {packages.length === 0 ? (
@@ -339,7 +396,7 @@ const PackageManagement = () => {
                     <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="text-sm font-medium">Código del bono: <span className="font-mono">{pkg.voucher_code}</span></div>
+                          <div className="text-sm font-medium">Código: <span className="font-mono">{pkg.voucher_code}</span></div>
                           <Badge className={getStatusColor(pkg.status)}>
                             {getStatusLabel(pkg.status)}
                           </Badge>
@@ -417,8 +474,7 @@ const PackageManagement = () => {
                         </div>
                         
                         <div>
-                          {/* Información de fecha de vencimiento eliminada - los bonos no caducan */}
-                          <div className="flex items-center space-x-2 mt-1">
+                          <div className="flex items-center space-x-2">
                             <Euro className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm font-medium">
                               €{(pkg.purchase_price_cents / 100).toFixed(2)}
@@ -426,12 +482,6 @@ const PackageManagement = () => {
                           </div>
                         </div>
                       </div>
-                      
-                      {pkg.notes && (
-                        <div className="mt-4 p-3 bg-muted rounded-lg">
-                          <p className="text-sm">{pkg.notes}</p>
-                        </div>
-                      )}
                       
                       {editingNotes === pkg.id && (
                         <div className="mt-4 space-y-2">
@@ -465,59 +515,248 @@ const PackageManagement = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="expiring">
+        <TabsContent value="bonos-expiring">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                  <span>Bonos Próximos a Vencer</span>
-                </span>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="daysAhead" className="text-sm">Días</Label>
-                  <Input id="daysAhead" type="number" min={1} max={60} value={daysAhead}
-                    onChange={(e) => setDaysAhead(Number(e.target.value) || 7)} className="w-20 h-8" />
-                </div>
-              </CardTitle>
+              <CardTitle>Bonos por Vencer</CardTitle>
             </CardHeader>
             <CardContent>
-              {expiringLoading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
-                  ))}
-                </div>
-              ) : expiringPackages.length === 0 ? (
+              <p className="text-muted-foreground">Los bonos no tienen fecha de vencimiento.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="bonos-active">
+          <Card>
+            <CardHeader>
+              <CardTitle>Bonos Activos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {packages.filter(p => p.status === 'active').map((pkg) => (
+                  <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-sm font-medium">Código: <span className="font-mono">{pkg.voucher_code}</span></div>
+                        <Badge className={getStatusColor(pkg.status)}>
+                          {getStatusLabel(pkg.status)}
+                        </Badge>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleUseSession(pkg.id)}
+                      >
+                        Usar Sesión
+                      </Button>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-sm">
+                        {pkg.profiles?.first_name} {pkg.profiles?.last_name}
+                      </div>
+                      <div className="text-sm">
+                        {pkg.used_sessions}/{pkg.total_sessions} sesiones
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Pestañas de Tarjetas Regalo */}
+        <TabsContent value="tarjetas-all">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Todas las Tarjetas Regalo</CardTitle>
+              <Dialog open={showCreateGiftCardDialog} onOpenChange={setShowCreateGiftCardDialog}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Crear Tarjeta Regalo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Crear Nueva Tarjeta Regalo</DialogTitle>
+                    <DialogDescription>Crea una nueva tarjeta regalo especificando el monto.</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateGiftCard} className="space-y-4">
+                    <div>
+                      <Label htmlFor="amount">Monto (€)</Label>
+                      <Input
+                        id="amount"
+                        name="amount"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        required
+                        placeholder="50.00"
+                      />
+                    </div>
+                    <div>
+                      <Label>Cliente (opcional)</Label>
+                      <ClientSelector
+                        placeholder="Busca por nombre, email o teléfono"
+                        onSelect={(c) => setCreateGiftCardClientId(c.id)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Fecha de vencimiento (opcional)</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !selectedDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarDays className="mr-2 h-4 w-4" />
+                            {selectedDate ? format(selectedDate, "PPP", { locale: es }) : "Seleccionar fecha"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={setSelectedDate}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div>
+                      <Label htmlFor="purchased_by_name">Comprado por (nombre)</Label>
+                      <Input
+                        id="purchased_by_name"
+                        name="purchased_by_name"
+                        placeholder="Nombre del comprador"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="purchased_by_email">Email del comprador</Label>
+                      <Input
+                        id="purchased_by_email"
+                        name="purchased_by_email"
+                        type="email"
+                        placeholder="email@ejemplo.com"
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline" onClick={() => setShowCreateGiftCardDialog(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit">
+                        Crear Tarjeta Regalo
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {giftCards.length === 0 ? (
                 <div className="text-center py-8">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No hay bonos próximos a vencer</p>
+                  <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No hay tarjetas regalo registradas</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {expiringPackages.map((pkg) => (
-                    <div key={pkg.id} className="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded-lg">
+                  {giftCards.map((card) => (
+                    <div key={card.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{pkg.client_name}</div>
-                          <div className="text-sm text-muted-foreground">{pkg.client_email}</div>
+                        <div className="flex items-center space-x-4">
+                          <div className="text-sm font-medium">Código: <span className="font-mono">{card.code}</span></div>
+                          <Badge className={getStatusColor(card.status)}>
+                            {getStatusLabel(card.status)}
+                          </Badge>
                         </div>
-                        <div className="text-right">
-                          <div className="font-medium">{pkg.package_name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {pkg.remaining_sessions} sesiones restantes
-                          </div>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setEditingGiftCard(card)}
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                          {card.status === 'active' && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>¿Desactivar tarjeta regalo?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta acción marcará la tarjeta como expirada.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeactivateGiftCard(card.id)}>
+                                    Confirmar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs">Código del bono:</span>
-                          <span className="font-mono text-sm">{pkg.voucher_code}</span>
+                      
+                      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          {card.profiles ? (
+                            <div className="flex items-center space-x-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">
+                                {card.profiles.first_name} {card.profiles.last_name}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              {card.purchased_by_name || 'Sin asignar'}
+                            </div>
+                          )}
+                          <p className="text-sm text-muted-foreground">
+                            {card.profiles?.email || card.purchased_by_email || ''}
+                          </p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-yellow-500" />
-                          <span className="text-sm font-medium text-yellow-700">
-                            {pkg.days_to_expiry} días restantes
-                          </span>
+                        
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <Euro className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">
+                              €{(card.remaining_balance_cents / 100).toFixed(2)} / €{(card.initial_balance_cents / 100).toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${100 - getUsagePercentage(card.remaining_balance_cents, card.initial_balance_cents)}%` }}
+                              />
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              {100 - getUsagePercentage(card.remaining_balance_cents, card.initial_balance_cents)}%
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">
+                              {card.expiry_date 
+                                ? format(new Date(card.expiry_date), "dd/MM/yyyy", { locale: es })
+                                : 'Sin vencimiento'
+                              }
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -528,77 +767,36 @@ const PackageManagement = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="active">
+        <TabsContent value="tarjetas-expiring">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span>Bonos Activos</span>
-              </CardTitle>
+              <CardTitle>Tarjetas por Vencer</CardTitle>
             </CardHeader>
             <CardContent>
-              {packages.filter(p => p.status === 'active').length === 0 ? (
+              {expiringGiftCards.length === 0 ? (
                 <div className="text-center py-8">
-                  <Gift className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No hay bonos activos</p>
+                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No hay tarjetas por vencer</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {packages.filter(p => p.status === 'active').map((pkg) => (
-                    <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                  {expiringGiftCards.map((card) => (
+                    <div key={card.id} className="border rounded-lg p-4 border-yellow-200 bg-yellow-50">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                        <div className="text-sm font-medium">Código del bono: <span className="font-mono">{pkg.voucher_code}</span></div>
-                          <Badge className="bg-green-100 text-green-800 border-green-300">
-                            Activo
-                          </Badge>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleUseSession(pkg.id)}
-                        >
-                          Usar Sesión
-                        </Button>
+                        <div className="text-sm font-medium">Código: <span className="font-mono">{card.code}</span></div>
+                        <Badge variant="outline" className="border-yellow-500 text-yellow-700">
+                          Vence: {card.expiry_date && format(new Date(card.expiry_date), "dd/MM/yyyy", { locale: es })}
+                        </Badge>
                       </div>
-                      
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                              {pkg.profiles?.first_name} {pkg.profiles?.last_name}
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{pkg.profiles?.email}</p>
+                      <div className="mt-2 flex items-center justify-between">
+                        <div className="text-sm">
+                          Saldo: €{(card.remaining_balance_cents / 100).toFixed(2)}
                         </div>
-                        
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <Gift className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">{pkg.packages?.name}</span>
+                        {card.profiles && (
+                          <div className="text-sm">
+                            {card.profiles.first_name} {card.profiles.last_name}
                           </div>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${getProgressPercentage(pkg.used_sessions, pkg.total_sessions)}%` }}
-                              />
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                              {pkg.used_sessions}/{pkg.total_sessions}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          {/* Información de fecha de vencimiento eliminada - los bonos no caducan */}
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Euro className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                              €{(pkg.purchase_price_cents / 100).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -607,7 +805,77 @@ const PackageManagement = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="tarjetas-active">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tarjetas Activas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {giftCards.filter(card => card.status === 'active').map((card) => (
+                  <div key={card.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium">Código: <span className="font-mono">{card.code}</span></div>
+                      <Badge className={getStatusColor(card.status)}>
+                        {getStatusLabel(card.status)}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-sm">
+                        Saldo: €{(card.remaining_balance_cents / 100).toFixed(2)}
+                      </div>
+                      {card.profiles && (
+                        <div className="text-sm">
+                          {card.profiles.first_name} {card.profiles.last_name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Edit Gift Card Dialog */}
+      {editingGiftCard && (
+        <Dialog open={!!editingGiftCard} onOpenChange={() => setEditingGiftCard(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Tarjeta Regalo</DialogTitle>
+              <DialogDescription>Modifica los datos de la tarjeta regalo</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Código</Label>
+                <Input value={editingGiftCard.code} disabled />
+              </div>
+              <div>
+                <Label>Saldo Restante (€)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={(editingGiftCard.remaining_balance_cents / 100).toString()}
+                  onChange={(e) => setEditingGiftCard({
+                    ...editingGiftCard,
+                    remaining_balance_cents: Math.round(parseFloat(e.target.value) * 100)
+                  })}
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setEditingGiftCard(null)}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => handleUpdateGiftCard(editingGiftCard.id, { remaining_balance_cents: editingGiftCard.remaining_balance_cents })}>
+                  Guardar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
