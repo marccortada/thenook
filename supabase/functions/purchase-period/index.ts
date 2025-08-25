@@ -62,7 +62,7 @@ serve(async (req) => {
       .select("total_price_cents, booking_datetime")
       .gte("booking_datetime", startDate)
       .lte("booking_datetime", endDate)
-      .eq("payment_status", "completed");
+      .eq("payment_status", "paid");
 
     if (bookingsError) {
       logStep("Error fetching bookings data", bookingsError);
@@ -83,9 +83,8 @@ serve(async (req) => {
       // Use a percentage of the actual revenue as the price
       calculatedPriceCents = Math.round(totalRevenueCents * 0.05); // 5% of total revenue
     } else {
-      // Fallback to base pricing per day
-      const pricePerDay = 199; // €1.99 per day
-      calculatedPriceCents = daysInPeriod * pricePerDay;
+      // Use minimum price when no revenue
+      calculatedPriceCents = 499; // €4.99 minimum
     }
 
     // Minimum price of €4.99
