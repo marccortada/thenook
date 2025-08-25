@@ -24,6 +24,20 @@ serve(async (req) => {
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
   const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
 
+  // Try to get base64 of template from Supabase Storage bucket 'gift-cards/template.png'
+  async function getGiftCardTemplateBase64(client: ReturnType<typeof createClient>): Promise<string | null> {
+    try {
+      // @ts-ignore - storage types not imported here
+      const { data, error } = await (client as any).storage.from('gift-cards').download('template.png');
+      if (error || !data) return null;
+      const arrayBuffer = await data.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      return `data:image/png;base64,${base64}`;
+    } catch (_e) {
+      return null;
+    }
+  }
+
   try {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("Falta STRIPE_SECRET_KEY en Supabase Secrets");
