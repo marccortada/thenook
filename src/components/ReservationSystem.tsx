@@ -388,14 +388,8 @@ const ReservationSystem = () => {
                 <div className="p-4 bg-accent/20 rounded-lg">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    {isAdmin ? (
-                      <span className="font-medium">Bienvenido, Admin</span>
-                    ) : (
-                      <>
-                        <span className="font-medium">{user.name}</span>
-                        <span className="text-muted-foreground hidden sm:inline">({user.email})</span>
-                      </>
-                    )}
+                    <span className="font-medium">{user.name}</span>
+                    <span className="text-muted-foreground hidden sm:inline">({user.email})</span>
                   </div>
                 </div>
               </div>
