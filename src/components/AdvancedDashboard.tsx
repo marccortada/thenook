@@ -75,18 +75,19 @@ const AdvancedDashboard = () => {
     growth?: number; 
     subtitle?: string 
   }) => (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">{title}</CardTitle>
+        <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      <CardContent className="space-y-1">
+        <div className="text-lg sm:text-2xl font-bold truncate">{value}</div>
+        {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
         {growth !== undefined && (
           <div className="flex items-center pt-1">
             <GrowthIndicator value={growth} />
-            <span className="text-xs text-muted-foreground ml-2">vs período anterior</span>
+            <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">vs período anterior</span>
+            <span className="text-xs text-muted-foreground ml-2 sm:hidden">vs anterior</span>
           </div>
         )}
       </CardContent>
@@ -151,18 +152,18 @@ const AdvancedDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold">Dashboard Avanzado</h2>
-          <p className="text-muted-foreground">
-            Análisis completo del rendimiento del negocio
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">📈 Analytics</h2>
+          <p className="text-sm text-muted-foreground">
+            Análisis del rendimiento del negocio
           </p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full sm:w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -178,14 +179,16 @@ const AdvancedDashboard = () => {
             size="sm"
             onClick={() => loadAnalytics(selectedPeriod)}
             disabled={loading}
+            className="w-full sm:w-auto"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            <span className="ml-2 sm:hidden">Actualizar</span>
           </Button>
         </div>
       </div>
 
       {/* KPIs Principales */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Reservas Totales"
           value={kpiMetrics?.totalBookings.toString() || "0"}
@@ -213,7 +216,7 @@ const AdvancedDashboard = () => {
       </div>
 
       {/* KPIs Secundarios */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Tasa de Asistencia"
           value={formatPercentage(kpiMetrics?.attendanceRate || 0)}
@@ -241,13 +244,39 @@ const AdvancedDashboard = () => {
       </div>
 
       <Tabs defaultValue="trends" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="trends">Tendencias</TabsTrigger>
-          <TabsTrigger value="therapists">Terapeutas</TabsTrigger>
-          <TabsTrigger value="services">Servicios</TabsTrigger>
-          <TabsTrigger value="centers">Centros</TabsTrigger>
-          <TabsTrigger value="clients">Clientes</TabsTrigger>
-        </TabsList>
+        {/* Mobile Select - Functional */}
+        <div className="lg:hidden mb-4">
+          <select 
+            className="w-full p-3 border rounded-lg bg-background text-sm font-medium shadow-sm"
+            onChange={(e) => {
+              // Get all tab triggers and find the one that matches our selection
+              const tabTriggers = document.querySelectorAll('[role="tab"]');
+              tabTriggers.forEach((trigger) => {
+                if (trigger.getAttribute('value') === e.target.value) {
+                  (trigger as HTMLElement).click();
+                }
+              });
+            }}
+            defaultValue="trends"
+          >
+            <option value="trends">📊 Tendencias</option>
+            <option value="therapists">👨‍⚕️ Terapeutas</option>
+            <option value="services">🎯 Servicios</option>
+            <option value="centers">🏢 Centros</option>
+            <option value="clients">👥 Clientes</option>
+          </select>
+        </div>
+        
+        {/* Desktop Tabs */}
+        <div className="hidden lg:block">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="trends">Tendencias</TabsTrigger>
+            <TabsTrigger value="therapists">Terapeutas</TabsTrigger>
+            <TabsTrigger value="services">Servicios</TabsTrigger>
+            <TabsTrigger value="centers">Centros</TabsTrigger>
+            <TabsTrigger value="clients">Clientes</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="trends" className="space-y-4">
           {/* Calendar Button */}
@@ -354,40 +383,40 @@ const AdvancedDashboard = () => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="text-center p-4 bg-blue-50">
-              <div className="text-2xl font-bold text-blue-600">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <Card className="text-center p-3 sm:p-4 bg-blue-50">
+              <div className="text-lg sm:text-2xl font-bold text-blue-600">
                 {kpiMetrics?.totalBookings || 0}
               </div>
-              <div className="text-sm text-blue-600">Total Reservas</div>
+              <div className="text-xs sm:text-sm text-blue-600">Total Reservas</div>
               {periodComparison && (
                 <div className="text-xs text-blue-500 mt-1">
                   {periodComparison.growth.totalBookings >= 0 ? '+' : ''}{periodComparison.growth.totalBookings.toFixed(1)}% vs anterior
                 </div>
               )}
             </Card>
-            <Card className="text-center p-4 bg-green-50">
-              <div className="text-2xl font-bold text-green-600">
+            <Card className="text-center p-3 sm:p-4 bg-green-50">
+              <div className="text-lg sm:text-2xl font-bold text-green-600">
                 {formatCurrency(kpiMetrics?.totalRevenue || 0)}
               </div>
-              <div className="text-sm text-green-600">Ingresos</div>
+              <div className="text-xs sm:text-sm text-green-600">Ingresos</div>
               {periodComparison && (
                 <div className="text-xs text-green-500 mt-1">
                   {periodComparison.growth.totalRevenue >= 0 ? '+' : ''}{periodComparison.growth.totalRevenue.toFixed(1)}% vs anterior
                 </div>
               )}
             </Card>
-            <Card className="text-center p-4 bg-purple-50">
-              <div className="text-2xl font-bold text-purple-600">
+            <Card className="text-center p-3 sm:p-4 bg-purple-50">
+              <div className="text-lg sm:text-2xl font-bold text-purple-600">
                 {kpiMetrics?.newClients || 0}
               </div>
-              <div className="text-sm text-purple-600">Nuevos Clientes</div>
+              <div className="text-xs sm:text-sm text-purple-600">Nuevos Clientes</div>
             </Card>
-            <Card className="text-center p-4 bg-orange-50">
-              <div className="text-2xl font-bold text-orange-600">
+            <Card className="text-center p-3 sm:p-4 bg-orange-50">
+              <div className="text-lg sm:text-2xl font-bold text-orange-600">
                 {formatPercentage(kpiMetrics?.attendanceRate || 0)}
               </div>
-              <div className="text-sm text-orange-600">Asistencia</div>
+              <div className="text-xs sm:text-sm text-orange-600">Asistencia</div>
               {periodComparison && (
                 <div className="text-xs text-orange-500 mt-1">
                   {periodComparison.growth.attendanceRate >= 0 ? '+' : ''}{periodComparison.growth.attendanceRate.toFixed(1)}% vs anterior
@@ -407,7 +436,7 @@ const AdvancedDashboard = () => {
         </TabsContent>
 
         <TabsContent value="services" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-2">
             <SimpleBarChart 
               data={serviceMetrics} 
               valueKey="totalBookings" 
@@ -433,16 +462,16 @@ const AdvancedDashboard = () => {
         </TabsContent>
 
         <TabsContent value="clients" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Nuevos Clientes</CardTitle>
+                <CardTitle className="text-base sm:text-lg">Nuevos Clientes</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-600">
+                <div className="text-2xl sm:text-3xl font-bold text-blue-600">
                   {kpiMetrics?.newClients || 0}
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   En el período seleccionado
                 </p>
               </CardContent>
@@ -450,13 +479,13 @@ const AdvancedDashboard = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Clientes Recurrentes</CardTitle>
+                <CardTitle className="text-base sm:text-lg">Clientes Recurrentes</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">
+                <div className="text-2xl sm:text-3xl font-bold text-green-600">
                   {kpiMetrics?.recurringClients || 0}
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Clientes que repiten
                 </p>
               </CardContent>
