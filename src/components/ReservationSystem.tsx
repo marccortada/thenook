@@ -20,7 +20,7 @@ import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 
 const ReservationSystem = () => {
   const { toast } = useToast();
-  const { user, isAuthenticated, isAdmin } = useSimpleAuth();
+  const { user, isAuthenticated, isAdmin, isEmployee } = useSimpleAuth();
   const { centers } = useCenters();
   const { employees } = useEmployees();
   const { lanes } = useLanes();
@@ -98,7 +98,8 @@ const ReservationSystem = () => {
     e.preventDefault();
     
     // Basic validation
-    if ((!isAuthenticated && !formData.clientName) || !formData.service || !formData.center || !formData.date || !formData.time) {
+    const isStaff = isAdmin || isEmployee;
+    if ((!isAuthenticated && !formData.clientName) || (isStaff && !formData.clientName) || !formData.service || !formData.center || !formData.date || !formData.time) {
       toast({
         title: "Error",
         description: "Por favor completa todos los campos obligatorios",
@@ -108,12 +109,12 @@ const ReservationSystem = () => {
     }
 
     try {
-      // Use authenticated user's email if logged in, otherwise use form email
+      // Use authenticated user's email if logged in and NOT staff, otherwise use form email for staff
       let clientEmail;
       let profileToUse;
       
-      if (isAuthenticated && user) {
-        // User is logged in, use their info
+      if (isAuthenticated && user && !isAdmin && !isEmployee) {
+        // Regular user is logged in, use their info
         clientEmail = user.email;
         profileToUse = {
           id: user.id,
@@ -127,7 +128,7 @@ const ReservationSystem = () => {
           updated_at: ''
         };
       } else {
-        // User not logged in, check if client already exists by email
+        // Admin/Employee or guest user - use form data for client
         clientEmail = formData.clientEmail || `cliente_${Date.now()}@temp.com`;
         
         const { data: existingProfile } = await supabase
@@ -378,8 +379,50 @@ const ReservationSystem = () => {
               </div>
             )}
 
-            {/* Show logged in user info */}
-            {isAuthenticated && user && (
+            {/* Client Information for Admin/Employee */}
+            {isAuthenticated && (isAdmin || isEmployee) && (
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center space-x-2">
+                  <User className="h-4 w-4" />
+                  <span>Información del Cliente</span>
+                </h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="clientName">Nombre del Cliente *</Label>
+                    <Input
+                      id="clientName"
+                      value={formData.clientName || ''}
+                      onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                      placeholder="Nombre completo del cliente"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="clientPhone">Teléfono</Label>
+                    <Input
+                      id="clientPhone"
+                      value={formData.clientPhone || ''}
+                      onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+                      placeholder="Número de teléfono"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="clientEmail">Email</Label>
+                  <Input
+                    id="clientEmail"
+                    type="email"
+                    value={formData.clientEmail || ''}
+                    onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+                    placeholder="Email del cliente"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Show user info for non-admin users */}
+            {isAuthenticated && !isAdmin && !isEmployee && user && (
               <div className="space-y-4">
                 <h3 className="font-medium flex items-center space-x-2">
                   <User className="h-4 w-4" />
