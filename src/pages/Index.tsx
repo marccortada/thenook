@@ -76,7 +76,7 @@ const Index = () => {
                   size="sm" 
                   onClick={() => {
                     // Cerrar sesión y volver a la página pública
-                    localStorage.removeItem('simpleAuth');
+                    localStorage.removeItem('nook_user_session');
                     window.location.href = '/';
                   }}
                 >
