@@ -567,17 +567,18 @@ const ClientReservation = () => {
                            {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                          </Button>
                        </PopoverTrigger>
-                       <PopoverContent 
-                         className="w-auto p-0 bg-background border shadow-lg" 
-                         align="start"
-                         side="bottom"
-                         sideOffset={2}
-                         alignOffset={0}
-                         collisionPadding={10}
-                         onOpenAutoFocus={(e) => e.preventDefault()}
-                         onCloseAutoFocus={(e) => e.preventDefault()}
-                         style={{ zIndex: 9999, position: 'absolute' }}
-                       >
+                        <PopoverContent 
+                          className="w-auto p-0 bg-background border shadow-lg" 
+                          align="start"
+                          side="bottom"
+                          sideOffset={4}
+                          alignOffset={0}
+                          collisionPadding={20}
+                          avoidCollisions={false}
+                          onOpenAutoFocus={(e) => e.preventDefault()}
+                          onCloseAutoFocus={(e) => e.preventDefault()}
+                          style={{ zIndex: 9999, position: 'absolute' }}
+                        >
                          <Calendar
                            mode="single"
                            selected={formData.date}
