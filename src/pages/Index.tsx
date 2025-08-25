@@ -61,12 +61,36 @@ const Index = () => {
       <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-4 sm:mb-6 lg:mb-8 px-2 sm:px-0">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
-              ¡Bienvenido, {user?.name || 'Usuario'}!
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
-            </p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
+                  ¡Bienvenido, {user?.name || 'Usuario'}!
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    // Cerrar sesión y volver a la página pública
+                    localStorage.removeItem('simpleAuth');
+                    window.location.href = '/';
+                  }}
+                >
+                  Cerrar sesión
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/')}
+                >
+                  Ver página pública
+                </Button>
+              </div>
+            </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
