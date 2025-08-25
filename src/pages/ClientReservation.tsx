@@ -551,39 +551,31 @@ const ClientReservation = () => {
                             {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0">
                           <Calendar
                             mode="single"
                             selected={formData.date}
-                            onSelect={(date) => {
-                              setFormData({ ...formData, date });
-                            }}
+                            onSelect={(date) => setFormData({ ...formData, date })}
                             disabled={(date) => date < new Date()}
                             initialFocus
-                            className="p-3 pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
                     </div>
-                  
+                   
                      <div>
                        <Label htmlFor="time" className="text-sm">Hora *</Label>
                          <Select 
                            value={formData.time} 
-                           onValueChange={(value) => {
-                             setFormData({ ...formData, time: value });
-                           }}
+                           onValueChange={(value) => setFormData({ ...formData, time: value })}
                          >
                            <SelectTrigger className="mt-1">
                              <SelectValue placeholder="Selecciona una hora" />
                            </SelectTrigger>
-                           <SelectContent className="max-h-60">
+                           <SelectContent>
                              {timeSlots.map((time) => (
                                <SelectItem key={time} value={time}>
-                                 <div className="flex items-center space-x-2">
-                                   <Clock className="h-3 w-3" />
-                                   <span>{time}</span>
-                                 </div>
+                                 {time}
                                </SelectItem>
                              ))}
                            </SelectContent>
