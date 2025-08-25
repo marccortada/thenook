@@ -21,12 +21,14 @@ import {
 } from "lucide-react";
 import { useAdvancedAnalytics } from "@/hooks/useAdvancedAnalytics";
 import { PeriodComparisonChart } from "@/components/PeriodComparisonChart";
+import PeriodCalendarModal from "@/components/PeriodCalendarModal";
 import { cn } from "@/lib/utils";
 
 type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year';
 
 const AdvancedDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
   const {
     kpiMetrics,
     periodComparison,
@@ -248,6 +250,23 @@ const AdvancedDashboard = () => {
         </TabsList>
 
         <TabsContent value="trends" className="space-y-4">
+          {/* Calendar Button */}
+          <div className="flex justify-end mb-4">
+            <Button
+              onClick={() => setShowCalendarModal(true)}
+              className={cn(
+                "px-6 py-3 text-base font-semibold rounded-xl",
+                "bg-gradient-to-r from-primary to-primary/80",
+                "hover:from-primary/90 hover:to-primary/70",
+                "shadow-lg hover:shadow-xl transition-all duration-200",
+                "flex items-center gap-2"
+              )}
+            >
+              <Calendar className="h-5 w-5" />
+              Calendario
+            </Button>
+          </div>
+
           <div className="grid gap-4 lg:grid-cols-3">
             {/* Period Comparison Chart */}
             <div className="lg:col-span-2">
@@ -461,6 +480,12 @@ const AdvancedDashboard = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Period Calendar Modal */}
+      <PeriodCalendarModal 
+        open={showCalendarModal} 
+        onOpenChange={setShowCalendarModal} 
+      />
     </div>
   );
 };
