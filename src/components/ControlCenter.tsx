@@ -9,12 +9,16 @@ import {
   Settings,
   Zap,
   Target,
-  Brain
+  Brain,
+  Euro,
+  Package2
 } from 'lucide-react';
 import CenterManagement from './CenterManagement';
 import AdvancedScheduleManagement from './AdvancedScheduleManagement';
 import NotificationCenter from './NotificationCenter';
 import EmployeeManagement from './EmployeeManagement';
+import AdminPricingPromos from '../pages/AdminPricingPromos';
+import AdminSettings from '../pages/AdminSettings';
 
 const ControlCenter = () => {
   const [activeTab, setActiveTab] = useState('centers');
@@ -48,7 +52,7 @@ const ControlCenter = () => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
           <TabsTrigger value="centers" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">Centros</span>
@@ -64,6 +68,14 @@ const ControlCenter = () => {
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="w-4 h-4" />
             <span className="hidden sm:inline">Notificaciones</span>
+          </TabsTrigger>
+          <TabsTrigger value="pricing" className="flex items-center gap-2">
+            <Euro className="w-4 h-4" />
+            <span className="hidden sm:inline">Precios</span>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:inline">Configuración</span>
           </TabsTrigger>
         </TabsList>
 
@@ -81,6 +93,14 @@ const ControlCenter = () => {
 
         <TabsContent value="notifications" className="space-y-6">
           <NotificationCenter />
+        </TabsContent>
+
+        <TabsContent value="pricing" className="space-y-6">
+          <AdminPricingPromos />
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <AdminSettings />
         </TabsContent>
       </Tabs>
 
