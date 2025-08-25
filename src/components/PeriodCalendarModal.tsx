@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,8 +101,14 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
   };
 
   const handleDaySelection = (range: { from: Date; to: Date } | undefined) => {
-    if (range?.from && range?.to) {
-      setSelectedRange(range);
+    if (range?.from) {
+      // Si solo hay fecha de inicio y no de fin, establecer ambas como la misma fecha para permitir selección de rango
+      if (!range.to) {
+        setSelectedRange({ from: range.from, to: range.from });
+      } else {
+        // Si hay ambas fechas, usar el rango completo
+        setSelectedRange(range);
+      }
     }
   };
 
@@ -205,6 +211,9 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
             <CalendarIcon className="h-6 w-6 text-primary" />
             Seleccionar Período para Comprar
           </DialogTitle>
+          <DialogDescription>
+            Selecciona el período que deseas analizar y comprar. Los precios se calculan en base a los datos reales de reservas.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
