@@ -536,117 +536,59 @@ const ClientReservation = () => {
                  </h3>
                  
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                   <div className="relative">
-                     <Label htmlFor="date" className="text-sm">Fecha *</Label>
-                     <Popover 
-                       modal={false}
-                       onOpenChange={(open) => {
-                         if (open) {
-                           // Prevent any automatic scrolling
-                           const preventDefault = (e: Event) => e.preventDefault();
-                           window.addEventListener('scroll', preventDefault, { passive: false });
-                           document.addEventListener('scroll', preventDefault, { passive: false });
-                           setTimeout(() => {
-                             window.removeEventListener('scroll', preventDefault);
-                             document.removeEventListener('scroll', preventDefault);
-                           }, 100);
-                         }
-                       }}
-                     >
-                       <PopoverTrigger asChild>
-                         <Button
-                           variant="outline"
-                           className={cn(
-                             "w-full justify-start text-left font-normal mt-1",
-                             !formData.date && "text-muted-foreground"
-                           )}
-                           onFocus={(e) => e.preventDefault()}
-                           onMouseDown={(e) => e.preventDefault()}
-                         >
-                           <CalendarIcon className="mr-2 h-4 w-4" />
-                           {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                         </Button>
-                       </PopoverTrigger>
-                        <PopoverContent 
-                          className="w-auto p-0 bg-background border shadow-lg" 
-                          align="start"
-                          side="bottom"
-                          sideOffset={4}
-                          alignOffset={0}
-                          collisionPadding={20}
-                          avoidCollisions={false}
-                          onOpenAutoFocus={(e) => e.preventDefault()}
-                          onCloseAutoFocus={(e) => e.preventDefault()}
-                          style={{ zIndex: 9999, position: 'absolute' }}
-                        >
-                         <Calendar
-                           mode="single"
-                           selected={formData.date}
-                           onSelect={(date) => {
-                             console.log('Calendar date selected:', date);
-                             setFormData({ ...formData, date });
-                           }}
-                           disabled={(date) => date < new Date()}
-                           initialFocus={false}
-                           className="p-3"
-                           classNames={{
-                             months: "flex flex-col space-y-4",
-                             month: "space-y-4",
-                             caption: "flex justify-center pt-1 relative items-center",
-                             caption_label: "text-sm font-medium",
-                             nav: "space-x-1 flex items-center",
-                             nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                             nav_button_previous: "absolute left-1",
-                             nav_button_next: "absolute right-1",
-                             table: "w-full border-collapse space-y-1",
-                             head_row: "flex",
-                             head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                             row: "flex w-full mt-2",
-                             cell: "text-center text-sm p-0 relative",
-                             day: "h-9 w-9 p-0 font-normal hover:bg-accent hover:text-accent-foreground rounded-md",
-                             day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
-                             day_today: "bg-accent text-accent-foreground",
-                             day_outside: "text-muted-foreground opacity-50",
-                             day_disabled: "text-muted-foreground opacity-50",
-                             day_hidden: "invisible",
-                           }}
-                         />
-                       </PopoverContent>
-                     </Popover>
-                   </div>
-                  
-                    <div className="relative">
-                      <Label htmlFor="time" className="text-sm">Hora *</Label>
-                      <div className="relative">
-                        <Select 
-                          value={formData.time} 
-                          onValueChange={(value) => {
-                            console.log('Time selected:', value);
-                            setFormData({ ...formData, time: value });
-                          }}
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Selecciona una hora" />
-                          </SelectTrigger>
-                          <SelectContent 
-                            className="bg-background border shadow-lg max-h-60 overflow-y-auto"
-                            position="popper"
-                            side="bottom"
-                            align="start"
-                            sideOffset={4}
+                    <div>
+                      <Label htmlFor="date" className="text-sm">Fecha *</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal mt-1",
+                              !formData.date && "text-muted-foreground"
+                            )}
                           >
-                            {timeSlots.map((time) => (
-                              <SelectItem key={time} value={time}>
-                                <div className="flex items-center space-x-2">
-                                  <Clock className="h-3 w-3" />
-                                  <span>{time}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.date}
+                            onSelect={(date) => {
+                              setFormData({ ...formData, date });
+                            }}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
+                  
+                     <div>
+                       <Label htmlFor="time" className="text-sm">Hora *</Label>
+                         <Select 
+                           value={formData.time} 
+                           onValueChange={(value) => {
+                             setFormData({ ...formData, time: value });
+                           }}
+                         >
+                           <SelectTrigger className="mt-1">
+                             <SelectValue placeholder="Selecciona una hora" />
+                           </SelectTrigger>
+                           <SelectContent className="max-h-60">
+                             {timeSlots.map((time) => (
+                               <SelectItem key={time} value={time}>
+                                 <div className="flex items-center space-x-2">
+                                   <Clock className="h-3 w-3" />
+                                   <span>{time}</span>
+                                 </div>
+                               </SelectItem>
+                             ))}
+                           </SelectContent>
+                         </Select>
+                     </div>
                   </div>
                 </div>
 
