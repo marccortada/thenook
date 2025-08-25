@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -463,6 +464,24 @@ const AdvancedCalendarView = () => {
     } catch (err) {
       console.error('Error updating booking', err);
       toast({ title: 'Error', description: 'No se pudo actualizar la reserva.', variant: 'destructive' });
+    }
+  };
+
+  // Delete booking completely
+  const deleteBooking = async (bookingId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId);
+      if (error) throw error;
+      toast({ title: '✅ Reserva borrada', description: 'Se eliminó la reserva.' });
+      setShowEditModal(false);
+      setEditingBooking(null);
+      await refetchBookings();
+    } catch (err) {
+      console.error('Error deleting booking', err);
+      toast({ title: 'Error', description: 'No se pudo borrar la reserva.', variant: 'destructive' });
     }
   };
 
@@ -1224,6 +1243,25 @@ const AdvancedCalendarView = () => {
                   </Button>
                 </div>
                 <div className="flex gap-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive">
+                        <Trash2 className="h-4 w-4 mr-2" /> Borrar
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Borrar reserva?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta acción elimina la reserva definitivamente. No se puede deshacer.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteBooking(editingBooking.id)}>Sí, borrar</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                   <Button size="sm" variant="outline" onClick={() => { setShowEditModal(false); setEditingBooking(null); }}>
                     <X className="h-4 w-4 mr-2" /> Cancelar
                   </Button>
