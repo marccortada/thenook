@@ -165,18 +165,17 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
   const getRealPrice = () => {
     if (!periodStats || !selectedRange) return "Calculando...";
     
-    const daysInPeriod = getDaysInPeriod();
     let realPrice;
     
     if (periodStats.totalRevenue > 0) {
       // 5% of actual revenue from real bookings
       realPrice = periodStats.totalRevenue * 0.05;
     } else {
-      // Fallback: €1.99 per day for periods with no revenue
-      realPrice = daysInPeriod * 1.99;
+      // If no revenue, use minimum price
+      realPrice = 4.99;
     }
     
-    // Minimum €4.99
+    // Ensure minimum €4.99
     realPrice = Math.max(realPrice, 4.99);
     
     return `€${realPrice.toFixed(2)}`;
