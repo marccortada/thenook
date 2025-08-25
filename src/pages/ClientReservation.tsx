@@ -20,38 +20,6 @@ import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
-// Add CSS to ensure popovers stay anchored
-const globalStyles = `
-  [data-radix-popper-content-wrapper] {
-    z-index: 9999 !important;
-  }
-  
-  [data-radix-select-content] {
-    z-index: 9999 !important;
-  }
-  
-  .calendar-popover {
-    position: absolute !important;
-    z-index: 9999 !important;
-  }
-  
-  .time-select-content {
-    position: absolute !important;
-    z-index: 9999 !important;
-  }
-  
-  body {
-    scroll-behavior: auto !important;
-  }
-`;
-
-// Inject styles
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement('style');
-  styleSheet.type = 'text/css';
-  styleSheet.innerText = globalStyles;
-  document.head.appendChild(styleSheet);
-}
 const ClientReservation = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
