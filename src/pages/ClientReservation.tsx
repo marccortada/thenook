@@ -40,6 +40,7 @@ const ClientReservation = () => {
   });
 
   const [selection, setSelection] = useState<{ id: string; kind: "service" } | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const { services, loading: servicesLoading } = useServices(formData.center);
 
@@ -504,31 +505,33 @@ const ClientReservation = () => {
                  </h3>
                  
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
+                    <div className="relative">
                       <Label htmlFor="date" className="text-sm">Fecha *</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal mt-1",
-                              !formData.date && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowCalendar(!showCalendar)}
+                        className={cn(
+                          "w-full justify-start text-left font-normal mt-1",
+                          !formData.date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                      </Button>
+                      {showCalendar && (
+                        <div className="absolute top-full left-0 z-50 bg-background border rounded-lg shadow-lg p-0 mt-1">
                           <Calendar
                             mode="single"
                             selected={formData.date}
-                            onSelect={(date) => setFormData({ ...formData, date })}
+                            onSelect={(date) => {
+                              setFormData({ ...formData, date });
+                              setShowCalendar(false);
+                            }}
                             disabled={(date) => date < new Date()}
-                            initialFocus
+                            className="rounded-lg"
                           />
-                        </PopoverContent>
-                      </Popover>
+                        </div>
+                      )}
                     </div>
                    
                      <div>
