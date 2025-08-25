@@ -162,24 +162,24 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
     return Math.ceil((selectedRange.to.getTime() - selectedRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   };
 
-  const getEstimatedPrice = () => {
+  const getRealPrice = () => {
     if (!periodStats || !selectedRange) return "Calculando...";
     
     const daysInPeriod = getDaysInPeriod();
-    let estimatedPrice;
+    let realPrice;
     
     if (periodStats.totalRevenue > 0) {
-      // 5% of actual revenue
-      estimatedPrice = periodStats.totalRevenue * 0.05;
+      // 5% of actual revenue from real bookings
+      realPrice = periodStats.totalRevenue * 0.05;
     } else {
-      // Fallback: €1.99 per day
-      estimatedPrice = daysInPeriod * 1.99;
+      // Fallback: €1.99 per day for periods with no revenue
+      realPrice = daysInPeriod * 1.99;
     }
     
     // Minimum €4.99
-    estimatedPrice = Math.max(estimatedPrice, 4.99);
+    realPrice = Math.max(realPrice, 4.99);
     
-    return `€${estimatedPrice.toFixed(2)}`;
+    return `€${realPrice.toFixed(2)}`;
   };
 
   const formatSelectedPeriod = () => {
@@ -191,7 +191,7 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
       start: format(selectedRange.from, 'dd/MM/yyyy', { locale: es }),
       end: format(selectedRange.to, 'dd/MM/yyyy', { locale: es }),
       days,
-      estimatedPrice: getEstimatedPrice()
+      realPrice: getRealPrice()
     };
   };
 
@@ -394,11 +394,11 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center border-t pt-3">
-                  <span className="font-bold text-lg">Precio Estimado:</span>
-                  <span className="font-bold text-xl text-primary">{selectedPeriodInfo.estimatedPrice}</span>
+                  <span className="font-bold text-lg">Precio Real:</span>
+                  <span className="font-bold text-xl text-primary">{selectedPeriodInfo.realPrice}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  * Precio basado en datos reales de reservas del período seleccionado
+                  * Precio calculado con datos reales del período: {periodStats?.totalBookings || 0} reservas, €{periodStats?.totalRevenue?.toFixed(2) || "0.00"} ingresos
                 </p>
               </CardContent>
             </Card>
