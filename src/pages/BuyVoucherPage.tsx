@@ -1,34 +1,61 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "react-router-dom";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { usePackages } from "@/hooks/useDatabase";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Gift, ArrowLeft, ChevronDown } from "lucide-react";
+import { Gift } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
+import { toast } from "sonner";
+
 const currency = (cents?: number) =>
   typeof cents === "number" ? (cents / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" }) : "";
 
+interface CartItem {
+  id: string;
+  name: string;
+  priceCents: number;
+  packageId: string;
+  sessionsCount: number;
+}
+
+// Simple local cart
+const useLocalCart = () => {
+  const [items, setItems] = useState<CartItem[]>([]);
+
+  const add = (item: Omit<CartItem, "id">) => {
+    setItems(prev => [...prev, { id: crypto.randomUUID(), ...item }]);
+    toast.success("Añadido al carrito");
+  };
+
+  const remove = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
+  const clear = () => setItems([]);
+  const totalCents = useMemo(() => items.reduce((sum, i) => sum + i.priceCents, 0), [items]);
+
+  return { items, add, remove, clear, totalCents };
+};
+
 export default function BuyVoucherPage() {
-  const { toast } = useToast();
-  const navigate = useNavigate();
   const { packages } = usePackages();
   const { t } = useTranslation();
-  const [pkgId, setPkgId] = useState<string>("");
-  const [mode, setMode] = useState<"self" | "gift">("self");
-  const [buyer, setBuyer] = useState({ name: "", email: "", phone: "" });
-  const [recipient, setRecipient] = useState({ name: "", email: "", phone: "" });
-  const [notes, setNotes] = useState("");
-  const [showPayment, setShowPayment] = useState(false);
-  const selectedPkg = useMemo(() => packages.find(p => p.id === pkgId), [packages, pkgId]);
+  const { items, add, remove, clear, totalCents } = useLocalCart();
+  
+  // Campos del formulario
+  const [purchasedByName, setPurchasedByName] = useState("");
+  const [purchasedByEmail, setPurchasedByEmail] = useState("");
+  const [isGift, setIsGift] = useState(false);
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [giftMessage, setGiftMessage] = useState("");
 
   const isDuo = (name?: string) => {
     const txt = (name || "").toLowerCase();
@@ -54,11 +81,11 @@ export default function BuyVoucherPage() {
     }
     const list = Array.from(pmap.values());
 
-    const grupos: Record<string, typeof packages> = {
-      individuales: [] as any,
-      cuatro: [] as any,
-      rituales: [] as any,
-      paraDos: [] as any,
+    const grupos = {
+      individuales: [] as any[],
+      cuatro: [] as any[],
+      rituales: [] as any[],
+      paraDos: [] as any[],
     };
 
     list.forEach((p: any) => {
@@ -76,50 +103,6 @@ export default function BuyVoucherPage() {
     document.title = `${t('buy_voucher')} | The Nook Madrid`;
   }, [t]);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pkgId) {
-      toast({ title: t('select_voucher_error'), variant: "destructive" });
-      return;
-    }
-    if (!buyer.name || !buyer.email) {
-      toast({ title: t('buyer_data_required'), variant: "destructive" });
-      return;
-    }
-    const rec = mode === "self" ? buyer : recipient;
-                      if (!rec.name || !rec.email) {
-                        toast({ title: t('beneficiary_data_required'), variant: "destructive" });
-                        return;
-                      }
-
-    try {
-      const payload = {
-        intent: "package_voucher" as const,
-        package_voucher: {
-          package_id: pkgId,
-          mode,
-          buyer,
-          recipient: rec,
-          notes,
-        },
-        currency: "eur",
-      };
-      const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-      if (error) throw error;
-      if (data?.url) {
-        setShowPayment(true);
-        // Scroll to payment section
-        setTimeout(() => {
-          document.getElementById("payment-section")?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-      } else {
-        toast({ title: "Error", description: "No se pudo iniciar el pago" , variant: "destructive"});
-      }
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "No se pudo iniciar el pago", variant: "destructive" });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -131,198 +114,227 @@ export default function BuyVoucherPage() {
                 ← The Nook Madrid
               </Link>
             </div>
-            <LanguageSelector />
+            <div className="flex items-center space-x-2">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline">Carrito ({items.length})</Button>
+                </SheetTrigger>
+                <SheetContent className="w-[90vw] sm:w-[480px]">
+                  <SheetHeader>
+                    <SheetTitle>Tu carrito</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4 space-y-4">
+                    {items.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Tu carrito está vacío.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {items.map((item) => (
+                          <div key={item.id} className="flex items-center justify-between gap-3 border rounded-md p-3">
+                            <div>
+                              <p className="text-sm font-medium leading-tight">{item.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {currency(item.priceCents)} · {item.sessionsCount} sesiones
+                              </p>
+                            </div>
+                            <Button size="sm" variant="ghost" onClick={() => remove(item.id)}>
+                              Quitar
+                            </Button>
+                          </div>
+                        ))}
+                        <div className="flex items-center justify-between border-t pt-3">
+                          <span className="text-sm text-muted-foreground">Total</span>
+                          <span className="font-semibold">{currency(totalCents)}</span>
+                        </div>
+                        
+                        {/* Campos de comprado por */}
+                        <div className="space-y-3 border-t pt-3">
+                          <div>
+                            <Label htmlFor="purchased_by_name" className="text-sm">Comprado por (nombre)</Label>
+                            <Input
+                              id="purchased_by_name"
+                              value={purchasedByName}
+                              onChange={(e) => setPurchasedByName(e.target.value)}
+                              placeholder="Nombre del comprador"
+                              className="mt-1"
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="purchased_by_email" className="text-sm">Email del comprador</Label>
+                            <Input
+                              id="purchased_by_email"
+                              type="email"
+                              value={purchasedByEmail}
+                              onChange={(e) => setPurchasedByEmail(e.target.value)}
+                              placeholder="email@ejemplo.com"
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* ¿Es un regalo? */}
+                        <div className="border-t pt-3">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="is_gift" 
+                              checked={isGift}
+                              onCheckedChange={(checked) => setIsGift(!!checked)}
+                            />
+                            <Label htmlFor="is_gift" className="text-sm">¿Es un regalo?</Label>
+                          </div>
+                          
+                          {isGift && (
+                            <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
+                              <div>
+                                <Label htmlFor="recipient_name" className="text-sm">Para (nombre del destinatario) *</Label>
+                                <Input
+                                  id="recipient_name"
+                                  value={recipientName}
+                                  onChange={(e) => setRecipientName(e.target.value)}
+                                  placeholder="Nombre del destinatario"
+                                  className="mt-1"
+                                  required={isGift}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="recipient_email" className="text-sm">Email del destinatario</Label>
+                                <Input
+                                  id="recipient_email"
+                                  type="email"
+                                  value={recipientEmail}
+                                  onChange={(e) => setRecipientEmail(e.target.value)}
+                                  placeholder="email@ejemplo.com"
+                                  className="mt-1"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="gift_message" className="text-sm">Mensaje de regalo (opcional)</Label>
+                                <Textarea
+                                  id="gift_message"
+                                  value={giftMessage}
+                                  onChange={(e) => setGiftMessage(e.target.value)}
+                                  placeholder="Tu mensaje personalizado..."
+                                  className="mt-1"
+                                  rows={3}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <PaymentMethodsInfo />
+                        <div className="flex gap-2 pt-1">
+                          <Button variant="secondary" onClick={clear} className="flex-1">
+                            Vaciar
+                          </Button>
+                          <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
+                            if (items.length === 0) return;
+                            if (isGift && !recipientName.trim()) {
+                              toast.error("Por favor, indica el nombre del destinatario");
+                              return;
+                            }
+                            try {
+                              const payload = {
+                                intent: "package_voucher",
+                                package_voucher: {
+                                  items: items.map(item => ({
+                                    package_id: item.packageId,
+                                    purchased_by_name: purchasedByName || undefined,
+                                    purchased_by_email: purchasedByEmail || undefined,
+                                    is_gift: isGift,
+                                    recipient_name: isGift ? recipientName : undefined,
+                                    recipient_email: isGift ? recipientEmail : undefined,
+                                    gift_message: isGift ? giftMessage : undefined
+                                  }))
+                                },
+                                currency: "eur"
+                              };
+                              const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
+                              if (error) throw error;
+                              if (data?.url) {
+                                window.location.href = data.url;
+                              }
+                            } catch (e: any) {
+                              toast.error(e.message || "No se pudo iniciar el pago");
+                            }
+                          }}>
+                            Proceder al Pago
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
+              <LanguageSelector />
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
-        <div className="max-w-4xl mx-auto">
-          <Card className="hover-lift glass-effect border-primary/20 shadow-lg">
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
-                <Gift className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>{t('buy_voucher')}</span>
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">{t('voucher_subtitle')}</p>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <form onSubmit={submit} className="space-y-6">
-                <div>
-                  <Label>{t('voucher')}</Label>
-                  <Select value={pkgId} onValueChange={setPkgId}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder={t('select_voucher')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel className="text-primary font-semibold text-sm">🧘 {t('individual_massages')}</SelectLabel>
-                        {categorized.individuales.length > 0 ? (
-                          categorized.individuales.map((p: any) => (
-                            <SelectItem key={p.id} value={p.id} className="pl-6">
-                              {p.name} · {p.sessions_count} {t('sessions')} · {currency(p.price_cents)}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="__no_ind__" disabled>
-                            No hay bonos individuales
-                          </SelectItem>
-                        )}
-                      </SelectGroup>
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <article>
+          <header className="mb-5">
+            <h1 className="text-2xl font-bold">Bonos</h1>
+            <p className="text-sm text-muted-foreground">
+              Elige tu bono de sesiones. Perfecto para regalos o uso personal.
+            </p>
+          </header>
 
-                      <SelectGroup>
-                        <SelectLabel className="text-primary font-semibold text-sm">✋ Masajes a Cuatro Manos</SelectLabel>
-                        {categorized.cuatro.length > 0 ? (
-                          categorized.cuatro.map((p: any) => (
-                            <SelectItem key={p.id} value={p.id} className="pl-6">
-                              {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="__no_cuatro__" disabled>
-                            No hay bonos a cuatro manos
-                          </SelectItem>
-                        )}
-                      </SelectGroup>
-
-                      <SelectGroup>
-                        <SelectLabel className="text-primary font-semibold text-sm">🌸 Rituales</SelectLabel>
-                        {categorized.rituales.length > 0 ? (
-                          categorized.rituales.map((p: any) => (
-                            <SelectItem key={p.id} value={p.id} className="pl-6">
-                              {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="__no_rit__" disabled>
-                            No hay bonos de rituales
-                          </SelectItem>
-                        )}
-                      </SelectGroup>
-
-                      <SelectGroup>
-                        <SelectLabel className="text-primary font-semibold text-sm">💑 Bonos para Dos Personas</SelectLabel>
-                        {categorized.paraDos.length > 0 ? (
-                          categorized.paraDos.map((p: any) => (
-                            <SelectItem key={p.id} value={p.id} className="pl-6">
-                              {p.name} · {p.sessions_count} sesiones · {currency(p.price_cents)}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="__no_dos__" disabled>
-                            No hay bonos para dos
-                          </SelectItem>
-                        )}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>{t('who_for')}</Label>
-                  <RadioGroup value={mode} onValueChange={(v) => setMode(v as any)} className="mt-2 grid grid-cols-2 gap-2">
-                    <Label className="border rounded-md p-3 flex items-center gap-2 cursor-pointer">
-                      <RadioGroupItem value="self" /> {t('for_me')}
-                    </Label>
-                    <Label className="border rounded-md p-3 flex items-center gap-2 cursor-pointer">
-                      <RadioGroupItem value="gift" /> {t('its_gift')}
-                    </Label>
-                  </RadioGroup>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-medium mb-2">Comprador</h3>
-                    <Label>Nombre</Label>
-                    <Input value={buyer.name} onChange={(e) => setBuyer({ ...buyer, name: e.target.value })} className="mb-2" />
-                    <Label>Email</Label>
-                    <Input type="email" value={buyer.email} onChange={(e) => setBuyer({ ...buyer, email: e.target.value })} className="mb-2" />
-                    <Label>Teléfono</Label>
-                    <Input value={buyer.phone} onChange={(e) => setBuyer({ ...buyer, phone: e.target.value })} />
-                  </div>
-                  {mode === 'gift' && (
-                    <div>
-                      <h3 className="font-medium mb-2">Destinatario</h3>
-                      <Label>Nombre</Label>
-                      <Input value={recipient.name} onChange={(e) => setRecipient({ ...recipient, name: e.target.value })} className="mb-2" />
-                      <Label>Email</Label>
-                      <Input type="email" value={recipient.email} onChange={(e) => setRecipient({ ...recipient, email: e.target.value })} className="mb-2" />
-                      <Label>Teléfono</Label>
-                      <Input value={recipient.phone} onChange={(e) => setRecipient({ ...recipient, phone: e.target.value })} />
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label>Notas (opcional)</Label>
-                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Escribe aquí si quieres comentarnos cualquier cosa" />
-                </div>
-
-                {selectedPkg && (
-                  <div className="text-sm text-muted-foreground">
-                    Total: {currency(selectedPkg.price_cents)} · {selectedPkg.sessions_count} sesiones
-                  </div>
-                )}
-
-                <PaymentMethodsInfo />
-
-                <div className="flex justify-end">
-                  <Button type="submit" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground px-8 py-2 font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
-                    Confirmar compra
-                  </Button>
-                </div>
-
-                {/* Payment Section */}
-                {showPayment && (
-                  <div id="payment-section" className="mt-8 p-6 bg-gradient-to-r from-accent/10 to-primary/10 rounded-lg border border-primary/20 animate-fade-in">
-                    <div className="text-center space-y-4">
-                      <h3 className="text-lg font-semibold text-primary">Proceder al Pago</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Se abrirá una nueva ventana segura para completar tu compra.
-                        El bono se enviará automáticamente por email al comprador y beneficiario.
-                      </p>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-                          <span>✉️ Email al comprador</span>
-                          <span>✉️ Email al beneficiario</span>
-                          <span>✉️ Notificación al centro</span>
-                        </div>
-                        <Button 
-                          onClick={async () => {
-                            try {
-                              const payload = {
-                                intent: "package_voucher" as const,
-                                package_voucher: {
-                                  package_id: pkgId,
-                                  mode,
-                                  buyer,
-                                  recipient: mode === "self" ? buyer : recipient,
-                                  notes,
-                                },
-                                currency: "eur",
-                              };
-                              const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-                              if (error) throw error;
-                              if (data?.url) {
-                                window.open(data.url, "_blank");
-                              }
-                            } catch (err: any) {
-                              toast({ title: "Error", description: err.message || "No se pudo iniciar el pago", variant: "destructive" });
-                            }
-                          }}
-                          className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                        >
-                          Abrir Página de Pago Seguro
-                        </Button>
+          <section aria-label="Listado de bonos">
+            <Accordion type="multiple" defaultValue={[]} className="w-full">
+              {([
+                ["masajes-individuales", "🧘 Masajes Individuales", categorized.individuales],
+                ["masajes-cuatro-manos", "✋ Masajes a Cuatro Manos", categorized.cuatro],
+                ["rituales", "🌸 Rituales", categorized.rituales],
+                ["para-dos-personas", "💑 Para Dos Personas", categorized.paraDos],
+              ] as [string, string, any[]][])
+                .filter(([, , list]) => list.length > 0)
+                .map(([key, label, list]) => (
+                  <AccordionItem key={key} value={key}>
+                    <AccordionTrigger className="px-3 text-lg font-bold text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                      {label}
+                    </AccordionTrigger>
+                    <AccordionContent className="px-3 py-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        {list.map((item) => (
+                          <Card key={item.id} className="flex flex-col">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-base leading-snug md:line-clamp-2" title={item.name}>
+                                {item.name}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1 flex flex-col gap-3">
+                              <p className="text-xs text-muted-foreground min-h-8">
+                                {item.sessions_count} sesiones
+                              </p>
+                              <p className="font-semibold">{currency(item.price_cents)}</p>
+                            </CardContent>
+                            <CardFooter>
+                              <Button 
+                                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300" 
+                                onClick={() => add({ 
+                                  name: item.name, 
+                                  priceCents: item.price_cents,
+                                  packageId: item.id,
+                                  sessionsCount: item.sessions_count
+                                })}
+                              >
+                                Añadir al Carrito
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        ))}
                       </div>
-                    </div>
-                  </div>
-                )}
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+            </Accordion>
+          </section>
+        </article>
       </main>
     </div>
   );
