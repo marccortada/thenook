@@ -195,8 +195,7 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
     return {
       start: format(selectedRange.from, 'dd/MM/yyyy', { locale: es }),
       end: format(selectedRange.to, 'dd/MM/yyyy', { locale: es }),
-      days,
-      realPrice: getRealPrice()
+      days
     };
   };
 
@@ -208,7 +207,7 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <CalendarIcon className="h-6 w-6 text-primary" />
-            Seleccionar Período para Comprar
+            Comparar Períodos - Datos Reales
           </DialogTitle>
         </DialogHeader>
 
@@ -381,13 +380,13 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
             </div>
           )}
 
-          {/* Selection Summary */}
+          {/* Summary of Selected Period */}
           {selectedPeriodInfo && (
             <Card className="bg-primary/5 border-primary/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <CheckCircle className="h-5 w-5 text-primary" />
-                  Resumen de Selección
+                  Resumen del Período
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -407,34 +406,14 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
                      selectedPeriodType === 'quarter' ? 'Trimestre' : 'Año'}
                   </Badge>
                 </div>
-                <div className="flex justify-between items-center border-t pt-3">
-                  <span className="font-bold text-lg">Precio Real:</span>
-                  <span className="font-bold text-xl text-primary">{selectedPeriodInfo.realPrice}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  * Precio calculado con datos reales del período: {periodStats?.totalBookings || 0} reservas, €{periodStats?.totalRevenue?.toFixed(2) || "0.00"} ingresos
-                </p>
               </CardContent>
             </Card>
           )}
 
-          {/* Purchase Button */}
-          <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={handlePurchase}
-              disabled={!selectedRange || isLoading || loadingStats}
-              className={cn(
-                "px-8 py-3 text-lg font-semibold rounded-xl",
-                "bg-gradient-to-r from-primary to-primary/80",
-                "hover:from-primary/90 hover:to-primary/70",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              <CreditCard className="h-5 w-5 mr-2" />
-              {isLoading ? "Procesando..." : loadingStats ? "Calculando..." : "Comprar este período"}
+          {/* Close Button */}
+          <div className="flex justify-end">
+            <Button onClick={() => onOpenChange(false)}>
+              Cerrar
             </Button>
           </div>
         </div>
