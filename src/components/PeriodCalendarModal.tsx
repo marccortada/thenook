@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar as CalendarIcon, CreditCard, CheckCircle, TrendingUp, Users, DollarSign } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from "date-fns";
 import { es } from "date-fns/locale";
@@ -26,6 +27,8 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
   const [isLoading, setIsLoading] = useState(false);
   const [periodStats, setPeriodStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [centers, setCenters] = useState<{ id: string; name: string }[]>([]);
+  const [selectedCenter, setSelectedCenter] = useState<string>('all');
 
   const quarters = [
     { label: "Q1 2024", start: new Date(2024, 0, 1), end: new Date(2024, 2, 31) },
@@ -52,49 +55,68 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
     { label: "2025", start: startOfYear(new Date(2025, 0, 1)), end: endOfYear(new Date(2025, 0, 1)) },
   ];
 
-  // Fetch period statistics when range changes
-  useEffect(() => {
-    if (selectedRange) {
-      fetchPeriodStats();
+// Cargar centros al abrir el modal
+useEffect(() => {
+  if (!open) return;
+  (async () => {
+    const { data, error } = await supabase
+      .from('centers')
+      .select('id, name')
+      .eq('active', true);
+    if (!error && data) setCenters(data as { id: string; name: string }[]);
+  })();
+}, [open]);
+
+// Recalcular estadísticas cuando cambia el rango o el centro
+useEffect(() => {
+  if (selectedRange) {
+    fetchPeriodStats();
+  }
+}, [selectedRange, selectedCenter]);
+
+const fetchPeriodStats = async () => {
+  if (!selectedRange) return;
+  setLoadingStats(true);
+  try {
+    const startDate = format(selectedRange.from, 'yyyy-MM-dd');
+    const endDate = format(selectedRange.to, 'yyyy-MM-dd');
+
+    // Construir consulta con rango completo del día y filtro por centro
+    let query = supabase
+      .from("bookings")
+      .select("total_price_cents, booking_datetime, payment_status, status, center_id")
+      .gte("booking_datetime", `${startDate}T00:00:00`)
+      .lte("booking_datetime", `${endDate}T23:59:59`);
+
+    if (selectedCenter !== 'all') {
+      query = query.eq('center_id', selectedCenter);
     }
-  }, [selectedRange]);
 
-  const fetchPeriodStats = async () => {
-    if (!selectedRange) return;
-    
-    setLoadingStats(true);
-    try {
-      const startDate = format(selectedRange.from, 'yyyy-MM-dd');
-      const endDate = format(selectedRange.to, 'yyyy-MM-dd');
+    const { data: bookings, error } = await query;
 
-      // Fetch bookings for the selected period
-      const { data: bookings, error } = await supabase
-        .from("bookings")
-        .select("total_price_cents, booking_datetime, payment_status")
-        .gte("booking_datetime", startDate)
-        .lte("booking_datetime", endDate);
-
-      if (error) {
-        console.error("Error fetching period stats:", error);
-        return;
-      }
-
-      const completedBookings = bookings?.filter(b => b.payment_status === 'paid') || [];
-      const totalRevenue = completedBookings.reduce((sum, booking) => sum + (booking.total_price_cents || 0), 0);
-      const averageTicket = completedBookings.length > 0 ? totalRevenue / completedBookings.length : 0;
-
-      setPeriodStats({
-        totalBookings: completedBookings.length,
-        totalRevenue: totalRevenue / 100, // Convert to euros
-        averageTicket: averageTicket / 100, // Convert to euros
-        totalBookingsAll: bookings?.length || 0
-      });
-    } catch (error) {
+    if (error) {
       console.error("Error fetching period stats:", error);
-    } finally {
-      setLoadingStats(false);
+      return;
     }
-  };
+
+    const confirmedBookings = bookings?.filter((b: any) => b.status === 'confirmed') || [];
+    const revenueBookings = bookings?.filter((b: any) => ['paid', 'completed'].includes((b.payment_status as string) || '')) || [];
+
+    const totalRevenueCents = revenueBookings.reduce((sum: number, booking: any) => sum + (booking.total_price_cents || 0), 0);
+    const averageTicketCents = revenueBookings.length > 0 ? totalRevenueCents / revenueBookings.length : 0;
+
+    setPeriodStats({
+      totalBookings: confirmedBookings.length,
+      totalRevenue: totalRevenueCents / 100, // euros
+      averageTicket: averageTicketCents / 100, // euros
+      totalBookingsAll: bookings?.length || 0
+    });
+  } catch (error) {
+    console.error("Error fetching period stats:", error);
+  } finally {
+    setLoadingStats(false);
+  }
+};
 
   const handleQuickSelection = (start: Date, end: Date) => {
     setSelectedRange({ from: start, to: end });
@@ -211,9 +233,25 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Period Type Selection */}
-          <Tabs value={selectedPeriodType} onValueChange={(value) => setSelectedPeriodType(value as PeriodType)}>
+<div className="space-y-6">
+  <div className="flex flex-wrap items-end gap-4">
+    <div className="space-y-1">
+      <span className="text-sm font-medium">Centro</span>
+      <Select value={selectedCenter} onValueChange={(v) => setSelectedCenter(v)}>
+        <SelectTrigger className="w-56">
+          <SelectValue placeholder="Todos los centros" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos los centros</SelectItem>
+          {centers.map((c) => (
+            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  </div>
+  {/* Period Type Selection */}
+  <Tabs value={selectedPeriodType} onValueChange={(value) => setSelectedPeriodType(value as PeriodType)}>
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="day" className="text-sm">Días</TabsTrigger>
               <TabsTrigger value="month" className="text-sm">Meses</TabsTrigger>
@@ -336,11 +374,11 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-lg font-medium text-blue-700">📅 Número de Reservas</p>
-                        <p className="text-4xl font-bold text-blue-900">
-                          {loadingStats ? "..." : periodStats?.totalBookings || 0}
-                        </p>
-                        <p className="text-sm text-blue-600 mt-1">reservas completadas</p>
+<p className="text-lg font-medium text-blue-700">📅 Reservas Confirmadas</p>
+<p className="text-4xl font-bold text-blue-900">
+  {loadingStats ? "..." : periodStats?.totalBookings || 0}
+</p>
+<p className="text-sm text-blue-600 mt-1">reservas confirmadas</p>
                       </div>
                       <Users className="h-12 w-12 text-blue-500" />
                     </div>
