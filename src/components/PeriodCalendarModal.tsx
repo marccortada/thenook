@@ -101,8 +101,14 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
   };
 
   const handleDaySelection = (range: { from: Date; to: Date } | undefined) => {
-    if (range?.from && range?.to) {
-      setSelectedRange(range);
+    if (range?.from) {
+      if (!range.to) {
+        // Solo una fecha seleccionada, establecer ambas fechas como la misma
+        setSelectedRange({ from: range.from, to: range.from });
+      } else {
+        // Rango completo seleccionado
+        setSelectedRange(range);
+      }
     }
   };
 
@@ -219,7 +225,10 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
             <TabsContent value="day" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Seleccionar Rango de Días</CardTitle>
+                  <CardTitle>Seleccionar Período - Pulsa dos fechas</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Primera fecha: inicio del período | Segunda fecha: fin del período
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <Calendar
@@ -319,37 +328,43 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
             </TabsContent>
           </Tabs>
 
-          {/* Period Statistics */}
+          {/* Period Statistics - Destacar reservas y cash */}
           {selectedRange && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-blue-700">Reservas Completadas</p>
-                      <p className="text-2xl font-bold text-blue-900">
-                        {loadingStats ? "..." : periodStats?.totalBookings || 0}
-                      </p>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">📊 Datos del Período Seleccionado</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-blue-50 border-blue-200 border-2">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-lg font-medium text-blue-700">📅 Número de Reservas</p>
+                        <p className="text-4xl font-bold text-blue-900">
+                          {loadingStats ? "..." : periodStats?.totalBookings || 0}
+                        </p>
+                        <p className="text-sm text-blue-600 mt-1">reservas completadas</p>
+                      </div>
+                      <Users className="h-12 w-12 text-blue-500" />
                     </div>
-                    <Users className="h-8 w-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-green-700">Ingresos Totales</p>
-                      <p className="text-2xl font-bold text-green-900">
-                        {loadingStats ? "..." : `€${periodStats?.totalRevenue?.toFixed(2) || "0.00"}`}
-                      </p>
+                <Card className="bg-green-50 border-green-200 border-2">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-lg font-medium text-green-700">💰 Cash Total</p>
+                        <p className="text-4xl font-bold text-green-900">
+                          {loadingStats ? "..." : `€${periodStats?.totalRevenue?.toFixed(2) || "0.00"}`}
+                        </p>
+                        <p className="text-sm text-green-600 mt-1">ingresos confirmados</p>
+                      </div>
+                      <DollarSign className="h-12 w-12 text-green-500" />
                     </div>
-                    <DollarSign className="h-8 w-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Ticket medio en una card separada más pequeña */}
               <Card className="bg-purple-50 border-purple-200">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
