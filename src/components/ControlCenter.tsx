@@ -11,7 +11,9 @@ import {
   Target,
   Brain,
   Euro,
-  Package2
+  Package2,
+  FileText,
+  QrCode
 } from 'lucide-react';
 import CenterManagement from './CenterManagement';
 import AdvancedScheduleManagement from './AdvancedScheduleManagement';
@@ -19,6 +21,8 @@ import NotificationCenter from './NotificationCenter';
 import EmployeeManagement from './EmployeeManagement';
 import AdminPricingPromos from '../pages/AdminPricingPromos';
 import AdminSettings from '../pages/AdminSettings';
+import ReportsCenter from '../pages/ReportsCenter';
+import RedeemCode from '../pages/RedeemCode';
 
 const ControlCenter = () => {
   const [activeTab, setActiveTab] = useState('centers');
@@ -52,7 +56,7 @@ const ControlCenter = () => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8">
           <TabsTrigger value="centers" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">Centros</span>
@@ -72,6 +76,14 @@ const ControlCenter = () => {
           <TabsTrigger value="pricing" className="flex items-center gap-2">
             <Euro className="w-4 h-4" />
             <span className="hidden sm:inline">Precios</span>
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">Reportes</span>
+          </TabsTrigger>
+          <TabsTrigger value="redeem" className="flex items-center gap-2">
+            <QrCode className="w-4 h-4" />
+            <span className="hidden sm:inline">Canjear</span>
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
@@ -97,6 +109,14 @@ const ControlCenter = () => {
 
         <TabsContent value="pricing" className="space-y-6">
           <AdminPricingPromos />
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-6">
+          <ReportsCenter />
+        </TabsContent>
+
+        <TabsContent value="redeem" className="space-y-6">
+          <RedeemCode />
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
