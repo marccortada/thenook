@@ -316,12 +316,10 @@ const PackageManagement = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="bonos-all" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="bonos-all">Todos los Bonos</TabsTrigger>
-          <TabsTrigger value="bonos-expiring">Bonos por Vencer</TabsTrigger>
           <TabsTrigger value="bonos-active">Solo Bonos Activos</TabsTrigger>
           <TabsTrigger value="tarjetas-all">Todas las Tarjetas</TabsTrigger>
-          <TabsTrigger value="tarjetas-expiring">Tarjetas por Vencer</TabsTrigger>
           <TabsTrigger value="tarjetas-active">Solo Tarjetas Activas</TabsTrigger>
         </TabsList>
 
@@ -511,17 +509,6 @@ const PackageManagement = () => {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="bonos-expiring">
-          <Card>
-            <CardHeader>
-              <CardTitle>Bonos por Vencer</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Los bonos no tienen fecha de vencimiento.</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -758,45 +745,6 @@ const PackageManagement = () => {
                             </span>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="tarjetas-expiring">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tarjetas por Vencer</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {expiringGiftCards.length === 0 ? (
-                <div className="text-center py-8">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No hay tarjetas por vencer</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {expiringGiftCards.map((card) => (
-                    <div key={card.id} className="border rounded-lg p-4 border-yellow-200 bg-yellow-50">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm font-medium">Código: <span className="font-mono">{card.code}</span></div>
-                        <Badge variant="outline" className="border-yellow-500 text-yellow-700">
-                          Vence: {card.expiry_date && format(new Date(card.expiry_date), "dd/MM/yyyy", { locale: es })}
-                        </Badge>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <div className="text-sm">
-                          Saldo: €{(card.remaining_balance_cents / 100).toFixed(2)}
-                        </div>
-                        {card.profiles && (
-                          <div className="text-sm">
-                            {card.profiles.first_name} {card.profiles.last_name}
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
