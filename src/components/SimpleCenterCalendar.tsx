@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,7 +22,8 @@ import {
   Ban,
   CreditCard,
   Calendar,
-  DollarSign
+  DollarSign,
+  AlertTriangle
 } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -348,10 +350,6 @@ const SimpleCenterCalendar = () => {
 
   // Delete booking completely
   const deleteBooking = async (bookingId: string) => {
-    if (!confirm('¿Estás seguro de que quieres borrar completamente esta reserva? Esta acción no se puede deshacer.')) {
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('bookings')
@@ -362,7 +360,7 @@ const SimpleCenterCalendar = () => {
 
       toast({
         title: "✅ Reserva Borrada",
-        description: "La reserva ha sido borrada completamente.",
+        description: "La reserva ha sido eliminada completamente del sistema.",
       });
 
       refetchBookings();
@@ -371,7 +369,7 @@ const SimpleCenterCalendar = () => {
       console.error('Error deleting booking:', error);
       toast({
         title: "Error",
-        description: "No se pudo borrar la reserva.",
+        description: "No se pudo borrar la reserva. Inténtalo de nuevo.",
         variant: "destructive",
       });
     }
@@ -855,14 +853,39 @@ const SimpleCenterCalendar = () => {
                   <Edit className="h-4 w-4 mr-2" />
                   Cerrar
                 </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => deleteBooking(selectedBooking.id)}
-                  className="flex items-center"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Borrar
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="flex items-center">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Borrar
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                        ¿Borrar Reserva Completamente?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción eliminará permanentemente la reserva del sistema. 
+                        No se puede deshacer. ¿Estás seguro de que quieres continuar?
+                        <br /><br />
+                        <strong>Cliente:</strong> {selectedBooking?.profiles?.first_name} {selectedBooking?.profiles?.last_name}
+                        <br />
+                        <strong>Fecha:</strong> {selectedBooking && format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => deleteBooking(selectedBooking.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Sí, Borrar Completamente
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           )}
@@ -922,11 +945,14 @@ const SimpleCenterCalendar = () => {
 
       {/* Reschedule Modal */}
       <Dialog open={showRescheduleModal} onOpenChange={setShowRescheduleModal}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Reagendar Cita</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-500" />
+              Reagendar Cita
+            </DialogTitle>
             <DialogDescription>
-              Seleccionar nueva fecha y hora para la reserva
+              Selecciona la nueva fecha y hora para la reserva de <strong>{selectedBooking?.profiles?.first_name} {selectedBooking?.profiles?.last_name}</strong>
             </DialogDescription>
           </DialogHeader>
           
@@ -961,9 +987,13 @@ const SimpleCenterCalendar = () => {
               <Button variant="outline" onClick={() => setShowRescheduleModal(false)} className="flex-1">
                 Cancelar
               </Button>
-              <Button onClick={rescheduleBooking} className="flex-1">
+              <Button 
+                onClick={rescheduleBooking} 
+                className="flex-1"
+                disabled={!newBookingTime}
+              >
                 <Calendar className="h-4 w-4 mr-2" />
-                Reagendar
+                Reagendar Cita
               </Button>
             </div>
           </div>
