@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -143,6 +145,10 @@ const GiftCardsPage = () => {
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
   const [purchasedByName, setPurchasedByName] = useState("");
   const [purchasedByEmail, setPurchasedByEmail] = useState("");
+  const [isGift, setIsGift] = useState(false);
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [giftMessage, setGiftMessage] = useState("");
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -296,27 +302,87 @@ const GiftCardsPage = () => {
                              placeholder="email@ejemplo.com"
                              className="mt-1"
                            />
-                         </div>
-                       </div>
-                       
-                       <PaymentMethodsInfo />
+                          </div>
+                        </div>
+                        
+                        {/* ¿Es un regalo? */}
+                        <div className="border-t pt-3">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="is_gift" 
+                              checked={isGift}
+                              onCheckedChange={(checked) => setIsGift(!!checked)}
+                            />
+                            <Label htmlFor="is_gift" className="text-sm">¿Es un regalo?</Label>
+                          </div>
+                          
+                          {isGift && (
+                            <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
+                              <div>
+                                <Label htmlFor="recipient_name" className="text-sm">Para (nombre del destinatario) *</Label>
+                                <Input
+                                  id="recipient_name"
+                                  value={recipientName}
+                                  onChange={(e) => setRecipientName(e.target.value)}
+                                  placeholder="Nombre del destinatario"
+                                  className="mt-1"
+                                  required={isGift}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="recipient_email" className="text-sm">Email del destinatario</Label>
+                                <Input
+                                  id="recipient_email"
+                                  type="email"
+                                  value={recipientEmail}
+                                  onChange={(e) => setRecipientEmail(e.target.value)}
+                                  placeholder="email@ejemplo.com"
+                                  className="mt-1"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="gift_message" className="text-sm">Mensaje de regalo (opcional)</Label>
+                                <Textarea
+                                  id="gift_message"
+                                  value={giftMessage}
+                                  onChange={(e) => setGiftMessage(e.target.value)}
+                                  placeholder="Tu mensaje personalizado..."
+                                  className="mt-1"
+                                  rows={3}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <PaymentMethodsInfo />
                       <div className="flex gap-2 pt-1">
                         <Button variant="secondary" onClick={clear} className="flex-1">
                           Vaciar
                         </Button>
-                        <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
-                          if (items.length === 0) return;
-                          try {
+                         <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
+                           if (items.length === 0) return;
+                           if (isGift && !recipientName.trim()) {
+                             toast.error("Por favor, indica el nombre del destinatario");
+                             return;
+                           }
+                           try {
                              const payload = {
                                intent: "gift_cards",
-                               gift_cards: {
-                                 items: items.map(i => ({ 
-                                   amount_cents: i.priceCents, 
-                                   quantity: i.quantity,
-                                   purchased_by_name: purchasedByName || undefined,
-                                   purchased_by_email: purchasedByEmail || undefined
-                                 }))
-                               },
+                                gift_cards: {
+                                  items: items.map(i => ({ 
+                                    amount_cents: i.priceCents, 
+                                    quantity: i.quantity,
+                                    purchased_by_name: purchasedByName || undefined,
+                                    purchased_by_email: purchasedByEmail || undefined,
+                                    is_gift: isGift,
+                                    recipient_name: isGift ? recipientName : undefined,
+                                    recipient_email: isGift ? recipientEmail : undefined,
+                                    gift_message: isGift ? giftMessage : undefined
+                                  }))
+                                },
                                currency: "eur"
                              };
                             const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
