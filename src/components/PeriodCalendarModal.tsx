@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, CreditCard, CheckCircle, TrendingUp, Users, DollarSign } from "lucide-react";
+import { Calendar as CalendarIcon, CreditCard, CheckCircle, TrendingUp, Users, DollarSign, X, Plus, BarChart3 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,13 +19,25 @@ interface PeriodCalendarModalProps {
 
 type PeriodType = 'day' | 'month' | 'quarter' | 'year';
 
+interface PeriodData {
+  from: Date;
+  to: Date;
+  label: string;
+  stats?: {
+    totalBookings: number;
+    totalRevenue: number;
+    averageTicket: number;
+    totalBookingsAll: number;
+  };
+}
+
 const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) => {
   const { toast } = useToast();
   const [selectedPeriodType, setSelectedPeriodType] = useState<PeriodType>('day');
-  const [selectedRange, setSelectedRange] = useState<{ from: Date; to: Date } | null>(null);
+  const [selectedPeriods, setSelectedPeriods] = useState<PeriodData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [periodStats, setPeriodStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [comparisonMode, setComparisonMode] = useState(false);
 
   const quarters = [
     { label: "Q1 2024", start: new Date(2024, 0, 1), end: new Date(2024, 2, 31) },
@@ -52,71 +64,107 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
     { label: "2025", start: startOfYear(new Date(2025, 0, 1)), end: endOfYear(new Date(2025, 0, 1)) },
   ];
 
-  // Fetch period statistics when range changes
+  // Fetch period statistics when periods change
   useEffect(() => {
-    if (selectedRange) {
-      fetchPeriodStats();
+    if (selectedPeriods.length > 0) {
+      fetchPeriodsStats();
     }
-  }, [selectedRange]);
+  }, [selectedPeriods]);
 
-  const fetchPeriodStats = async () => {
-    if (!selectedRange) return;
-    
+  const fetchPeriodsStats = async () => {
     setLoadingStats(true);
     try {
-      const startDate = format(selectedRange.from, 'yyyy-MM-dd');
-      const endDate = format(selectedRange.to, 'yyyy-MM-dd');
+      const updatedPeriods = await Promise.all(
+        selectedPeriods.map(async (period) => {
+          const startDate = format(period.from, 'yyyy-MM-dd');
+          const endDate = format(period.to, 'yyyy-MM-dd');
 
-      // Fetch bookings for the selected period
-      const { data: bookings, error } = await supabase
-        .from("bookings")
-        .select("total_price_cents, booking_datetime, payment_status")
-        .gte("booking_datetime", startDate)
-        .lte("booking_datetime", endDate);
+          // Fetch bookings for the selected period
+          const { data: bookings, error } = await supabase
+            .from("bookings")
+            .select("total_price_cents, booking_datetime, payment_status")
+            .gte("booking_datetime", startDate)
+            .lte("booking_datetime", endDate);
 
-      if (error) {
-        console.error("Error fetching period stats:", error);
-        return;
-      }
+          if (error) {
+            console.error("Error fetching period stats:", error);
+            return period;
+          }
 
-      const completedBookings = bookings?.filter(b => b.payment_status === 'paid') || [];
-      const totalRevenue = completedBookings.reduce((sum, booking) => sum + (booking.total_price_cents || 0), 0);
-      const averageTicket = completedBookings.length > 0 ? totalRevenue / completedBookings.length : 0;
+          const completedBookings = bookings?.filter(b => b.payment_status === 'paid') || [];
+          const totalRevenue = completedBookings.reduce((sum, booking) => sum + (booking.total_price_cents || 0), 0);
+          const averageTicket = completedBookings.length > 0 ? totalRevenue / completedBookings.length : 0;
 
-      setPeriodStats({
-        totalBookings: completedBookings.length,
-        totalRevenue: totalRevenue / 100, // Convert to euros
-        averageTicket: averageTicket / 100, // Convert to euros
-        totalBookingsAll: bookings?.length || 0
-      });
+          return {
+            ...period,
+            stats: {
+              totalBookings: completedBookings.length,
+              totalRevenue: totalRevenue / 100, // Convert to euros
+              averageTicket: averageTicket / 100, // Convert to euros
+              totalBookingsAll: bookings?.length || 0
+            }
+          };
+        })
+      );
+
+      setSelectedPeriods(updatedPeriods);
     } catch (error) {
-      console.error("Error fetching period stats:", error);
+      console.error("Error fetching periods stats:", error);
     } finally {
       setLoadingStats(false);
     }
   };
 
-  const handleQuickSelection = (start: Date, end: Date) => {
-    setSelectedRange({ from: start, to: end });
+  const handlePeriodSelection = (start: Date, end: Date, label: string) => {
+    const newPeriod: PeriodData = {
+      from: start,
+      to: end,
+      label
+    };
+
+    if (comparisonMode) {
+      // In comparison mode, add to the list (max 3 periods)
+      if (selectedPeriods.length < 3) {
+        const exists = selectedPeriods.some(p => 
+          p.from.getTime() === start.getTime() && p.to.getTime() === end.getTime()
+        );
+        if (!exists) {
+          setSelectedPeriods([...selectedPeriods, newPeriod]);
+        }
+      } else {
+        toast({
+          title: "Límite alcanzado",
+          description: "Máximo 3 períodos para comparar",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Normal mode, replace the selection
+      setSelectedPeriods([newPeriod]);
+    }
   };
 
   const handleDaySelection = (range: { from: Date; to: Date } | undefined) => {
     if (range?.from) {
-      // Si solo hay fecha de inicio y no de fin, establecer ambas como la misma fecha para permitir selección de rango
-      if (!range.to) {
-        setSelectedRange({ from: range.from, to: range.from });
-      } else {
-        // Si hay ambas fechas, usar el rango completo
-        setSelectedRange(range);
-      }
+      const end = range.to || range.from;
+      const label = range.from.getTime() === end.getTime() 
+        ? format(range.from, 'dd/MM/yyyy', { locale: es })
+        : `${format(range.from, 'dd/MM/yyyy', { locale: es })} - ${format(end, 'dd/MM/yyyy', { locale: es })}`;
+      
+      handlePeriodSelection(range.from, end, label);
     }
   };
 
+  const removePeriod = (index: number) => {
+    const newPeriods = selectedPeriods.filter((_, i) => i !== index);
+    setSelectedPeriods(newPeriods);
+  };
+
   const handlePurchase = async () => {
-    if (!selectedRange) {
+    if (selectedPeriods.length === 0) {
       toast({
         title: "Error",
-        description: "Por favor selecciona un período",
+        description: "Por favor selecciona al menos un período",
         variant: "destructive",
       });
       return;
@@ -125,14 +173,17 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
     setIsLoading(true);
 
     try {
+      // For now, purchase the first selected period (can be extended for multiple purchases)
+      const firstPeriod = selectedPeriods[0];
       const { data, error } = await supabase.functions.invoke('purchase-period', {
         body: {
-          startDate: format(selectedRange.from, 'yyyy-MM-dd'),
-          endDate: format(selectedRange.to, 'yyyy-MM-dd'),
+          startDate: format(firstPeriod.from, 'yyyy-MM-dd'),
+          endDate: format(firstPeriod.to, 'yyyy-MM-dd'),
           periodType: selectedPeriodType,
           priceInfo: {
-            stats: periodStats,
-            daysInPeriod: getDaysInPeriod()
+            stats: firstPeriod.stats,
+            daysInPeriod: getDaysInPeriod(firstPeriod),
+            comparisonData: selectedPeriods.length > 1 ? selectedPeriods : null
           }
         }
       });
@@ -143,11 +194,11 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
         const purchase = data.purchase;
         toast({
           title: "¡Compra exitosa!",
-          description: `Has comprado el período desde ${format(selectedRange.from, 'dd/MM/yyyy', { locale: es })} hasta ${format(selectedRange.to, 'dd/MM/yyyy', { locale: es })} por €${(purchase.priceCents / 100).toFixed(2)}`,
+          description: `Has comprado el análisis del período "${firstPeriod.label}" por €${(purchase.priceCents / 100).toFixed(2)}`,
         });
         onOpenChange(false);
-        setSelectedRange(null);
-        setPeriodStats(null);
+        setSelectedPeriods([]);
+        setComparisonMode(false);
       } else {
         throw new Error(data.error || 'Error en la compra');
       }
@@ -163,60 +214,116 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
     }
   };
 
-  const getDaysInPeriod = () => {
-    if (!selectedRange) return 0;
-    return Math.ceil((selectedRange.to.getTime() - selectedRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const getDaysInPeriod = (period: PeriodData) => {
+    return Math.ceil((period.to.getTime() - period.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   };
 
-  const getEstimatedPrice = () => {
-    if (!periodStats || !selectedRange) return "Calculando...";
-    
-    const daysInPeriod = getDaysInPeriod();
-    let estimatedPrice;
-    
-    if (periodStats.totalRevenue > 0) {
-      // 5% of actual revenue
-      estimatedPrice = periodStats.totalRevenue * 0.05;
-    } else {
-      // Fallback: €1.99 per day
-      estimatedPrice = daysInPeriod * 1.99;
-    }
-    
-    // Minimum €4.99
-    estimatedPrice = Math.max(estimatedPrice, 4.99);
-    
-    return `€${estimatedPrice.toFixed(2)}`;
+  const getCurrentSelection = (start: Date, end: Date) => {
+    return selectedPeriods.some(p => 
+      p.from.getTime() === start.getTime() && p.to.getTime() === end.getTime()
+    );
   };
 
-  const formatSelectedPeriod = () => {
-    if (!selectedRange) return null;
+  const getTotalPrice = () => {
+    if (selectedPeriods.length === 0) return 0;
     
-    const days = getDaysInPeriod();
-    
-    return {
-      start: format(selectedRange.from, 'dd/MM/yyyy', { locale: es }),
-      end: format(selectedRange.to, 'dd/MM/yyyy', { locale: es }),
-      days,
-      estimatedPrice: getEstimatedPrice()
-    };
+    return selectedPeriods.reduce((total, period) => {
+      const daysInPeriod = getDaysInPeriod(period);
+      let price;
+      
+      if (period.stats && period.stats.totalRevenue > 0) {
+        // 5% of actual revenue
+        price = period.stats.totalRevenue * 0.05;
+      } else {
+        // Fallback: €1.99 per day
+        price = daysInPeriod * 1.99;
+      }
+      
+      // Minimum €4.99 per period
+      return total + Math.max(price, 4.99);
+    }, 0);
   };
-
-  const selectedPeriodInfo = formatSelectedPeriod();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <CalendarIcon className="h-6 w-6 text-primary" />
-            Seleccionar Período para Comprar
+            Seleccionar Períodos para Comparar y Comprar
           </DialogTitle>
           <DialogDescription>
-            Selecciona el período que deseas analizar y comprar. Los precios se calculan en base a los datos reales de reservas.
+            Selecciona uno o múltiples períodos para analizar y comparar. Los datos mostrados son reales de tu base de datos.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Comparison Mode Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={comparisonMode ? "default" : "outline"}
+                onClick={() => setComparisonMode(!comparisonMode)}
+                className="flex items-center gap-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Modo Comparación
+              </Button>
+              {comparisonMode && (
+                <Badge variant="secondary">
+                  {selectedPeriods.length}/3 períodos seleccionados
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Selected Periods Display */}
+          {selectedPeriods.length > 0 && (
+            <Card className="bg-primary/5 border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-lg">Períodos Seleccionados</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {selectedPeriods.map((period, index) => (
+                    <Card key={index} className="relative">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 h-6 w-6 p-0"
+                        onClick={() => removePeriod(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-sm">{period.label}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {getDaysInPeriod(period)} días
+                        </p>
+                        {period.stats && (
+                          <div className="mt-2 space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span>Reservas:</span>
+                              <span className="font-medium">{period.stats.totalBookings}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span>Ingresos:</span>
+                              <span className="font-medium">€{period.stats.totalRevenue.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span>Ticket medio:</span>
+                              <span className="font-medium">€{period.stats.averageTicket.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Period Type Selection */}
           <Tabs value={selectedPeriodType} onValueChange={(value) => setSelectedPeriodType(value as PeriodType)}>
             <TabsList className="grid w-full grid-cols-4">
@@ -230,11 +337,13 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
               <Card>
                 <CardHeader>
                   <CardTitle>Seleccionar Rango de Días</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {comparisonMode ? "Haz clic para añadir períodos a la comparación" : "Selecciona un rango de fechas"}
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <Calendar
                     mode="range"
-                    selected={selectedRange}
                     onSelect={handleDaySelection}
                     numberOfMonths={2}
                     className="pointer-events-auto"
@@ -247,16 +356,19 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
             <TabsContent value="month" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Seleccionar Mes</CardTitle>
+                  <CardTitle>Seleccionar Meses</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {comparisonMode ? "Selecciona múltiples meses para comparar" : "Selecciona un mes"}
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
                     {months.map((month) => (
                       <Button
                         key={month.label}
-                        variant={selectedRange?.from?.getTime() === month.start.getTime() ? "default" : "outline"}
+                        variant={getCurrentSelection(month.start, month.end) ? "default" : "outline"}
                         className="h-auto p-3 flex flex-col items-center text-xs"
-                        onClick={() => handleQuickSelection(month.start, month.end)}
+                        onClick={() => handlePeriodSelection(month.start, month.end, month.label)}
                       >
                         <span className="font-medium">{month.label}</span>
                         <span className="text-xs text-muted-foreground mt-1">
@@ -275,16 +387,19 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
             <TabsContent value="quarter" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Seleccionar Trimestre</CardTitle>
+                  <CardTitle>Seleccionar Trimestres</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {comparisonMode ? "Selecciona múltiples trimestres para comparar" : "Selecciona un trimestre"}
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {quarters.map((quarter) => (
                       <Button
                         key={quarter.label}
-                        variant={selectedRange?.from?.getTime() === quarter.start.getTime() ? "default" : "outline"}
+                        variant={getCurrentSelection(quarter.start, quarter.end) ? "default" : "outline"}
                         className="h-auto p-4 flex flex-col items-center"
-                        onClick={() => handleQuickSelection(quarter.start, quarter.end)}
+                        onClick={() => handlePeriodSelection(quarter.start, quarter.end, quarter.label)}
                       >
                         <span className="font-bold text-lg">{quarter.label}</span>
                         <span className="text-sm text-muted-foreground mt-2">
@@ -303,16 +418,19 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
             <TabsContent value="year" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Seleccionar Año</CardTitle>
+                  <CardTitle>Seleccionar Años</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {comparisonMode ? "Selecciona múltiples años para comparar" : "Selecciona un año"}
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
                     {years.map((year) => (
                       <Button
                         key={year.label}
-                        variant={selectedRange?.from?.getTime() === year.start.getTime() ? "default" : "outline"}
+                        variant={getCurrentSelection(year.start, year.end) ? "default" : "outline"}
                         className="h-auto p-8 flex flex-col items-center"
-                        onClick={() => handleQuickSelection(year.start, year.end)}
+                        onClick={() => handlePeriodSelection(year.start, year.end, year.label)}
                       >
                         <span className="font-bold text-2xl">{year.label}</span>
                         <span className="text-sm text-muted-foreground mt-2">
@@ -329,108 +447,66 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
             </TabsContent>
           </Tabs>
 
-          {/* Period Statistics */}
-          {selectedRange && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-blue-700">Reservas Completadas</p>
-                      <p className="text-2xl font-bold text-blue-900">
-                        {loadingStats ? "..." : periodStats?.totalBookings || 0}
-                      </p>
-                    </div>
-                    <Users className="h-8 w-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-green-700">Ingresos Totales</p>
-                      <p className="text-2xl font-bold text-green-900">
-                        {loadingStats ? "..." : `€${periodStats?.totalRevenue?.toFixed(2) || "0.00"}`}
-                      </p>
-                    </div>
-                    <DollarSign className="h-8 w-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-purple-50 border-purple-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-purple-700">Ticket Medio</p>
-                      <p className="text-2xl font-bold text-purple-900">
-                        {loadingStats ? "..." : `€${periodStats?.averageTicket?.toFixed(2) || "0.00"}`}
-                      </p>
-                    </div>
-                    <TrendingUp className="h-8 w-8 text-purple-500" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Selection Summary */}
-          {selectedPeriodInfo && (
-            <Card className="bg-primary/5 border-primary/20">
+          {/* Comparison Summary */}
+          {selectedPeriods.length > 1 && (
+            <Card className="bg-blue-50 border-blue-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  Resumen de Selección
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Comparación de Períodos
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Período:</span>
-                  <span>{selectedPeriodInfo.start} - {selectedPeriodInfo.end}</span>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-blue-700">Total Reservas</p>
+                    <p className="text-2xl font-bold text-blue-900">
+                      {loadingStats ? "..." : selectedPeriods.reduce((sum, p) => sum + (p.stats?.totalBookings || 0), 0)}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-green-700">Total Ingresos</p>
+                    <p className="text-2xl font-bold text-green-900">
+                      {loadingStats ? "..." : `€${selectedPeriods.reduce((sum, p) => sum + (p.stats?.totalRevenue || 0), 0).toFixed(2)}`}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-purple-700">Ticket Medio Promedio</p>
+                    <p className="text-2xl font-bold text-purple-900">
+                      {loadingStats ? "..." : `€${(selectedPeriods.reduce((sum, p) => sum + (p.stats?.averageTicket || 0), 0) / selectedPeriods.length).toFixed(2)}`}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Duración:</span>
-                  <span>{selectedPeriodInfo.days} día{selectedPeriodInfo.days !== 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Tipo:</span>
-                  <Badge variant="secondary">
-                    {selectedPeriodType === 'day' ? 'Día(s)' :
-                     selectedPeriodType === 'month' ? 'Mes' :
-                     selectedPeriodType === 'quarter' ? 'Trimestre' : 'Año'}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center border-t pt-3">
-                  <span className="font-bold text-lg">Precio Estimado:</span>
-                  <span className="font-bold text-xl text-primary">{selectedPeriodInfo.estimatedPrice}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  * Precio basado en datos reales de reservas del período seleccionado
-                </p>
               </CardContent>
             </Card>
           )}
 
           {/* Purchase Button */}
-          <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={handlePurchase}
-              disabled={!selectedRange || isLoading || loadingStats}
-              className={cn(
-                "px-8 py-3 text-lg font-semibold rounded-xl",
-                "bg-gradient-to-r from-primary to-primary/80",
-                "hover:from-primary/90 hover:to-primary/70",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              <CreditCard className="h-5 w-5 mr-2" />
-              {isLoading ? "Procesando..." : loadingStats ? "Calculando..." : "Comprar este período"}
-            </Button>
+          <div className="flex justify-between items-center">
+            <div className="text-left">
+              <p className="text-sm text-muted-foreground">Precio total del análisis:</p>
+              <p className="text-2xl font-bold text-primary">€{getTotalPrice().toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">Basado en datos reales de reservas</p>
+            </div>
+            <div className="flex space-x-3">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handlePurchase}
+                disabled={selectedPeriods.length === 0 || isLoading || loadingStats}
+                className={cn(
+                  "px-8 py-3 text-lg font-semibold rounded-xl",
+                  "bg-gradient-to-r from-primary to-primary/80",
+                  "hover:from-primary/90 hover:to-primary/70",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                )}
+              >
+                <CreditCard className="h-5 w-5 mr-2" />
+                {isLoading ? "Procesando..." : loadingStats ? "Calculando..." : 
+                 selectedPeriods.length > 1 ? "Comprar Análisis Comparativo" : "Comprar Análisis"}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
