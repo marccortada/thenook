@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -140,6 +141,8 @@ const useLocalCart = () => {
 
 const GiftCardsPage = () => {
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
+  const [purchasedByName, setPurchasedByName] = useState("");
+  const [purchasedByEmail, setPurchasedByEmail] = useState("");
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -265,11 +268,38 @@ const GiftCardsPage = () => {
                           </Button>
                         </div>
                       ))}
-                      <div className="flex items-center justify-between border-t pt-3">
-                        <span className="text-sm text-muted-foreground">Total</span>
-                        <span className="font-semibold">{euro(totalCents)}</span>
-                      </div>
-                      <PaymentMethodsInfo />
+                       <div className="flex items-center justify-between border-t pt-3">
+                         <span className="text-sm text-muted-foreground">Total</span>
+                         <span className="font-semibold">{euro(totalCents)}</span>
+                       </div>
+                       
+                       {/* Campos de comprado por */}
+                       <div className="space-y-3 border-t pt-3">
+                         <div>
+                           <Label htmlFor="purchased_by_name" className="text-sm">Comprado por (nombre)</Label>
+                           <Input
+                             id="purchased_by_name"
+                             value={purchasedByName}
+                             onChange={(e) => setPurchasedByName(e.target.value)}
+                             placeholder="Nombre del comprador"
+                             className="mt-1"
+                           />
+                         </div>
+                         
+                         <div>
+                           <Label htmlFor="purchased_by_email" className="text-sm">Email del comprador</Label>
+                           <Input
+                             id="purchased_by_email"
+                             type="email"
+                             value={purchasedByEmail}
+                             onChange={(e) => setPurchasedByEmail(e.target.value)}
+                             placeholder="email@ejemplo.com"
+                             className="mt-1"
+                           />
+                         </div>
+                       </div>
+                       
+                       <PaymentMethodsInfo />
                       <div className="flex gap-2 pt-1">
                         <Button variant="secondary" onClick={clear} className="flex-1">
                           Vaciar
@@ -277,13 +307,18 @@ const GiftCardsPage = () => {
                         <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
                           if (items.length === 0) return;
                           try {
-                            const payload = {
-                              intent: "gift_cards",
-                              gift_cards: {
-                                items: items.map(i => ({ amount_cents: i.priceCents, quantity: i.quantity }))
-                              },
-                              currency: "eur"
-                            };
+                             const payload = {
+                               intent: "gift_cards",
+                               gift_cards: {
+                                 items: items.map(i => ({ 
+                                   amount_cents: i.priceCents, 
+                                   quantity: i.quantity,
+                                   purchased_by_name: purchasedByName || undefined,
+                                   purchased_by_email: purchasedByEmail || undefined
+                                 }))
+                               },
+                               currency: "eur"
+                             };
                             const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
                             if (error) throw error;
                             if (data?.url) {
