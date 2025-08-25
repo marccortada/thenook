@@ -41,6 +41,7 @@ const ClientReservation = () => {
 
   const [selection, setSelection] = useState<{ id: string; kind: "service" } | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showTimeDropdown, setShowTimeDropdown] = useState(false);
 
   const { services, loading: servicesLoading } = useServices(formData.center);
 
@@ -534,23 +535,36 @@ const ClientReservation = () => {
                       )}
                     </div>
                    
-                     <div>
+                     <div className="relative">
                        <Label htmlFor="time" className="text-sm">Hora *</Label>
-                         <Select 
-                           value={formData.time} 
-                           onValueChange={(value) => setFormData({ ...formData, time: value })}
-                         >
-                           <SelectTrigger className="mt-1">
-                             <SelectValue placeholder="Selecciona una hora" />
-                           </SelectTrigger>
-                           <SelectContent>
-                             {timeSlots.map((time) => (
-                               <SelectItem key={time} value={time}>
-                                 {time}
-                               </SelectItem>
-                             ))}
-                           </SelectContent>
-                         </Select>
+                       <Button
+                         variant="outline"
+                         onClick={() => setShowTimeDropdown(!showTimeDropdown)}
+                         className={cn(
+                           "w-full justify-start text-left font-normal mt-1",
+                           !formData.time && "text-muted-foreground"
+                         )}
+                       >
+                         <Clock className="mr-2 h-4 w-4" />
+                         {formData.time || "Selecciona una hora"}
+                       </Button>
+                       {showTimeDropdown && (
+                         <div className="absolute top-full left-0 z-50 bg-background border rounded-lg shadow-lg mt-1 w-full max-h-60 overflow-y-auto">
+                           {timeSlots.map((time) => (
+                             <button
+                               key={time}
+                               onClick={() => {
+                                 setFormData({ ...formData, time });
+                                 setShowTimeDropdown(false);
+                               }}
+                               className="w-full px-4 py-2 text-left hover:bg-accent hover:text-accent-foreground flex items-center space-x-2"
+                             >
+                               <Clock className="h-3 w-3" />
+                               <span>{time}</span>
+                             </button>
+                           ))}
+                         </div>
+                       )}
                      </div>
                   </div>
                 </div>
