@@ -115,159 +115,6 @@ export default function BuyVoucherPage() {
               </Link>
             </div>
             <div className="flex items-center space-x-2">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline">Carrito ({items.length})</Button>
-                </SheetTrigger>
-                <SheetContent className="w-[90vw] sm:w-[480px]">
-                  <SheetHeader>
-                    <SheetTitle>Tu carrito</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-4 space-y-4">
-                    {items.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Tu carrito está vacío.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {items.map((item) => (
-                          <div key={item.id} className="flex items-center justify-between gap-3 border rounded-md p-3">
-                            <div>
-                              <p className="text-sm font-medium leading-tight">{item.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {currency(item.priceCents)} · {item.sessionsCount} sesiones
-                              </p>
-                            </div>
-                            <Button size="sm" variant="ghost" onClick={() => remove(item.id)}>
-                              Quitar
-                            </Button>
-                          </div>
-                        ))}
-                        <div className="flex items-center justify-between border-t pt-3">
-                          <span className="text-sm text-muted-foreground">Total</span>
-                          <span className="font-semibold">{currency(totalCents)}</span>
-                        </div>
-                        
-                        {/* Campos de comprado por */}
-                        <div className="space-y-3 border-t pt-3">
-                          <div>
-                            <Label htmlFor="purchased_by_name" className="text-sm">Comprado por (nombre)</Label>
-                            <Input
-                              id="purchased_by_name"
-                              value={purchasedByName}
-                              onChange={(e) => setPurchasedByName(e.target.value)}
-                              placeholder="Nombre del comprador"
-                              className="mt-1"
-                            />
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="purchased_by_email" className="text-sm">Email del comprador</Label>
-                            <Input
-                              id="purchased_by_email"
-                              type="email"
-                              value={purchasedByEmail}
-                              onChange={(e) => setPurchasedByEmail(e.target.value)}
-                              placeholder="email@ejemplo.com"
-                              className="mt-1"
-                            />
-                          </div>
-                        </div>
-                        
-                        {/* ¿Es un regalo? */}
-                        <div className="border-t pt-3">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id="is_gift" 
-                              checked={isGift}
-                              onCheckedChange={(checked) => setIsGift(!!checked)}
-                            />
-                            <Label htmlFor="is_gift" className="text-sm">¿Es un regalo?</Label>
-                          </div>
-                          
-                          {isGift && (
-                            <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
-                              <div>
-                                <Label htmlFor="recipient_name" className="text-sm">Para (nombre del destinatario) *</Label>
-                                <Input
-                                  id="recipient_name"
-                                  value={recipientName}
-                                  onChange={(e) => setRecipientName(e.target.value)}
-                                  placeholder="Nombre del destinatario"
-                                  className="mt-1"
-                                  required={isGift}
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label htmlFor="recipient_email" className="text-sm">Email del destinatario</Label>
-                                <Input
-                                  id="recipient_email"
-                                  type="email"
-                                  value={recipientEmail}
-                                  onChange={(e) => setRecipientEmail(e.target.value)}
-                                  placeholder="email@ejemplo.com"
-                                  className="mt-1"
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label htmlFor="gift_message" className="text-sm">Mensaje de regalo (opcional)</Label>
-                                <Textarea
-                                  id="gift_message"
-                                  value={giftMessage}
-                                  onChange={(e) => setGiftMessage(e.target.value)}
-                                  placeholder="Tu mensaje personalizado..."
-                                  className="mt-1"
-                                  rows={3}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <PaymentMethodsInfo />
-                        <div className="flex gap-2 pt-1">
-                          <Button variant="secondary" onClick={clear} className="flex-1">
-                            Vaciar
-                          </Button>
-                          <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
-                            if (items.length === 0) return;
-                            if (isGift && !recipientName.trim()) {
-                              toast.error("Por favor, indica el nombre del destinatario");
-                              return;
-                            }
-                            try {
-                              const payload = {
-                                intent: "package_voucher",
-                                package_voucher: {
-                                  items: items.map(item => ({
-                                    package_id: item.packageId,
-                                    purchased_by_name: purchasedByName || undefined,
-                                    purchased_by_email: purchasedByEmail || undefined,
-                                    is_gift: isGift,
-                                    recipient_name: isGift ? recipientName : undefined,
-                                    recipient_email: isGift ? recipientEmail : undefined,
-                                    gift_message: isGift ? giftMessage : undefined
-                                  }))
-                                },
-                                currency: "eur"
-                              };
-                              const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-                              if (error) throw error;
-                              if (data?.url) {
-                                window.location.href = data.url;
-                              }
-                            } catch (e: any) {
-                              toast.error(e.message || "No se pudo iniciar el pago");
-                            }
-                          }}>
-                            Proceder al Pago
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </SheetContent>
-              </Sheet>
               <LanguageSelector />
             </div>
           </div>
@@ -277,11 +124,166 @@ export default function BuyVoucherPage() {
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <article>
-          <header className="mb-5">
-            <h1 className="text-2xl font-bold">Bonos</h1>
-            <p className="text-sm text-muted-foreground">
-              Elige tu bono de sesiones. Perfecto para regalos o uso personal.
-            </p>
+          <header className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold">Bonos</h1>
+              <p className="text-sm text-muted-foreground">
+                Elige tu bono de sesiones. Perfecto para regalos o uso personal.
+              </p>
+            </div>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline">Carrito ({items.length})</Button>
+              </SheetTrigger>
+              <SheetContent className="w-[90vw] sm:w-[480px]">
+                <SheetHeader>
+                  <SheetTitle>Tu carrito</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4 space-y-4">
+                  {items.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Tu carrito está vacío.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {items.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between gap-3 border rounded-md p-3">
+                          <div>
+                            <p className="text-sm font-medium leading-tight">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {currency(item.priceCents)} · {item.sessionsCount} sesiones
+                            </p>
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={() => remove(item.id)}>
+                            Quitar
+                          </Button>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between border-t pt-3">
+                        <span className="text-sm text-muted-foreground">Total</span>
+                        <span className="font-semibold">{currency(totalCents)}</span>
+                      </div>
+                      
+                      {/* Campos de comprado por */}
+                      <div className="space-y-3 border-t pt-3">
+                        <div>
+                          <Label htmlFor="purchased_by_name" className="text-sm">Comprado por (nombre)</Label>
+                          <Input
+                            id="purchased_by_name"
+                            value={purchasedByName}
+                            onChange={(e) => setPurchasedByName(e.target.value)}
+                            placeholder="Nombre del comprador"
+                            className="mt-1"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="purchased_by_email" className="text-sm">Email del comprador</Label>
+                          <Input
+                            id="purchased_by_email"
+                            type="email"
+                            value={purchasedByEmail}
+                            onChange={(e) => setPurchasedByEmail(e.target.value)}
+                            placeholder="email@ejemplo.com"
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* ¿Es un regalo? */}
+                      <div className="border-t pt-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="is_gift" 
+                            checked={isGift}
+                            onCheckedChange={(checked) => setIsGift(!!checked)}
+                          />
+                          <Label htmlFor="is_gift" className="text-sm">¿Es un regalo?</Label>
+                        </div>
+                        
+                        {isGift && (
+                          <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
+                            <div>
+                              <Label htmlFor="recipient_name" className="text-sm">Para (nombre del destinatario) *</Label>
+                              <Input
+                                id="recipient_name"
+                                value={recipientName}
+                                onChange={(e) => setRecipientName(e.target.value)}
+                                placeholder="Nombre del destinatario"
+                                className="mt-1"
+                                required={isGift}
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="recipient_email" className="text-sm">Email del destinatario</Label>
+                              <Input
+                                id="recipient_email"
+                                type="email"
+                                value={recipientEmail}
+                                onChange={(e) => setRecipientEmail(e.target.value)}
+                                placeholder="email@ejemplo.com"
+                                className="mt-1"
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="gift_message" className="text-sm">Mensaje de regalo (opcional)</Label>
+                              <Textarea
+                                id="gift_message"
+                                value={giftMessage}
+                                onChange={(e) => setGiftMessage(e.target.value)}
+                                placeholder="Tu mensaje personalizado..."
+                                className="mt-1"
+                                rows={3}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <PaymentMethodsInfo />
+                      <div className="flex gap-2 pt-1">
+                        <Button variant="secondary" onClick={clear} className="flex-1">
+                          Vaciar
+                        </Button>
+                        <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
+                          if (items.length === 0) return;
+                          if (isGift && !recipientName.trim()) {
+                            toast.error("Por favor, indica el nombre del destinatario");
+                            return;
+                          }
+                          try {
+                            const payload = {
+                              intent: "package_voucher",
+                              package_voucher: {
+                                items: items.map(item => ({
+                                  package_id: item.packageId,
+                                  purchased_by_name: purchasedByName || undefined,
+                                  purchased_by_email: purchasedByEmail || undefined,
+                                  is_gift: isGift,
+                                  recipient_name: isGift ? recipientName : undefined,
+                                  recipient_email: isGift ? recipientEmail : undefined,
+                                  gift_message: isGift ? giftMessage : undefined
+                                }))
+                              },
+                              currency: "eur"
+                            };
+                            const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
+                            if (error) throw error;
+                            if (data?.url) {
+                              window.location.href = data.url;
+                            }
+                          } catch (e: any) {
+                            toast.error(e.message || "No se pudo iniciar el pago");
+                          }
+                        }}>
+                          Proceder al Pago
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </header>
 
           <section aria-label="Listado de bonos">
