@@ -95,7 +95,7 @@ const CenterManagement = () => {
 
       setCenterDetails({
         ...data,
-        working_hours: data.working_hours || defaultWorkingHours
+        working_hours: (data.working_hours as any) || defaultWorkingHours
       });
     } catch (error) {
       console.error('Error fetching center details:', error);

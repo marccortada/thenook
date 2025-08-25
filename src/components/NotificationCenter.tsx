@@ -49,11 +49,12 @@ const NotificationCenter = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
-    trigger_type: '',
+    trigger_type: 'booking_reminder' as 'booking_reminder' | 'birthday' | 'appointment_confirmation' | 'no_show_follow_up',
     trigger_days_before: 0,
     message_template: '',
     send_via: [] as string[],
-    target_audience: 'all' as string
+    target_audience: 'all_clients' as 'all_clients' | 'specific_segments',
+    is_active: true
   });
 
   const triggerTypes = [
@@ -94,7 +95,8 @@ const NotificationCenter = () => {
       trigger_days_before: rule.trigger_days_before || 0,
       message_template: rule.message_template,
       send_via: rule.send_via,
-      target_audience: rule.target_audience
+      target_audience: rule.target_audience,
+      is_active: rule.is_active
     });
   };
 
@@ -115,11 +117,12 @@ const NotificationCenter = () => {
       setShowCreateDialog(false);
       setEditForm({
         name: '',
-        trigger_type: '',
+        trigger_type: 'booking_reminder',
         trigger_days_before: 0,
         message_template: '',
         send_via: [],
-        target_audience: 'all'
+        target_audience: 'all_clients',
+        is_active: true
       });
     } catch (error) {
       console.error('Error creating rule:', error);
@@ -129,11 +132,12 @@ const NotificationCenter = () => {
   const resetEditForm = () => {
     setEditForm({
       name: '',
-      trigger_type: '',
+      trigger_type: 'booking_reminder',
       trigger_days_before: 0,
       message_template: '',
       send_via: [],
-      target_audience: 'all'
+      target_audience: 'all_clients',
+      is_active: true
     });
   };
 
@@ -171,7 +175,7 @@ const NotificationCenter = () => {
               
               <div>
                 <Label htmlFor="trigger-type">Tipo de disparador</Label>
-                <Select value={editForm.trigger_type} onValueChange={(value) => 
+                <Select value={editForm.trigger_type} onValueChange={(value: any) => 
                   setEditForm({ ...editForm, trigger_type: value })
                 }>
                   <SelectTrigger>
@@ -278,7 +282,7 @@ const NotificationCenter = () => {
                 
                 <div>
                   <Label htmlFor="edit-trigger">Tipo de disparador</Label>
-                  <Select value={editForm.trigger_type} onValueChange={(value) => 
+                  <Select value={editForm.trigger_type} onValueChange={(value: any) => 
                     setEditForm({ ...editForm, trigger_type: value })
                   }>
                     <SelectTrigger>

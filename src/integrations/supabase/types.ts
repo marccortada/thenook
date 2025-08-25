@@ -284,6 +284,7 @@ export type Database = {
           name: string
           phone: string | null
           updated_at: string
+          working_hours: Json | null
         }
         Insert: {
           active?: boolean | null
@@ -294,6 +295,7 @@ export type Database = {
           name: string
           phone?: string | null
           updated_at?: string
+          working_hours?: Json | null
         }
         Update: {
           active?: boolean | null
@@ -304,6 +306,7 @@ export type Database = {
           name?: string
           phone?: string | null
           updated_at?: string
+          working_hours?: Json | null
         }
         Relationships: []
       }
