@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 
 import InternalCodesManagement from "@/components/InternalCodesManagement";
+import PackageManagement from "@/components/PackageManagement";
+import GiftCardManagement from "@/components/GiftCardManagement";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminSettings = () => {
@@ -115,13 +117,14 @@ const AdminSettings = () => {
             >
               <option value="general">🏢 General</option>
               <option value="codes">🏷️ Códigos</option>
+              <option value="gifts">🎁 Bonos y Tarjetas</option>
               <option value="payments">💳 Pagos</option>
               <option value="notifications">🔔 Notificaciones</option>
             </select>
           </div>
 
           {/* Desktop Tabs */}
-          <TabsList className="hidden lg:grid w-full grid-cols-4 h-auto mb-6">
+          <TabsList className="hidden lg:grid w-full grid-cols-5 h-auto mb-6">
             <TabsTrigger value="general" className="flex items-center gap-2 p-3">
               <Building2 className="h-4 w-4" />
               <span>General</span>
@@ -129,6 +132,10 @@ const AdminSettings = () => {
             <TabsTrigger value="codes" className="flex items-center gap-2 p-3">
               <Hash className="h-4 w-4" />
               <span>Códigos</span>
+            </TabsTrigger>
+            <TabsTrigger value="gifts" className="flex items-center gap-2 p-3">
+              <Package className="h-4 w-4" />
+              <span>Bonos y Tarjetas</span>
             </TabsTrigger>
             <TabsTrigger value="payments" className="flex items-center gap-2 p-3">
               <CreditCard className="h-4 w-4" />
@@ -278,6 +285,50 @@ const AdminSettings = () => {
 
           <TabsContent value="codes" className="space-y-4 sm:space-y-6">
             <InternalCodesManagement />
+          </TabsContent>
+
+          <TabsContent value="gifts" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="shadow-sm border-2">
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+                    Gestión de Bonos
+                  </CardTitle>
+                  <CardDescription className="text-sm sm:text-base">
+                    Administra los bonos y paquetes de sesiones
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => window.open('/admin/bonos', '_blank')}
+                    className="w-full"
+                  >
+                    Ir a Gestión de Bonos
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm border-2">
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
+                    Gestión de Tarjetas Regalo
+                  </CardTitle>
+                  <CardDescription className="text-sm sm:text-base">
+                    Administra las tarjetas regalo y su saldo
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => window.open('/admin/tarjetas-regalo', '_blank')}
+                    className="w-full"
+                  >
+                    Ir a Gestión de Tarjetas Regalo
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="payments" className="space-y-4 sm:space-y-6">
