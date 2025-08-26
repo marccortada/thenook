@@ -13,7 +13,8 @@ import {
   Euro,
   Package2,
   FileText,
-  QrCode
+  QrCode,
+  Gift
 } from 'lucide-react';
 import CenterManagement from './CenterManagement';
 import AdvancedScheduleManagement from './AdvancedScheduleManagement';
@@ -23,6 +24,7 @@ import AdminPricingPromos from '../pages/AdminPricingPromos';
 import AdminSettings from '../pages/AdminSettings';
 import ReportsCenter from '../pages/ReportsCenter';
 import RedeemCode from '../pages/RedeemCode';
+import GiftCardImageGenerator from './GiftCardImageGenerator';
 
 const ControlCenter = () => {
   const [activeTab, setActiveTab] = useState('centers');
@@ -56,7 +58,7 @@ const ControlCenter = () => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-9">
           <TabsTrigger value="centers" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">Centros</span>
@@ -80,6 +82,10 @@ const ControlCenter = () => {
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             <span className="hidden sm:inline">Reportes</span>
+          </TabsTrigger>
+          <TabsTrigger value="giftcards" className="flex items-center gap-2">
+            <Gift className="w-4 h-4" />
+            <span className="hidden sm:inline">Tarjetas</span>
           </TabsTrigger>
           <TabsTrigger value="redeem" className="flex items-center gap-2">
             <QrCode className="w-4 h-4" />
@@ -113,6 +119,10 @@ const ControlCenter = () => {
 
         <TabsContent value="reports" className="space-y-6">
           <ReportsCenter />
+        </TabsContent>
+
+        <TabsContent value="giftcards" className="space-y-6">
+          <GiftCardImageGenerator />
         </TabsContent>
 
         <TabsContent value="redeem" className="space-y-6">
