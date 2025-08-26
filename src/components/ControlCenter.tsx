@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   Building2, 
   Calendar, 
@@ -14,7 +15,8 @@ import {
   Package2,
   FileText,
   QrCode,
-  Gift
+  Gift,
+  ExternalLink
 } from 'lucide-react';
 import CenterManagement from './CenterManagement';
 import AdvancedScheduleManagement from './AdvancedScheduleManagement';
@@ -114,7 +116,52 @@ const ControlCenter = () => {
         </TabsContent>
 
         <TabsContent value="pricing" className="space-y-6">
-          <AdminPricingPromos />
+          <Card className="border-l-4 border-l-blue-500">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Gestión de Precios y Promociones
+                <Button 
+                  onClick={() => window.open('/panel-gestion-nook-madrid-2024/precios-promos', '_blank')}
+                  className="flex items-center gap-2"
+                  variant="outline"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Abrir Panel Externo
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                Accede al panel completo de gestión de precios y promociones con todas las funcionalidades avanzadas.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-2">Panel Integrado</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Funcionalidades básicas dentro del Centro de Control
+                    </p>
+                    <AdminPricingPromos />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-2">Panel Completo</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Acceso completo a todas las funcionalidades avanzadas
+                    </p>
+                    <Button 
+                      onClick={() => window.open('/panel-gestion-nook-madrid-2024/precios-promos', '_blank')}
+                      className="w-full flex items-center gap-2"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Ir al Panel Completo
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">

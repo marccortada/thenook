@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useServices, usePackages } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
+import BackToControlCenter from "@/components/BackToControlCenter";
 
 import HappyHourManagement from "@/components/HappyHourManagement";
 
@@ -19,6 +20,10 @@ export default function AdminPricingPromos() {
   const { services, refetch: refetchServices } = useServices();
   const { packages, refetch: refetchPackages } = usePackages();
   const { toast } = useToast();
+  const location = useLocation();
+  
+  // Detectar si estamos en la ruta externa
+  const isExternalRoute = location.pathname.includes('panel-gestion-nook-madrid');
 
   useEffect(() => {
     document.title = "Precios y Promos | The Nook Madrid";
@@ -390,6 +395,9 @@ export default function AdminPricingPromos() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Mostrar botón de volver solo si estamos en ruta externa */}
+      {isExternalRoute && <BackToControlCenter />}
+      
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
