@@ -39,7 +39,7 @@ serve(async (req) => {
         bookings(booking_datetime, total_price_cents, services(name))
       `)
       .eq('status', 'pending')
-      .in('type', ['appointment_confirmation', 'booking_reminder'])
+      .in('type', ['appointment_confirmation', 'booking_reminder', 'booking_invoice'])
       .lte('scheduled_for', nowIso)
       .limit(10);
 
@@ -78,7 +78,48 @@ serve(async (req) => {
           continue;
         }
 
-        // Send email using Resend
+        // Handle invoice emails differently
+        if (notification.type === 'booking_invoice' && notification.booking_id) {
+          console.log(`📧 Processing invoice for booking ${notification.booking_id}`);
+          
+          try {
+            // Call the invoice function
+            const { data: invoiceResult, error: invoiceError } = await supabaseClient.functions
+              .invoke('send-booking-invoice', {
+                body: { booking_id: notification.booking_id }
+              });
+
+            if (invoiceError) {
+              throw invoiceError;
+            }
+
+            console.log('✅ Invoice sent successfully');
+            await supabaseClient
+              .from('automated_notifications')
+              .update({ 
+                status: 'sent',
+                sent_at: new Date().toISOString()
+              })
+              .eq('id', notification.id);
+            
+            successCount++;
+            continue;
+            
+          } catch (invoiceError) {
+            console.error('❌ Invoice function error:', invoiceError);
+            await supabaseClient
+              .from('automated_notifications')
+              .update({ 
+                status: 'failed', 
+                error_message: `Invoice error: ${invoiceError.message}`,
+                sent_at: new Date().toISOString()
+              })
+              .eq('id', notification.id);
+            continue;
+          }
+        }
+
+        // Send regular email using Resend
         const emailResponse = await resend.emails.send({
           from: 'The Nook Madrid <reservas@thenookmadrid.com>',
           to: [client.email],

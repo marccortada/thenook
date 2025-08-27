@@ -27,6 +27,7 @@ import AdminSettings from '../pages/AdminSettings';
 import ReportsCenter from '../pages/ReportsCenter';
 import RedeemCode from '../pages/RedeemCode';
 import GiftCardImageGenerator from './GiftCardImageGenerator';
+import LogoUpload from './LogoUpload';
 
 const ControlCenter = () => {
   const [activeTab, setActiveTab] = useState('centers');
@@ -177,6 +178,7 @@ const ControlCenter = () => {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
+          <LogoUpload />
           <AdminSettings />
         </TabsContent>
       </Tabs>
