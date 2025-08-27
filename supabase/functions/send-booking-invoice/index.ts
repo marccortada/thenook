@@ -86,8 +86,8 @@ serve(async (req) => {
     let logoUrl = '';
     try {
       const { data: logoData } = await supabase.storage
-        .from('gift-cards')
-        .getPublicUrl('logo.png');
+        .from('logo')
+        .getPublicUrl('thenook.jpg');
       
       if (logoData?.publicUrl) {
         logoUrl = logoData.publicUrl;

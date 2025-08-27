@@ -20,8 +20,8 @@ const LogoUpload = () => {
   const checkCurrentLogo = async () => {
     try {
       const { data } = await supabase.storage
-        .from('gift-cards')
-        .getPublicUrl('logo.png');
+        .from('logo')
+        .getPublicUrl('thenook.jpg');
       
       if (data?.publicUrl) {
         // Check if the file actually exists by trying to fetch it
@@ -69,8 +69,8 @@ const LogoUpload = () => {
     try {
       // Upload the file with a fixed name so it can be easily referenced
       const { data, error } = await supabase.storage
-        .from('gift-cards')
-        .upload('logo.png', file, {
+        .from('logo')
+        .upload('thenook.jpg', file, {
           cacheControl: '3600',
           upsert: true, // This will overwrite if exists
         });
@@ -105,8 +105,8 @@ const LogoUpload = () => {
   const removeLogo = async () => {
     try {
       const { error } = await supabase.storage
-        .from('gift-cards')
-        .remove(['logo.png']);
+        .from('logo')
+        .remove(['thenook.jpg']);
 
       if (error) throw error;
 

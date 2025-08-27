@@ -27,6 +27,7 @@ import AdvancedCalendarView from "@/components/AdvancedCalendarView";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
 import PublicLandingPage from "@/pages/PublicLandingPage";
+import AppLogo from "@/components/AppLogo";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("bookings");

@@ -28,6 +28,7 @@ import ReportsCenter from '../pages/ReportsCenter';
 import RedeemCode from '../pages/RedeemCode';
 import GiftCardImageGenerator from './GiftCardImageGenerator';
 import LogoUpload from './LogoUpload';
+import InvoiceManagement from './InvoiceManagement';
 
 const ControlCenter = () => {
   const [activeTab, setActiveTab] = useState('centers');
@@ -178,7 +179,20 @@ const ControlCenter = () => {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
-          <LogoUpload />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Settings className="h-5 w-5" />
+                <span>Configuración General</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <LogoUpload />
+            </CardContent>
+          </Card>
+
+          <InvoiceManagement />
+          
           <AdminSettings />
         </TabsContent>
       </Tabs>
