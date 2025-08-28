@@ -31,10 +31,10 @@ type PeriodType = 'today' | 'yesterday' | 'week' | 'lastWeek' | 'month' | 'lastM
 
 const AdvancedDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
-  const [comparisonPeriod, setComparisonPeriod] = useState<PeriodType>('month');
+  const [comparisonPeriod, setComparisonPeriod] = useState<PeriodType>('lastMonth');
   const [viewMode, setViewMode] = useState<'total' | 'daily'>('total');
   const [showCalendarModal, setShowCalendarModal] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false); // Start with false for better control
   const {
     kpiMetrics,
     periodComparison,
@@ -48,12 +48,12 @@ const AdvancedDashboard = () => {
 
   const handlePeriodChange = (period: PeriodType) => {
     setSelectedPeriod(period);
-    loadAnalytics(period);
+    loadAnalytics(period, comparisonPeriod);
   };
 
   const handleComparisonPeriodChange = (period: PeriodType) => {
     setComparisonPeriod(period);
-    loadAnalytics(selectedPeriod);
+    loadAnalytics(selectedPeriod, period);
   };
 
   const toggleViewMode = () => {
@@ -65,11 +65,11 @@ const AdvancedDashboard = () => {
     if (!autoRefresh) return;
     
     const interval = setInterval(() => {
-      loadAnalytics(selectedPeriod);
+      loadAnalytics(selectedPeriod, comparisonPeriod);
     }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
-  }, [autoRefresh, selectedPeriod, loadAnalytics]);
+  }, [autoRefresh, selectedPeriod, comparisonPeriod, loadAnalytics]);
 
   const getPeriodLabel = (period: PeriodType) => {
     switch (period) {
@@ -248,7 +248,7 @@ const AdvancedDashboard = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => loadAnalytics(selectedPeriod)}
+              onClick={() => loadAnalytics(selectedPeriod, comparisonPeriod)}
               disabled={loading}
               className="w-full sm:w-auto"
             >
