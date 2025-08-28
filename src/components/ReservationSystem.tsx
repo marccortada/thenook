@@ -628,7 +628,12 @@ const ReservationSystem = () => {
               </div>
             )}
 
-            <Button type="submit" className="w-full" size="lg">
+            <Button 
+              type="submit" 
+              className="w-full" 
+              size="lg"
+              onClick={() => console.log('🔘 Botón clickeado')}
+            >
               Crear Reserva
             </Button>
           </form>
