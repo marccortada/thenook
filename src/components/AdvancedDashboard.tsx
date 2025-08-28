@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,10 @@ import {
   BarChart3,
   Activity,
   MapPin,
-  RefreshCw
+  RefreshCw,
+  CalendarDays,
+  Eye,
+  ArrowUpDown
 } from "lucide-react";
 import { useAdvancedAnalytics } from "@/hooks/useAdvancedAnalytics";
 import { PeriodComparisonChart } from "@/components/PeriodComparisonChart";
@@ -28,7 +31,10 @@ type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year';
 
 const AdvancedDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
+  const [comparisonPeriod, setComparisonPeriod] = useState<PeriodType>('month');
+  const [viewMode, setViewMode] = useState<'total' | 'daily'>('total');
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const {
     kpiMetrics,
     periodComparison,
@@ -44,6 +50,26 @@ const AdvancedDashboard = () => {
     setSelectedPeriod(period);
     loadAnalytics(period);
   };
+
+  const handleComparisonPeriodChange = (period: PeriodType) => {
+    setComparisonPeriod(period);
+    loadAnalytics(selectedPeriod);
+  };
+
+  const toggleViewMode = () => {
+    setViewMode(current => current === 'total' ? 'daily' : 'total');
+  };
+
+  // Auto-refresh functionality
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      loadAnalytics(selectedPeriod);
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, selectedPeriod, loadAnalytics]);
 
   const formatCurrency = (amount: number) => `€${amount.toFixed(2)}`;
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
@@ -162,28 +188,53 @@ const AdvancedDashboard = () => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-            <SelectTrigger className="w-full sm:w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Hoy</SelectItem>
-              <SelectItem value="week">Semana</SelectItem>
-              <SelectItem value="month">Mes</SelectItem>
-              <SelectItem value="quarter">Trimestre</SelectItem>
-              <SelectItem value="year">Año</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => loadAnalytics(selectedPeriod)}
-            disabled={loading}
-            className="w-full sm:w-auto"
-          >
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            <span className="ml-2 sm:hidden">Actualizar</span>
-          </Button>
+          <div className="flex gap-2">
+            <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+              <SelectTrigger className="w-full sm:w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Hoy</SelectItem>
+                <SelectItem value="week">Semana</SelectItem>
+                <SelectItem value="month">Mes</SelectItem>
+                <SelectItem value="quarter">Trimestre</SelectItem>
+                <SelectItem value="year">Año</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleViewMode}
+              className="flex items-center gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              {viewMode === 'total' ? 'Total' : 'Diario'}
+            </Button>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button
+              variant={autoRefresh ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              className="flex items-center gap-2"
+            >
+              <Activity className="h-4 w-4" />
+              Auto
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadAnalytics(selectedPeriod)}
+              disabled={loading}
+              className="w-full sm:w-auto"
+            >
+              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+              <span className="ml-2 sm:hidden">Actualizar</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -279,21 +330,42 @@ const AdvancedDashboard = () => {
         </div>
 
         <TabsContent value="trends" className="space-y-4">
-          {/* Calendar Button */}
-          <div className="flex justify-end mb-4">
-            <Button
-              onClick={() => setShowCalendarModal(true)}
-              className={cn(
-                "px-6 py-3 text-base font-semibold rounded-xl",
-                "bg-gradient-to-r from-primary to-primary/80",
-                "hover:from-primary/90 hover:to-primary/70",
-                "shadow-lg hover:shadow-xl transition-all duration-200",
-                "flex items-center gap-2"
-              )}
-            >
-              <Calendar className="h-5 w-5" />
-              Calendario
-            </Button>
+          {/* Controls Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-muted/50 rounded-lg">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                <span className="text-sm font-medium">Comparar con:</span>
+              </div>
+              <Select value={comparisonPeriod} onValueChange={handleComparisonPeriodChange}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Día anterior</SelectItem>
+                  <SelectItem value="week">Semana anterior</SelectItem>
+                  <SelectItem value="month">Mes anterior</SelectItem>
+                  <SelectItem value="quarter">Trimestre anterior</SelectItem>
+                  <SelectItem value="year">Año anterior</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowCalendarModal(true)}
+                className={cn(
+                  "px-4 py-2 text-sm font-semibold rounded-lg",
+                  "bg-gradient-to-r from-primary to-primary/80",
+                  "hover:from-primary/90 hover:to-primary/70",
+                  "shadow-md hover:shadow-lg transition-all duration-200",
+                  "flex items-center gap-2"
+                )}
+              >
+                <Calendar className="h-4 w-4" />
+                Calendario
+              </Button>
+            </div>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
@@ -342,41 +414,65 @@ const AdvancedDashboard = () => {
               )}
             </div>
 
-            {/* Daily Evolution */}
+            {/* Daily Evolution - Enhanced */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Últimos 7 días
+                <CardTitle className="flex items-center gap-2 justify-between">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-5 w-5" />
+                    {viewMode === 'total' ? 'Evolución Diaria' : 'Desglose por Día'}
+                  </div>
+                  <Badge variant={autoRefresh ? "default" : "secondary"} className="text-xs">
+                    {autoRefresh ? 'En vivo' : 'Estático'}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {timeSeriesData.slice(-7).map((day, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="text-sm font-medium">
-                        {new Date(day.date).toLocaleDateString('es-ES', { 
-                          weekday: 'short', 
-                          day: 'numeric', 
-                          month: 'short' 
-                        })}
+                <div className="space-y-3 max-h-80 overflow-y-auto">
+                  {timeSeriesData.slice(viewMode === 'daily' ? -30 : -7).map((day, index) => {
+                    const dayRevenue = viewMode === 'total' ? day.revenue : day.revenue;
+                    const maxRevenue = Math.max(...timeSeriesData.map(d => d.revenue));
+                    const revenuePercentage = maxRevenue > 0 ? (dayRevenue / maxRevenue) * 100 : 0;
+                    
+                    return (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-primary"></div>
+                            {new Date(day.date).toLocaleDateString('es-ES', { 
+                              weekday: 'short', 
+                              day: 'numeric', 
+                              month: 'short' 
+                            })}
+                          </div>
+                          <div className="flex items-center space-x-4 text-sm">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3 text-blue-500" />
+                              <span className="font-medium">{day.bookings}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <DollarSign className="h-3 w-3 text-green-500" />
+                              <span className="font-medium">{formatCurrency(dayRevenue)}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Users className="h-3 w-3 text-purple-500" />
+                              <span className="font-medium">{day.newClients}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {viewMode === 'daily' && (
+                          <div className="ml-4">
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500"
+                                style={{ width: `${revenuePercentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center space-x-4 text-sm">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3 text-blue-500" />
-                          <span>{day.bookings}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <DollarSign className="h-3 w-3 text-green-500" />
-                          <span>{formatCurrency(day.revenue)}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Users className="h-3 w-3 text-purple-500" />
-                          <span>{day.newClients}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
