@@ -848,31 +848,12 @@ const AdvancedCalendarView = () => {
             </Button>
           </div>
           
-          {/* View Mode Toggle - Mobile Friendly */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === 'day' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('day')}
-            >
-              Día
-            </Button>
-            <Button
-              variant={viewMode === 'week' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('week')}
-            >
-              Semana
-            </Button>
+          <div className="text-lg sm:text-xl font-semibold text-center sm:text-left">
+            {viewMode === 'day' 
+              ? format(selectedDate, "EEEE, d 'de' MMMM yyyy", { locale: es })
+              : `${format(getWeekDates()[0], "d MMM", { locale: es })} - ${format(getWeekDates()[6], "d MMM yyyy", { locale: es })}`
+            }
           </div>
-        </div>
-
-        {/* Date Display */}
-        <div className="text-lg sm:text-xl font-semibold text-center sm:text-left">
-          {viewMode === 'day' 
-            ? format(selectedDate, "EEEE, d 'de' MMMM yyyy", { locale: es })
-            : `${format(getWeekDates()[0], "d MMM", { locale: es })} - ${format(getWeekDates()[6], "d MMM yyyy", { locale: es })}`
-          }
         </div>
 
         {/* Filters and Controls - Mobile Stack */}
