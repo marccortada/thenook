@@ -227,13 +227,24 @@ const ClientReservation = () => {
       setSelection(null);
       setShowExistingBookings(false);
       setExistingBookings([]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating booking:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la reserva. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
+      
+      // Check if it's a capacity error
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('Capacidad máxima alcanzada')) {
+        toast({
+          title: "Capacidad Completa",
+          description: "Esta franja horaria ya tiene el máximo de 4 reservas. Por favor, elige otro horario.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudo crear la reserva. Inténtalo de nuevo.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
