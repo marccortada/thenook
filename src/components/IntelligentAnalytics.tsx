@@ -52,15 +52,26 @@ const IntelligentAnalytics = () => {
     try {
       setMetricsLoading(true);
       const { data, error } = await supabase
-        .from('real_time_metrics')
+        .from('business_metrics')
         .select('*')
-        .eq('period_type', selectedPeriod)
         .order('calculated_at', { ascending: false })
         .limit(20);
 
       if (error) throw error;
       
-      setRealTimeMetrics(data || []);
+      // Transform business_metrics to match RealTimeMetric interface
+      const transformedData = data?.map(metric => ({
+        id: metric.id,
+        metric_name: metric.metric_name,
+        metric_value: metric.metric_value,
+        metric_type: metric.metric_type,
+        period_type: selectedPeriod,
+        period_start: metric.period_start,
+        period_end: metric.period_end,
+        calculated_at: metric.calculated_at
+      })) || [];
+      
+      setRealTimeMetrics(transformedData);
     } catch (error) {
       console.error('Error fetching metrics:', error);
     } finally {
@@ -146,12 +157,16 @@ const IntelligentAnalytics = () => {
         }
       ];
 
-      // Insert metrics one by one with proper error handling
+      // Insert metrics using business_metrics table
       for (const metric of metricsData) {
         const { error } = await supabase
-          .from('real_time_metrics')
-          .upsert(metric, {
-            onConflict: 'metric_name,period_type,period_start'
+          .from('business_metrics')
+          .insert({
+            metric_name: metric.metric_name,
+            metric_value: metric.metric_value,
+            metric_type: metric.metric_type,
+            period_start: metric.period_start,
+            period_end: metric.period_end
           });
         
         if (error) {

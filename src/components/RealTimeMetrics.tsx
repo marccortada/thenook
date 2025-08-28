@@ -42,15 +42,27 @@ const RealTimeMetrics = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('real_time_metrics')
+        .from('business_metrics')
         .select('*')
-        .eq('period_type', selectedPeriod)
         .order('calculated_at', { ascending: false })
         .limit(20);
 
       if (error) throw error;
       
-      setMetrics(data || []);
+      // Transform business_metrics to match Metric interface
+      const transformedData = data?.map(metric => ({
+        id: metric.id,
+        metric_name: metric.metric_name,
+        metric_value: metric.metric_value,
+        metric_type: metric.metric_type,
+        period_type: selectedPeriod,
+        period_start: metric.period_start,
+        period_end: metric.period_end,
+        calculated_at: metric.calculated_at,
+        metadata: metric.metadata
+      })) || [];
+      
+      setMetrics(transformedData);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching metrics:', error);
@@ -66,7 +78,31 @@ const RealTimeMetrics = () => {
 
   const calculateMetrics = async () => {
     try {
-      const { error } = await supabase.rpc('calculate_real_time_metrics');
+      // Calculate simple metrics using existing tables
+      const currentDay = new Date().toISOString().split('T')[0];
+      
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('*')
+        .gte('booking_datetime', `${currentDay}T00:00:00`)
+        .lt('booking_datetime', `${currentDay}T23:59:59`);
+
+      if (bookingsError) throw bookingsError;
+
+      const dailyBookingsCount = bookings?.length || 0;
+      const dailyRevenue = bookings?.reduce((sum, b) => sum + (b.total_price_cents / 100), 0) || 0;
+
+      // Insert simple metric
+      const { error } = await supabase
+        .from('business_metrics')
+        .insert({
+          metric_name: 'daily_bookings',
+          metric_value: dailyBookingsCount,
+          metric_type: 'count',
+          period_start: currentDay,
+          period_end: currentDay
+        });
+
       if (error) throw error;
       
       toast({

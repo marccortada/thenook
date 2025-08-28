@@ -48,17 +48,60 @@ export const useClientNotes = (
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
-        .rpc('get_client_notes_with_details', {
-          target_client_id: clientId || null,
-          category_filter: category || null,
-          search_query: searchQuery || null,
-          limit_count: 100
-        });
+      let query = supabase
+        .from('client_notes')
+        .select(`
+          *,
+          profiles!client_notes_client_id_fkey (
+            first_name,
+            last_name,
+            email
+          ),
+          profiles!client_notes_staff_id_fkey (
+            first_name,
+            last_name,
+            email
+          )
+        `);
+
+      if (clientId) {
+        query = query.eq('client_id', clientId);
+      }
+
+      if (category) {
+        query = query.eq('category', category);
+      }
+
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
+      }
+
+      const { data, error: fetchError } = await query
+        .order('created_at', { ascending: false })
+        .limit(100);
 
       if (fetchError) throw fetchError;
 
-      setNotes(data as ClientNote[] || []);
+      // Transform data to match ClientNote interface
+      const transformedData = data?.map(note => ({
+        id: note.id,
+        client_id: note.client_id,
+        staff_id: note.staff_id,
+        title: note.title,
+        content: note.content,
+        category: note.category as ClientNote['category'],
+        priority: note.priority as ClientNote['priority'],
+        is_private: note.is_private,
+        is_alert: note.is_alert,
+        created_at: note.created_at,
+        updated_at: note.updated_at,
+        client_name: `${note.profiles?.first_name || ''} ${note.profiles?.last_name || ''}`.trim(),
+        client_email: note.profiles?.email || '',
+        staff_name: `${note.profiles?.first_name || ''} ${note.profiles?.last_name || ''}`.trim(),
+        staff_email: note.profiles?.email || ''
+      })) || [];
+
+      setNotes(transformedData);
     } catch (error) {
       console.error('Error fetching client notes:', error);
       setError('Error al cargar las notas');
@@ -178,21 +221,18 @@ export const useClientNotes = (
 
   const toggleAlert = async (noteId: string, isAlert: boolean) => {
     try {
-      const { data, error } = await supabase
-        .rpc('toggle_note_alert', {
-          note_id: noteId,
-          is_alert_value: isAlert
-        });
+      const { error } = await supabase
+        .from('client_notes')
+        .update({ is_alert: isAlert })
+        .eq('id', noteId);
 
       if (error) throw error;
 
-      if (data) {
-        await fetchNotes();
-        toast({
-          title: "Éxito",
-          description: isAlert ? "Alerta activada" : "Alerta desactivada",
-        });
-      }
+      await fetchNotes();
+      toast({
+        title: "Éxito",
+        description: isAlert ? "Alerta activada" : "Alerta desactivada",
+      });
     } catch (error) {
       console.error('Error toggling alert:', error);
       toast({
@@ -235,11 +275,37 @@ export const useClientAlerts = () => {
       setError(null);
 
       const { data, error: fetchError } = await supabase
-        .rpc('get_active_client_alerts');
+        .from('client_notes')
+        .select(`
+          *,
+          profiles!client_notes_client_id_fkey (
+            first_name,
+            last_name,
+            email
+          ),
+          profiles!client_notes_staff_id_fkey (
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq('is_alert', true)
+        .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
 
-      setAlerts(data || []);
+      setAlerts(data?.map(note => ({
+        id: note.id,
+        client_id: note.client_id,
+        client_name: `${note.profiles?.first_name || ''} ${note.profiles?.last_name || ''}`.trim(),
+        client_email: note.profiles?.email || '',
+        title: note.title,
+        content: note.content,
+        category: note.category,
+        priority: note.priority,
+        created_at: note.created_at,
+        staff_name: `${note.profiles?.first_name || ''} ${note.profiles?.last_name || ''}`.trim()
+      })) || []);
     } catch (error) {
       console.error('Error fetching client alerts:', error);
       setError('Error al cargar las alertas');
@@ -255,21 +321,18 @@ export const useClientAlerts = () => {
 
   const dismissAlert = async (noteId: string) => {
     try {
-      const { data, error } = await supabase
-        .rpc('toggle_note_alert', {
-          note_id: noteId,
-          is_alert_value: false
-        });
+      const { error } = await supabase
+        .from('client_notes')
+        .update({ is_alert: false })
+        .eq('id', noteId);
 
       if (error) throw error;
 
-      if (data) {
-        await fetchAlerts();
-        toast({
-          title: "Éxito",
-          description: "Alerta descartada",
-        });
-      }
+      await fetchAlerts();
+      toast({
+        title: "Éxito",
+        description: "Alerta descartada",
+      });
     } catch (error) {
       console.error('Error dismissing alert:', error);
       toast({
