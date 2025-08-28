@@ -1,188 +1,124 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
-  Settings,
-  Euro,
-  Bell,
-  FileText,
-  Home,
-  Building2,
+  Settings, 
+  Bell, 
+  FileText, 
+  TrendingUp,
   Calendar,
   Users,
   Package,
-  QrCode,
-  Gift
+  Euro,
+  ChevronLeft,
+  Home
 } from 'lucide-react';
-import AppLogo from './AppLogo';
-import AdminPricingPromos from '../pages/AdminPricingPromos';
-import NotificationCenter from './NotificationCenter';
-import ReportsCenter from './ReportsCenter';
-import AdminSettings from '../pages/AdminSettings';
-import ControlCenter from './ControlCenter';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import ControlCenter from '@/components/ControlCenter';
+import AdminPricingPromos from '@/pages/AdminPricingPromos';
+import NotificationDashboard from '@/components/NotificationDashboard';
+import ReportsCenter from '@/components/ReportsCenter';
+import AdminSettings from '@/pages/AdminSettings';
 
-interface AdminDashboardProps {
-  onBackToMain: () => void;
+interface SidebarItemProps {
+  icon: React.ComponentType<any>;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+  badge?: number;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToMain }) => {
-  const [activeSection, setActiveSection] = useState('overview');
+const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, isActive, onClick, badge }) => (
+  <button
+    onClick={onClick}
+    className={`
+      w-full flex items-center gap-3 px-4 py-3 text-left transition-colors rounded-lg
+      ${isActive 
+        ? 'bg-primary text-primary-foreground' 
+        : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+      }
+    `}
+  >
+    <Icon className="h-5 w-5" />
+    <span className="font-medium">{label}</span>
+    {badge && badge > 0 && (
+      <Badge variant="destructive" className="ml-auto">
+        {badge}
+      </Badge>
+    )}
+  </button>
+);
 
-  const sections = [
-    {
-      id: 'overview',
-      title: 'Panel Principal',
+const AdminDashboard = () => {
+  const [activeSection, setActiveSection] = useState('control');
+  const { profile } = useSimpleAuth();
+
+  const sidebarItems = [
+    { 
+      id: 'control', 
+      label: 'Centro de Control', 
       icon: Home,
-      description: 'Vista general del sistema'
+      component: ControlCenter 
     },
-    {
-      id: 'control',
-      title: 'Centro de Control',
-      icon: Building2,
-      description: 'Gestión de centros, horarios y personal'
+    { 
+      id: 'pricing', 
+      label: 'Precios y Promos', 
+      icon: TrendingUp,
+      component: AdminPricingPromos 
     },
-    {
-      id: 'pricing',
-      title: 'Precios y Promos',
-      icon: Euro,
-      description: 'Gestión de precios y promociones'
-    },
-    {
-      id: 'notifications',
-      title: 'Notificaciones',
+    { 
+      id: 'notifications', 
+      label: 'Notificaciones', 
       icon: Bell,
-      description: 'Centro de notificaciones y alertas'
+      component: NotificationDashboard 
     },
-    {
-      id: 'reports',
-      title: 'Reportes',
+    { 
+      id: 'reports', 
+      label: 'Reports', 
       icon: FileText,
-      description: 'Informes y análisis'
+      component: ReportsCenter 
     },
-    {
-      id: 'settings',
-      title: 'Configuración',
+    { 
+      id: 'settings', 
+      label: 'Configuración', 
       icon: Settings,
-      description: 'Configuración del sistema'
+      component: AdminSettings 
     }
   ];
 
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'overview':
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sections.slice(1).map((section) => {
-                const Icon = section.icon;
-                return (
-                  <Card key={section.id} className="cursor-pointer hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <Icon className="h-5 w-5 text-primary" />
-                        {section.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {section.description}
-                      </p>
-                      <Button 
-                        onClick={() => setActiveSection(section.id)}
-                        className="w-full"
-                      >
-                        Acceder
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        );
-      case 'control':
-        return <ControlCenter />;
-      case 'pricing':
-        return <AdminPricingPromos />;
-      case 'notifications':
-        return <NotificationCenter />;
-      case 'reports':
-        return <ReportsCenter />;
-      case 'settings':
-        return <AdminSettings />;
-      default:
-        return null;
-    }
-  };
-
-  const currentSection = sections.find(s => s.id === activeSection);
-  const CurrentIcon = currentSection?.icon || Home;
+  const ActiveComponent = sidebarItems.find(item => item.id === activeSection)?.component || ControlCenter;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-white/95 backdrop-blur sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <AppLogo className="h-8 w-auto" />
-              <div className="hidden sm:block h-6 w-px bg-border" />
-              <h1 className="hidden sm:block text-lg font-semibold">Administración</h1>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={onBackToMain}
-              className="flex items-center gap-2"
-            >
-              ← Volver al Panel Principal
-            </Button>
-          </div>
+    <div className="flex h-screen bg-background">
+      {/* Sidebar */}
+      <div className="w-64 border-r bg-card">
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-bold text-primary">Panel de Admin</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {profile?.first_name} {profile?.last_name}
+          </p>
         </div>
-      </header>
+        
+        <nav className="p-4 space-y-2">
+          {sidebarItems.map((item) => (
+            <SidebarItem
+              key={item.id}
+              icon={item.icon}
+              label={item.label}
+              isActive={activeSection === item.id}
+              onClick={() => setActiveSection(item.id)}
+            />
+          ))}
+        </nav>
+      </div>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Sidebar Navigation */}
-          <div className="w-full lg:w-64 space-y-2">
-            <div className="bg-white rounded-lg border p-2">
-              {sections.map((section) => {
-                const Icon = section.icon;
-                const isActive = activeSection === section.id;
-                return (
-                  <Button
-                    key={section.id}
-                    variant={isActive ? "default" : "ghost"}
-                    className={`w-full justify-start gap-3 ${isActive ? '' : 'text-muted-foreground'}`}
-                    onClick={() => setActiveSection(section.id)}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{section.title}</span>
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <CurrentIcon className="h-5 w-5" />
-                  {currentSection?.title}
-                </CardTitle>
-                {currentSection?.description && (
-                  <p className="text-sm text-muted-foreground">
-                    {currentSection.description}
-                  </p>
-                )}
-              </CardHeader>
-              <CardContent>
-                {renderContent()}
-              </CardContent>
-            </Card>
-          </div>
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-6">
+          <ActiveComponent />
         </div>
       </div>
     </div>

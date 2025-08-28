@@ -1,246 +1,208 @@
+
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
-  Building2, 
-  Calendar, 
-  Bell, 
+  Calendar,
   Users, 
+  Package,
+  TrendingUp,
   Settings,
-  Zap,
-  Target,
-  Brain,
-  Euro,
-  Package2,
+  Bell,
   FileText,
-  QrCode,
+  CreditCard,
   Gift,
-  ExternalLink
+  UserCheck,
+  Clock,
+  Euro,
+  AlertCircle,
+  CheckCircle,
+  RotateCcw
 } from 'lucide-react';
-import CenterManagement from './CenterManagement';
+import ReservationSystem from './ReservationSystem';
+import ClientManagement from './ClientManagement';
+import PackageManagement from './PackageManagement';
+import AdvancedDashboard from './AdvancedDashboard';
 import AdvancedScheduleManagement from './AdvancedScheduleManagement';
-import NotificationCenter from './NotificationCenter';
 import EmployeeManagement from './EmployeeManagement';
-import AdminPricingPromos from '../pages/AdminPricingPromos';
-import AdminSettings from '../pages/AdminSettings';
-import ReportsCenter from './ReportsCenter';
-import RedeemCode from '../pages/RedeemCode';
-import GiftCardImageGenerator from './GiftCardImageGenerator';
-import LogoUpload from './LogoUpload';
-import InvoiceManagement from './InvoiceManagement';
+import CenterManagement from './CenterManagement';
+import { useDashboard } from '@/hooks/useDashboard';
 
 const ControlCenter = () => {
-  const [activeTab, setActiveTab] = useState('centers');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const { metrics, loading, error, refetch } = useDashboard();
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-4 sm:p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-4 w-24" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-4 sm:p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <p className="text-red-500 mb-4">{error}</p>
+              <Button onClick={refetch} variant="outline">
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Reintentar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Centro de Control</h1>
-        <p className="text-muted-foreground">
-          Gestión centralizada de centros, horarios, personal y automatizaciones inteligentes
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-primary">Centro de Control</h2>
+          <p className="text-muted-foreground">Panel de administración para gestión completa</p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={refetch} variant="outline" size="sm">
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Actualizar
+          </Button>
+        </div>
       </div>
 
-      {/* Intelligence Note */}
-      <Card className="border-blue-200 bg-blue-50/50">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <Brain className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-blue-900 mb-1">Configuración para IA</h3>
-              <p className="text-sm text-blue-700">
-                Los turnos, disponibilidad y ausencias configurados aquí serán utilizados por la IA para 
-                optimizar las reservas, sugerir horarios disponibles y gestionar automatizaciones inteligentes.
-                Una configuración precisa mejora significativamente la eficiencia del sistema.
+      {/* Stats Cards */}
+      {metrics && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Reservas Hoy</CardTitle>
+              <Calendar className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.todayBookings}</div>
+              <p className="text-xs text-muted-foreground">
+                {metrics.pendingBookings} pendientes
               </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ingresos Hoy</CardTitle>
+              <Euro className="h-4 w-4 text-success" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">€{metrics.todayRevenue?.toFixed(2) || '0.00'}</div>
+              <p className="text-xs text-muted-foreground">
+                +{metrics.revenueGrowth?.toFixed(1) || '0'}% vs ayer
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Clientes Activos</CardTitle>
+              <Users className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.activeClients}</div>
+              <p className="text-xs text-muted-foreground">
+                {metrics.newClientsThisMonth} nuevos este mes
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tasa Ocupación</CardTitle>
+              <TrendingUp className="h-4 w-4 text-warning" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.occupancyRate?.toFixed(1) || '0'}%</div>
+              <p className="text-xs text-muted-foreground">
+                Promedio semanal
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-9">
-          <TabsTrigger value="centers" className="flex items-center gap-2">
-            <Building2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Centros</span>
-          </TabsTrigger>
-          <TabsTrigger value="schedules" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            <span className="hidden sm:inline">Horarios</span>
-          </TabsTrigger>
-          <TabsTrigger value="staff" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">Personal</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="w-4 h-4" />
-            <span className="hidden sm:inline">Notificaciones</span>
-          </TabsTrigger>
-          <TabsTrigger value="pricing" className="flex items-center gap-2">
-            <Euro className="w-4 h-4" />
-            <span className="hidden sm:inline">Precios</span>
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            <span className="hidden sm:inline">Reportes</span>
-          </TabsTrigger>
-          <TabsTrigger value="giftcards" className="flex items-center gap-2">
-            <Gift className="w-4 h-4" />
-            <span className="hidden sm:inline">Tarjetas</span>
-          </TabsTrigger>
-          <TabsTrigger value="redeem" className="flex items-center gap-2">
-            <QrCode className="w-4 h-4" />
-            <span className="hidden sm:inline">Canjear</span>
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="w-4 h-4" />
-            <span className="hidden sm:inline">Configuración</span>
-          </TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="reservations">Reservas</TabsTrigger>
+          <TabsTrigger value="clients">Clientes</TabsTrigger>
+          <TabsTrigger value="packages">Bonos</TabsTrigger>
+          <TabsTrigger value="schedule">Horarios</TabsTrigger>
+          <TabsTrigger value="staff">Personal</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="centers" className="space-y-6">
-          <CenterManagement />
+        <TabsContent value="dashboard">
+          <AdvancedDashboard />
         </TabsContent>
 
-        <TabsContent value="schedules" className="space-y-6">
+        <TabsContent value="reservations">
+          <ReservationSystem />
+        </TabsContent>
+
+        <TabsContent value="clients">
+          <ClientManagement />
+        </TabsContent>
+
+        <TabsContent value="packages">
+          <PackageManagement />
+        </TabsContent>
+
+        <TabsContent value="schedule">
           <AdvancedScheduleManagement />
         </TabsContent>
 
-        <TabsContent value="staff" className="space-y-6">
-          <EmployeeManagement />
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6">
-          <NotificationCenter />
-        </TabsContent>
-
-        <TabsContent value="pricing" className="space-y-6">
-          <Card className="border-l-4 border-l-blue-500">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Gestión de Precios y Promociones
-                <Button 
-                  onClick={() => window.open('/panel-gestion-nook-madrid-2024/precios-promos', '_blank')}
-                  className="flex items-center gap-2"
-                  variant="outline"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Abrir Panel Externo
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Accede al panel completo de gestión de precios y promociones con todas las funcionalidades avanzadas.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <h4 className="font-medium mb-2">Panel Integrado</h4>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Funcionalidades básicas dentro del Centro de Control
-                    </p>
-                    <AdminPricingPromos />
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <h4 className="font-medium mb-2">Panel Completo</h4>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Acceso completo a todas las funcionalidades avanzadas
-                    </p>
-                    <Button 
-                      onClick={() => window.open('/panel-gestion-nook-madrid-2024/precios-promos', '_blank')}
-                      className="w-full flex items-center gap-2"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      Ir al Panel Completo
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="reports" className="space-y-6">
-          <ReportsCenter />
-        </TabsContent>
-
-        <TabsContent value="giftcards" className="space-y-6">
-          <GiftCardImageGenerator />
-        </TabsContent>
-
-        <TabsContent value="redeem" className="space-y-6">
-          <RedeemCode />
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-6">
+        <TabsContent value="staff">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Settings className="h-5 w-5" />
-                <span>Configuración General</span>
-              </CardTitle>
+              <CardTitle>Gestión de Personal</CardTitle>
+              <CardDescription>
+                Administra empleados y centros
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <LogoUpload />
+            <CardContent>
+              <Tabs defaultValue="employees">
+                <TabsList>
+                  <TabsTrigger value="employees">Empleados</TabsTrigger>
+                  <TabsTrigger value="centers">Centros</TabsTrigger>
+                </TabsList>
+                <TabsContent value="employees">
+                  <EmployeeManagement />
+                </TabsContent>
+                <TabsContent value="centers">
+                  <CenterManagement />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
-
-          <InvoiceManagement />
-          
-          <AdminSettings />
         </TabsContent>
       </Tabs>
-
-      {/* Bottom Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Target className="w-4 h-4 text-green-600" />
-              Configuración Óptima
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Asegúrate de configurar horarios específicos por centro y empleado para maximizar la precisión de la IA.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Zap className="w-4 h-4 text-yellow-600" />
-              Automatización
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Las notificaciones y turnos configurados permiten automatizar recordatorios y optimizar la ocupación.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Settings className="w-4 h-4 text-blue-600" />
-              Configuración Granular
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Cada centro puede tener horarios únicos y personal especializado para servicios específicos.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };
