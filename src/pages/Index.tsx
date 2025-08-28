@@ -73,11 +73,19 @@ const Index = () => {
                 height={40}
               />
             </Link>
-            <div className="flex items-center">
+            <div className="flex flex-col gap-1 sm:gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 h-8 sm:h-9"
+                className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 h-7 sm:h-8"
+                onClick={() => window.open('/', '_blank')}
+              >
+                Ver página pública
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 h-7 sm:h-8"
                 onClick={() => {
                   // Cerrar sesión y volver a la página pública
                   localStorage.removeItem('nook_user_session');
