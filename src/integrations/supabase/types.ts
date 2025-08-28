@@ -310,57 +310,6 @@ export type Database = {
         }
         Relationships: []
       }
-      client_alerts: {
-        Row: {
-          alert_type: string
-          client_id: string
-          created_at: string
-          id: string
-          message: string
-          resolved: boolean
-          resolved_at: string | null
-          resolved_by: string | null
-          risk_level: number
-        }
-        Insert: {
-          alert_type: string
-          client_id: string
-          created_at?: string
-          id?: string
-          message: string
-          resolved?: boolean
-          resolved_at?: string | null
-          resolved_by?: string | null
-          risk_level?: number
-        }
-        Update: {
-          alert_type?: string
-          client_id?: string
-          created_at?: string
-          id?: string
-          message?: string
-          resolved?: boolean
-          resolved_at?: string | null
-          resolved_by?: string | null
-          risk_level?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_alerts_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "client_alerts_resolved_by_fkey"
-            columns: ["resolved_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       client_notes: {
         Row: {
           category: string
@@ -1512,91 +1461,6 @@ export type Database = {
         }
         Relationships: []
       }
-      note_analysis: {
-        Row: {
-          analyzed_at: string
-          created_at: string
-          id: string
-          note_id: string
-          risk_level: number
-          sentiment: string
-          suggested_actions: string[] | null
-          summary: string | null
-          themes: string[] | null
-          urgency: string
-        }
-        Insert: {
-          analyzed_at?: string
-          created_at?: string
-          id?: string
-          note_id: string
-          risk_level?: number
-          sentiment: string
-          suggested_actions?: string[] | null
-          summary?: string | null
-          themes?: string[] | null
-          urgency: string
-        }
-        Update: {
-          analyzed_at?: string
-          created_at?: string
-          id?: string
-          note_id?: string
-          risk_level?: number
-          sentiment?: string
-          suggested_actions?: string[] | null
-          summary?: string | null
-          themes?: string[] | null
-          urgency?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "note_analysis_note_id_fkey"
-            columns: ["note_id"]
-            isOneToOne: false
-            referencedRelation: "client_notes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      note_analysis_queue: {
-        Row: {
-          attempts: number
-          created_at: string
-          error_message: string | null
-          id: string
-          note_id: string
-          processed_at: string | null
-          status: string
-        }
-        Insert: {
-          attempts?: number
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          note_id: string
-          processed_at?: string | null
-          status?: string
-        }
-        Update: {
-          attempts?: number
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          note_id?: string
-          processed_at?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "note_analysis_queue_note_id_fkey"
-            columns: ["note_id"]
-            isOneToOne: false
-            referencedRelation: "client_notes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       notification_rules: {
         Row: {
           created_at: string
@@ -2344,37 +2208,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_active_client_alerts: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          category: string
-          client_email: string
-          client_id: string
-          client_name: string
-          content: string
-          created_at: string
-          id: string
-          priority: string
-          staff_name: string
-          title: string
-        }[]
-      }
-      get_analysis_stats: {
-        Args: { days_back?: number }
-        Returns: {
-          active_alerts: number
-          analyzed_notes: number
-          avg_risk_level: number
-          critical_urgency: number
-          high_urgency: number
-          low_urgency: number
-          medium_urgency: number
-          negative_sentiment: number
-          neutral_sentiment: number
-          positive_sentiment: number
-          total_notes: number
-        }[]
-      }
       get_business_intelligence: {
         Args: {
           center_id_param?: string
@@ -2382,31 +2215,6 @@ export type Database = {
           start_date?: string
         }
         Returns: Json
-      }
-      get_client_notes_with_details: {
-        Args: {
-          category_filter?: string
-          limit_count?: number
-          search_query?: string
-          target_client_id?: string
-        }
-        Returns: {
-          category: string
-          client_email: string
-          client_id: string
-          client_name: string
-          content: string
-          created_at: string
-          id: string
-          is_alert: boolean
-          is_private: boolean
-          priority: string
-          staff_email: string
-          staff_id: string
-          staff_name: string
-          title: string
-          updated_at: string
-        }[]
       }
       get_code_assignments_with_details: {
         Args: { target_entity_id?: string; target_entity_type?: string }
@@ -2525,10 +2333,6 @@ export type Database = {
           entity_id: string
           entity_type: string
         }[]
-      }
-      toggle_note_alert: {
-        Args: { is_alert_value: boolean; note_id: string }
-        Returns: boolean
       }
       use_client_package_session: {
         Args: { booking_id?: string; package_id: string }
