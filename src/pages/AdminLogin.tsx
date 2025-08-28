@@ -66,43 +66,18 @@ const AdminLogin = () => {
         return;
       }
 
-      // Buscar el perfil del usuario (puede no existir aún)
-      const { data: profileInitial, error: profileErrorInitial } = await supabase
+      // Buscar el perfil del usuario
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', data.user.id)
-        .maybeSingle();
+        .single();
 
-      let profile = profileInitial;
-
-      // Si no hay perfil o no tiene rol válido y es el admin principal, forzar rol en backend
-      if ((profileErrorInitial || !profile || (profile.role !== 'admin' && profile.role !== 'employee')) &&
-          formData.email.toLowerCase() === 'admin@thenookmadrid.com') {
-        const { data: ensureRes, error: ensureErr } = await supabase.functions.invoke('ensure-admin-profile', {
-          body: { email: formData.email, role: 'admin' }
-        });
-        if (ensureErr || !ensureRes?.success) {
-          toast({
-            title: 'Error de autenticación',
-            description: ensureErr?.message || ensureRes?.error || 'No se pudo preparar el perfil de administrador',
-            variant: 'destructive',
-          });
-          return;
-        }
-        // Reintentar obtener perfil
-        const { data: profileAfter } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
-        profile = profileAfter as any;
-      }
-
-      if (!profile) {
+      if (profileError || !profile) {
         toast({
-          title: 'Error de autenticación',
-          description: 'Perfil de usuario no encontrado',
-          variant: 'destructive',
+          title: "Error de autenticación",
+          description: "Perfil de usuario no encontrado",
+          variant: "destructive",
         });
         return;
       }
@@ -110,9 +85,9 @@ const AdminLogin = () => {
       // Verificar que tenga permisos (admin o employee)
       if (profile.role !== 'admin' && profile.role !== 'employee') {
         toast({
-          title: 'Acceso denegado',
-          description: 'No tienes permisos para acceder al panel',
-          variant: 'destructive',
+          title: "Acceso denegado",
+          description: "No tienes permisos para acceder al panel",
+          variant: "destructive",
         });
         return;
       }

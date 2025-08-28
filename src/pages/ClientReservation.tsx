@@ -17,7 +17,6 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
-import AppLogo from "@/components/AppLogo";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
@@ -313,9 +312,8 @@ const ClientReservation = () => {
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <span className="text-xl">←</span>
-              <AppLogo className="h-8 w-auto" />
+            <Link to="/" className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
+              ← The Nook Madrid
             </Link>
             <LanguageSelector />
           </div>

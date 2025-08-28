@@ -1,208 +1,153 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  Calendar,
+  Building2, 
+  Calendar, 
+  Bell, 
   Users, 
-  Package,
-  TrendingUp,
   Settings,
-  Bell,
-  FileText,
-  CreditCard,
-  Gift,
-  UserCheck,
-  Clock,
+  Zap,
+  Target,
+  Brain,
   Euro,
-  AlertCircle,
-  CheckCircle,
-  RotateCcw
+  Package2
 } from 'lucide-react';
-import ReservationSystem from './ReservationSystem';
-import ClientManagement from './ClientManagement';
-import PackageManagement from './PackageManagement';
-import AdvancedDashboard from './AdvancedDashboard';
-import AdvancedScheduleManagement from './AdvancedScheduleManagement';
-import EmployeeManagement from './EmployeeManagement';
 import CenterManagement from './CenterManagement';
-import { useDashboard } from '@/hooks/useDashboard';
+import AdvancedScheduleManagement from './AdvancedScheduleManagement';
+import NotificationCenter from './NotificationCenter';
+import EmployeeManagement from './EmployeeManagement';
+import AdminPricingPromos from '../pages/AdminPricingPromos';
+import AdminSettings from '../pages/AdminSettings';
 
 const ControlCenter = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const { stats, loading, error, refetch } = useDashboard();
-
-  if (loading) {
-    return (
-      <div className="container mx-auto p-4 sm:p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16 mb-2" />
-                <Skeleton className="h-4 w-24" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-4 sm:p-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <p className="text-red-500 mb-4">{error}</p>
-              <Button onClick={refetch} variant="outline">
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Reintentar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const [activeTab, setActiveTab] = useState('centers');
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-primary">Centro de Control</h2>
-          <p className="text-muted-foreground">Panel de administración para gestión completa</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={refetch} variant="outline" size="sm">
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Actualizar
-          </Button>
-        </div>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">Centro de Control</h1>
+        <p className="text-muted-foreground">
+          Gestión centralizada de centros, horarios, personal y automatizaciones inteligentes
+        </p>
       </div>
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Reservas Hoy</CardTitle>
-              <Calendar className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalBookings || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                0 pendientes
+      {/* Intelligence Note */}
+      <Card className="border-blue-200 bg-blue-50/50">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Brain className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-blue-900 mb-1">Configuración para IA</h3>
+              <p className="text-sm text-blue-700">
+                Los turnos, disponibilidad y ausencias configurados aquí serán utilizados por la IA para 
+                optimizar las reservas, sugerir horarios disponibles y gestionar automatizaciones inteligentes.
+                Una configuración precisa mejora significativamente la eficiencia del sistema.
               </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ingresos Hoy</CardTitle>
-              <Euro className="h-4 w-4 text-success" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">€{stats.totalRevenue?.toFixed(2) || '0.00'}</div>
-              <p className="text-xs text-muted-foreground">
-                Ingresos totales
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Clientes Activos</CardTitle>
-              <Users className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.newClients || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Clientes registrados
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ticket Promedio</CardTitle>
-              <TrendingUp className="h-4 w-4 text-warning" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.averageTicket?.toFixed(0) || '0'}€</div>
-              <p className="text-xs text-muted-foreground">
-                Por reserva
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="reservations">Reservas</TabsTrigger>
-          <TabsTrigger value="clients">Clientes</TabsTrigger>
-          <TabsTrigger value="packages">Bonos</TabsTrigger>
-          <TabsTrigger value="schedule">Horarios</TabsTrigger>
-          <TabsTrigger value="staff">Personal</TabsTrigger>
+          <TabsTrigger value="centers" className="flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Centros</span>
+          </TabsTrigger>
+          <TabsTrigger value="schedules" className="flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            <span className="hidden sm:inline">Horarios</span>
+          </TabsTrigger>
+          <TabsTrigger value="staff" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            <span className="hidden sm:inline">Personal</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            <span className="hidden sm:inline">Notificaciones</span>
+          </TabsTrigger>
+          <TabsTrigger value="pricing" className="flex items-center gap-2">
+            <Euro className="w-4 h-4" />
+            <span className="hidden sm:inline">Precios</span>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:inline">Configuración</span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="dashboard">
-          <AdvancedDashboard />
+        <TabsContent value="centers" className="space-y-6">
+          <CenterManagement />
         </TabsContent>
 
-        <TabsContent value="reservations">
-          <ReservationSystem />
-        </TabsContent>
-
-        <TabsContent value="clients">
-          <ClientManagement />
-        </TabsContent>
-
-        <TabsContent value="packages">
-          <PackageManagement />
-        </TabsContent>
-
-        <TabsContent value="schedule">
+        <TabsContent value="schedules" className="space-y-6">
           <AdvancedScheduleManagement />
         </TabsContent>
 
-        <TabsContent value="staff">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gestión de Personal</CardTitle>
-              <CardDescription>
-                Administra empleados y centros
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="employees">
-                <TabsList>
-                  <TabsTrigger value="employees">Empleados</TabsTrigger>
-                  <TabsTrigger value="centers">Centros</TabsTrigger>
-                </TabsList>
-                <TabsContent value="employees">
-                  <EmployeeManagement />
-                </TabsContent>
-                <TabsContent value="centers">
-                  <CenterManagement />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+        <TabsContent value="staff" className="space-y-6">
+          <EmployeeManagement />
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6">
+          <NotificationCenter />
+        </TabsContent>
+
+        <TabsContent value="pricing" className="space-y-6">
+          <AdminPricingPromos />
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <AdminSettings />
         </TabsContent>
       </Tabs>
+
+      {/* Bottom Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Target className="w-4 h-4 text-green-600" />
+              Configuración Óptima
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              Asegúrate de configurar horarios específicos por centro y empleado para maximizar la precisión de la IA.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Zap className="w-4 h-4 text-yellow-600" />
+              Automatización
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              Las notificaciones y turnos configurados permiten automatizar recordatorios y optimizar la ocupación.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Settings className="w-4 h-4 text-blue-600" />
+              Configuración Granular
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              Cada centro puede tener horarios únicos y personal especializado para servicios específicos.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

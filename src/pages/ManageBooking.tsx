@@ -13,7 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import AppLogo from "@/components/AppLogo";
 import { Link } from "react-router-dom";
 
 interface Booking {
@@ -209,7 +208,9 @@ const ManageBooking = () => {
         <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <AppLogo className="h-8 w-auto" />
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                The Nook Madrid
+              </h1>
             </div>
             <div className="flex items-center space-x-2">
               <Button

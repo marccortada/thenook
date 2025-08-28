@@ -27,7 +27,6 @@ import {
 } from "recharts";
 import { TrendingUp, TrendingDown, Calendar, Users, Euro, Target, CalendarIcon } from "lucide-react";
 import { useDashboard } from "@/hooks/useDashboard";
-import { PeriodComparisonWidget } from "@/components/PeriodComparisonWidget";
 
 interface AnalyticsProps {
   startDate?: string;
@@ -201,18 +200,13 @@ const Analytics = ({ startDate, endDate, centerId }: AnalyticsProps) => {
       </div>
 
       {/* Charts */}
-      <Tabs defaultValue="comparison" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="comparison">Comparar</TabsTrigger>
+      <Tabs defaultValue="trends" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="trends">Tendencias</TabsTrigger>
           <TabsTrigger value="services">Servicios</TabsTrigger>
           <TabsTrigger value="distribution">Distribución</TabsTrigger>
           <TabsTrigger value="centers">Centros</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="comparison" className="space-y-4">
-          <PeriodComparisonWidget />
-        </TabsContent>
 
         <TabsContent value="trends" className="space-y-4">
           {/* Controles de comparación - SIEMPRE VISIBLE */}

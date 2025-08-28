@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import AppLogo from "@/components/AppLogo";
 import { Loader2, LogIn, UserPlus, ArrowLeft } from "lucide-react";
 
 const Auth = () => {
@@ -184,7 +183,9 @@ const Auth = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al inicio
           </Button>
-          <AppLogo className="h-12 w-auto" />
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            The Nook Madrid
+          </h1>
           <p className="text-muted-foreground mt-2">Tu centro de bienestar en Madrid</p>
         </div>
 

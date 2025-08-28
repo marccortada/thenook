@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,18 +10,15 @@ import { useServices, usePackages } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+
 import HappyHourManagement from "@/components/HappyHourManagement";
 
 const currency = (euros?: number) => typeof euros === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(euros) : "-";
 
-function AdminPricingPromos() {
+export default function AdminPricingPromos() {
   const { services, refetch: refetchServices } = useServices();
   const { packages, refetch: refetchPackages } = usePackages();
   const { toast } = useToast();
-  const location = useLocation();
-  
-  // Detectar si estamos en la ruta externa
-  const isExternalRoute = location.pathname.includes('panel-gestion-nook-madrid');
 
   useEffect(() => {
     document.title = "Precios y Promos | The Nook Madrid";
@@ -393,13 +389,17 @@ function AdminPricingPromos() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Gestión de Precios y Promociones</h2>
-        <p className="text-muted-foreground">
-          Administra precios de servicios, promociones y descuentos especiales
-        </p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            Precios y Promos - The Nook Madrid
+          </h1>
+        </div>
+      </header>
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">Precios y Promos</h1>
         <Tabs defaultValue="services">
           <TabsList>
             <TabsTrigger value="services">Servicios</TabsTrigger>
@@ -723,8 +723,8 @@ function AdminPricingPromos() {
             <HappyHourManagement />
           </TabsContent>
         </Tabs>
-      </div>
-    );
-  }
-
-export default AdminPricingPromos;
+        </div>
+      </main>
+    </div>
+  );
+}

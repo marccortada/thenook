@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import AppLogo from "@/components/AppLogo";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 export default function RedeemCode() {
@@ -51,10 +50,9 @@ export default function RedeemCode() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <AppLogo className="h-8 w-auto" />
-            <h1 className="text-2xl font-bold">Canjear Código</h1>
-          </div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            Canjear Código - The Nook Madrid
+          </h1>
         </div>
       </header>
       <main className="container mx-auto px-4 py-8">

@@ -24,7 +24,7 @@ import ReportsCenter from './ReportsCenter';
 import AdvancedReports from './AdvancedReports';
 import IntelligentAnalytics from './IntelligentAnalytics';
 import AdvancedScheduleManagement from './AdvancedScheduleManagement';
-
+import RealTimeMetrics from './RealTimeMetrics';
 import InternalCodesManagement from './InternalCodesManagement';
 
 const UnifiedDashboard = () => {

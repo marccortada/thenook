@@ -14,7 +14,11 @@ import GiftCardsPage from "./pages/GiftCardsPage";
 import GiftCardsManagementPage from "./pages/GiftCardsManagementPage";
 import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
+import NotificationDashboard from "./pages/NotificationDashboard";
+import ReportsCenter from "./pages/ReportsCenter";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminPricingPromos from "./pages/AdminPricingPromos";
+import AdminSettings from "./pages/AdminSettings";
 import RedeemCode from "./pages/RedeemCode";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
@@ -45,26 +49,55 @@ const App = () => (
             }
           />
           <Route path="/admin-login" element={<AdminLogin />} />
-          
-          {/* Redirección desde rutas antiguas del panel */}
           <Route 
             path="/panel-gestion-nook-madrid-2024" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireAuth={true}>
                 <Index />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/panel-gestion-nook-madrid-2024/*" 
+            path="/panel-gestion-nook-madrid-2024/notifications" 
             element={
-              <ProtectedRoute>
-                <Index />
+              <ProtectedRoute requireAdmin={true}>
+                <NotificationDashboard />
               </ProtectedRoute>
             } 
           />
-          
-          <Route path="/canjear" element={<ProtectedRoute requireEmployee={true}><RedeemCode /></ProtectedRoute>} />
+          <Route 
+            path="/panel-gestion-nook-madrid-2024/reports" 
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <ReportsCenter />
+              </ProtectedRoute>
+            } 
+          />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route 
+            path="/panel-gestion-nook-madrid-2024/precios-promos" 
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <AdminPricingPromos />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/panel-gestion-nook-madrid-2024/canjear" 
+            element={
+              <ProtectedRoute requireEmployee={true}>
+                <RedeemCode />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/panel-gestion-nook-madrid-2024/configuracion" 
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <AdminSettings />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/pago-exitoso" element={<PaymentSuccess />} />
           <Route path="/pago-cancelado" element={<PaymentCanceled />} />
           <Route path="*" element={<NotFound />} />
