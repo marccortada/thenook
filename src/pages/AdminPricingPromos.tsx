@@ -648,6 +648,104 @@ export default function AdminPricingPromos() {
           </TabsContent>
 
           <TabsContent value="packages" className="mt-6 space-y-4">
+            {/* Formulario para crear nuevo bono */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Crear Nuevo Bono
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <Label htmlFor="package-name">Nombre del Bono *</Label>
+                    <Input
+                      id="package-name"
+                      placeholder="Ej: Bono 5 Masajes"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="package-service">Servicio</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar servicio" />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-background">
+                        <SelectItem value="all">Todos los servicios</SelectItem>
+                        {services.map((service: any) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            {service.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="package-sessions">Sesiones *</Label>
+                    <Input
+                      id="package-sessions"
+                      type="number"
+                      min="1"
+                      placeholder="5"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="package-price">Precio (€) *</Label>
+                    <Input
+                      id="package-price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="150.00"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="package-center">Centro</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos los centros" />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-background">
+                        <SelectItem value="all">Todos los centros</SelectItem>
+                        {centers.map((center) => (
+                          <SelectItem key={center.id} value={center.id}>
+                            {center.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="package-discount">Descuento (%)</Label>
+                    <Input
+                      id="package-discount"
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="10"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="package-description">Descripción</Label>
+                    <Input
+                      id="package-description"
+                      placeholder="Descripción opcional del bono..."
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <Button onClick={() => {
+                    // Aquí iría la lógica para crear el bono
+                    toast({ title: 'Funcionalidad pendiente', description: 'Crear bono estará disponible próximamente' });
+                  }} className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Crear Bono
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Bonos (paquetes) - precios y sesiones</CardTitle>
