@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useClients, Client, ClientBooking } from "@/hooks/useClients";
-
+import { useClientNotes } from "@/hooks/useClientNotes";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +37,7 @@ const ClientManagement = () => {
   const [clientBookings, setClientBookings] = useState<ClientBooking[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Partial<Client>>({});
-  
+  const [newNote, setNewNote] = useState({ title: "", content: "", category: "general", priority: "normal" });
   const { toast } = useToast();
 
   // Ordenación y creación
@@ -102,6 +102,31 @@ const ClientManagement = () => {
       await refetch?.();
     } catch (e: any) {
       toast({ title: 'Error', description: e.message || 'No se pudo crear el cliente', variant: 'destructive' });
+    }
+  };
+  const { notes, createNote, refetch: refetchNotes } = useClientNotes(selectedClient?.id);
+
+  const handleCreateNote = async () => {
+    if (!selectedClient || !newNote.title || !newNote.content) return;
+
+    try {
+      await createNote({
+        client_id: selectedClient.id,
+        title: newNote.title,
+        content: newNote.content,
+        category: newNote.category as any,
+        priority: newNote.priority as any,
+      });
+
+      setNewNote({ title: "", content: "", category: "general", priority: "normal" });
+      await refetchNotes();
+      
+      toast({
+        title: "Éxito",
+        description: "Nota añadida correctamente",
+      });
+    } catch (error) {
+      console.error('Error creating note:', error);
     }
   };
 
@@ -318,9 +343,10 @@ const ClientManagement = () => {
 
           {selectedClient && (
             <Tabs defaultValue="info" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="info">Información</TabsTrigger>
                 <TabsTrigger value="bookings">Reservas</TabsTrigger>
+                <TabsTrigger value="notes">Notas</TabsTrigger>
               </TabsList>
 
               <TabsContent value="info" className="space-y-4">
@@ -449,6 +475,118 @@ const ClientManagement = () => {
                                   <p><strong>Notas:</strong> {booking.notes}</p>
                                 )}
                               </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="notes" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Añadir Nueva Nota</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="note_title">Título</Label>
+                      <Input
+                        id="note_title"
+                        value={newNote.title}
+                        onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+                        placeholder="Título de la nota"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="note_category">Categoría</Label>
+                        <Select value={newNote.category} onValueChange={(value) => setNewNote({ ...newNote, category: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="general">General</SelectItem>
+                            <SelectItem value="preferences">Preferencias</SelectItem>
+                            <SelectItem value="medical">Médico</SelectItem>
+                            <SelectItem value="allergies">Alergias</SelectItem>
+                            <SelectItem value="behavior">Comportamiento</SelectItem>
+                            <SelectItem value="payment">Pago</SelectItem>
+                            <SelectItem value="complaints">Quejas</SelectItem>
+                            <SelectItem value="compliments">Cumplidos</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="note_priority">Prioridad</Label>
+                        <Select value={newNote.priority} onValueChange={(value) => setNewNote({ ...newNote, priority: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Baja</SelectItem>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="high">Alta</SelectItem>
+                            <SelectItem value="urgent">Urgente</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="note_content">Contenido</Label>
+                      <Textarea
+                        id="note_content"
+                        value={newNote.content}
+                        onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                        placeholder="Escribe aquí el contenido de la nota..."
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <Button onClick={handleCreateNote} className="w-full">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Añadir Nota
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Notas Existentes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {notes.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        No hay notas registradas
+                      </p>
+                    ) : (
+                      <ScrollArea className="h-[300px]">
+                        <div className="space-y-3">
+                          {notes.map((note) => (
+                            <div key={note.id} className="border rounded-lg p-3">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium">{note.title}</h4>
+                                <div className="flex gap-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {note.category}
+                                  </Badge>
+                                  <Badge 
+                                    variant={note.priority === 'urgent' ? 'destructive' : 
+                                           note.priority === 'high' ? 'default' : 'secondary'}
+                                    className="text-xs"
+                                  >
+                                    {note.priority}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">{note.content}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(note.created_at), 'dd/MM/yyyy HH:mm', { locale: es })} • {note.staff_name}
+                              </p>
                             </div>
                           ))}
                         </div>

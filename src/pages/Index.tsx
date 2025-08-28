@@ -1,9 +1,8 @@
-// Main Index component
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Bell, Package, Settings, Activity, Calendar } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Bell, Brain, Package, Settings, Activity, Calendar } from "lucide-react";
 
 import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
@@ -21,7 +20,7 @@ import ReportsCenter from "@/components/ReportsCenter";
 import AdvancedReports from "@/components/AdvancedReports";
 import NotificationCenter from "@/components/NotificationCenter";
 import UnifiedDashboard from "@/components/UnifiedDashboard";
-
+import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 
 import SimpleCenterCalendar from "@/components/SimpleCenterCalendar";
 import AdvancedCalendarView from "@/components/AdvancedCalendarView";
@@ -226,6 +225,21 @@ const Index = () => {
                   </CardContent>
                 </Card>
               </div>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Brain className="h-5 w-5" />
+                    <span>Analíticas Inteligentes</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Análisis avanzado con IA y predicciones
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <IntelligentAnalytics />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {isAdmin && (
