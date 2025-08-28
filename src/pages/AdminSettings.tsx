@@ -117,14 +117,13 @@ const AdminSettings = () => {
             >
               <option value="general">🏢 General</option>
               <option value="codes">🏷️ Códigos</option>
-              <option value="gifts">🎁 Bonos y Tarjetas</option>
               <option value="payments">💳 Pagos</option>
               <option value="notifications">🔔 Notificaciones</option>
             </select>
           </div>
 
           {/* Desktop Tabs */}
-          <TabsList className="hidden lg:grid w-full grid-cols-5 h-auto mb-6">
+          <TabsList className="hidden lg:grid w-full grid-cols-4 h-auto mb-6">
             <TabsTrigger value="general" className="flex items-center gap-2 p-3">
               <Building2 className="h-4 w-4" />
               <span>General</span>
@@ -132,10 +131,6 @@ const AdminSettings = () => {
             <TabsTrigger value="codes" className="flex items-center gap-2 p-3">
               <Hash className="h-4 w-4" />
               <span>Códigos</span>
-            </TabsTrigger>
-            <TabsTrigger value="gifts" className="flex items-center gap-2 p-3">
-              <Package className="h-4 w-4" />
-              <span>Bonos y Tarjetas</span>
             </TabsTrigger>
             <TabsTrigger value="payments" className="flex items-center gap-2 p-3">
               <CreditCard className="h-4 w-4" />
