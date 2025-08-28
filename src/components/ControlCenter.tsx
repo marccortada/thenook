@@ -33,7 +33,7 @@ import { useDashboard } from '@/hooks/useDashboard';
 
 const ControlCenter = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { metrics, loading, error, refetch } = useDashboard();
+  const { stats, loading, error, refetch } = useDashboard();
 
   if (loading) {
     return (
@@ -91,7 +91,7 @@ const ControlCenter = () => {
       </div>
 
       {/* Stats Cards */}
-      {metrics && (
+      {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -99,9 +99,9 @@ const ControlCenter = () => {
               <Calendar className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.todayBookings}</div>
+              <div className="text-2xl font-bold">{stats.totalBookings || 0}</div>
               <p className="text-xs text-muted-foreground">
-                {metrics.pendingBookings} pendientes
+                0 pendientes
               </p>
             </CardContent>
           </Card>
@@ -112,9 +112,9 @@ const ControlCenter = () => {
               <Euro className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">€{metrics.todayRevenue?.toFixed(2) || '0.00'}</div>
+              <div className="text-2xl font-bold">€{stats.totalRevenue?.toFixed(2) || '0.00'}</div>
               <p className="text-xs text-muted-foreground">
-                +{metrics.revenueGrowth?.toFixed(1) || '0'}% vs ayer
+                Ingresos totales
               </p>
             </CardContent>
           </Card>
@@ -125,22 +125,22 @@ const ControlCenter = () => {
               <Users className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.activeClients}</div>
+              <div className="text-2xl font-bold">{stats.newClients || 0}</div>
               <p className="text-xs text-muted-foreground">
-                {metrics.newClientsThisMonth} nuevos este mes
+                Clientes registrados
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tasa Ocupación</CardTitle>
+              <CardTitle className="text-sm font-medium">Ticket Promedio</CardTitle>
               <TrendingUp className="h-4 w-4 text-warning" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.occupancyRate?.toFixed(1) || '0'}%</div>
+              <div className="text-2xl font-bold">{stats.averageTicket?.toFixed(0) || '0'}€</div>
               <p className="text-xs text-muted-foreground">
-                Promedio semanal
+                Por reserva
               </p>
             </CardContent>
           </Card>

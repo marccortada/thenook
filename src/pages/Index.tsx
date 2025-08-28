@@ -10,7 +10,7 @@ import PackageManagement from "@/components/PackageManagement";
 import ClientManagement from "@/components/ClientManagement";
 import SpecialistClients from "@/components/SpecialistClients";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
-import InventoryManagement from "@/components/InventoryManagement";
+
 import HappyHourManagement from "@/components/HappyHourManagement";
 import RealTimeMetrics from "@/components/RealTimeMetrics";
 
@@ -60,7 +60,7 @@ const Index = () => {
 
   // Mostrar el panel de administración si está activo
   if (showAdminDashboard && isAdmin) {
-    return <AdminDashboard onBackToMain={() => setShowAdminDashboard(false)} />;
+    return <AdminDashboard />;
   }
 
   return (
@@ -137,10 +137,6 @@ const Index = () => {
                     <span className="hidden sm:inline">Códigos</span>
                   </TabsTrigger>
                   
-                  <TabsTrigger value="inventory" className="flex flex-col items-center py-2 px-1 text-xs">
-                    <Package className="h-4 w-4 mb-1" />
-                    <span className="hidden sm:inline">Inventario</span>
-                  </TabsTrigger>
                   
                   <TabsTrigger value="promos" className="flex flex-col items-center py-2 px-1 text-xs">
                     <Percent className="h-4 w-4 mb-1" />
@@ -299,22 +295,6 @@ const Index = () => {
                   </Card>
                 </TabsContent>
 
-                <TabsContent value="inventory" className="space-y-4 sm:space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Package className="h-5 w-5" />
-                        <span>Gestión de Inventario</span>
-                      </CardTitle>
-                      <CardDescription>
-                        Control de stock, proveedores y movimientos
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <InventoryManagement />
-                    </CardContent>
-                  </Card>
-                </TabsContent>
 
                 <TabsContent value="promos" className="space-y-4 sm:space-y-6">
                   <Card>

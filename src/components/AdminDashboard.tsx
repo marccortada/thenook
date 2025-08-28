@@ -54,7 +54,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, isActive, 
 
 const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState('control');
-  const { profile } = useSimpleAuth();
+  const { user } = useSimpleAuth();
 
   const sidebarItems = [
     { 
@@ -98,7 +98,7 @@ const AdminDashboard = () => {
         <div className="p-6 border-b">
           <h2 className="text-xl font-bold text-primary">Panel de Admin</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {profile?.first_name} {profile?.last_name}
+            {user?.name}
           </p>
         </div>
         
