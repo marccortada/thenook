@@ -566,8 +566,8 @@ const ClientReservation = () => {
                             side="bottom"
                             sideOffset={4}
                             alignOffset={0}
-                            avoidCollisions={true}
-                            collisionPadding={8}
+                            avoidCollisions={false}
+                            onInteractOutside={() => setShowCalendar(false)}
                           >
                            <Calendar
                              mode="single"
@@ -605,8 +605,8 @@ const ClientReservation = () => {
                              side="bottom"
                              sideOffset={4}
                              alignOffset={0}
-                             avoidCollisions={true}
-                             collisionPadding={8}
+                             avoidCollisions={false}
+                             onInteractOutside={() => setShowTimeDropdown(false)}
                            >
                             <div className="p-1">
                               {timeSlots.map((time) => (
