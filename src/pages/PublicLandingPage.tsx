@@ -193,10 +193,14 @@ export default function PublicLandingPage() {
       <footer className="border-t bg-background/95 py-8">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center items-center space-x-6 text-muted-foreground">
-            <div className="flex items-center gap-2">
+            <a href="tel:911481474" className="flex items-center gap-2 hover:text-primary transition-colors">
               <Phone className="h-4 w-4" />
-              <span className="text-sm">+34 XXX XXX XXX</span>
-            </div>
+              <span className="text-sm">911 481 474</span>
+            </a>
+            <a href="https://wa.me/+34622360922" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-primary transition-colors">
+              <span className="text-sm">💬</span>
+              <span className="text-sm">WhatsApp</span>
+            </a>
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
               <span className="text-sm">info@thenookmadrid.com</span>
