@@ -232,34 +232,16 @@ const ReservationSystem = () => {
       const newBooking = await createBooking(bookingData);
       console.log('Booking successfully created:', newBooking);
 
-      // Redirigir INMEDIATAMENTE para asegurar la reserva con Stripe
-      if (newBooking?.id) {
-        console.log('🔀 Redirigiendo a asegurar reserva:', newBooking.id);
-        navigate(`/asegurar-reserva?booking_id=${newBooking.id}`);
-        return; // Importante: salir aquí para no ejecutar el resto
-      }
-
-      // Canjear código si procede
-      if (formData.redeemNow && formData.redeemCode) {
-        try {
-          const amountCents = formData.redeemAmountEUR && formData.redeemAmountEUR > 0 ? Math.round(formData.redeemAmountEUR * 100) : null;
-          const { error: redeemError } = await (supabase as any).rpc('redeem_voucher_code', {
-            p_code: formData.redeemCode.trim(),
-            p_booking_id: newBooking?.id || null,
-            p_amount_cents: amountCents,
-            p_notes: formData.redeemNotes || null,
-          });
-          if (redeemError) throw redeemError;
-          toast({ title: '🎫 Canje aplicado', description: 'Se aplicó el bono/tarjeta a la reserva.' });
-        } catch (e: any) {
-          toast({ title: 'Canje no aplicado', description: e.message || 'Revisa el código o el importe', variant: 'destructive' });
-        }
-      }
-
       toast({
         title: "✅ Reserva Creada",
-        description: `Reserva para ${isAuthenticated && user ? user.name : formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
+        description: `Reserva para ${isAuthenticated && user ? user.name : formData.clientName} creada. Te enviamos un email para asegurarla con tarjeta. ID: ${newBooking?.id}`,
       });
+
+      // Redirigir INMEDIATAMENTE después del toast
+      setTimeout(() => {
+        console.log('🔀 Redirigiendo a asegurar reserva:', newBooking.id);
+        navigate(`/asegurar-reserva?booking_id=${newBooking.id}`);
+      }, 1000);
 
 
       // Reset form
