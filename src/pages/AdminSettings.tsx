@@ -288,46 +288,8 @@ const AdminSettings = () => {
           </TabsContent>
 
           <TabsContent value="gifts" className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="shadow-sm border-2">
-                <CardHeader className="pb-3 sm:pb-6">
-                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <Package className="h-4 w-4 sm:h-5 sm:w-5" />
-                    Gestión de Bonos
-                  </CardTitle>
-                  <CardDescription className="text-sm sm:text-base">
-                    Administra los bonos y paquetes de sesiones
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button 
-                    onClick={() => window.open('/admin/bonos', '_blank')}
-                    className="w-full"
-                  >
-                    Ir a Gestión de Bonos
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-sm border-2">
-                <CardHeader className="pb-3 sm:pb-6">
-                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
-                    Gestión de Tarjetas Regalo
-                  </CardTitle>
-                  <CardDescription className="text-sm sm:text-base">
-                    Administra las tarjetas regalo y su saldo
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button 
-                    onClick={() => window.open('/admin/tarjetas-regalo', '_blank')}
-                    className="w-full"
-                  >
-                    Ir a Gestión de Tarjetas Regalo
-                  </Button>
-                </CardContent>
-              </Card>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Esta sección está disponible en el menú principal de administración.</p>
             </div>
           </TabsContent>
 

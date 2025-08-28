@@ -52,7 +52,7 @@ const ControlCenter = () => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="centers" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             <span className="hidden sm:inline">Centros</span>
@@ -64,18 +64,6 @@ const ControlCenter = () => {
           <TabsTrigger value="staff" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             <span className="hidden sm:inline">Personal</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="w-4 h-4" />
-            <span className="hidden sm:inline">Notificaciones</span>
-          </TabsTrigger>
-          <TabsTrigger value="pricing" className="flex items-center gap-2">
-            <Euro className="w-4 h-4" />
-            <span className="hidden sm:inline">Precios</span>
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="w-4 h-4" />
-            <span className="hidden sm:inline">Configuración</span>
           </TabsTrigger>
         </TabsList>
 
@@ -89,18 +77,6 @@ const ControlCenter = () => {
 
         <TabsContent value="staff" className="space-y-6">
           <EmployeeManagement />
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6">
-          <NotificationCenter />
-        </TabsContent>
-
-        <TabsContent value="pricing" className="space-y-6">
-          <AdminPricingPromos />
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-6">
-          <AdminSettings />
         </TabsContent>
       </Tabs>
 
