@@ -57,12 +57,27 @@ serve(async (req) => {
       .eq('stripe_setup_intent_id', setup_intent_id)
       .single();
 
-    if (findError || !paymentIntent) {
-      throw new Error('Booking not found for this setup intent');
-    }
-
-    const bookingId = paymentIntent.booking_id;
-    logStep('Found booking', { bookingId });
+let bookingId: string | null = null;
+if (!findError && paymentIntent) {
+  bookingId = paymentIntent.booking_id;
+  logStep('Found booking via DB record', { bookingId });
+} else {
+  // Fallback: try to read booking_id from SetupIntent metadata (Checkout in setup mode)
+  const metaBookingId = (setupIntent.metadata && (setupIntent.metadata as any).booking_id) as string | undefined;
+  if (!metaBookingId) {
+    throw new Error('Booking not found for this setup intent');
+  }
+  bookingId = metaBookingId;
+  logStep('Found booking via metadata', { bookingId });
+  // Ensure payment intent row exists for future lookups
+  await supabaseClient.from('booking_payment_intents').upsert({
+    booking_id: bookingId,
+    stripe_setup_intent_id: setup_intent_id,
+    client_secret: '',
+    status: setupIntent.status || 'requires_payment_method',
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'stripe_setup_intent_id' });
+}
 
     // Update booking and payment intent with confirmed payment method
     const updates = {

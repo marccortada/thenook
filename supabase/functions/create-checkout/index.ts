@@ -124,16 +124,16 @@ serve(async (req) => {
 
     if (!line_items.length) throw new Error("No se han generado artículos para el pago");
 
-    const session = await stripe.checkout.sessions.create({
-      line_items,
-      mode: "payment",
-      success_url: `${origin}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/pago-cancelado`,
-      metadata,
-      payment_intent_data: {
-        metadata,
-      },
-    });
+const session = await stripe.checkout.sessions.create({
+  line_items,
+  mode: "payment",
+  success_url: `${origin}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`,
+  cancel_url: `${origin}/pago-cancelado`,
+  metadata,
+  payment_intent_data: {
+    metadata,
+  },
+});
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

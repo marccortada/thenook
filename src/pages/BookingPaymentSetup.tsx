@@ -36,6 +36,8 @@ export default function BookingPaymentSetup() {
 
   const setupIntentId = searchParams.get('setup_intent');
   const clientSecret = searchParams.get('client_secret');
+  const bookingIdParam = searchParams.get('booking_id');
+
 
   useEffect(() => {
     const loadStripe = async () => {
@@ -53,24 +55,21 @@ export default function BookingPaymentSetup() {
     loadStripe();
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
+  if (setupIntentId || bookingIdParam) {
+    fetchBookingDetails();
+  }
+}, [setupIntentId, bookingIdParam]);
+
+const fetchBookingDetails = async () => {
+  try {
     if (setupIntentId) {
-      fetchBookingDetails();
-    }
-  }, [setupIntentId]);
-
-  const fetchBookingDetails = async () => {
-    try {
-      if (!setupIntentId) return;
-
       const { data: paymentIntent, error: intentError } = await supabase
         .from('booking_payment_intents')
         .select('booking_id')
         .eq('stripe_setup_intent_id', setupIntentId)
         .single();
-
       if (intentError) throw intentError;
-
       const { data: bookingData, error: bookingError } = await supabase
         .from('bookings')
         .select(`
@@ -85,68 +84,65 @@ export default function BookingPaymentSetup() {
         `)
         .eq('id', paymentIntent.booking_id)
         .single();
-
       if (bookingError) throw bookingError;
-
       setBooking(bookingData);
-    } catch (error) {
-      console.error('Error fetching booking:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo cargar la información de la reserva",
-        variant: "destructive",
-      });
-      navigate('/');
-    } finally {
-      setLoading(false);
+    } else if (bookingIdParam) {
+      const { data: bookingData, error: bookingError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          booking_datetime,
+          total_price_cents,
+          duration_minutes,
+          payment_method_status,
+          services(name),
+          employees(profiles(first_name, last_name)),
+          profiles(first_name, last_name, email)
+        `)
+        .eq('id', bookingIdParam)
+        .single();
+      if (bookingError) throw bookingError;
+      setBooking(bookingData);
     }
-  };
+  } catch (error) {
+    console.error('Error fetching booking:', error);
+    toast({
+      title: "Error",
+      description: "No se pudo cargar la información de la reserva",
+      variant: "destructive",
+    });
+    navigate('/');
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handlePaymentSetup = async () => {
-    if (!stripeLoaded || !clientSecret) {
-      toast({
-        title: "Error",
-        description: "Stripe no se ha cargado correctamente",
-        variant: "destructive",
-      });
-      return;
+const handlePaymentSetup = async () => {
+  setProcessing(true);
+  try {
+    const targetBookingId = booking?.id || bookingIdParam;
+    if (!targetBookingId) throw new Error('Falta el identificador de la reserva');
+
+    const { data, error } = await (supabase as any).functions.invoke('create-booking-setup-session', {
+      body: { booking_id: targetBookingId }
+    });
+    if (error) throw error;
+    if (data?.url) {
+      window.open(data.url, '_blank');
+    } else {
+      throw new Error('No se pudo iniciar Stripe Checkout');
     }
-
-    setProcessing(true);
-
-    try {
-      const stripe = window.Stripe(process.env.NODE_ENV === 'production' 
-        ? 'pk_live_...' // Replace with your live publishable key
-        : 'pk_test_51QatCOIRCCcE5Yoq4z1HVdqSXczKaWXJ1JZXsZNnMZjzSgP0b3fxJcH9p4EjCFMd2b2cZHQjZOq3sWf2KVUY6MNW00HHgNP3z1'
-      );
-
-      if (!stripe) {
-        throw new Error('Stripe failed to load');
-      }
-
-      // Redirect to Stripe-hosted setup page
-      const { error } = await stripe.redirectToCheckout({
-        mode: 'setup',
-        setupIntentClientSecret: clientSecret,
-        successUrl: `${window.location.origin}/pago-configurado?setup_intent=${setupIntentId}`,
-        cancelUrl: `${window.location.origin}/asegurar-reserva?setup_intent=${setupIntentId}&client_secret=${clientSecret}`,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-    } catch (error: any) {
-      console.error('Payment setup error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Error al configurar el método de pago",
-        variant: "destructive",
-      });
-    } finally {
-      setProcessing(false);
-    }
-  };
+  } catch (error: any) {
+    console.error('Payment setup error:', error);
+    toast({
+      title: "Error",
+      description: error.message || "Error al iniciar la página de tarjeta",
+      variant: "destructive",
+    });
+  } finally {
+    setProcessing(false);
+  }
+};
 
   if (loading) {
     return (
@@ -318,8 +314,8 @@ export default function BookingPaymentSetup() {
         <div className="space-y-3">
           {!isPaymentSetup ? (
             <Button 
-              onClick={handlePaymentSetup}
-              disabled={processing || !stripeLoaded}
+onClick={handlePaymentSetup}
+              disabled={processing}
               className="w-full h-12 text-lg"
               size="lg"
             >

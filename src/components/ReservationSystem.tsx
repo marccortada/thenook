@@ -17,9 +17,11 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
+import { useNavigate } from "react-router-dom";
 
 const ReservationSystem = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { user, isAuthenticated, isAdmin, isEmployee } = useSimpleAuth();
   const { centers } = useCenters();
   const { employees } = useEmployees();
@@ -247,10 +249,16 @@ const ReservationSystem = () => {
         }
       }
 
-      toast({
-        title: "✅ Reserva Creada",
-        description: `Reserva para ${isAuthenticated && user ? user.name : formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
-      });
+toast({
+  title: "✅ Reserva Creada",
+  description: `Reserva para ${isAuthenticated && user ? user.name : formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
+});
+
+// Redirigir para asegurar la reserva con Stripe
+if (newBooking?.id) {
+  navigate(`/asegurar-reserva?booking_id=${newBooking.id}`);
+}
+
 
       // Reset form
       setFormData({
