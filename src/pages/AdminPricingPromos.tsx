@@ -11,6 +11,7 @@ import { useServices, usePackages } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import BackToControlCenter from "@/components/BackToControlCenter";
+import AppLogo from "@/components/AppLogo";
 
 import HappyHourManagement from "@/components/HappyHourManagement";
 
@@ -400,9 +401,10 @@ export default function AdminPricingPromos() {
       
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-            Precios y Promos - The Nook Madrid
-          </h1>
+          <div className="flex items-center gap-3">
+            <AppLogo className="h-8 w-auto" />
+            <h1 className="text-2xl font-bold">Precios y Promos</h1>
+          </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-8">

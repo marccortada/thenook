@@ -3,6 +3,7 @@ import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AppLogo from '@/components/AppLogo';
 import NotificationCenter from '@/components/NotificationCenter';
 import NotificationDashboard from '@/components/NotificationDashboard';
 import NotificationAutomation from '@/components/NotificationAutomation';
@@ -23,9 +24,10 @@ const NotificationDashboardPage = () => {
       <div className="min-h-screen bg-background">
         <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              Centro de Notificaciones - The Nook Madrid
-            </h1>
+            <div className="flex items-center gap-3">
+              <AppLogo className="h-8 w-auto" />
+              <h1 className="text-2xl font-bold">Centro de Notificaciones</h1>
+            </div>
           </div>
         </header>
         <main className="container mx-auto px-4 py-8">

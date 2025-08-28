@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
+import AppLogo from "@/components/AppLogo";
 import { useTranslation } from "@/hooks/useTranslation";
 interface CartItem {
   id: string;
@@ -230,8 +231,9 @@ const GiftCardsPage = () => {
         <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <Link to="/" className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
-                ← The Nook Madrid
+              <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <span className="text-lg">←</span>
+                <AppLogo className="h-8 w-auto" />
               </Link>
             </div>
             <LanguageSelector />

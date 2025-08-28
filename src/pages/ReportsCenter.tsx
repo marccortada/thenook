@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useReports, ReportData, ReportFilter } from "@/hooks/useReports";
 import { useCenters, useServices, useEmployees } from "@/hooks/useDatabase";
+import AppLogo from "@/components/AppLogo";
 import { useToast } from "@/hooks/use-toast";
 
 import { useNavigate } from "react-router-dom";
@@ -218,9 +219,10 @@ const ReportsCenter = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-            Centro de Reportes - The Nook Madrid
-          </h1>
+          <div className="flex items-center gap-3">
+            <AppLogo className="h-8 w-auto" />
+            <h1 className="text-2xl font-bold">Centro de Reportes</h1>
+          </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-8">
