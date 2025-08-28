@@ -389,12 +389,12 @@ const ReservationSystem = () => {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="clientName">Nombre del Cliente *</Label>
+                    <Label htmlFor="clientName">Nombre *</Label>
                     <Input
                       id="clientName"
                       value={formData.clientName || ''}
                       onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                      placeholder="Nombre completo del cliente"
+                      placeholder="Nombre"
                     />
                   </div>
                   <div>
@@ -415,7 +415,7 @@ const ReservationSystem = () => {
                     type="email"
                     value={formData.clientEmail || ''}
                     onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
-                    placeholder="Email del cliente"
+                    placeholder="Email"
                   />
                 </div>
               </div>
