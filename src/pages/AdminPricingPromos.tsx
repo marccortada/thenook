@@ -306,13 +306,13 @@ export default function AdminPricingPromos() {
         <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Precios y Promos</h1>
         <Tabs defaultValue="services">
-          <TabsList>
-            <TabsTrigger value="services">Servicios</TabsTrigger>
-            <TabsTrigger value="manage-services">Gestión de Servicios</TabsTrigger>
-            <TabsTrigger value="packages">Bonos</TabsTrigger>
-            <TabsTrigger value="giftcards">Tarjetas regalo</TabsTrigger>
-            <TabsTrigger value="promotions">Promociones</TabsTrigger>
-            <TabsTrigger value="happy-hours">Happy Hours</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1">
+            <TabsTrigger value="services" className="text-xs sm:text-sm px-2 py-2">Servicios</TabsTrigger>
+            <TabsTrigger value="manage-services" className="text-xs sm:text-sm px-2 py-2">Gestión</TabsTrigger>
+            <TabsTrigger value="packages" className="text-xs sm:text-sm px-2 py-2">Bonos</TabsTrigger>
+            <TabsTrigger value="giftcards" className="text-xs sm:text-sm px-2 py-2">Tarjetas</TabsTrigger>
+            <TabsTrigger value="promotions" className="text-xs sm:text-sm px-2 py-2">Promos</TabsTrigger>
+            <TabsTrigger value="happy-hours" className="text-xs sm:text-sm px-2 py-2">Happy Hours</TabsTrigger>
           </TabsList>
 
           <TabsContent value="services" className="mt-6 space-y-4">
@@ -362,60 +362,70 @@ export default function AdminPricingPromos() {
           </TabsContent>
 
           <TabsContent value="manage-services" className="mt-6 space-y-4">
-            {/* Lista de todos los servicios individuales con opciones CRUD */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Gestión Completa de Servicios</span>
-                  <span className="text-sm text-muted-foreground">{services.length} servicios</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {services.map((service: any) => (
-                    <div key={service.id} className="border rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{service.name}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {service.type} • {service.duration_minutes} min • {currency(service.price_cents / 100)}
-                          </p>
-                          {service.description && (
-                            <p className="text-xs text-muted-foreground mb-2">{service.description}</p>
-                          )}
-                          <div className="flex items-center gap-2 text-xs">
-                            <span className={`px-2 py-1 rounded ${service.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                              {service.active ? 'Activo' : 'Inactivo'}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {centers.find(c => c.id === service.center_id)?.name || 'Todos los centros'}
-                            </span>
+            {/* Servicios agrupados por tipo */}
+            <div className="space-y-4">
+              {/* Agrupar servicios por tipo */}
+              {serviceTypes.map(type => {
+                const servicesOfType = services.filter((service: any) => service.type === type.value);
+                if (servicesOfType.length === 0) return null;
+                
+                return (
+                  <Card key={type.value}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span>{type.label}</span>
+                        <span className="text-sm text-muted-foreground">{servicesOfType.length} servicios</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {servicesOfType.map((service: any) => (
+                          <div key={service.id} className="border rounded-lg p-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg">{service.name}</h3>
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  {service.duration_minutes} min • {currency(service.price_cents / 100)}
+                                </p>
+                                {service.description && (
+                                  <p className="text-xs text-muted-foreground mb-2">{service.description}</p>
+                                )}
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className={`px-2 py-1 rounded ${service.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {service.active ? 'Activo' : 'Inactivo'}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {centers.find(c => c.id === service.center_id)?.name || 'Todos los centros'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingService({ ...service })}
+                                className="flex-1"
+                              >
+                                <Edit className="h-3 w-3 mr-1" />
+                                Editar
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteService(service.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
+                        ))}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingService({ ...service })}
-                          className="flex-1"
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Editar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => deleteService(service.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
 
             {/* Formulario para crear nuevo servicio */}
             <Card>
