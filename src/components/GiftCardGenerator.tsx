@@ -56,7 +56,7 @@ export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ onGenerate
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
-        img.src = '/lovable-uploads/20209585-44ab-4a43-ab74-10299b0fcb50.png';
+        img.src = 'https://duedcqgrflmmmxmpdytu.supabase.co/storage/v1/object/public/gift-cards/www.thenookmadrid.com.png';
       });
 
       // Set canvas size to match image
