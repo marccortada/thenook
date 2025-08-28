@@ -307,7 +307,17 @@ const ClientReservation = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10 prevent-scroll">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
+      {/* Overlay para cerrar dropdowns al hacer clic fuera */}
+      {(showCalendar || showTimeDropdown) && (
+        <div 
+          className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm"
+          onClick={() => {
+            setShowCalendar(false);
+            setShowTimeDropdown(false);
+          }}
+        />
+      )}
       {/* Simple Header */}
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -521,76 +531,91 @@ const ClientReservation = () => {
                  </div>
                )}
 
-               {/* Date & Time */}
-               <div className="space-y-3 sm:space-y-4">
-                 <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                   <Clock className="h-4 w-4" />
-                   <span>Fecha y Hora</span>
-                 </h3>
-                 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="relative">
-                      <Label htmlFor="date" className="text-sm">Fecha *</Label>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowCalendar(!showCalendar)}
-                        className={cn(
-                          "w-full justify-start text-left font-normal mt-1",
-                          !formData.date && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
-                      </Button>
-                      {showCalendar && (
-                        <div className="absolute top-full left-0 z-50 bg-background border rounded-lg shadow-lg p-0 mt-1">
-                          <Calendar
-                            mode="single"
-                            selected={formData.date}
-                            onSelect={(date) => {
-                              setFormData({ ...formData, date });
-                              setShowCalendar(false);
-                            }}
-                            disabled={(date) => date < new Date()}
-                            className="rounded-lg"
-                          />
-                        </div>
-                      )}
-                    </div>
-                   
+                {/* Date & Time - FIXED POSITIONING */}
+                <div className="space-y-3 sm:space-y-4 sticky top-20 z-40 bg-background/95 backdrop-blur-sm p-4 rounded-lg border border-primary/20 shadow-lg">
+                  <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                    <Clock className="h-4 w-4" />
+                    <span>Fecha y Hora</span>
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                      <div className="relative">
-                       <Label htmlFor="time" className="text-sm">Hora *</Label>
-                       <Button
-                         variant="outline"
-                         onClick={() => setShowTimeDropdown(!showTimeDropdown)}
-                         className={cn(
-                           "w-full justify-start text-left font-normal mt-1",
-                           !formData.time && "text-muted-foreground"
-                         )}
-                       >
-                         <Clock className="mr-2 h-4 w-4" />
-                         {formData.time || "Selecciona una hora"}
-                       </Button>
-                       {showTimeDropdown && (
-                         <div className="absolute top-full left-0 z-50 bg-background border rounded-lg shadow-lg mt-1 w-full max-h-60 overflow-y-auto">
-                           {timeSlots.map((time) => (
-                             <button
-                               key={time}
-                               onClick={() => {
-                                 setFormData({ ...formData, time });
-                                 setShowTimeDropdown(false);
-                               }}
-                               className="w-full px-4 py-2 text-left hover:bg-accent hover:text-accent-foreground flex items-center space-x-2"
-                             >
-                               <Clock className="h-3 w-3" />
-                               <span>{time}</span>
-                             </button>
-                           ))}
-                         </div>
-                       )}
+                       <Label htmlFor="date" className="text-sm">Fecha *</Label>
+                       <Popover open={showCalendar} onOpenChange={setShowCalendar}>
+                         <PopoverTrigger asChild>
+                           <Button
+                             variant="outline"
+                             className={cn(
+                               "w-full justify-start text-left font-normal mt-1",
+                               !formData.date && "text-muted-foreground"
+                             )}
+                           >
+                             <CalendarIcon className="mr-2 h-4 w-4" />
+                             {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                           </Button>
+                         </PopoverTrigger>
+                         <PopoverContent 
+                           className="w-auto p-0 z-[9999] bg-background border shadow-xl"
+                           align="start"
+                           side="bottom"
+                           sideOffset={4}
+                         >
+                           <Calendar
+                             mode="single"
+                             selected={formData.date}
+                             onSelect={(date) => {
+                               setFormData({ ...formData, date });
+                               setShowCalendar(false);
+                             }}
+                             disabled={(date) => date < new Date()}
+                             className={cn("p-3 pointer-events-auto")}
+                             initialFocus
+                           />
+                         </PopoverContent>
+                       </Popover>
                      </div>
-                  </div>
-                </div>
+                    
+                      <div className="relative">
+                        <Label htmlFor="time" className="text-sm">Hora *</Label>
+                        <Popover open={showTimeDropdown} onOpenChange={setShowTimeDropdown}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal mt-1",
+                                !formData.time && "text-muted-foreground"
+                              )}
+                            >
+                              <Clock className="mr-2 h-4 w-4" />
+                              {formData.time || "Selecciona una hora"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent 
+                            className="w-full p-0 z-[9999] bg-background border shadow-xl max-h-60 overflow-y-auto"
+                            align="start"
+                            side="bottom"
+                            sideOffset={4}
+                          >
+                            <div className="p-1">
+                              {timeSlots.map((time) => (
+                                <button
+                                  key={time}
+                                  onClick={() => {
+                                    setFormData({ ...formData, time });
+                                    setShowTimeDropdown(false);
+                                  }}
+                                  className="w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 rounded-md transition-colors"
+                                >
+                                  <Clock className="h-3 w-3" />
+                                  <span>{time}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                   </div>
+                 </div>
 
 
               {/* Notes */}
