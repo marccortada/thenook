@@ -131,6 +131,47 @@ export type Database = {
           },
         ]
       }
+      booking_payment_intents: {
+        Row: {
+          booking_id: string
+          client_secret: string
+          created_at: string
+          id: string
+          status: string
+          stripe_payment_method_id: string | null
+          stripe_setup_intent_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          client_secret: string
+          created_at?: string
+          id?: string
+          status?: string
+          stripe_payment_method_id?: string | null
+          stripe_setup_intent_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          client_secret?: string
+          created_at?: string
+          id?: string
+          status?: string
+          stripe_payment_method_id?: string | null
+          stripe_setup_intent_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_payment_intents_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_datetime: string
@@ -139,16 +180,21 @@ export type Database = {
           client_id: string | null
           created_at: string
           duration_minutes: number
+          email_sent_at: string | null
+          email_status: string | null
           employee_id: string | null
           id: string
           lane_id: string | null
           notes: string | null
           payment_method: string | null
+          payment_method_status: string | null
           payment_notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"] | null
           service_id: string | null
           status: Database["public"]["Enums"]["booking_status"] | null
+          stripe_payment_method_id: string | null
           stripe_session_id: string | null
+          stripe_setup_intent_id: string | null
           total_price_cents: number
           updated_at: string
         }
@@ -159,16 +205,21 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           duration_minutes: number
+          email_sent_at?: string | null
+          email_status?: string | null
           employee_id?: string | null
           id?: string
           lane_id?: string | null
           notes?: string | null
           payment_method?: string | null
+          payment_method_status?: string | null
           payment_notes?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           service_id?: string | null
           status?: Database["public"]["Enums"]["booking_status"] | null
+          stripe_payment_method_id?: string | null
           stripe_session_id?: string | null
+          stripe_setup_intent_id?: string | null
           total_price_cents: number
           updated_at?: string
         }
@@ -179,16 +230,21 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           duration_minutes?: number
+          email_sent_at?: string | null
+          email_status?: string | null
           employee_id?: string | null
           id?: string
           lane_id?: string | null
           notes?: string | null
           payment_method?: string | null
+          payment_method_status?: string | null
           payment_notes?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           service_id?: string | null
           status?: Database["public"]["Enums"]["booking_status"] | null
+          stripe_payment_method_id?: string | null
           stripe_session_id?: string | null
+          stripe_setup_intent_id?: string | null
           total_price_cents?: number
           updated_at?: string
         }

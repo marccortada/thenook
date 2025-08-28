@@ -11,6 +11,8 @@ import PublicLandingPage from "./pages/PublicLandingPage";
 import ClientReservation from "./pages/ClientReservation";
 import BuyPackagesPage from "./pages/BuyPackagesPage";
 import GiftCardsPage from "./pages/GiftCardsPage";
+import BookingPaymentSetup from "./pages/BookingPaymentSetup";
+import PaymentSetupSuccess from "./pages/PaymentSetupSuccess";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,10 @@ const App = () => (
             <Route path="/client-reservation" element={<ClientReservation />} />
             <Route path="/packages" element={<BuyPackagesPage />} />
             <Route path="/gift-cards" element={<GiftCardsPage />} />
+            
+            {/* Páginas de pago con tarjeta */}
+            <Route path="/asegurar-reserva" element={<BookingPaymentSetup />} />
+            <Route path="/pago-configurado" element={<PaymentSetupSuccess />} />
             
             {/* Admin Login - único acceso externo */}
             <Route path="/admin-login" element={<AdminLogin />} />

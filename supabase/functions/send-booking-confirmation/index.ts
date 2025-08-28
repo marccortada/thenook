@@ -39,7 +39,7 @@ serve(async (req) => {
         bookings(booking_datetime, total_price_cents, services(name))
       `)
       .eq('status', 'pending')
-      .in('type', ['appointment_confirmation', 'booking_reminder'])
+      .in('type', ['appointment_confirmation', 'booking_reminder', 'booking_confirmation_with_payment'])
       .lte('scheduled_for', nowIso)
       .limit(10);
 
@@ -56,11 +56,35 @@ serve(async (req) => {
       );
     }
 
-    console.log(`📬 Found ${notifications.length} notifications to send`);
+    // Separate payment notifications for different processing
+    const paymentNotifications = notifications.filter(n => n.type === 'booking_confirmation_with_payment');
+    const regularNotifications = notifications.filter(n => n.type !== 'booking_confirmation_with_payment');
+
+    // Process payment notifications through dedicated function
+    if (paymentNotifications.length > 0) {
+      console.log(`🔄 Redirecting ${paymentNotifications.length} payment notifications to dedicated function`);
+      try {
+        const paymentResponse = await supabaseClient.functions.invoke('send-booking-with-payment');
+        console.log('✅ Payment notifications redirected successfully');
+      } catch (error) {
+        console.error('❌ Error redirecting payment notifications:', error);
+      }
+    }
+
+    // Continue with regular notifications only
+    if (regularNotifications.length === 0) {
+      console.log('✅ No regular notifications to process');
+      return new Response(
+        JSON.stringify({ message: 'Payment notifications redirected', processed: paymentNotifications.length }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`📬 Found ${regularNotifications.length} regular notifications to send`);
 
     let successCount = 0;
 
-    for (const notification of notifications) {
+    for (const notification of regularNotifications) {
       try {
         const client = notification.profiles;
         const booking = notification.bookings;
@@ -168,13 +192,14 @@ serve(async (req) => {
       }
     }
 
-    console.log(`🎉 Email processing complete: ${successCount}/${notifications.length} successful`);
+    console.log(`🎉 Email processing complete: ${successCount}/${regularNotifications.length} successful`);
 
     return new Response(
       JSON.stringify({ 
         message: 'Notifications processed', 
-        processed: notifications.length,
-        successful: successCount
+        processed: regularNotifications.length,
+        successful: successCount,
+        payment_redirected: paymentNotifications.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
