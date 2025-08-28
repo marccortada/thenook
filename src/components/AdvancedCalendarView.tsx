@@ -162,12 +162,11 @@ const AdvancedCalendarView = () => {
     return eachDayOfInterval({ start, end });
   };
 
-  // Get lanes for selected center (exactly 4 lanes per center)
+  // Get lanes for selected center (show all active lanes for better view)
   const getCenterLanes = (centerId: string) => {
     return lanes
       .filter(lane => lane.center_id === centerId && lane.active)
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .slice(0, 4); // Ensure exactly 4 lanes
+      .sort((a, b) => a.name.localeCompare(b.name));
   };
 
   // Get booking for specific slot - now with filtering
@@ -562,18 +561,25 @@ const AdvancedCalendarView = () => {
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[85vh]">
-            <div className="grid grid-cols-[50px_repeat(4,1fr)] gap-0 min-w-[600px]">
+            {/* Responsive grid based on number of lanes */}
+            <div className={cn(
+              "gap-0 min-w-fit",
+              centerLanes.length === 1 ? "grid grid-cols-[60px_1fr]" :
+              centerLanes.length === 2 ? "grid grid-cols-[60px_repeat(2,1fr)]" :
+              centerLanes.length === 3 ? "grid grid-cols-[60px_repeat(3,1fr)]" :
+              "grid grid-cols-[60px_repeat(4,1fr)]"
+            )}>
               {/* Header */}
               <div className="sticky top-0 z-10 bg-background border-b">
-                <div className="p-1 text-center font-medium border-r bg-muted/50 text-xs">
+                <div className="p-2 text-center font-medium border-r bg-muted/50 text-sm">
                   Hora
                 </div>
               </div>
-              {centerLanes.map((lane) => (
+              {centerLanes.slice(0, 4).map((lane) => (
                 <div key={lane.id} className="sticky top-0 z-10 bg-background border-b">
-                  <div className="p-1 text-center font-medium border-r bg-muted/50">
-                    <div className="font-semibold text-xs">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
-                    <div className="text-[9px] text-muted-foreground">Cap: {lane.capacity}</div>
+                  <div className="p-2 text-center font-medium border-r bg-muted/50">
+                    <div className="font-semibold text-sm">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
+                    <div className="text-xs text-muted-foreground">Cap: {lane.capacity}</div>
                   </div>
                 </div>
               ))}
@@ -582,12 +588,12 @@ const AdvancedCalendarView = () => {
               {timeSlots.map((timeSlot, timeIndex) => (
                 <React.Fragment key={timeIndex}>
                   {/* Time label */}
-                  <div className="p-0.5 text-center text-[10px] border-r border-b bg-muted/30 font-medium h-6 flex items-center justify-center">
+                  <div className="p-2 text-center text-sm border-r border-b bg-muted/30 font-medium h-12 flex items-center justify-center">
                     {timeSlot.hour}
                   </div>
 
                    {/* Lane slots */}
-                   {centerLanes.map((lane) => {
+                   {centerLanes.slice(0, 4).map((lane) => {
                      let booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, timeSlot.time);
                      if (!booking && lane.id === centerLanes[0].id) {
                        const fallback = bookings.find(b => {
@@ -606,59 +612,58 @@ const AdvancedCalendarView = () => {
                      return (
                         <div
                           key={lane.id}
-                          className="relative h-6 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
+                          className="relative h-12 border-r border-b hover:bg-muted/20 cursor-pointer transition-colors"
                           onClick={() => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time)}
                         >
                         {booking && isFirstSlotOfBooking && (
                           <div
                              className={cn(
-                               "absolute inset-1 rounded border-l-4 p-1 transition-all hover:shadow-md text-xs",
+                               "absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md",
                                getStatusColor(booking.status)
                              )}
                              style={{
-                               height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 32 - 4}px`
+                               height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 4}px`,
+                               zIndex: 2
                              }}
                            >
-                             <div className="text-xs font-semibold truncate">{booking.profiles?.first_name}</div>
+                             <div className="text-sm font-semibold truncate">{booking.profiles?.first_name} {booking.profiles?.last_name}</div>
                              {booking.payment_status === 'paid' && (
-                               <div className="absolute top-0 right-0">
-                                 <CheckCircle2 className="h-3 w-3 text-green-600" />
+                               <div className="absolute top-1 right-1">
+                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                                </div>
                              )}
-                             <div className="text-[10px] text-muted-foreground truncate">
-                               {format(parseISO(booking.booking_datetime), 'HH:mm')}
+                             <div className="text-xs text-muted-foreground truncate">
+                               {booking.services?.name}
+                             </div>
+                             <div className="text-xs font-medium">
+                               €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
                              </div>
                           </div>
                         )}
                          {isBlocked && !booking && (
-                           <div className="absolute inset-1 rounded bg-gray-400/40 border border-gray-500/60 flex items-center justify-center">
-                             <div className="flex items-center gap-1">
-                               <span className="text-[10px] font-bold text-gray-700">BLOCKED</span>
+                           <div className="absolute top-1 left-1 right-1 bottom-1 rounded bg-gray-400/40 border border-gray-500/60 flex items-center justify-center">
+                             <div className="flex items-center gap-2">
+                               <span className="text-xs font-bold text-gray-700">BLOQUEADO</span>
                                <Button
                                  variant="ghost"
                                  size="sm"
-                                 className="h-4 w-4 p-0 hover:bg-red-600 hover:text-white"
+                                 className="h-6 w-6 p-0 hover:bg-red-600 hover:text-white"
                                  onClick={(e) => handleUnblockLane(isBlocked.id, e)}
                                >
-                                 <X className="h-2 w-2" />
+                                 <X className="h-3 w-3" />
                                </Button>
                              </div>
                            </div>
                          )}
-                         {!booking && !isBlocked && (
-                           <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                             <Plus className="h-4 w-4 text-muted-foreground" />
-                           </div>
-                         )}
                          {blockingMode && !booking && !isBlocked && (
                            <div className={cn(
-                             "absolute inset-1 rounded border-2 border-dashed transition-all",
+                             "absolute top-1 left-1 right-1 bottom-1 rounded border-2 border-dashed transition-all",
                              blockStartSlot?.laneId === lane.id && blockStartSlot?.timeSlot.getTime() === timeSlot.time.getTime() 
                                ? "border-blue-500 bg-blue-500/10" 
                                : "border-blue-300 hover:border-blue-500 hover:bg-blue-500/5"
                            )}>
                              <div className="absolute inset-0 flex items-center justify-center">
-                               <Ban className="h-3 w-3 text-blue-600" />
+                               <Ban className="h-4 w-4 text-blue-600" />
                              </div>
                            </div>
                          )}
