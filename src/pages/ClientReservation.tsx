@@ -679,6 +679,24 @@ const ClientReservation = () => {
         </div>
       </main>
       
+      {/* Footer with contact information */}
+      <footer className="bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-t mt-8">
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center space-y-2">
+            <div className="flex justify-center items-center gap-4 text-sm text-muted-foreground">
+              <a href="tel:911481474" className="flex items-center gap-1 hover:text-primary transition-colors">
+                <span>📞</span>
+                <span>911 481 474</span>
+              </a>
+              <a href="https://wa.me/+34622360922" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
+                <span>💬</span>
+                <span>WhatsApp</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
+      
     </div>
   );
 };
