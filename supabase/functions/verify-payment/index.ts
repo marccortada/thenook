@@ -81,6 +81,7 @@ serve(async (req) => {
           id: string; 
           code: string; 
           amount_cents: number;
+          gift_card_name: string;
           purchased_by_name?: string;
           purchased_by_email?: string;
           is_gift?: boolean;
@@ -91,6 +92,17 @@ serve(async (req) => {
         
         for (const it of payload.items) {
           const qty = it.quantity ?? 1;
+          
+          // Buscar el nombre de la tarjeta regalo según el valor
+          const { data: giftCardOption, error: optionError } = await supabaseAdmin
+            .from("gift_card_options")
+            .select("name")
+            .eq("amount_cents", it.amount_cents)
+            .eq("is_active", true)
+            .maybeSingle();
+          
+          const giftCardName = giftCardOption?.name || `Tarjeta ${(it.amount_cents / 100).toFixed(2)}€`;
+          
           for (let i = 0; i < qty; i++) {
             const { data: code, error: codeErr } = await supabaseAdmin.rpc("generate_voucher_code");
             if (codeErr) throw codeErr;
@@ -113,6 +125,7 @@ serve(async (req) => {
               id: data.id, 
               code: data.code, 
               amount_cents: it.amount_cents,
+              gift_card_name: giftCardName,
               purchased_by_name: it.purchased_by_name,
               purchased_by_email: it.purchased_by_email,
               is_gift: it.is_gift,
@@ -282,31 +295,32 @@ serve(async (req) => {
             
             if (finalRecipientEmail) {
               const recipientSubject = isGift 
-                ? `🎁 ¡Has recibido una tarjeta regalo de ${purchaserName || 'alguien especial'}!`
-                : "Tu tarjeta regalo de The Nook Madrid";
+                ? `🎁 ¡Has recibido ${card.gift_card_name} de ${purchaserName || 'alguien especial'}!`
+                : `Tu ${card.gift_card_name} de The Nook Madrid`;
                 
               const recipientHtml = `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                   <div style="text-align: center; padding: 20px;">
                     <h2 style="color: #8B5CF6;">${isGift ? '🎁 ¡Has recibido una tarjeta regalo!' : '✨ Tu tarjeta regalo'}</h2>
+                    <h3 style="color: #D4B896; margin: 10px 0;">${card.gift_card_name}</h3>
                     ${isGift ? `<p style="font-size: 18px; color: #666;">De parte de: <strong>${purchaserName || 'Alguien especial'}</strong></p>` : ''}
                     ${giftMessage ? `<div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; font-style: italic; color: #666;">"${giftMessage}"</div>` : ''}
                     
                     <div style="margin: 30px 0;">
-                      <img src="${giftCardImage}" alt="Tarjeta Regalo" style="max-width: 100%; height: auto; border-radius: 15px;"/>
+                      <img src="${giftCardImage}" alt="${card.gift_card_name}" style="max-width: 100%; height: auto; border-radius: 15px;"/>
                     </div>
                     
                     <div style="background: #f0f9ff; padding: 20px; border-radius: 10px; margin: 20px 0;">
                       <h3 style="color: #1e40af; margin-top: 0;">¿Cómo usar tu tarjeta regalo?</h3>
                       <ol style="text-align: left; color: #374151;">
-                        <li>Reserva tu cita llamando al <strong>+34 XXX XXX XXX</strong></li>
+                        <li>Reserva tu cita llamando al <strong>911 481 474</strong></li>
                         <li>Presenta el código <strong>${card.code}</strong> al llegar</li>
                         <li>¡Disfruta de tu experiencia relajante!</li>
                       </ol>
                     </div>
                     
                     <p style="color: #666; font-size: 14px;">
-                      Esta tarjeta regalo tiene un valor de <strong>${(card.amount_cents / 100).toFixed(2)}€</strong><br>
+                      ${card.gift_card_name} con valor de <strong>${(card.amount_cents / 100).toFixed(2)}€</strong><br>
                       Válida en The Nook Madrid
                     </p>
                   </div>
@@ -369,7 +383,7 @@ serve(async (req) => {
                 <ul>
                   ${created.map((c) => `
                     <li>
-                      <strong>${(c.amount_cents / 100).toFixed(2)}€</strong> — Código: <code>${c.code}</code><br>
+                      <strong>${c.gift_card_name}</strong> (${(c.amount_cents / 100).toFixed(2)}€) — Código: <code>${c.code}</code><br>
                       ${c.is_gift ? `🎁 <em>Regalo para: ${c.recipient_name} (${c.recipient_email})</em>` : '📝 <em>Compra personal</em>'}
                       ${c.gift_message ? `<br>💌 Mensaje: "${c.gift_message}"` : ''}
                     </li>
