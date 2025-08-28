@@ -97,11 +97,24 @@ const ReservationSystem = () => {
   }, [] as typeof packages);
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('🚀 handleSubmit started');
     e.preventDefault();
     
     // Basic validation
+    console.log('📋 Validando campos:', { 
+      isAuthenticated, 
+      isAdmin, 
+      isEmployee, 
+      clientName: formData.clientName, 
+      service: formData.service, 
+      center: formData.center, 
+      date: formData.date, 
+      time: formData.time 
+    });
+    
     const isStaff = isAdmin || isEmployee;
     if ((!isAuthenticated && !formData.clientName) || (isStaff && !formData.clientName) || !formData.service || !formData.center || !formData.date || !formData.time) {
+      console.log('❌ Validación fallida');
       toast({
         title: "Error",
         description: "Por favor completa todos los campos obligatorios",
@@ -109,6 +122,8 @@ const ReservationSystem = () => {
       });
       return;
     }
+    
+    console.log('✅ Validación exitosa, continuando...');
 
     try {
       // Use authenticated user's email if logged in and NOT staff, otherwise use form email for staff
