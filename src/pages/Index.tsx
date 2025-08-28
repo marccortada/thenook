@@ -25,7 +25,7 @@ import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 import SimpleCenterCalendar from "@/components/SimpleCenterCalendar";
 import AdvancedCalendarView from "@/components/AdvancedCalendarView";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import PublicLandingPage from "@/pages/PublicLandingPage";
 
 const Index = () => {
@@ -58,6 +58,37 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header with logo */}
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="inline-flex items-center hover:opacity-80 transition-opacity">
+              <img
+                src="/lovable-uploads/475dc4d6-6d6b-4357-a8b5-4611869beb43.png"
+                alt="The Nook Madrid - Inicio"
+                className="h-8 w-auto md:h-10"
+                loading="lazy"
+                width={160}
+                height={40}
+              />
+            </Link>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  // Cerrar sesión y volver a la página pública
+                  localStorage.removeItem('nook_user_session');
+                  window.location.href = '/';
+                }}
+              >
+                Cerrar sesión
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
       <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-4 sm:mb-6 lg:mb-8 px-2 sm:px-0">
@@ -69,26 +100,6 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">
                   Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
                 </p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    // Cerrar sesión y volver a la página pública
-                    localStorage.removeItem('nook_user_session');
-                    window.location.href = '/';
-                  }}
-                >
-                  Cerrar sesión
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate('/')}
-                >
-                  Ver página pública
-                </Button>
               </div>
             </div>
           </div>
