@@ -440,51 +440,60 @@ const SimpleCenterCalendar = () => {
           </Card>
         </div>
 
-        {/* Employee and Status filters - Responsive */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 p-2 sm:p-0">
-          <div className="flex items-center gap-2 text-xs sm:text-sm">
-            <User className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="font-medium">Especialista:</span>
+        {/* Employee and Status filters - Mobile Optimized */}
+        <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs font-medium">
+                <User className="h-3 w-3" />
+                <span>Especialista</span>
+              </div>
+              <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                <SelectTrigger className="w-full text-xs">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {centerEmployees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.profiles?.first_name} {employee.profiles?.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs font-medium">
+                <span>Estado</span>
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full text-xs">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="confirmed">✅ Confirmadas</SelectItem>
+                  <SelectItem value="pending">⏳ Pendientes</SelectItem>
+                  <SelectItem value="requested">📋 Solicitadas</SelectItem>
+                  <SelectItem value="new">🆕 Nuevas</SelectItem>
+                  <SelectItem value="online">🌐 Online</SelectItem>
+                  <SelectItem value="cancelled">❌ Canceladas</SelectItem>
+                  <SelectItem value="completed">✔️ Completadas</SelectItem>
+                  <SelectItem value="no_show">❌ No Show</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+              <div className="text-xs font-medium opacity-0">Acción</div>
+              <Button size="sm" onClick={() => handleNewBooking(center.id)} className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Nueva Reserva</span>
+                <span className="sm:hidden">Nueva</span>
+              </Button>
+            </div>
           </div>
-          <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-            <SelectTrigger className="w-full sm:w-64">
-              <SelectValue placeholder="Todos los especialistas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los especialistas</SelectItem>
-              {centerEmployees.map((employee) => (
-                <SelectItem key={employee.id} value={employee.id}>
-                  {employee.profiles?.first_name} {employee.profiles?.last_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <div className="flex items-center gap-2 text-xs sm:text-sm">
-            <span className="font-medium">Estado:</span>
-          </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Todos los estados" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              <SelectItem value="confirmed">✅ Confirmadas</SelectItem>
-              <SelectItem value="pending">⏳ Pendientes</SelectItem>
-              <SelectItem value="requested">📋 Solicitadas</SelectItem>
-              <SelectItem value="new">🆕 Nuevas</SelectItem>
-              <SelectItem value="online">🌐 Online</SelectItem>
-              <SelectItem value="cancelled">❌ Canceladas</SelectItem>
-              <SelectItem value="completed">✔️ Completadas</SelectItem>
-              <SelectItem value="no_show">❌ No Show</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button size="sm" onClick={() => handleNewBooking(center.id)} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Nueva Reserva</span>
-            <span className="sm:hidden">Nueva</span>
-          </Button>
         </div>
 
         {/* Calendar Grid - takes full height */}

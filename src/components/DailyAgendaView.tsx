@@ -176,37 +176,42 @@ const DailyAgendaView = () => {
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={goToPreviousDay}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={goToNextDay}>
-                <ChevronRight className="h-4 w-4" />
+        {/* Header - Mobile Optimized */}
+        <div className="space-y-3 lg:space-y-0 lg:flex lg:items-center lg:justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={goToPreviousDay}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={goToNextDay}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button variant="outline" size="sm" onClick={goToToday} className="lg:hidden">
+                Hoy
               </Button>
             </div>
-            <div className="text-2xl font-bold text-foreground">
-              {format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+            <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
+              {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Search */}
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {/* Search - Full width on mobile */}
+            <div className="relative flex-1 sm:flex-none">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-32 lg:w-48"
+                className="pl-9 w-full sm:w-48"
               />
             </div>
 
             {/* Center filter */}
             <Select value={selectedCenter} onValueChange={setSelectedCenter}>
-              <SelectTrigger className="w-32 lg:w-40">
+              <SelectTrigger className="flex-1 sm:flex-none sm:w-40">
                 <MapPin className="h-4 w-4 mr-1" />
                 <SelectValue />
               </SelectTrigger>
@@ -222,7 +227,7 @@ const DailyAgendaView = () => {
 
             {/* View mode toggle */}
             <Select value={viewMode} onValueChange={(value: 'lanes' | 'employees') => setViewMode(value)}>
-              <SelectTrigger className="w-28 lg:w-32">
+              <SelectTrigger className="flex-1 sm:flex-none sm:w-32">
                 <Settings className="h-4 w-4 mr-1" />
                 <SelectValue />
               </SelectTrigger>
@@ -235,9 +240,10 @@ const DailyAgendaView = () => {
             {/* Add booking button with options */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm">
+                <Button size="sm" className="flex-1 sm:flex-none">
                   <Plus className="h-4 w-4 mr-2" />
-                  <span className="hidden lg:inline">Nuevo</span>
+                  <span className="sm:hidden lg:inline">Nuevo</span>
+                  <span className="hidden sm:inline lg:hidden">+</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -307,24 +313,26 @@ const DailyAgendaView = () => {
               </h3>
             </div>
             
-            <ScrollArea className="h-[400px] lg:h-[500px]">
+            <ScrollArea className="h-[500px] lg:h-[600px]">
               <div className="relative">
-                {/* Header - Responsive */}
+                {/* Header - Mobile Optimized */}
                 <div className="sticky top-0 z-10 bg-background border-b">
                   <div className={cn(
                     "grid gap-0",
-                    columns.length <= 3 ? "grid-cols-[60px_repeat(auto-fit,minmax(120px,1fr))]" : "grid-cols-[60px_repeat(auto-fit,minmax(100px,1fr))]"
+                    "grid-cols-[50px_repeat(auto-fit,minmax(80px,1fr))] sm:grid-cols-[60px_repeat(auto-fit,minmax(100px,1fr))] lg:grid-cols-[70px_repeat(auto-fit,minmax(120px,1fr))]"
                   )}>
-                    <div className="p-2 text-center font-medium border-r bg-muted/50 text-xs lg:text-sm">
+                    <div className="p-1 sm:p-2 text-center font-medium border-r bg-muted/50 text-xs">
                       Hora
                     </div>
                     {columns.map((column) => (
-                      <div key={column.id} className="p-2 text-center font-medium border-r bg-muted/50">
+                      <div key={column.id} className="p-1 sm:p-2 text-center font-medium border-r bg-muted/50 min-w-0">
                         <div className="flex flex-col items-center gap-1">
-                          <span className="font-semibold text-xs lg:text-sm truncate">{(column.name || '').replace(/ra[ií]l/gi, 'Carril')}</span>
+                          <span className="font-semibold text-xs lg:text-sm truncate w-full" title={column.name}>
+                            {(column.name || '').replace(/ra[ií]l/gi, 'C').slice(0, 8)}
+                          </span>
                           {viewMode === 'employees' && column.specialties && (
-                            <Badge variant="secondary" className="text-xs hidden lg:inline-flex">
-                              {column.specialties.length} esp.
+                            <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
+                              {column.specialties.length}
                             </Badge>
                           )}
                         </div>
@@ -333,19 +341,19 @@ const DailyAgendaView = () => {
                   </div>
                 </div>
 
-                {/* Time slots - Compact */}
+                {/* Time slots - Mobile Optimized */}
                 <div className={cn(
                   "grid gap-0",
-                  columns.length <= 3 ? "grid-cols-[60px_repeat(auto-fit,minmax(120px,1fr))]" : "grid-cols-[60px_repeat(auto-fit,minmax(100px,1fr))]"
+                  "grid-cols-[50px_repeat(auto-fit,minmax(80px,1fr))] sm:grid-cols-[60px_repeat(auto-fit,minmax(100px,1fr))] lg:grid-cols-[70px_repeat(auto-fit,minmax(120px,1fr))]"
                 )}>
                   {timeSlots.map((timeSlot, timeIndex) => (
                     <React.Fragment key={timeIndex}>
-                      {/* Time label - Compact */}
-                      <div className="p-1 text-center text-xs lg:text-sm border-r border-b bg-muted/30 font-medium">
+                      {/* Time label - Mobile Optimized */}
+                      <div className="p-1 text-center text-xs border-r border-b bg-muted/30 font-medium">
                         {format(timeSlot, 'HH:mm')}
                       </div>
 
-                      {/* Column slots - Compact */}
+                      {/* Column slots - Mobile Optimized */}
                       {columns.map((column) => {
                         const booking = getBookingForColumnAndTime(column.id, timeSlot);
                         const isFirstSlotOfBooking = booking && 
@@ -354,33 +362,33 @@ const DailyAgendaView = () => {
                         return (
                           <div
                             key={`${column.id}-${timeIndex}`}
-                            className="relative border-r border-b min-h-[40px] lg:min-h-[50px] hover:bg-muted/20 transition-colors overflow-hidden"
+                            className="relative border-r border-b min-h-[35px] sm:min-h-[40px] lg:min-h-[50px] hover:bg-muted/20 transition-colors overflow-hidden"
                           >
                             {booking && isFirstSlotOfBooking && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
                                     className={cn(
-                                      "absolute top-1 left-1 right-1 rounded border-l-4 p-1 lg:p-2 cursor-pointer transition-all hover:shadow-md",
+                                      "absolute top-0.5 left-0.5 right-0.5 rounded border-l-4 p-1 cursor-pointer transition-all hover:shadow-md",
                                       getStatusColor(booking.status)
                                     )}
                                     style={{
-                                      height: `${Math.ceil((convertBookingToSlot(booking).endTime.getTime() - convertBookingToSlot(booking).startTime.getTime()) / (30 * 60 * 1000)) * 40 - 4}px`,
+                                      height: `${Math.ceil((convertBookingToSlot(booking).endTime.getTime() - convertBookingToSlot(booking).startTime.getTime()) / (30 * 60 * 1000)) * 35 - 2}px`,
                                       minWidth: 0,
                                       maxWidth: '100%'
                                     }}
                                     onClick={() => handleBookingClick(booking)}
                                   >
-                                    <div className="text-xs font-semibold truncate w-full">
-                                      {convertBookingToSlot(booking).clientName}
+                                    <div className="text-xs font-semibold truncate w-full leading-tight">
+                                      {convertBookingToSlot(booking).clientName.split(' ')[0]}
                                     </div>
-                                    <div className="text-xs text-muted-foreground truncate w-full hidden lg:block">
-                                      {convertBookingToSlot(booking).serviceName}
+                                    <div className="text-xs text-muted-foreground truncate w-full hidden sm:block leading-tight">
+                                      {convertBookingToSlot(booking).serviceName.slice(0, 15)}
                                     </div>
-                                    <div className="text-xs font-medium truncate w-full">
+                                    <div className="text-xs font-medium truncate w-full leading-tight">
                                       €{convertBookingToSlot(booking).price}
                                     </div>
-                                    <div className="text-xs text-muted-foreground truncate w-full hidden lg:block">
+                                    <div className="text-xs text-muted-foreground truncate w-full hidden lg:block leading-tight">
                                       {format(convertBookingToSlot(booking).startTime, 'HH:mm')}
                                     </div>
                                   </div>
