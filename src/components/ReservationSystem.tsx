@@ -234,14 +234,13 @@ const ReservationSystem = () => {
 
       toast({
         title: "✅ Reserva Creada",
-        description: `Reserva para ${isAuthenticated && user ? user.name : formData.clientName} creada. Te enviamos un email para asegurarla con tarjeta. ID: ${newBooking?.id}`,
+        description: `Reserva creada. Redirigiendo para asegurarla con tarjeta...`,
       });
 
-      // Redirigir INMEDIATAMENTE después del toast
-      setTimeout(() => {
-        console.log('🔀 Redirigiendo a asegurar reserva:', newBooking.id);
-        navigate(`/asegurar-reserva?booking_id=${newBooking.id}`);
-      }, 1000);
+      // Usar window.location para forzar la redirección
+      console.log('🔀 Redirigiendo a asegurar reserva:', newBooking.id);
+      window.location.href = `/asegurar-reserva?booking_id=${newBooking.id}`;
+      return;
 
 
       // Reset form
