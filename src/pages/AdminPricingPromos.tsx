@@ -648,199 +648,269 @@ export default function AdminPricingPromos() {
           </TabsContent>
 
           <TabsContent value="packages" className="mt-6 space-y-4">
-            {/* Formulario para crear nuevo bono */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  Crear Nuevo Bono
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <Label htmlFor="package-name">Nombre del Bono *</Label>
-                    <Input
-                      id="package-name"
-                      placeholder="Ej: Bono 5 Masajes"
-                    />
+            <Accordion type="multiple" className="space-y-4">
+              {/* Formulario para crear nuevo bono */}
+              <AccordionItem value="create-package" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    <span className="text-lg font-semibold">Crear Nuevo Bono</span>
                   </div>
-                  <div>
-                    <Label htmlFor="package-service">Servicio</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar servicio" />
-                      </SelectTrigger>
-                      <SelectContent className="z-50 bg-background">
-                        <SelectItem value="all">Todos los servicios</SelectItem>
-                        {services.map((service: any) => (
-                          <SelectItem key={service.id} value={service.id}>
-                            {service.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="package-sessions">Sesiones *</Label>
-                    <Input
-                      id="package-sessions"
-                      type="number"
-                      min="1"
-                      placeholder="5"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="package-price">Precio (€) *</Label>
-                    <Input
-                      id="package-price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="150.00"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="package-center">Centro</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos los centros" />
-                      </SelectTrigger>
-                      <SelectContent className="z-50 bg-background">
-                        <SelectItem value="all">Todos los centros</SelectItem>
-                        {centers.map((center) => (
-                          <SelectItem key={center.id} value={center.id}>
-                            {center.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="package-discount">Descuento (%)</Label>
-                    <Input
-                      id="package-discount"
-                      type="number"
-                      min="0"
-                      max="100"
-                      placeholder="10"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label htmlFor="package-description">Descripción</Label>
-                    <Input
-                      id="package-description"
-                      placeholder="Descripción opcional del bono..."
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end mt-4">
-                  <Button onClick={() => {
-                    // Aquí iría la lógica para crear el bono
-                    toast({ title: 'Funcionalidad pendiente', description: 'Crear bono estará disponible próximamente' });
-                  }} className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Crear Bono
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Bonos (paquetes) - precios y sesiones</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {uniquePackages.map((g) => {
-                  const edit = packageEdits[g.key] || { price_euros: g.price_euros, sessions_count: g.sessions_count, active: g.allActive };
-                  return (
-                    <div key={g.key} className="border rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <div className="font-medium">{g.name}</div>
-                          <div className="text-xs text-muted-foreground">{g.service_name ? `Servicio: ${g.service_name} · ` : ''}{edit.sessions_count} sesiones</div>
-                        </div>
-                        <div className="text-sm font-semibold">{currency(edit.price_euros)}</div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 items-end">
-                        <div>
-                          <Label>Precio (€)</Label>
-                          <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handlePackageChange(g.key, 'price_euros', parseFloat(e.target.value || '0'))} />
-                        </div>
-                        <div>
-                          <Label>Sesiones</Label>
-                          <Input type="number" min="1" value={edit.sessions_count} onChange={(e) => handlePackageChange(g.key, 'sessions_count', parseInt(e.target.value || '1'))} />
-                        </div>
-                        <div>
-                          <Label>Estado</Label>
-                          <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(g.key, 'active', v === 'true')}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent className="z-50 bg-background">
-                              <SelectItem value="true">Activo</SelectItem>
-                              <SelectItem value="false">Inactivo</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex justify-end">
-                          <Button size="sm" onClick={() => savePackage(g.key, g.ids)}>Guardar</Button>
-                        </div>
-                      </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <Label htmlFor="package-name">Nombre del Bono *</Label>
+                      <Input
+                        id="package-name"
+                        placeholder="Ej: Bono 5 Masajes"
+                      />
                     </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
+                    <div>
+                      <Label htmlFor="package-service">Servicio</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar servicio" />
+                        </SelectTrigger>
+                        <SelectContent className="z-50 bg-background">
+                          <SelectItem value="all">Todos los servicios</SelectItem>
+                          {services.map((service: any) => (
+                            <SelectItem key={service.id} value={service.id}>
+                              {service.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="package-sessions">Sesiones *</Label>
+                      <Input
+                        id="package-sessions"
+                        type="number"
+                        min="1"
+                        placeholder="5"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="package-price">Precio (€) *</Label>
+                      <Input
+                        id="package-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="150.00"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="package-center">Centro</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos los centros" />
+                        </SelectTrigger>
+                        <SelectContent className="z-50 bg-background">
+                          <SelectItem value="all">Todos los centros</SelectItem>
+                          {centers.map((center) => (
+                            <SelectItem key={center.id} value={center.id}>
+                              {center.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="package-discount">Descuento (%)</Label>
+                      <Input
+                        id="package-discount"
+                        type="number"
+                        min="0"
+                        max="100"
+                        placeholder="10"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="package-description">Descripción</Label>
+                      <Input
+                        id="package-description"
+                        placeholder="Descripción opcional del bono..."
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end mt-4">
+                    <Button onClick={() => {
+                      // Aquí iría la lógica para crear el bono
+                      toast({ title: 'Funcionalidad pendiente', description: 'Crear bono estará disponible próximamente' });
+                    }} className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Crear Bono
+                    </Button>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Bonos existentes */}
+              <AccordionItem value="manage-packages" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-lg font-semibold">Gestionar Bonos Existentes</span>
+                    <span className="text-sm text-muted-foreground mr-4">{uniquePackages.length} bonos</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {uniquePackages.map((g) => {
+                      const edit = packageEdits[g.key] || { price_euros: g.price_euros, sessions_count: g.sessions_count, active: g.allActive };
+                      return (
+                        <div key={g.key} className="border rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <div className="font-medium">{g.name}</div>
+                              <div className="text-xs text-muted-foreground">{g.service_name ? `Servicio: ${g.service_name} · ` : ''}{edit.sessions_count} sesiones</div>
+                            </div>
+                            <div className="text-sm font-semibold">{currency(edit.price_euros)}</div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 items-end">
+                            <div>
+                              <Label>Precio (€)</Label>
+                              <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handlePackageChange(g.key, 'price_euros', parseFloat(e.target.value || '0'))} />
+                            </div>
+                            <div>
+                              <Label>Sesiones</Label>
+                              <Input type="number" min="1" value={edit.sessions_count} onChange={(e) => handlePackageChange(g.key, 'sessions_count', parseInt(e.target.value || '1'))} />
+                            </div>
+                            <div>
+                              <Label>Estado</Label>
+                              <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(g.key, 'active', v === 'true')}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent className="z-50 bg-background">
+                                  <SelectItem value="true">Activo</SelectItem>
+                                  <SelectItem value="false">Inactivo</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex justify-end">
+                              <Button size="sm" onClick={() => savePackage(g.key, g.ids)}>Guardar</Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </TabsContent>
 
           <TabsContent value="giftcards" className="mt-6 space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between gap-2">
-                <CardTitle>Tarjetas regalo - opciones disponibles</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="ghost" onClick={seedCatalogGiftOptions}>Añadir faltantes</Button>
-                  {giftOptions.length === 0 && (
-                    giftDenoms.length > 0 ? (
-                      <Button size="sm" onClick={seedCatalogGiftOptions}>Importar catálogo</Button>
-                    ) : null
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {giftOptions.map((opt) => {
-                  const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active };
-                  return (
-                    <div key={opt.id} className="border rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="font-medium">{opt.name}</div>
-                        <div className="text-sm font-semibold">{currency(edit.amount_euros)}</div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 items-end">
-                        <div>
-                          <Label>Importe (€)</Label>
-                          <Input type="number" step="0.01" value={edit.amount_euros} onChange={(e) => handleGiftChange(opt.id, 'amount_euros', parseFloat(e.target.value || '0'))} />
-                        </div>
-                        <div>
-                          <Label>Estado</Label>
-                          <Select value={String(edit.active)} onValueChange={(v) => handleGiftChange(opt.id, 'active', v === 'true')}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent className="z-50 bg-background">
-                              <SelectItem value="true">Activo</SelectItem>
-                              <SelectItem value="false">Inactivo</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex justify-end">
-                          <Button size="sm" onClick={() => saveGiftOption(opt.id)}>Guardar</Button>
-                        </div>
-                        <div className="flex justify-end">
-                          <Button size="sm" variant="destructive" onClick={() => deleteGiftOption(opt.id)}>Eliminar</Button>
-                        </div>
-                      </div>
+            <Accordion type="multiple" className="space-y-4">
+              {/* Crear nuevas opciones de tarjetas regalo */}
+              <AccordionItem value="create-giftcard" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-5 w-5" />
+                      <span className="text-lg font-semibold">Crear Nueva Opción de Tarjeta Regalo</span>
                     </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
+                    <div className="flex items-center gap-2 mr-4">
+                      <Button size="sm" variant="ghost" onClick={seedCatalogGiftOptions}>Añadir faltantes</Button>
+                      {giftOptions.length === 0 && (
+                        giftDenoms.length > 0 ? (
+                          <Button size="sm" onClick={seedCatalogGiftOptions}>Importar catálogo</Button>
+                        ) : null
+                      )}
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="giftcard-name">Nombre *</Label>
+                      <Input
+                        id="giftcard-name"
+                        placeholder="Ej: Tarjeta 50€"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="giftcard-amount">Importe (€) *</Label>
+                      <Input
+                        id="giftcard-amount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="50.00"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="giftcard-status">Estado</Label>
+                      <Select defaultValue="true">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="z-50 bg-background">
+                          <SelectItem value="true">Activo</SelectItem>
+                          <SelectItem value="false">Inactivo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end mt-4">
+                    <Button onClick={() => {
+                      // Aquí iría la lógica para crear la tarjeta regalo
+                      toast({ title: 'Funcionalidad pendiente', description: 'Crear tarjeta regalo estará disponible próximamente' });
+                    }} className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Crear Opción
+                    </Button>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Gestionar tarjetas regalo existentes */}
+              <AccordionItem value="manage-giftcards" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-lg font-semibold">Gestionar Tarjetas Regalo Existentes</span>
+                    <span className="text-sm text-muted-foreground mr-4">{giftOptions.length} opciones</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {giftOptions.map((opt) => {
+                      const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active };
+                      return (
+                        <div key={opt.id} className="border rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-medium">{opt.name}</div>
+                            <div className="text-sm font-semibold">{currency(edit.amount_euros)}</div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 items-end">
+                            <div>
+                              <Label>Importe (€)</Label>
+                              <Input type="number" step="0.01" value={edit.amount_euros} onChange={(e) => handleGiftChange(opt.id, 'amount_euros', parseFloat(e.target.value || '0'))} />
+                            </div>
+                            <div>
+                              <Label>Estado</Label>
+                              <Select value={String(edit.active)} onValueChange={(v) => handleGiftChange(opt.id, 'active', v === 'true')}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent className="z-50 bg-background">
+                                  <SelectItem value="true">Activo</SelectItem>
+                                  <SelectItem value="false">Inactivo</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex justify-end">
+                              <Button size="sm" onClick={() => saveGiftOption(opt.id)}>Guardar</Button>
+                            </div>
+                            <div className="flex justify-end">
+                              <Button size="sm" variant="destructive" onClick={() => deleteGiftOption(opt.id)}>Eliminar</Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </TabsContent>
 
           <TabsContent value="promotions" className="mt-6">
