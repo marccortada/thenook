@@ -10,16 +10,6 @@ import { Brain, TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, Zap, 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface RealTimeMetric {
-  id: string;
-  metric_name: string;
-  metric_value: number;
-  metric_type: string;
-  period_type: string;
-  period_start: string;
-  period_end: string;
-  calculated_at: string;
-}
 
 const IntelligentAnalytics = () => {
   const { 
@@ -37,186 +27,12 @@ const IntelligentAnalytics = () => {
     loadAnalytics
   } = useAdvancedAnalytics();
 
-  // Real-time metrics state
-  const [realTimeMetrics, setRealTimeMetrics] = useState<RealTimeMetric[]>([]);
-  const [selectedPeriod, setSelectedPeriod] = useState('daily');
-  const [metricsLoading, setMetricsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     loadAnalysisStats();
-    fetchRealTimeMetrics();
   }, []);
 
-  const fetchRealTimeMetrics = async () => {
-    try {
-      setMetricsLoading(true);
-      const { data, error } = await supabase
-        .from('real_time_metrics')
-        .select('*')
-        .eq('period_type', selectedPeriod)
-        .order('calculated_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      
-      setRealTimeMetrics(data || []);
-    } catch (error) {
-      console.error('Error fetching metrics:', error);
-    } finally {
-      setMetricsLoading(false);
-    }
-  };
-
-  const calculateRealTimeMetrics = async () => {
-    try {
-      setMetricsLoading(true);
-      
-      const currentDay = new Date().toISOString().split('T')[0];
-      
-      // Get all data in parallel with proper error handling
-      const [
-        { data: dailyBookings, error: bookingsError },
-        { data: paidBookings, error: paidError },
-        { data: newClients, error: clientsError }
-      ] = await Promise.all([
-        supabase
-          .from('bookings')
-          .select('*')
-          .gte('booking_datetime', `${currentDay}T00:00:00`)
-          .lt('booking_datetime', `${currentDay}T23:59:59`),
-        supabase
-          .from('bookings')
-          .select('total_price_cents')
-          .eq('payment_status', 'paid')
-          .gte('booking_datetime', `${currentDay}T00:00:00`)
-          .lt('booking_datetime', `${currentDay}T23:59:59`),
-        supabase
-          .from('profiles')
-          .select('id')
-          .eq('role', 'client')
-          .gte('created_at', `${currentDay}T00:00:00`)
-          .lt('created_at', `${currentDay}T23:59:59`)
-      ]);
-      
-      // Check for errors
-      if (bookingsError) throw bookingsError;
-      if (paidError) throw paidError;
-      if (clientsError) throw clientsError;
-      
-      const dailyBookingsCount = dailyBookings?.length || 0;
-      const dailyRevenue = paidBookings?.reduce((sum, b) => sum + (b.total_price_cents / 100), 0) || 0;
-      const newClientsCount = newClients?.length || 0;
-      const confirmedBookings = dailyBookings?.filter(b => b.status === 'confirmed').length || 0;
-      const occupancyRate = dailyBookingsCount > 0 ? (confirmedBookings * 100) / dailyBookingsCount : 0;
-
-      // Create metrics data
-      const metricsData = [
-        {
-          metric_name: 'daily_bookings',
-          metric_value: dailyBookingsCount,
-          metric_type: 'count',
-          period_type: selectedPeriod,
-          period_start: `${currentDay}T00:00:00`,
-          period_end: `${currentDay}T23:59:59`
-        },
-        {
-          metric_name: 'daily_revenue',
-          metric_value: dailyRevenue,
-          metric_type: 'currency',
-          period_type: selectedPeriod,
-          period_start: `${currentDay}T00:00:00`,
-          period_end: `${currentDay}T23:59:59`
-        },
-        {
-          metric_name: 'daily_new_clients',
-          metric_value: newClientsCount,
-          metric_type: 'count',
-          period_type: selectedPeriod,
-          period_start: `${currentDay}T00:00:00`,
-          period_end: `${currentDay}T23:59:59`
-        },
-        {
-          metric_name: 'daily_occupancy_rate',
-          metric_value: occupancyRate,
-          metric_type: 'percentage',
-          period_type: selectedPeriod,
-          period_start: `${currentDay}T00:00:00`,
-          period_end: `${currentDay}T23:59:59`
-        }
-      ];
-
-      // Insert metrics one by one with proper error handling
-      for (const metric of metricsData) {
-        const { error } = await supabase
-          .from('real_time_metrics')
-          .upsert(metric, {
-            onConflict: 'metric_name,period_type,period_start'
-          });
-        
-        if (error) {
-          console.error('Error inserting metric:', metric.metric_name, error);
-        }
-      }
-      
-      toast({
-        title: "Métricas actualizadas",
-        description: "Las métricas han sido calculadas correctamente",
-      });
-      
-      await fetchRealTimeMetrics();
-    } catch (error) {
-      console.error('Error calculating metrics:', error);
-      toast({
-        title: "Error",
-        description: "Error en el cálculo de métricas: " + (error as any)?.message,
-        variant: "destructive",
-      });
-    } finally {
-      setMetricsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRealTimeMetrics();
-  }, [selectedPeriod]);
-
-  const getMetricIcon = (metricName: string) => {
-    switch (metricName) {
-      case 'daily_bookings': return Calendar;
-      case 'daily_revenue': return Euro;
-      case 'daily_new_clients': return Users;
-      case 'daily_occupancy_rate': return Activity;
-      default: return BarChart3;
-    }
-  };
-
-  const getMetricTitle = (metricName: string) => {
-    switch (metricName) {
-      case 'daily_bookings': return 'Reservas Diarias';
-      case 'daily_revenue': return 'Ingresos Diarios';
-      case 'daily_new_clients': return 'Nuevos Clientes';
-      case 'daily_occupancy_rate': return 'Tasa de Ocupación';
-      default: return metricName.replace(/_/g, ' ');
-    }
-  };
-
-  const formatMetricValue = (metric: RealTimeMetric) => {
-    switch (metric.metric_type) {
-      case 'currency': return `€${metric.metric_value.toFixed(2)}`;
-      case 'percentage': return `${metric.metric_value.toFixed(1)}%`;
-      case 'count': return Math.round(metric.metric_value).toString();
-      default: return metric.metric_value.toString();
-    }
-  };
-
-  // Group metrics by name to get latest value
-  const latestMetrics = realTimeMetrics.reduce((acc, metric) => {
-    if (!acc[metric.metric_name] || new Date(metric.calculated_at) > new Date(acc[metric.metric_name].calculated_at)) {
-      acc[metric.metric_name] = metric;
-    }
-    return acc;
-  }, {} as Record<string, RealTimeMetric>);
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
@@ -244,108 +60,14 @@ const IntelligentAnalytics = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="h-5 w-5" />
-            Analytics Completo - IA y Métricas
+            Analíticas Inteligentes
           </CardTitle>
           <CardDescription>
-            Análisis inteligente, métricas en tiempo real y analytics avanzados
+            Análisis avanzado con IA y predicciones
           </CardDescription>
         </CardHeader>
       </Card>
 
-      {/* Métricas en Tiempo Real */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Métricas en Tiempo Real
-          </CardTitle>
-          <CardDescription>
-            Indicadores de rendimiento actualizados
-          </CardDescription>
-          <div className="flex items-center gap-2">
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="daily">Diario</SelectItem>
-                <SelectItem value="weekly">Semanal</SelectItem>
-                <SelectItem value="monthly">Mensual</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={calculateRealTimeMetrics}
-              disabled={metricsLoading}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              {metricsLoading ? 'Calculando...' : 'Calcular'}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Real-time Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Object.values(latestMetrics).map((metric) => {
-              const Icon = getMetricIcon(metric.metric_name);
-              const trend = Math.random() > 0.5 ? 'up' : 'down';
-              const percentage = Math.floor(Math.random() * 20) + 1;
-              
-              return (
-                <Card key={metric.id} className="relative overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium flex items-center justify-between">
-                      <span>{getMetricTitle(metric.metric_name)}</span>
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-bold">
-                        {formatMetricValue(metric)}
-                      </span>
-                      <div className={`flex items-center gap-1 text-xs ${
-                        trend === 'up' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {trend === 'up' ? (
-                          <TrendingUp className="h-3 w-3" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3" />
-                        )}
-                        {percentage}%
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {selectedPeriod === 'daily' && 'Hoy'}
-                      {selectedPeriod === 'weekly' && 'Esta semana'}
-                      {selectedPeriod === 'monthly' && 'Este mes'}
-                    </p>
-                  </CardContent>
-                  
-                  <div className={`absolute bottom-0 left-0 h-1 w-full ${
-                    trend === 'up' ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
-                </Card>
-              );
-            })}
-          </div>
-
-          {Object.keys(latestMetrics).length === 0 && (
-            <div className="text-center py-8">
-              <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No hay métricas disponibles</h3>
-              <p className="text-muted-foreground mb-4">
-                Haz clic en "Calcular" para generar métricas en tiempo real.
-              </p>
-              <Button onClick={calculateRealTimeMetrics} disabled={metricsLoading}>
-                {metricsLoading ? 'Calculando...' : 'Calcular Métricas'}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Analytics Avanzados */}
       <Card>

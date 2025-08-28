@@ -12,7 +12,6 @@ import SpecialistClients from "@/components/SpecialistClients";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
 
 import HappyHourManagement from "@/components/HappyHourManagement";
-import RealTimeMetrics from "@/components/RealTimeMetrics";
 
 import AdvancedDashboard from "@/components/AdvancedDashboard";
 import ReportsCenter from "@/components/ReportsCenter";
@@ -200,31 +199,17 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <TrendingUp className="h-5 w-5" />
-                      <span>Métricas en Tiempo Real</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <RealTimeMetrics />
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Activity className="h-5 w-5" />
-                      <span>Dashboard Unificado</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <UnifiedDashboard />
-                  </CardContent>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Activity className="h-5 w-5" />
+                    <span>Dashboard Unificado</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <UnifiedDashboard />
+                </CardContent>
+              </Card>
               
               <Card>
                 <CardHeader>
