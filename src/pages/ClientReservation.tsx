@@ -207,18 +207,12 @@ const ClientReservation = () => {
       };
 
       const newBooking = await createBooking(bookingData);
+      console.log('Booking successfully created:', newBooking);
 
-      // Disparar el envío del email con enlace para añadir tarjeta
-      try {
-        await supabase.functions.invoke('send-booking-with-payment', { body: {} });
-      } catch (err) {
-        console.warn('No se pudo iniciar el envío del correo de pago:', err);
-      }
-
-      toast({
-        title: "✅ Reserva Creada",
-        description: `Reserva para ${formData.clientName} creada. Te enviaremos un email para asegurarla con tarjeta. ID: ${newBooking?.id}`,
-      });
+      // Redirigir INMEDIATAMENTE para asegurar la reserva con Stripe
+      console.log('🔀 Redirigiendo a asegurar reserva:', newBooking.id);
+      window.location.href = `/asegurar-reserva?booking_id=${newBooking.id}`;
+      return;
 
       // Reset form
       setFormData({
