@@ -419,28 +419,6 @@ const ClientReservation = () => {
                    />
                  </div>
                  
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                   <div>
-                     <Label htmlFor="purchased_by_name" className="text-sm">Comprado por (nombre)</Label>
-                     <Input
-                       id="purchased_by_name"
-                       name="purchased_by_name"
-                       className="mt-1"
-                       placeholder="Nombre del comprador"
-                     />
-                   </div>
-                   
-                   <div>
-                     <Label htmlFor="purchased_by_email" className="text-sm">Email del comprador</Label>
-                     <Input
-                       id="purchased_by_email"
-                       name="purchased_by_email"
-                       type="email"
-                       className="mt-1"
-                       placeholder="email@ejemplo.com"
-                     />
-                   </div>
-                 </div>
               </div>
 
               {/* Existing Bookings */}
