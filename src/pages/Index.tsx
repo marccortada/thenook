@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Bell, Brain, Package, Settings, Activity } from "lucide-react";
+import MobileOptimizer from "@/components/MobileOptimizer";
 
 import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";

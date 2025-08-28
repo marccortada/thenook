@@ -296,26 +296,26 @@ const ReservationSystem = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-2 sm:px-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <Card className="w-full">
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
             <CalendarDays className="h-5 w-5" />
             <span>Nueva Reserva</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Client Information - Only show if user is not authenticated */}
             {!isAuthenticated && (
               <div className="space-y-4">
-                <h3 className="font-medium flex items-center space-x-2">
+                <h3 className="font-medium flex items-center space-x-2 text-base sm:text-lg">
                   <User className="h-4 w-4" />
                   <span>Información del Cliente</span>
                 </h3>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="clientName">Nombre Completo *</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="clientName" className="text-sm font-medium">Nombre Completo *</Label>
                     <Input
                       id="clientName"
                       value={formData.clientName}

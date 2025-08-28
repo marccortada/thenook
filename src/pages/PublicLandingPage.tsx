@@ -39,27 +39,27 @@ export default function PublicLandingPage() {
         </div>
       </header>
 
-      {/* Main Widgets */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      {/* Main Widgets - Mobile Optimized */}
+      <section className="container mx-auto px-4 py-8 sm:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto">
           {/* Reservar Cita */}
           <Card className="hover-lift glass-effect border-primary/20 shadow-lg">
-            <CardHeader className="text-center">
-              <CardTitle className="flex items-center justify-center gap-2 text-xl">
-                <Calendar className="h-6 w-6 text-primary" />
-                {t('book_appointment')}
+            <CardHeader className="text-center p-4 sm:p-6">
+              <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                <span className="text-sm sm:text-base">{t('book_appointment')}</span>
               </CardTitle>
-              <CardDescription className="text-center">
+              <CardDescription className="text-center text-sm">
                 {t('book_description')}
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center">
+            <CardContent className="text-center p-4 sm:p-6 pt-0">
               <Button 
                 size="lg" 
-                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground"
+                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground text-sm sm:text-base py-3"
                 onClick={() => navigate('/client-reservation')}
               >
-                <Calendar className="mr-2 h-5 w-5" />
+                <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 {t('book_now')}
               </Button>
             </CardContent>
@@ -67,36 +67,36 @@ export default function PublicLandingPage() {
 
           {/* Bonos */}
           <Card className="hover-lift glass-effect border-primary/20 shadow-lg">
-            <CardHeader className="text-center">
-              <CardTitle className="flex items-center justify-center gap-2 text-xl">
-                <Gift className="h-6 w-6 text-primary" />
-                {t('vouchers')}
+            <CardHeader className="text-center p-4 sm:p-6">
+              <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
+                <Gift className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                <span className="text-sm sm:text-base">{t('vouchers')}</span>
               </CardTitle>
-              <CardDescription className="text-center">
+              <CardDescription className="text-center text-sm">
                 {t('vouchers_description')}
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center">
+            <CardContent className="text-center p-4 sm:p-6 pt-0">
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="w-full"
+                className="w-full text-sm sm:text-base py-3"
                 onClick={() => navigate('/packages')}
               >
-                <Gift className="mr-2 h-5 w-5" />
+                <Gift className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 {t('buy_voucher')}
               </Button>
             </CardContent>
           </Card>
 
           {/* Tarjetas de Regalo */}
-          <Card className="hover-lift glass-effect border-primary/20 shadow-lg">
-            <CardHeader className="text-center">
-              <CardTitle className="flex items-center justify-center gap-2 text-xl">
-                <Star className="h-6 w-6 text-primary" />
-                {t('gift_cards')}
+          <Card className="hover-lift glass-effect border-primary/20 shadow-lg sm:col-span-2 lg:col-span-1">
+            <CardHeader className="text-center p-4 sm:p-6">
+              <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
+                <Star className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                <span className="text-sm sm:text-base">{t('gift_cards')}</span>
               </CardTitle>
-              <CardDescription className="text-center">
+              <CardDescription className="text-center text-sm">
                 {t('gift_description')}
               </CardDescription>
             </CardHeader>
