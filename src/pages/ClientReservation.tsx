@@ -208,9 +208,16 @@ const ClientReservation = () => {
 
       const newBooking = await createBooking(bookingData);
 
+      // Disparar el envío del email con enlace para añadir tarjeta
+      try {
+        await supabase.functions.invoke('send-booking-with-payment', { body: {} });
+      } catch (err) {
+        console.warn('No se pudo iniciar el envío del correo de pago:', err);
+      }
+
       toast({
         title: "✅ Reserva Creada",
-        description: `Reserva para ${formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
+        description: `Reserva para ${formData.clientName} creada. Te enviaremos un email para asegurarla con tarjeta. ID: ${newBooking?.id}`,
       });
 
       // Reset form
