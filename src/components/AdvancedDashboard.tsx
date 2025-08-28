@@ -27,7 +27,7 @@ import { PeriodComparisonChart } from "@/components/PeriodComparisonChart";
 import PeriodCalendarModal from "@/components/PeriodCalendarModal";
 import { cn } from "@/lib/utils";
 
-type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year';
+type PeriodType = 'today' | 'yesterday' | 'week' | 'lastWeek' | 'month' | 'lastMonth' | 'quarter' | 'lastQuarter' | 'year' | 'lastYear';
 
 const AdvancedDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
@@ -70,6 +70,22 @@ const AdvancedDashboard = () => {
 
     return () => clearInterval(interval);
   }, [autoRefresh, selectedPeriod, loadAnalytics]);
+
+  const getPeriodLabel = (period: PeriodType) => {
+    switch (period) {
+      case 'today': return 'Hoy';
+      case 'yesterday': return 'Ayer';
+      case 'week': return 'Esta Semana';
+      case 'lastWeek': return 'Semana Anterior';
+      case 'month': return 'Este Mes';
+      case 'lastMonth': return 'Mes Anterior';
+      case 'quarter': return 'Este Trimestre';
+      case 'lastQuarter': return 'Trimestre Anterior';
+      case 'year': return 'Este Año';
+      case 'lastYear': return 'Año Anterior';
+      default: return period;
+    }
+  };
 
   const formatCurrency = (amount: number) => `€${amount.toFixed(2)}`;
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
@@ -190,15 +206,20 @@ const AdvancedDashboard = () => {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <div className="flex gap-2">
             <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-              <SelectTrigger className="w-full sm:w-32">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="today">Hoy</SelectItem>
-                <SelectItem value="week">Semana</SelectItem>
-                <SelectItem value="month">Mes</SelectItem>
+                <SelectItem value="yesterday">Ayer</SelectItem>
+                <SelectItem value="week">Esta Semana</SelectItem>
+                <SelectItem value="lastWeek">Semana Anterior</SelectItem>
+                <SelectItem value="month">Este Mes</SelectItem>
+                <SelectItem value="lastMonth">Mes Anterior</SelectItem>
                 <SelectItem value="quarter">Trimestre</SelectItem>
-                <SelectItem value="year">Año</SelectItem>
+                <SelectItem value="lastQuarter">Trimestre Anterior</SelectItem>
+                <SelectItem value="year">Este Año</SelectItem>
+                <SelectItem value="lastYear">Año Anterior</SelectItem>
               </SelectContent>
             </Select>
             
@@ -342,11 +363,11 @@ const AdvancedDashboard = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="today">Día anterior</SelectItem>
-                  <SelectItem value="week">Semana anterior</SelectItem>
-                  <SelectItem value="month">Mes anterior</SelectItem>
-                  <SelectItem value="quarter">Trimestre anterior</SelectItem>
-                  <SelectItem value="year">Año anterior</SelectItem>
+                  <SelectItem value="yesterday">Ayer</SelectItem>
+                  <SelectItem value="lastWeek">Semana anterior</SelectItem>
+                  <SelectItem value="lastMonth">Mes anterior</SelectItem>
+                  <SelectItem value="lastQuarter">Trimestre anterior</SelectItem>
+                  <SelectItem value="lastYear">Año anterior</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -375,14 +396,8 @@ const AdvancedDashboard = () => {
                 <PeriodComparisonChart
                   title="Comparación de Períodos"
                   periodLabel={{
-                    current: `${selectedPeriod === 'today' ? 'Hoy' : 
-                             selectedPeriod === 'week' ? 'Esta semana' :
-                             selectedPeriod === 'month' ? 'Este mes' :
-                             selectedPeriod === 'quarter' ? 'Este trimestre' : 'Este año'}`,
-                    previous: `${selectedPeriod === 'today' ? 'Ayer' : 
-                              selectedPeriod === 'week' ? 'Semana anterior' :
-                              selectedPeriod === 'month' ? 'Mes anterior' :
-                              selectedPeriod === 'quarter' ? 'Trimestre anterior' : 'Año anterior'}`
+                    current: getPeriodLabel(selectedPeriod),
+                    previous: getPeriodLabel(comparisonPeriod)
                   }}
                   data={[
                     {

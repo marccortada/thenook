@@ -64,7 +64,7 @@ export interface CenterMetrics {
   therapistCount: number;
 }
 
-type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year';
+type PeriodType = 'today' | 'yesterday' | 'week' | 'lastWeek' | 'month' | 'lastMonth' | 'quarter' | 'lastQuarter' | 'year' | 'lastYear';
 
 export const useAdvancedAnalytics = () => {
   const [kpiMetrics, setKpiMetrics] = useState<KPIMetrics | null>(null);
@@ -86,6 +86,13 @@ export const useAdvancedAnalytics = () => {
           start: startOfToday,
           end: new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000 - 1)
         };
+      case 'yesterday':
+        const yesterday = new Date(startOfToday);
+        yesterday.setDate(yesterday.getDate() - 1);
+        return {
+          start: yesterday,
+          end: new Date(yesterday.getTime() + 24 * 60 * 60 * 1000 - 1)
+        };
       case 'week':
         const startOfWeek = new Date(startOfToday);
         startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
@@ -93,10 +100,22 @@ export const useAdvancedAnalytics = () => {
           start: startOfWeek,
           end: new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000 - 1)
         };
+      case 'lastWeek':
+        const lastWeekStart = new Date(startOfToday);
+        lastWeekStart.setDate(startOfToday.getDate() - startOfToday.getDay() - 7);
+        return {
+          start: lastWeekStart,
+          end: new Date(lastWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000 - 1)
+        };
       case 'month':
         return {
           start: new Date(now.getFullYear(), now.getMonth(), 1),
           end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+        };
+      case 'lastMonth':
+        return {
+          start: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+          end: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
         };
       case 'quarter':
         const quarter = Math.floor(now.getMonth() / 3);
@@ -104,10 +123,23 @@ export const useAdvancedAnalytics = () => {
           start: new Date(now.getFullYear(), quarter * 3, 1),
           end: new Date(now.getFullYear(), quarter * 3 + 3, 0, 23, 59, 59)
         };
+      case 'lastQuarter':
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        const lastQuarter = currentQuarter === 0 ? 3 : currentQuarter - 1;
+        const lastQuarterYear = currentQuarter === 0 ? now.getFullYear() - 1 : now.getFullYear();
+        return {
+          start: new Date(lastQuarterYear, lastQuarter * 3, 1),
+          end: new Date(lastQuarterYear, lastQuarter * 3 + 3, 0, 23, 59, 59)
+        };
       case 'year':
         return {
           start: new Date(now.getFullYear(), 0, 1),
           end: new Date(now.getFullYear(), 11, 31, 23, 59, 59)
+        };
+      case 'lastYear':
+        return {
+          start: new Date(now.getFullYear() - 1, 0, 1),
+          end: new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59)
         };
       default:
         return { start: startOfToday, end: now };
@@ -159,16 +191,31 @@ export const useAdvancedAnalytics = () => {
 
   const calculateKPIMetrics = async (startDate: Date, endDate: Date): Promise<KPIMetrics> => {
     try {
-      // Obtener reservas del período
-      const { data: bookings } = await supabase
+      console.log('Fetching bookings for period:', startDate.toISOString(), 'to', endDate.toISOString());
+      
+      // Obtener reservas del período con mejor query
+      const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
-          *,
+          id,
+          client_id,
+          total_price_cents,
+          status,
+          booking_datetime,
+          created_at,
           profiles!inner(id, email, created_at),
-          services!inner(name, price_cents, type)
+          services(name, price_cents, type)
         `)
         .gte('booking_datetime', startDate.toISOString())
         .lte('booking_datetime', endDate.toISOString());
+
+      
+      if (bookingsError) {
+        console.error('Error fetching bookings:', bookingsError);
+        throw bookingsError;
+      }
+
+      console.log('Fetched bookings:', bookings?.length || 0);
 
       const totalBookings = bookings?.length || 0;
       const totalRevenue = bookings?.reduce((sum, booking) => 
@@ -176,29 +223,31 @@ export const useAdvancedAnalytics = () => {
       
       const averageTicket = totalBookings > 0 ? totalRevenue / totalBookings : 0;
       
-      // Calcular nuevos vs recurrentes
-      const clientEmails = Array.from(new Set(bookings?.map(b => b.profiles.email) || []));
-      const newClients = await Promise.all(
-        clientEmails.map(async (email) => {
-          const { data: previousBookings } = await supabase
-            .from('bookings')
-            .select('id')
-            .eq('client_id', bookings?.find(b => b.profiles.email === email)?.client_id)
-            .lt('booking_datetime', startDate.toISOString())
-            .limit(1);
-          
-          return previousBookings?.length === 0;
-        })
-      );
+      // Calcular nuevos vs recurrentes - mejorado
+      const uniqueClientIds = Array.from(new Set(bookings?.map(b => b.client_id) || []));
+      
+      let newClientCount = 0;
+      for (const clientId of uniqueClientIds) {
+        if (!clientId) continue;
+        
+        const { data: previousBookings } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('client_id', clientId)
+          .lt('booking_datetime', startDate.toISOString())
+          .limit(1);
+        
+        if (!previousBookings || previousBookings.length === 0) {
+          newClientCount++;
+        }
+      }
 
-      const newClientCount = newClients.filter(Boolean).length;
-      const recurringClients = clientEmails.length - newClientCount;
+      
+      const recurringClients = uniqueClientIds.length - newClientCount;
 
-      // Calcular tasas
+      // Calcular tasas - mejorado
       const confirmedBookings = bookings?.filter(b => 
         b.status === 'confirmed' || b.status === 'completed') || [];
-      const cancelledBookings = bookings?.filter(b => 
-        b.status === 'cancelled' || b.status === 'no_show') || [];
       const noShowBookings = bookings?.filter(b => b.status === 'no_show') || [];
 
       const conversionRate = totalBookings > 0 ? 
@@ -208,16 +257,17 @@ export const useAdvancedAnalytics = () => {
       const noShowRate = totalBookings > 0 ? 
         (noShowBookings.length / totalBookings) * 100 : 0;
 
-      // Calcular ocupación (simplificado)
-      const { data: totalSlots } = await supabase
+      // Calcular ocupación usando slots reales
+      const { data: lanes } = await supabase
         .from('lanes')
-        .select('id, center_id');
+        .select('id, center_id')
+        .eq('active', true);
       
       const workingHours = 10; // 10 horas por día promedio
-      const daysInPeriod = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      const totalPossibleSlots = (totalSlots?.length || 1) * workingHours * daysInPeriod;
+      const daysInPeriod = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+      const totalPossibleSlots = (lanes?.length || 1) * workingHours * daysInPeriod;
       const occupancyRate = totalPossibleSlots > 0 ? 
-        (totalBookings / totalPossibleSlots) * 100 : 0;
+        Math.min(100, (totalBookings / totalPossibleSlots) * 100) : 0;
 
       // Revenue per therapist
       const { data: therapists } = await supabase
@@ -225,10 +275,10 @@ export const useAdvancedAnalytics = () => {
         .select('id')
         .eq('active', true);
       
-      const revenuePerTherapist = (therapists?.length || 1) > 0 ? 
-        totalRevenue / (therapists?.length || 1) : 0;
+      const therapistCount = therapists?.length || 1;
+      const revenuePerTherapist = therapistCount > 0 ? totalRevenue / therapistCount : 0;
 
-      return {
+      const result = {
         totalBookings,
         totalRevenue,
         averageTicket,
@@ -240,6 +290,9 @@ export const useAdvancedAnalytics = () => {
         occupancyRate,
         revenuePerTherapist
       };
+
+      console.log('Calculated KPI metrics:', result);
+      return result;
     } catch (error) {
       console.error('Error calculating KPI metrics:', error);
       return {
