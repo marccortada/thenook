@@ -542,14 +542,14 @@ const ClientReservation = () => {
                  </div>
                )}
 
-                {/* Date & Time - FIXED POSITIONING */}
-                <div className="space-y-3 sm:space-y-4 sticky top-20 z-40 bg-background/95 backdrop-blur-sm p-4 rounded-lg border border-primary/20 shadow-lg">
-                  <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                    <Clock className="h-4 w-4" />
-                    <span>Fecha y Hora</span>
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                 {/* Date & Time */}
+                 <div className="space-y-3 sm:space-y-4 p-4 rounded-lg border border-primary/20 bg-card">
+                   <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                     <Clock className="h-4 w-4" />
+                     <span>Fecha y Hora</span>
+                   </h3>
+                   
+                   <div className="grid grid-cols-1 gap-3 sm:gap-4">
                      <div className="relative">
                        <Label htmlFor="date" className="text-sm">Fecha *</Label>
                        <Popover open={showCalendar} onOpenChange={setShowCalendar}>
@@ -565,15 +565,15 @@ const ClientReservation = () => {
                              {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                            </Button>
                          </PopoverTrigger>
-                          <PopoverContent 
-                            className="w-auto p-0 z-[70] bg-popover border border-border shadow-lg"
-                            align="start"
-                            side="bottom"
-                            sideOffset={4}
-                            alignOffset={0}
-                            avoidCollisions={false}
-                            onInteractOutside={() => setShowCalendar(false)}
-                          >
+                           <PopoverContent 
+                             className="w-auto p-0 z-50 bg-popover border border-border shadow-lg"
+                             align="start"
+                             side="bottom"
+                             sideOffset={4}
+                             alignOffset={0}
+                             avoidCollisions={true}
+                             onInteractOutside={() => setShowCalendar(false)}
+                           >
                            <Calendar
                              mode="single"
                              selected={formData.date}
@@ -604,15 +604,15 @@ const ClientReservation = () => {
                               {formData.time || "Selecciona una hora"}
                             </Button>
                           </PopoverTrigger>
-                           <PopoverContent 
-                             className="w-full p-0 z-[70] bg-popover border border-border shadow-lg max-h-60 overflow-y-auto"
-                             align="start"
-                             side="bottom"
-                             sideOffset={4}
-                             alignOffset={0}
-                             avoidCollisions={false}
-                             onInteractOutside={() => setShowTimeDropdown(false)}
-                           >
+                            <PopoverContent 
+                              className="w-full p-0 z-50 bg-popover border border-border shadow-lg max-h-60 overflow-y-auto"
+                              align="start"
+                              side="bottom"
+                              sideOffset={4}
+                              alignOffset={0}
+                              avoidCollisions={true}
+                              onInteractOutside={() => setShowTimeDropdown(false)}
+                            >
                             <div className="p-1">
                               {timeSlots.map((time) => (
                                 <button
