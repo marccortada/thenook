@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gift, Calendar, Star, MapPin, Phone, Mail } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
 export default function PublicLandingPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
@@ -43,11 +44,13 @@ export default function PublicLandingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <Button size="lg" className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground" asChild>
-                <Link to="/client-reservation">
-                  <Calendar className="mr-2 h-5 w-5" />
-                  {t('book_now')}
-                </Link>
+              <Button 
+                size="lg" 
+                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground"
+                onClick={() => navigate('/client-reservation')}
+              >
+                <Calendar className="mr-2 h-5 w-5" />
+                {t('book_now')}
               </Button>
             </CardContent>
           </Card>
@@ -64,11 +67,14 @@ export default function PublicLandingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <Button size="lg" variant="outline" className="w-full" asChild>
-                <Link to="/comprar-bono">
-                  <Gift className="mr-2 h-5 w-5" />
-                  {t('buy_voucher')}
-                </Link>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate('/packages')}
+              >
+                <Gift className="mr-2 h-5 w-5" />
+                {t('buy_voucher')}
               </Button>
             </CardContent>
           </Card>
@@ -85,11 +91,14 @@ export default function PublicLandingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <Button size="lg" variant="outline" className="w-full" asChild>
-                <Link to="/tarjetas-regalo">
-                  <Star className="mr-2 h-5 w-5" />
-                  {t('gift_cards')}
-                </Link>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate('/gift-cards')}
+              >
+                <Star className="mr-2 h-5 w-5" />
+                {t('gift_cards')}
               </Button>
             </CardContent>
           </Card>
