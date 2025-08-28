@@ -249,15 +249,17 @@ const ReservationSystem = () => {
         }
       }
 
-toast({
-  title: "✅ Reserva Creada",
-  description: `Reserva para ${isAuthenticated && user ? user.name : formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
-});
+      // Redirigir INMEDIATAMENTE para asegurar la reserva con Stripe
+      if (newBooking?.id) {
+        console.log('🔀 Redirigiendo a asegurar reserva:', newBooking.id);
+        navigate(`/asegurar-reserva?booking_id=${newBooking.id}`);
+        return; // Importante: salir aquí para no ejecutar el resto
+      }
 
-// Redirigir para asegurar la reserva con Stripe
-if (newBooking?.id) {
-  navigate(`/asegurar-reserva?booking_id=${newBooking.id}`);
-}
+      toast({
+        title: "✅ Reserva Creada",
+        description: `Reserva para ${isAuthenticated && user ? user.name : formData.clientName} confirmada exitosamente. ID: ${newBooking?.id}`,
+      });
 
 
       // Reset form
