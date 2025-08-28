@@ -16,19 +16,16 @@ const AppLogo: React.FC<AppLogoProps> = ({
   useEffect(() => {
     const fetchLogo = async () => {
       try {
-        const { data } = await supabase.storage
-          .from('logo')
-          .getPublicUrl('thenook.jpg');
+        // URL directa del logo de The Nook Madrid
+        const logoUrl = 'https://duedcqgrflmmmxmpdytu.supabase.co/storage/v1/object/sign/logo/thenook.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yNjVhZDEyNS05NzI2LTQ1MzEtYTcxMy01Y2Q4NjE0ZTUwOTIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL3RoZW5vb2suanBnIiwiaWF0IjoxNzU2MjkxNDkyLCJleHAiOjE4NDI2OTE0OTJ9.vCJWD8edyqvBPIQCdWKF1LFWWdpsCvkF-pp_5qermS8';
         
-        if (data?.publicUrl) {
-          // Check if the file actually exists
-          const response = await fetch(data.publicUrl, { method: 'HEAD' });
-          if (response.ok) {
-            setLogoUrl(data.publicUrl);
-          }
+        // Verificar que la imagen carga correctamente
+        const response = await fetch(logoUrl, { method: 'HEAD' });
+        if (response.ok) {
+          setLogoUrl(logoUrl);
         }
       } catch (error) {
-        console.log('No logo found, using fallback text');
+        console.log('Error cargando logo, usando fallback text');
       } finally {
         setLoading(false);
       }

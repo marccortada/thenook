@@ -24,7 +24,7 @@ import NotificationCenter from './NotificationCenter';
 import EmployeeManagement from './EmployeeManagement';
 import AdminPricingPromos from '../pages/AdminPricingPromos';
 import AdminSettings from '../pages/AdminSettings';
-import ReportsCenter from '../pages/ReportsCenter';
+import ReportsCenter from './ReportsCenter';
 import RedeemCode from '../pages/RedeemCode';
 import GiftCardImageGenerator from './GiftCardImageGenerator';
 import LogoUpload from './LogoUpload';

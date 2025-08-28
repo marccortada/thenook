@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Bell, Brain, Package, Settings, Activity } from "lucide-react";
+import { CalendarDays, Users, BarChart3, MapPin, Clock, Star, Gift, StickyNote, Hash, FileText, Percent, TrendingUp, Bell, Brain, Package, Settings, Activity, Calendar } from "lucide-react";
 
 import ReservationSystem from "@/components/ReservationSystem";
 import EmployeeManagement from "@/components/EmployeeManagement";
@@ -24,6 +24,7 @@ import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 
 import SimpleCenterCalendar from "@/components/SimpleCenterCalendar";
 import AdvancedCalendarView from "@/components/AdvancedCalendarView";
+import AdminDashboard from "@/components/AdminDashboard";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
 import PublicLandingPage from "@/pages/PublicLandingPage";
@@ -31,6 +32,7 @@ import AppLogo from "@/components/AppLogo";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("bookings");
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
   const { user, isAdmin, isEmployee, isAuthenticated, loading } = useSimpleAuth();
   const navigate = useNavigate();
 
@@ -41,7 +43,6 @@ const Index = () => {
     return <PublicLandingPage />;
   }
 
-  // Mostrar loading mientras se verifica la autenticación
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -55,6 +56,11 @@ const Index = () => {
         </div>
       </div>
     );
+  }
+
+  // Mostrar el panel de administración si está activo
+  if (showAdminDashboard && isAdmin) {
+    return <AdminDashboard onBackToMain={() => setShowAdminDashboard(false)} />;
   }
 
   return (
@@ -74,142 +80,259 @@ const Index = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    // Cerrar sesión y volver a la página pública
-                    localStorage.removeItem('nook_user_session');
-                    window.location.href = '/';
-                  }}
-                >
-                  Cerrar sesión
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate('/')}
-                >
-                  Ver página pública
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                {isAdmin && (
+                  <Button 
+                    onClick={() => setShowAdminDashboard(true)}
+                    className="flex items-center space-x-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Panel de Administración</span>
+                  </Button>
+                )}
+                <Button variant="outline" onClick={() => navigate("/admin-login")} className="flex items-center space-x-2">
+                  <Users className="h-4 w-4" />
+                  <span>Cambiar Usuario</span>
                 </Button>
               </div>
             </div>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {/* Mobile Menu - Improved */}
-            <div className="lg:hidden mb-4 sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-              <div className="p-2">
-                <select 
-                  value={activeTab} 
-                  onChange={(e) => setActiveTab(e.target.value)}
-                  className="w-full p-3 border rounded-lg bg-background text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary focus:border-primary"
-                >
-                  <option value="reservations">📅 Nueva Reserva</option>
-                  <option value="bookings">📅 Calendario</option>
-                  <option value="clients">👥 Gestión de Clientes</option>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9 bg-muted p-1 h-auto">
+              <TabsTrigger value="bookings" className="flex flex-col items-center py-2 px-1 text-xs">
+                <CalendarDays className="h-4 w-4 mb-1" />
+                <span className="hidden sm:inline">Reservas</span>
+              </TabsTrigger>
+              
+              <TabsTrigger value="calendar" className="flex flex-col items-center py-2 px-1 text-xs">
+                <Calendar className="h-4 w-4 mb-1" />
+                <span className="hidden sm:inline">Calendario</span>
+              </TabsTrigger>
+              
+              <TabsTrigger value="clients" className="flex flex-col items-center py-2 px-1 text-xs">
+                <Users className="h-4 w-4 mb-1" />
+                <span className="hidden sm:inline">Clientes</span>
+              </TabsTrigger>
+              
+              <TabsTrigger value="analytics" className="flex flex-col items-center py-2 px-1 text-xs">
+                <BarChart3 className="h-4 w-4 mb-1" />
+                <span className="hidden sm:inline">Analíticas</span>
+              </TabsTrigger>
+              
+              {isAdmin && (
+                <>
+                  <TabsTrigger value="staff" className="flex flex-col items-center py-2 px-1 text-xs">
+                    <Users className="h-4 w-4 mb-1" />
+                    <span className="hidden sm:inline">Personal</span>
+                  </TabsTrigger>
                   
-                  {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
-                  {(isAdmin || isOwner) && <option value="analytics">📈 Analytics</option>}
-                  {(isAdmin || isOwner) && <option value="control">🎛️ Centro de Control</option>}
-                </select>
-              </div>
-            </div>
-
-            {/* Desktop Grid - More Responsive */}
-            <div className="hidden lg:grid grid-cols-2 xl:grid-cols-4 gap-3 xl:gap-4 mb-6 sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-4 pt-2">
-              <Button
-                variant={activeTab === "reservations" ? "default" : "outline"}
-                onClick={() => setActiveTab("reservations")}
-                className="h-auto p-3 xl:p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm text-xs xl:text-sm"
-              >
-                <CalendarDays className="h-4 w-4 xl:h-5 xl:w-5" />
-                <span className="font-medium">Nueva Reserva</span>
-              </Button>
-              
-              <Button
-                variant={activeTab === "bookings" ? "default" : "outline"}
-                onClick={() => setActiveTab("bookings")}
-                className="h-auto p-3 xl:p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm text-xs xl:text-sm"
-              >
-                <CalendarDays className="h-4 w-4 xl:h-5 xl:w-5" />
-                <span className="font-medium">Calendario</span>
-              </Button>
-              
-              <Button
-                variant={activeTab === "clients" ? "default" : "outline"}
-                onClick={() => setActiveTab("clients")}
-                className="h-auto p-3 xl:p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm text-xs xl:text-sm"
-              >
-                <Users className="h-4 w-4 xl:h-5 xl:w-5" />
-                <span className="font-medium">Gestión de Clientes</span>
-              </Button>
-              
-              {(isAdmin || isEmployee) && (
-                <Button
-                  variant={activeTab === "packages" ? "default" : "outline"}
-                  onClick={() => setActiveTab("packages")}
-                  className="h-auto p-3 xl:p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm text-xs xl:text-sm"
-                >
-                  <Gift className="h-4 w-4 xl:h-5 xl:w-5" />
-                  <span className="font-medium">Bonos</span>
-                </Button>
+                  <TabsTrigger value="packages" className="flex flex-col items-center py-2 px-1 text-xs">
+                    <Package className="h-4 w-4 mb-1" />
+                    <span className="hidden sm:inline">Bonos</span>
+                  </TabsTrigger>
+                  
+                  <TabsTrigger value="codes" className="flex flex-col items-center py-2 px-1 text-xs">
+                    <Hash className="h-4 w-4 mb-1" />
+                    <span className="hidden sm:inline">Códigos</span>
+                  </TabsTrigger>
+                  
+                  <TabsTrigger value="inventory" className="flex flex-col items-center py-2 px-1 text-xs">
+                    <Package className="h-4 w-4 mb-1" />
+                    <span className="hidden sm:inline">Inventario</span>
+                  </TabsTrigger>
+                  
+                  <TabsTrigger value="promos" className="flex flex-col items-center py-2 px-1 text-xs">
+                    <Percent className="h-4 w-4 mb-1" />
+                    <span className="hidden sm:inline">Promos</span>
+                  </TabsTrigger>
+                </>
               )}
+            </TabsList>
 
-              
-              {(isAdmin || isOwner) && (
-                <Button
-                  variant={activeTab === "analytics" ? "default" : "outline"}
-                  onClick={() => setActiveTab("analytics")}
-                  className="h-auto p-3 xl:p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm text-xs xl:text-sm"
-                >
-                  <TrendingUp className="h-4 w-4 xl:h-5 xl:w-5" />
-                  <span className="font-medium">Analytics</span>
-                </Button>
-              )}
-              
-              {(isAdmin || isOwner) && (
-                <Button
-                  variant={activeTab === "control" ? "default" : "outline"}
-                  onClick={() => setActiveTab("control")}
-                  className="h-auto p-3 xl:p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm text-xs xl:text-sm"
-                >
-                  <BarChart3 className="h-4 w-4 xl:h-5 xl:w-5" />
-                  <span className="font-medium">Centro Control</span>
-                </Button>
-              )}
-            </div>
-
-            <TabsContent value="reservations" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
+            <TabsContent value="bookings" className="space-y-4 sm:space-y-6">
               <ReservationSystem />
             </TabsContent>
 
-            <TabsContent value="bookings" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6 -mx-2 sm:-mx-4 lg:mx-0">
-              <AdvancedCalendarView />
+            <TabsContent value="calendar" className="space-y-4 sm:space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CalendarDays className="h-5 w-5" />
+                    <span>Calendario de Citas</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Vista avanzada del calendario con gestión de disponibilidad
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AdvancedCalendarView />
+                </CardContent>
+              </Card>
             </TabsContent>
 
-            <TabsContent value="clients" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
-              <ClientManagement />
+            <TabsContent value="clients" className="space-y-4 sm:space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Users className="h-5 w-5" />
+                    <span>Gestión de Clientes</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Administra la información de clientes y su historial
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ClientManagement />
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Star className="h-5 w-5" />
+                    <span>Clientes Especialistas</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Vista especializada de clientes por profesional
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SpecialistClients />
+                </CardContent>
+              </Card>
             </TabsContent>
 
-            {(isAdmin || isOwner) && (
-              <TabsContent value="analytics" className="mt-4 sm:mt-6">
-                <AdvancedDashboard />
-              </TabsContent>
-            )}
+            <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <TrendingUp className="h-5 w-5" />
+                      <span>Métricas en Tiempo Real</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <RealTimeMetrics />
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Activity className="h-5 w-5" />
+                      <span>Dashboard Unificado</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <UnifiedDashboard />
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Brain className="h-5 w-5" />
+                    <span>Analíticas Inteligentes</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Análisis avanzado con IA y predicciones
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <IntelligentAnalytics />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-            {(isAdmin || isEmployee) && (
-              <TabsContent value="packages" className="mt-4 sm:mt-6">
-                <PackageManagement />
-              </TabsContent>
-            )}
+            {isAdmin && (
+              <>
+                <TabsContent value="staff" className="space-y-4 sm:space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Users className="h-5 w-5" />
+                        <span>Gestión de Personal</span>
+                      </CardTitle>
+                      <CardDescription>
+                        Administra empleados, horarios y especialidades
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <EmployeeManagement />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
+                <TabsContent value="packages" className="space-y-4 sm:space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Package className="h-5 w-5" />
+                        <span>Gestión de Bonos</span>
+                      </CardTitle>
+                      <CardDescription>
+                        Crea y administra paquetes de servicios
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <PackageManagement />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
-            {(isAdmin || isOwner) && (
-              <TabsContent value="control" className="mt-0">
-                <UnifiedDashboard />
-              </TabsContent>
+                <TabsContent value="codes" className="space-y-4 sm:space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Hash className="h-5 w-5" />
+                        <span>Códigos Internos</span>
+                      </CardTitle>
+                      <CardDescription>
+                        Gestiona códigos de descuento y promociones especiales
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <InternalCodesManagement />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="inventory" className="space-y-4 sm:space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Package className="h-5 w-5" />
+                        <span>Gestión de Inventario</span>
+                      </CardTitle>
+                      <CardDescription>
+                        Control de stock, proveedores y movimientos
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <InventoryManagement />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="promos" className="space-y-4 sm:space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Percent className="h-5 w-5" />
+                        <span>Happy Hours</span>
+                      </CardTitle>
+                      <CardDescription>
+                        Configura descuentos por horarios especiales
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <HappyHourManagement />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </>
             )}
           </Tabs>
         </div>

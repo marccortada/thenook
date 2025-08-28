@@ -10,14 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useServices, usePackages } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import BackToControlCenter from "@/components/BackToControlCenter";
-import AppLogo from "@/components/AppLogo";
 
 import HappyHourManagement from "@/components/HappyHourManagement";
 
 const currency = (euros?: number) => typeof euros === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(euros) : "-";
 
-export default function AdminPricingPromos() {
+function AdminPricingPromos() {
   const { services, refetch: refetchServices } = useServices();
   const { packages, refetch: refetchPackages } = usePackages();
   const { toast } = useToast();
@@ -395,21 +393,13 @@ export default function AdminPricingPromos() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Mostrar botón de volver solo si estamos en ruta externa */}
-      {isExternalRoute && <BackToControlCenter />}
-      
-      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <AppLogo className="h-8 w-auto" />
-            <h1 className="text-2xl font-bold">Precios y Promos</h1>
-          </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Precios y Promos</h1>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Gestión de Precios y Promociones</h2>
+        <p className="text-muted-foreground">
+          Administra precios de servicios, promociones y descuentos especiales
+        </p>
+      </div>
         <Tabs defaultValue="services">
           <TabsList>
             <TabsTrigger value="services">Servicios</TabsTrigger>
@@ -733,8 +723,8 @@ export default function AdminPricingPromos() {
             <HappyHourManagement />
           </TabsContent>
         </Tabs>
-        </div>
-      </main>
-    </div>
-  );
-}
+      </div>
+    );
+  }
+
+export default AdminPricingPromos;
