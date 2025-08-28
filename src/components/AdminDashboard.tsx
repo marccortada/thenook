@@ -29,6 +29,10 @@ import AdminPricingPromos from '@/pages/AdminPricingPromos';
 import NotificationDashboard from '@/components/NotificationDashboard';
 import ReportsCenter from '@/components/ReportsCenter';
 import AdminSettings from '@/pages/AdminSettings';
+import AdvancedCalendarView from '@/components/AdvancedCalendarView';
+import SimpleCenterCalendar from '@/components/SimpleCenterCalendar';
+import CenterManagement from '@/components/CenterManagement';
+import EmployeeManagement from '@/components/EmployeeManagement';
 
 interface SidebarItemProps {
   icon: React.ComponentType<any>;
@@ -115,6 +119,54 @@ const CodesAndPromotions = () => {
   );
 };
 
+// Componente unificado para Calendario y Gestión de Centros
+const CalendarAndCenters = () => {
+  const [activeTab, setActiveTab] = useState<'calendar' | 'advanced' | 'centers' | 'staff'>('calendar');
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap gap-2">
+        <Button 
+          variant={activeTab === 'calendar' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('calendar')}
+          size="sm"
+        >
+          <Calendar className="mr-2 h-4 w-4" />
+          Calendario Simple
+        </Button>
+        <Button 
+          variant={activeTab === 'advanced' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('advanced')}
+          size="sm"
+        >
+          <Calendar className="mr-2 h-4 w-4" />
+          Calendario Avanzado
+        </Button>
+        <Button 
+          variant={activeTab === 'centers' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('centers')}
+          size="sm"
+        >
+          <Home className="mr-2 h-4 w-4" />
+          Gestión de Centros
+        </Button>
+        <Button 
+          variant={activeTab === 'staff' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('staff')}
+          size="sm"
+        >
+          <Users className="mr-2 h-4 w-4" />
+          Personal
+        </Button>
+      </div>
+      
+      {activeTab === 'calendar' && <SimpleCenterCalendar />}
+      {activeTab === 'advanced' && <AdvancedCalendarView />}
+      {activeTab === 'centers' && <CenterManagement />}
+      {activeTab === 'staff' && <EmployeeManagement />}
+    </div>
+  );
+};
 const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState('analytics');
   const { user } = useSimpleAuth();
@@ -131,6 +183,12 @@ const AdminDashboard = () => {
       label: 'Reservas', 
       icon: Calendar,
       component: ReservationSystem 
+    },
+    { 
+      id: 'calendario', 
+      label: 'Calendario', 
+      icon: Calendar,
+      component: CalendarAndCenters 
     },
     { 
       id: 'clientes', 
