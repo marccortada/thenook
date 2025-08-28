@@ -50,7 +50,7 @@ const App = () => (
           <Route 
             path="/panel-gestion-nook-madrid-2024" 
             element={
-              <ProtectedRoute requireAdmin={true}>
+              <ProtectedRoute>
                 <Index />
               </ProtectedRoute>
             } 
@@ -58,7 +58,7 @@ const App = () => (
           <Route 
             path="/panel-gestion-nook-madrid-2024/*" 
             element={
-              <ProtectedRoute requireAdmin={true}>
+              <ProtectedRoute>
                 <Index />
               </ProtectedRoute>
             } 
