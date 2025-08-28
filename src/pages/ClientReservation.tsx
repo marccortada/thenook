@@ -486,21 +486,27 @@ const ClientReservation = () => {
                  
                  <div>
                    <Label htmlFor="center" className="text-sm">Centro *</Label>
-                   <Select value={formData.center} onValueChange={(value) => { setFormData({ ...formData, center: value }); setSelection(null); }}>
-                     <SelectTrigger className="mt-1">
-                       <SelectValue placeholder="Selecciona un centro" />
-                     </SelectTrigger>
-                     <SelectContent className="z-[100] bg-background border shadow-lg">
-                       {centers.map((center) => (
-                         <SelectItem key={center.id} value={center.id}>
-                           <div className="flex items-center space-x-2">
-                             <MapPin className="h-3 w-3" />
-                             <span>{center.name}</span>
-                           </div>
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
+                    <Select value={formData.center} onValueChange={(value) => { setFormData({ ...formData, center: value }); setSelection(null); }}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Selecciona un centro" />
+                      </SelectTrigger>
+                      <SelectContent 
+                        position="popper" 
+                        side="bottom" 
+                        align="start"
+                        sideOffset={4}
+                        className="z-[60] bg-popover border border-border shadow-lg"
+                      >
+                        {centers.map((center) => (
+                          <SelectItem key={center.id} value={center.id}>
+                            <div className="flex items-center space-x-2">
+                              <MapPin className="h-3 w-3" />
+                              <span>{center.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                  </div>
                </div>
 
@@ -554,12 +560,15 @@ const ClientReservation = () => {
                              {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                            </Button>
                          </PopoverTrigger>
-                         <PopoverContent 
-                           className="w-auto p-0 z-[9999] bg-background border shadow-xl"
-                           align="start"
-                           side="bottom"
-                           sideOffset={4}
-                         >
+                          <PopoverContent 
+                            className="w-auto p-0 z-[70] bg-popover border border-border shadow-lg"
+                            align="start"
+                            side="bottom"
+                            sideOffset={4}
+                            alignOffset={0}
+                            avoidCollisions={true}
+                            collisionPadding={8}
+                          >
                            <Calendar
                              mode="single"
                              selected={formData.date}
@@ -590,12 +599,15 @@ const ClientReservation = () => {
                               {formData.time || "Selecciona una hora"}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent 
-                            className="w-full p-0 z-[9999] bg-background border shadow-xl max-h-60 overflow-y-auto"
-                            align="start"
-                            side="bottom"
-                            sideOffset={4}
-                          >
+                           <PopoverContent 
+                             className="w-full p-0 z-[70] bg-popover border border-border shadow-lg max-h-60 overflow-y-auto"
+                             align="start"
+                             side="bottom"
+                             sideOffset={4}
+                             alignOffset={0}
+                             avoidCollisions={true}
+                             collisionPadding={8}
+                           >
                             <div className="p-1">
                               {timeSlots.map((time) => (
                                 <button
