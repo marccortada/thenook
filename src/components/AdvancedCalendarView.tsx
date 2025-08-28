@@ -831,10 +831,11 @@ const AdvancedCalendarView = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+    <div className="space-y-4">
+      {/* Header Controls - Mobile Optimized */}
+      <div className="space-y-3">
+        {/* Date Navigation and Mode Toggle */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={goToPrevious}>
               <ChevronLeft className="h-4 w-4" />
@@ -842,54 +843,64 @@ const AdvancedCalendarView = () => {
             <Button variant="outline" size="icon" onClick={goToNext}>
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button variant="outline" onClick={goToToday}>
+            <Button variant="outline" size="sm" onClick={goToToday}>
               Hoy
             </Button>
           </div>
           
-          <div className="text-lg font-semibold">
-            {viewMode === 'day' 
-              ? format(selectedDate, "EEEE, d 'de' MMMM yyyy", { locale: es })
-              : `${format(getWeekDates()[0], "d MMM", { locale: es })} - ${format(getWeekDates()[6], "d MMM yyyy", { locale: es })}`
-            }
+          {/* View Mode Toggle - Mobile Friendly */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === 'day' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('day')}
+            >
+              Día
+            </Button>
+            <Button
+              variant={viewMode === 'week' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('week')}
+            >
+              Semana
+            </Button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Center Selection */}
-          <Select value={selectedCenter} onValueChange={setSelectedCenter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Selecciona centro" />
-            </SelectTrigger>
-            <SelectContent>
-              {centers.map((center) => (
-                <SelectItem key={center.id} value={center.id}>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    {center.name}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Date Display */}
+        <div className="text-lg sm:text-xl font-semibold text-center sm:text-left">
+          {viewMode === 'day' 
+            ? format(selectedDate, "EEEE, d 'de' MMMM yyyy", { locale: es })
+            : `${format(getWeekDates()[0], "d MMM", { locale: es })} - ${format(getWeekDates()[6], "d MMM yyyy", { locale: es })}`
+          }
+        </div>
 
-          {/* Lane Blocking & Filters */}
+        {/* Filters and Controls - Mobile Stack */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Center Selection */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Centro</label>
+            <Select value={selectedCenter} onValueChange={setSelectedCenter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecciona centro" />
+              </SelectTrigger>
+              <SelectContent>
+                {centers.map((center) => (
+                  <SelectItem key={center.id} value={center.id}>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      {center.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Status Filter */}
           {(isAdmin || isEmployee) && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant={blockingMode ? "destructive" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setBlockingMode(!blockingMode);
-                  setBlockStartSlot(null);
-                  setBlockEndSlot(null);
-                }}
-              >
-                <Ban className="w-4 h-4 mr-2" />
-                {blockingMode ? 'Cancelar Bloqueo' : 'Bloquear Carriles'}
-              </Button>
-              
-              {/* Status Filter Dropdown */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Estado</label>
               <Select value={statusFilters.length === 0 ? "all" : statusFilters.join(',')} onValueChange={(value) => {
                 if (value === "all") {
                   setStatusFilters([]);
@@ -897,8 +908,8 @@ const AdvancedCalendarView = () => {
                   setStatusFilters(value.split(',').filter(Boolean));
                 }
               }}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filtrar por estado" />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
@@ -915,17 +926,38 @@ const AdvancedCalendarView = () => {
             </div>
           )}
           
-          {/* View Mode Toggle */}
-          <Select value={viewMode} onValueChange={(value: 'day' | 'week') => setViewMode(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="day">Día</SelectItem>
-              <SelectItem value="week">Semana</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* View Mode Toggle - Better Mobile Layout */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Vista</label>
+            <div className="flex gap-1">
+              <Button
+                variant={viewMode === 'day' ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1"
+                onClick={() => setViewMode('day')}
+              >
+                Día
+              </Button>
+              <Button
+                variant={viewMode === 'week' ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1"
+                onClick={() => setViewMode('week')}
+              >
+                Semana
+              </Button>
+            </div>
+          </div>
         </div>
+        
+        {/* Blocking Mode Info */}
+        {blockingMode && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700">
+              📍 Modo bloqueo activo: Haz clic en una franja para empezar, luego en otra para definir el rango.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Calendar View */}
