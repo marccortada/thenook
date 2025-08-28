@@ -202,18 +202,18 @@ export default function PublicLandingPage() {
       {/* Footer */}
       <footer className="border-t bg-background/95 py-8">
         <div className="container mx-auto px-4 text-center">
-          <div className="flex justify-center items-center space-x-6 text-muted-foreground">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 text-muted-foreground">
             <a href="tel:911481474" className="flex items-center gap-2 hover:text-primary transition-colors">
-              <Phone className="h-4 w-4" />
-              <span className="text-sm">911 481 474</span>
+              <Phone className="h-4 w-4 flex-shrink-0" />
+              <span className="text-sm whitespace-nowrap">911 481 474</span>
             </a>
             <a href="https://wa.me/+34622360922" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-primary transition-colors">
               <span className="text-sm">💬</span>
-              <span className="text-sm">WhatsApp</span>
+              <span className="text-sm whitespace-nowrap">WhatsApp</span>
             </a>
             <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              <span className="text-sm">info@thenookmadrid.com</span>
+              <Mail className="h-4 w-4 flex-shrink-0" />
+              <span className="text-sm break-all sm:break-normal">info@thenookmadrid.com</span>
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
