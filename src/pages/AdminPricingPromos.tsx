@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useServices, usePackages, useCenters } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -362,22 +363,21 @@ export default function AdminPricingPromos() {
           </TabsContent>
 
           <TabsContent value="manage-services" className="mt-6 space-y-4">
-            {/* Servicios agrupados por tipo */}
-            <div className="space-y-4">
-              {/* Agrupar servicios por tipo */}
+            {/* Servicios agrupados por tipo con acordeón */}
+            <Accordion type="multiple" className="space-y-4">
               {serviceTypes.map(type => {
                 const servicesOfType = services.filter((service: any) => service.type === type.value);
                 if (servicesOfType.length === 0) return null;
                 
                 return (
-                  <Card key={type.value}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <span>{type.label}</span>
-                        <span className="text-sm text-muted-foreground">{servicesOfType.length} servicios</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                  <AccordionItem key={type.value} value={type.value} className="border rounded-lg">
+                    <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-lg font-semibold">{type.label}</span>
+                        <span className="text-sm text-muted-foreground mr-4">{servicesOfType.length} servicios</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {servicesOfType.map((service: any) => (
                           <div key={service.id} className="border rounded-lg p-4">
@@ -421,11 +421,11 @@ export default function AdminPricingPromos() {
                           </div>
                         ))}
                       </div>
-                    </CardContent>
-                  </Card>
+                    </AccordionContent>
+                  </AccordionItem>
                 );
               })}
-            </div>
+            </Accordion>
 
             {/* Formulario para crear nuevo servicio */}
             <Card>
