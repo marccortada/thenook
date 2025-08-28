@@ -232,6 +232,13 @@ const ReservationSystem = () => {
       const newBooking = await createBooking(bookingData);
       console.log('Booking successfully created:', newBooking);
 
+      // Redirigir INMEDIATAMENTE para asegurar la reserva con Stripe
+      if (newBooking?.id) {
+        console.log('🔀 Redirigiendo a asegurar reserva:', newBooking.id);
+        navigate(`/asegurar-reserva?booking_id=${newBooking.id}`);
+        return; // Importante: salir aquí para no ejecutar el resto
+      }
+
       // Canjear código si procede
       if (formData.redeemNow && formData.redeemCode) {
         try {
@@ -247,13 +254,6 @@ const ReservationSystem = () => {
         } catch (e: any) {
           toast({ title: 'Canje no aplicado', description: e.message || 'Revisa el código o el importe', variant: 'destructive' });
         }
-      }
-
-      // Redirigir INMEDIATAMENTE para asegurar la reserva con Stripe
-      if (newBooking?.id) {
-        console.log('🔀 Redirigiendo a asegurar reserva:', newBooking.id);
-        navigate(`/asegurar-reserva?booking_id=${newBooking.id}`);
-        return; // Importante: salir aquí para no ejecutar el resto
       }
 
       toast({
