@@ -124,62 +124,150 @@ serve(async (req) => {
         }
         results.gift_cards = created;
 
-        // Enviar emails con imagen de tarjeta regalo
-        try {
-          for (const card of created) {
-            // Crear imagen SVG de la tarjeta regalo
-            const giftCardImage = `data:image/svg+xml;base64,${btoa(`
-              <svg width="400" height="250" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
-                  </linearGradient>
-                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="3" dy="3" stdDeviation="3" flood-opacity="0.3"/>
-                  </filter>
-                </defs>
+        // Generar y guardar tarjeta regalo personalizada
+        async function generateGiftCardImage(card: any, purchaseDate: string): Promise<string> {
+          try {
+            // Crear imagen SVG con el diseño de la tarjeta
+            const svgContent = `
+              <svg width="670" height="473" viewBox="0 0 670 473" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background base color matching the template -->
+                <rect width="670" height="473" fill="#D4B896"/>
                 
-                <!-- Card background -->
-                <rect x="10" y="10" width="380" height="230" rx="15" ry="15" 
-                      fill="url(#cardGradient)" filter="url(#shadow)"/>
+                <!-- Decorative mandala elements -->
+                <g opacity="0.6" fill="#C4A776">
+                  <!-- Left mandala -->
+                  <g transform="translate(60, 60)">
+                    <circle cx="0" cy="0" r="40" fill="none" stroke="#C4A776" stroke-width="2"/>
+                    <circle cx="0" cy="0" r="25" fill="none" stroke="#C4A776" stroke-width="1"/>
+                    <path d="M-30,0 L-15,0 M30,0 L15,0 M0,-30 L0,-15 M0,30 L0,15" stroke="#C4A776" stroke-width="2"/>
+                    <path d="M-21,-21 L-10,-10 M21,-21 L10,-10 M-21,21 L-10,10 M21,21 L10,10" stroke="#C4A776" stroke-width="1"/>
+                  </g>
+                  
+                  <!-- Right mandala -->
+                  <g transform="translate(610, 60)">
+                    <circle cx="0" cy="0" r="40" fill="none" stroke="#C4A776" stroke-width="2"/>
+                    <circle cx="0" cy="0" r="25" fill="none" stroke="#C4A776" stroke-width="1"/>
+                    <path d="M-30,0 L-15,0 M30,0 L15,0 M0,-30 L0,-15 M0,30 L0,15" stroke="#C4A776" stroke-width="2"/>
+                    <path d="M-21,-21 L-10,-10 M21,-21 L10,-10 M-21,21 L-10,10 M21,21 L10,10" stroke="#C4A776" stroke-width="1"/>
+                  </g>
+                </g>
                 
-                <!-- Decorative elements -->
-                <circle cx="350" cy="50" r="30" fill="white" opacity="0.2"/>
-                <circle cx="50" cy="200" r="25" fill="white" opacity="0.15"/>
-                
-                <!-- Title -->
-                <text x="200" y="50" text-anchor="middle" 
-                      font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">
+                <!-- Main title -->
+                <text x="335" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#8B6B47" letter-spacing="4px">
                   TARJETA REGALO
                 </text>
                 
-                <!-- Brand -->
-                <text x="200" y="75" text-anchor="middle" 
-                      font-family="Arial, sans-serif" font-size="16" fill="white" opacity="0.9">
-                  The Nook Madrid
-                </text>
-                
-                <!-- Amount -->
-                <text x="200" y="120" text-anchor="middle" 
-                      font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white">
-                  ${(card.amount_cents / 100).toFixed(2)}€
-                </text>
-                
-                <!-- Code -->
-                <rect x="80" y="150" width="240" height="40" rx="8" ry="8" fill="white" opacity="0.9"/>
-                <text x="200" y="175" text-anchor="middle" 
-                      font-family="monospace" font-size="18" font-weight="bold" fill="#333">
+                <!-- Upper rectangle for code -->
+                <rect x="180" y="150" width="310" height="60" rx="8" ry="8" fill="none" stroke="#8B6B47" stroke-width="3" stroke-dasharray="5,5"/>
+                <text x="335" y="185" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#5A4A3A">
                   ${card.code}
                 </text>
                 
-                <!-- Instructions -->
-                <text x="200" y="210" text-anchor="middle" 
-                      font-family="Arial, sans-serif" font-size="12" fill="white" opacity="0.8">
-                  Presenta este código en tu visita
+                <!-- Lower rectangle for date -->
+                <rect x="180" y="230" width="310" height="40" rx="8" ry="8" fill="none" stroke="#8B6B47" stroke-width="3" stroke-dasharray="5,5"/>
+                <text x="335" y="255" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#5A4A3A">
+                  ${purchaseDate}
+                </text>
+                
+                <!-- Business hours and info -->
+                <text x="100" y="330" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
+                  Abrimos todos los días
+                </text>
+                <text x="100" y="350" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
+                  Lunes a Domingo 10:00 - 22:00
+                </text>
+                <text x="100" y="370" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
+                  Incluido festivos
+                </text>
+                <text x="100" y="390" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
+                  www.thenookmadrid.com
+                </text>
+                
+                <!-- Contact info -->
+                <text x="570" y="330" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
+                  Reservas
+                </text>
+                <text x="570" y="350" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
+                  reservas@thenookmadrid.com
+                </text>
+                <text x="570" y="370" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
+                  t. 911 481 474
+                </text>
+                <text x="570" y="390" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
+                  W. 622 36 09 22
+                </text>
+                
+                <!-- Address -->
+                <text x="335" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#5A4A3A">
+                  THE NOOK MADRID | Zurbarán 10 | Príncipe de Vergara 204
+                </text>
+                
+                <!-- Logo placeholder in bottom right -->
+                <g transform="translate(550, 410)">
+                  <text font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#8B6B47">the</text>
+                  <text y="25" font-family="Arial, sans-serif" font-size="24" fill="#8B6B47">nook</text>
+                </g>
+              </svg>
+            `;
+            
+            // Guardar en Supabase Storage
+            const fileName = `gift-card-${card.code}-${Date.now()}.svg`;
+            const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' });
+            
+            try {
+              const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+                .from('gift-cards')
+                .upload(fileName, svgBlob, {
+                  contentType: 'image/svg+xml',
+                  upsert: false
+                });
+              
+              if (uploadError) {
+                console.error('Error uploading gift card image:', uploadError);
+              } else {
+                console.log('Gift card image uploaded successfully:', uploadData.path);
+              }
+            } catch (uploadErr) {
+              console.error('Exception uploading gift card image:', uploadErr);
+            }
+            
+            // Retornar imagen como data URL para el email
+            return `data:image/svg+xml;base64,${btoa(svgContent)}`;
+          } catch (error) {
+            console.error('Error generating gift card image:', error);
+            // Fallback a imagen simple
+            return `data:image/svg+xml;base64,${btoa(`
+              <svg width="400" height="250" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
+                <rect width="400" height="250" fill="#D4B896"/>
+                <text x="200" y="50" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold" fill="#8B6B47">
+                  TARJETA REGALO
+                </text>
+                <text x="200" y="120" text-anchor="middle" font-family="monospace" font-size="20" font-weight="bold" fill="#5A4A3A">
+                  ${card.code}
+                </text>
+                <text x="200" y="150" text-anchor="middle" font-family="Arial" font-size="16" fill="#5A4A3A">
+                  ${purchaseDate}
+                </text>
+                <text x="200" y="200" text-anchor="middle" font-family="Arial" font-size="16" fill="#6B5B4F">
+                  THE NOOK MADRID
                 </text>
               </svg>
             `)}`;
+          }
+        }
+
+        // Enviar emails con imagen de tarjeta regalo
+        try {
+          for (const card of created) {
+            // Generar fecha de compra en formato DD/MM/AAAA
+            const purchaseDate = new Date().toLocaleDateString('es-ES', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+            
+            // Generar imagen personalizada de la tarjeta regalo
+            const giftCardImage = await generateGiftCardImage(card, purchaseDate);
 
             const purchaserEmail = card.purchased_by_email || buyerEmail;
             const isGift = card.is_gift;
