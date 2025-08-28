@@ -186,7 +186,14 @@ const handlePaymentSetup = async () => {
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-primary">The Nook Madrid</h1>
+          <div className="flex justify-center mb-4">
+            <img
+              src="/lovable-uploads/475dc4d6-6d6b-4357-a8b5-4611869beb43.png"
+              alt="The Nook Madrid"
+              className="h-12 w-auto md:h-16"
+              loading="lazy"
+            />
+          </div>
           <p className="text-muted-foreground">Asegurar tu reserva</p>
         </div>
 
