@@ -35,7 +35,7 @@ const AdminSettings = () => {
     businessName: "The Nook Madrid",
     address: "Calle Ejemplo 123, Madrid",
     phone: "+34 123 456 789",
-    email: "info@thenookmadrid.com",
+    email: "reservas@thenookmadrid.com",
     website: "https://thenookmadrid.com",
     taxId: "B12345678",
     currency: "EUR",

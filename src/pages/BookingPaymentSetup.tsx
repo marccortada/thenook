@@ -353,7 +353,7 @@ onClick={handlePaymentSetup}
         {/* Footer */}
         <div className="text-center text-sm text-muted-foreground">
           <p>Si tienes alguna pregunta, contáctanos en</p>
-          <p className="font-medium">info@thenookmadrid.com</p>
+          <p className="font-medium">reservas@thenookmadrid.com</p>
         </div>
       </div>
     </div>

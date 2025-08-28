@@ -191,7 +191,7 @@ export default function PaymentSetupSuccess() {
             <div className="text-center text-sm">
               <p className="font-medium mb-2">¿Necesitas ayuda?</p>
               <p className="text-muted-foreground">
-                📧 info@thenookmadrid.com<br />
+                📧 reservas@thenookmadrid.com<br />
                 📞 +34 XXX XXX XXX
               </p>
             </div>
