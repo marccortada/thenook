@@ -8,16 +8,23 @@ import {
   Settings, 
   Bell, 
   FileText, 
-  TrendingUp,
+  BarChart3,
   Calendar,
   Users,
   Package,
+  Gift,
+  Percent,
   Euro,
-  ChevronLeft,
   Home
 } from 'lucide-react';
 import { useSimpleAuth } from '@/hooks/useSimpleAuth';
-import ControlCenter from '@/components/ControlCenter';
+import Analytics from '@/components/Analytics';
+import ReservationSystem from '@/components/ReservationSystem';
+import ClientManagement from '@/components/ClientManagement';
+import GiftCardManagement from '@/components/GiftCardManagement';
+import PackageManagement from '@/components/PackageManagement';
+import InternalCodesManagement from '@/components/InternalCodesManagement';
+import HappyHourManagement from '@/components/HappyHourManagement';
 import AdminPricingPromos from '@/pages/AdminPricingPromos';
 import NotificationDashboard from '@/components/NotificationDashboard';
 import ReportsCenter from '@/components/ReportsCenter';
@@ -52,26 +59,106 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, isActive, 
   </button>
 );
 
+// Componente unificado para Bonos y Tarjetas Regalo
+const BonusAndGiftCards = () => {
+  const [activeTab, setActiveTab] = useState<'packages' | 'giftcards'>('packages');
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex space-x-4">
+        <Button 
+          variant={activeTab === 'packages' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('packages')}
+        >
+          <Package className="mr-2 h-4 w-4" />
+          Bonos y Paquetes
+        </Button>
+        <Button 
+          variant={activeTab === 'giftcards' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('giftcards')}
+        >
+          <Gift className="mr-2 h-4 w-4" />
+          Tarjetas Regalo
+        </Button>
+      </div>
+      
+      {activeTab === 'packages' ? <PackageManagement /> : <GiftCardManagement />}
+    </div>
+  );
+};
+
+// Componente unificado para Códigos y Promociones
+const CodesAndPromotions = () => {
+  const [activeTab, setActiveTab] = useState<'codes' | 'promotions'>('codes');
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex space-x-4">
+        <Button 
+          variant={activeTab === 'codes' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('codes')}
+        >
+          <Percent className="mr-2 h-4 w-4" />
+          Códigos Promocionales
+        </Button>
+        <Button 
+          variant={activeTab === 'promotions' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('promotions')}
+        >
+          <Percent className="mr-2 h-4 w-4" />
+          Happy Hours
+        </Button>
+      </div>
+      
+      {activeTab === 'codes' ? <InternalCodesManagement /> : <HappyHourManagement />}
+    </div>
+  );
+};
+
 const AdminDashboard = () => {
-  const [activeSection, setActiveSection] = useState('control');
+  const [activeSection, setActiveSection] = useState('analytics');
   const { user } = useSimpleAuth();
 
   const sidebarItems = [
     { 
-      id: 'control', 
-      label: 'Centro de Control', 
-      icon: Home,
-      component: ControlCenter 
+      id: 'analytics', 
+      label: 'Analytics', 
+      icon: BarChart3,
+      component: Analytics 
     },
     { 
-      id: 'pricing', 
-      label: 'Precios y Promos', 
-      icon: TrendingUp,
+      id: 'reservas', 
+      label: 'Reservas', 
+      icon: Calendar,
+      component: ReservationSystem 
+    },
+    { 
+      id: 'clientes', 
+      label: 'Clientes', 
+      icon: Users,
+      component: ClientManagement 
+    },
+    { 
+      id: 'bonos-tarjetas', 
+      label: 'Bonos y Tarjetas Regalo', 
+      icon: Gift,
+      component: BonusAndGiftCards 
+    },
+    { 
+      id: 'codigos-promociones', 
+      label: 'Códigos y Promociones', 
+      icon: Percent,
+      component: CodesAndPromotions 
+    },
+    { 
+      id: 'precios-promociones', 
+      label: 'Gestión de Precios y Promociones', 
+      icon: Euro,
       component: AdminPricingPromos 
     },
     { 
-      id: 'notifications', 
-      label: 'Notificaciones', 
+      id: 'notificaciones', 
+      label: 'Centro de Notificaciones', 
       icon: Bell,
       component: NotificationDashboard 
     },
@@ -82,14 +169,14 @@ const AdminDashboard = () => {
       component: ReportsCenter 
     },
     { 
-      id: 'settings', 
-      label: 'Configuración', 
+      id: 'configuracion', 
+      label: 'Configuración del Sistema', 
       icon: Settings,
       component: AdminSettings 
     }
   ];
 
-  const ActiveComponent = sidebarItems.find(item => item.id === activeSection)?.component || ControlCenter;
+  const ActiveComponent = sidebarItems.find(item => item.id === activeSection)?.component || Analytics;
 
   return (
     <div className="flex h-screen bg-background">
