@@ -62,14 +62,17 @@ const Index = () => {
       <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-4 sm:mb-6 lg:mb-8 px-2 sm:px-0">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
-                  ¡Bienvenido, {user?.name || 'Usuario'}!
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
-                </p>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <AppLogo className="h-10 w-auto" />
+                <div>
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
+                    ¡Bienvenido, {user?.name || 'Usuario'}!
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Panel de {isAdmin ? 'administración' : 'empleado'} y gestión
+                  </p>
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 <Button 
