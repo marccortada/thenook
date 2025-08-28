@@ -15,8 +15,18 @@ export default function PublicLandingPage() {
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              The Nook Madrid
+            <h1 className="text-xl md:text-2xl font-bold">
+              <Link to="/" className="inline-flex items-center gap-3">
+                <img
+                  src="/lovable-uploads/475dc4d6-6d6b-4357-a8b5-4611869beb43.png"
+                  alt="Logotipo The Nook Madrid"
+                  className="h-8 w-auto md:h-10"
+                  loading="lazy"
+                  width={160}
+                  height={40}
+                />
+                <span className="sr-only">The Nook Madrid</span>
+              </Link>
             </h1>
             <div className="flex items-center space-x-3">
               <LanguageSelector />
