@@ -9,7 +9,7 @@ import AdminDashboard from "./components/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import PublicLandingPage from "./pages/PublicLandingPage";
 import ClientReservation from "./pages/ClientReservation";
-import PackagesPage from "./pages/PackagesPage";
+import BuyPackagesPage from "./pages/BuyPackagesPage";
 import GiftCardsPage from "./pages/GiftCardsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -28,7 +28,7 @@ const App = () => (
             
             {/* Páginas públicas de reservas y compras */}
             <Route path="/client-reservation" element={<ClientReservation />} />
-            <Route path="/packages" element={<PackagesPage />} />
+            <Route path="/packages" element={<BuyPackagesPage />} />
             <Route path="/gift-cards" element={<GiftCardsPage />} />
             
             {/* Admin Login - único acceso externo */}
