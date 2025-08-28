@@ -61,29 +61,31 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header with logo */}
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="inline-flex items-center hover:opacity-80 transition-opacity">
               <img
                 src="/lovable-uploads/475dc4d6-6d6b-4357-a8b5-4611869beb43.png"
                 alt="The Nook Madrid - Inicio"
-                className="h-8 w-auto md:h-10"
+                className="h-6 w-auto sm:h-8 md:h-10"
                 loading="lazy"
                 width={160}
                 height={40}
               />
             </Link>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center">
               <Button 
                 variant="outline" 
                 size="sm" 
+                className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 h-8 sm:h-9"
                 onClick={() => {
                   // Cerrar sesión y volver a la página pública
                   localStorage.removeItem('nook_user_session');
                   window.location.href = '/';
                 }}
               >
-                Cerrar sesión
+                <span className="hidden sm:inline">Cerrar sesión</span>
+                <span className="sm:hidden">Salir</span>
               </Button>
             </div>
           </div>
