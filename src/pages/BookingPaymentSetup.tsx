@@ -24,6 +24,7 @@ interface BookingDetails {
   services: { name: string } | null;
   employees: { profiles: { first_name: string; last_name: string } } | null;
   profiles: { first_name: string; last_name: string; email: string } | null;
+  centers: { name: string; address: string } | null;
 }
 
 export default function BookingPaymentSetup() {
@@ -80,7 +81,8 @@ const fetchBookingDetails = async () => {
           payment_method_status,
           services(name),
           employees(profiles(first_name, last_name)),
-          profiles(first_name, last_name, email)
+          profiles(first_name, last_name, email),
+          centers(name, address)
         `)
         .eq('id', paymentIntent.booking_id)
         .single();
@@ -97,7 +99,8 @@ const fetchBookingDetails = async () => {
           payment_method_status,
           services(name),
           employees(profiles(first_name, last_name)),
-          profiles(first_name, last_name, email)
+          profiles(first_name, last_name, email),
+          centers(name, address)
         `)
         .eq('id', bookingIdParam)
         .single();
@@ -282,8 +285,8 @@ const handlePaymentSetup = async () => {
                   <MapPin className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium">The Nook Madrid</p>
-                  <p className="text-sm text-muted-foreground">Ubicación del tratamiento</p>
+                  <p className="font-medium">{booking.centers?.name || 'The Nook Madrid'}</p>
+                  <p className="text-sm text-muted-foreground">{booking.centers?.address || 'Centro de tratamientos'}</p>
                 </div>
               </div>
             </div>
