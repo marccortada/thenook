@@ -45,6 +45,25 @@ const App = () => (
             }
           />
           <Route path="/admin-login" element={<AdminLogin />} />
+          
+          {/* Redirección desde rutas antiguas del panel */}
+          <Route 
+            path="/panel-gestion-nook-madrid-2024" 
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <Index />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/panel-gestion-nook-madrid-2024/*" 
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <Index />
+              </ProtectedRoute>
+            } 
+          />
+          
           <Route path="/canjear" element={<ProtectedRoute requireEmployee={true}><RedeemCode /></ProtectedRoute>} />
           <Route path="/pago-exitoso" element={<PaymentSuccess />} />
           <Route path="/pago-cancelado" element={<PaymentCanceled />} />
