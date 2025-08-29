@@ -85,11 +85,11 @@ const translations = {
     "proceed_to_payment": "Proceder al Pago",
     "custom_amount": "Importe Personalizado",
     "custom_gift_card": "TARJETA REGALO por VALOR personalizado",
-    "custom_description": "Elige un importe fijo o escribe otro importe.",
-    "custom_placeholder": "Introduce el importe personalizado",
-    "valid_amount": "Indica un importe válido",
-    "add_to_cart": "Añadir al Carrito",
-    "added_to_cart": "Añadido al carrito",
+     "custom_description": "Elige un importe fijo o escribe otro importe.",
+     "custom_placeholder": "Otro importe (€)",
+     "valid_amount": "Indica un importe válido",
+     "add_to_cart": "Añadir al Carrito",
+     "added_to_cart": "Añadido al carrito",
     
     // Validation messages
     "select_voucher_error": "Selecciona un bono",
@@ -266,11 +266,11 @@ const translations = {
     "proceed_to_payment": "Proceed to Payment",
     "custom_amount": "Custom Amount",
     "custom_gift_card": "CUSTOM AMOUNT GIFT CARD",
-    "custom_description": "Choose a fixed amount or enter another amount.",
-    "custom_placeholder": "Enter custom amount",
-    "valid_amount": "Please enter a valid amount",
-    "add_to_cart": "Add to Cart",
-    "added_to_cart": "Added to cart",
+     "custom_description": "Choose a fixed amount or enter another amount.",
+     "custom_placeholder": "Other amount (€)",
+     "valid_amount": "Please enter a valid amount",
+     "add_to_cart": "Add to Cart",
+     "added_to_cart": "Added to cart",
     
     // Validation messages
     "select_voucher_error": "Select a voucher",

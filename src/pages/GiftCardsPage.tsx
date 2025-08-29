@@ -99,48 +99,6 @@ const isDuo = (name?: string) => {
 const isCuatroManos = (name?: string) => !!name?.toLowerCase().includes("cuatro manos");
 const isRitual = (name?: string) => !!name?.toLowerCase().includes("ritual");
 
-const useLocalCart = () => {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    try {
-      const raw = localStorage.getItem("cart:giftcards");
-      return raw ? (JSON.parse(raw) as CartItem[]) : [];
-    } catch {
-      return [];
-    }
-  });
-  useEffect(() => {
-    localStorage.setItem("cart:giftcards", JSON.stringify(items));
-  }, [items]);
-
-  const add = (item: Omit<CartItem, "quantity" | "id"> & { quantity?: number }) => {
-    setItems((prev) => {
-      const idx = prev.findIndex(
-        (i) => i.name === item.name && i.priceCents === item.priceCents
-      );
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = { ...copy[idx], quantity: copy[idx].quantity + (item.quantity ?? 1) };
-        return copy;
-      }
-      return [
-        ...prev,
-        { id: crypto.randomUUID(), name: item.name, priceCents: item.priceCents, quantity: item.quantity ?? 1 },
-      ];
-    });
-    toast.success("Añadido al carrito");
-  };
-
-  const remove = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
-  const clear = () => setItems([]);
-  const totalCents = useMemo(
-    () => items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0),
-    [items]
-  );
-
-  return { items, add, remove, clear, totalCents };
-};
-
-
 const GiftCardsPage = () => {
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
   const [purchasedByName, setPurchasedByName] = useState("");
@@ -150,6 +108,48 @@ const GiftCardsPage = () => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [giftMessage, setGiftMessage] = useState("");
   const { t } = useTranslation();
+
+  // Hook para manejo del carrito local
+  const useLocalCart = () => {
+    const [items, setItems] = useState<CartItem[]>(() => {
+      try {
+        const raw = localStorage.getItem("cart:giftcards");
+        return raw ? (JSON.parse(raw) as CartItem[]) : [];
+      } catch {
+        return [];
+      }
+    });
+    useEffect(() => {
+      localStorage.setItem("cart:giftcards", JSON.stringify(items));
+    }, [items]);
+
+    const add = (item: Omit<CartItem, "quantity" | "id"> & { quantity?: number }) => {
+      setItems((prev) => {
+        const idx = prev.findIndex(
+          (i) => i.name === item.name && i.priceCents === item.priceCents
+        );
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = { ...copy[idx], quantity: copy[idx].quantity + (item.quantity ?? 1) };
+          return copy;
+        }
+        return [
+          ...prev,
+          { id: crypto.randomUUID(), name: item.name, priceCents: item.priceCents, quantity: item.quantity ?? 1 },
+        ];
+      });
+      toast.success(t('added_to_cart'));
+    };
+
+    const remove = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+    const clear = () => setItems([]);
+    const totalCents = useMemo(
+      () => items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0),
+      [items]
+    );
+
+    return { items, add, remove, clear, totalCents };
+  };
 
   useEffect(() => {
     (async () => {
@@ -218,7 +218,7 @@ const GiftCardsPage = () => {
   const addCustomToCart = () => {
     const amount = selectedPreset ?? (typeof customAmount === "number" ? customAmount : NaN);
     if (!amount || amount <= 0) {
-      toast.error("Indica un importe válido");
+      toast.error(t('valid_amount'));
       return;
     }
     add({ name: custom.name, priceCents: Math.round(amount * 100) });
@@ -244,7 +244,7 @@ const GiftCardsPage = () => {
                 to="/" 
                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted"
               >
-                ← Volver
+                ← {t('back')}
               </Link>
             </div>
             <LanguageSelector />
@@ -256,22 +256,22 @@ const GiftCardsPage = () => {
         <article>
           <header className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold">Tarjetas Regalo</h1>
+              <h1 className="text-2xl font-bold">{t('gift_cards_page')}</h1>
               <p className="text-sm text-muted-foreground">
-                Elige tu tarjeta regalo. Diseño elegante y 100% responsive.
+                {t('gift_cards_subtitle')}
               </p>
             </div>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline">Carrito ({items.length})</Button>
+                <Button variant="outline">{t('cart')} ({items.length})</Button>
               </SheetTrigger>
               <SheetContent className="w-[90vw] sm:w-[480px]">
                 <SheetHeader>
-                  <SheetTitle>Tu carrito</SheetTitle>
+                  <SheetTitle>{t('your_cart')}</SheetTitle>
                 </SheetHeader>
                 <div className="mt-4 space-y-4">
                   {items.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Tu carrito está vacío.</p>
+                    <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
                   ) : (
                     <div className="space-y-3">
                       {items.map((it) => (
@@ -283,39 +283,39 @@ const GiftCardsPage = () => {
                             </p>
                           </div>
                           <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
-                            Quitar
+                            {t('remove')}
                           </Button>
                         </div>
                       ))}
                        <div className="flex items-center justify-between border-t pt-3">
-                         <span className="text-sm text-muted-foreground">Total</span>
+                         <span className="text-sm text-muted-foreground">{t('total')}</span>
                          <span className="font-semibold">{euro(totalCents)}</span>
                        </div>
                        
                        {/* Campos de comprado por */}
                        <div className="space-y-3 border-t pt-3">
                          <div>
-                           <Label htmlFor="purchased_by_name" className="text-sm">Comprado por (nombre)</Label>
-                           <Input
-                             id="purchased_by_name"
-                             value={purchasedByName}
-                             onChange={(e) => setPurchasedByName(e.target.value)}
-                             placeholder="Nombre del comprador"
-                             className="mt-1"
-                           />
-                         </div>
-                         
-                         <div>
-                           <Label htmlFor="purchased_by_email" className="text-sm">Email del comprador</Label>
-                           <Input
-                             id="purchased_by_email"
-                             type="email"
-                             value={purchasedByEmail}
-                             onChange={(e) => setPurchasedByEmail(e.target.value)}
-                             placeholder="email@ejemplo.com"
-                             className="mt-1"
-                           />
+                            <Label htmlFor="purchased_by_name" className="text-sm">{t('purchased_by_name')}</Label>
+                            <Input
+                              id="purchased_by_name"
+                              value={purchasedByName}
+                              onChange={(e) => setPurchasedByName(e.target.value)}
+                              placeholder={t('buyer_name_placeholder')}
+                              className="mt-1"
+                            />
                           </div>
+                          
+                          <div>
+                            <Label htmlFor="purchased_by_email" className="text-sm">{t('buyer_email')}</Label>
+                            <Input
+                              id="purchased_by_email"
+                              type="email"
+                              value={purchasedByEmail}
+                              onChange={(e) => setPurchasedByEmail(e.target.value)}
+                              placeholder={t('buyer_email_placeholder')}
+                              className="mt-1"
+                            />
+                           </div>
                         </div>
                         
                         {/* ¿Es un regalo? */}
@@ -326,89 +326,89 @@ const GiftCardsPage = () => {
                               checked={isGift}
                               onCheckedChange={(checked) => setIsGift(!!checked)}
                             />
-                            <Label htmlFor="is_gift" className="text-sm">¿Es un regalo?</Label>
-                          </div>
-                          
-                          {isGift && (
-                            <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
-                              <div>
-                                <Label htmlFor="recipient_name" className="text-sm">Para (nombre del destinatario) *</Label>
-                                <Input
-                                  id="recipient_name"
-                                  value={recipientName}
-                                  onChange={(e) => setRecipientName(e.target.value)}
-                                  placeholder="Nombre del destinatario"
-                                  className="mt-1"
-                                  required={isGift}
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label htmlFor="recipient_email" className="text-sm">Email del destinatario</Label>
-                                <Input
-                                  id="recipient_email"
-                                  type="email"
-                                  value={recipientEmail}
-                                  onChange={(e) => setRecipientEmail(e.target.value)}
-                                  placeholder="email@ejemplo.com"
-                                  className="mt-1"
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label htmlFor="gift_message" className="text-sm">Mensaje de regalo (opcional)</Label>
-                                <Textarea
-                                  id="gift_message"
-                                  value={giftMessage}
-                                  onChange={(e) => setGiftMessage(e.target.value)}
-                                  placeholder="Tu mensaje personalizado..."
-                                  className="mt-1"
-                                  rows={3}
-                                />
-                              </div>
-                            </div>
-                          )}
+                             <Label htmlFor="is_gift" className="text-sm">{t('is_gift')}</Label>
+                           </div>
+                           
+                           {isGift && (
+                             <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
+                               <div>
+                                 <Label htmlFor="recipient_name" className="text-sm">{t('recipient_name_required')}</Label>
+                                 <Input
+                                   id="recipient_name"
+                                   value={recipientName}
+                                   onChange={(e) => setRecipientName(e.target.value)}
+                                   placeholder={t('recipient_name_placeholder')}
+                                   className="mt-1"
+                                   required={isGift}
+                                 />
+                               </div>
+                               
+                               <div>
+                                 <Label htmlFor="recipient_email" className="text-sm">{t('recipient_email')}</Label>
+                                 <Input
+                                   id="recipient_email"
+                                   type="email"
+                                   value={recipientEmail}
+                                   onChange={(e) => setRecipientEmail(e.target.value)}
+                                   placeholder={t('buyer_email_placeholder')}
+                                   className="mt-1"
+                                 />
+                               </div>
+                               
+                               <div>
+                                 <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
+                                 <Textarea
+                                   id="gift_message"
+                                   value={giftMessage}
+                                   onChange={(e) => setGiftMessage(e.target.value)}
+                                   placeholder={t('gift_message_placeholder')}
+                                   className="mt-1"
+                                   rows={3}
+                                 />
+                               </div>
+                             </div>
+                           )}
                         </div>
                         
                         <PaymentMethodsInfo />
                       <div className="flex gap-2 pt-1">
-                        <Button variant="secondary" onClick={clear} className="flex-1">
-                          Vaciar
-                        </Button>
-                         <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
-                           if (items.length === 0) return;
-                           if (isGift && !recipientName.trim()) {
-                             toast.error("Por favor, indica el nombre del destinatario");
-                             return;
-                           }
-                           try {
-                             const payload = {
-                               intent: "gift_cards",
-                                gift_cards: {
-                                  items: items.map(i => ({ 
-                                    amount_cents: i.priceCents, 
-                                    quantity: i.quantity,
-                                    purchased_by_name: purchasedByName || undefined,
-                                    purchased_by_email: purchasedByEmail || undefined,
-                                    is_gift: isGift,
-                                    recipient_name: isGift ? recipientName : undefined,
-                                    recipient_email: isGift ? recipientEmail : undefined,
-                                    gift_message: isGift ? giftMessage : undefined
-                                  }))
-                                },
-                               currency: "eur"
-                             };
-                            const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-                            if (error) throw error;
-                            if (data?.url) {
-                              window.location.href = data.url;
+                         <Button variant="secondary" onClick={clear} className="flex-1">
+                           {t('empty_cart_button')}
+                         </Button>
+                          <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
+                            if (items.length === 0) return;
+                            if (isGift && !recipientName.trim()) {
+                              toast.error(t('recipient_name_error'));
+                              return;
                             }
-                          } catch (e: any) {
-                            toast.error(e.message || "No se pudo iniciar el pago");
-                          }
-                        }}>
-                          Proceder al Pago
-                        </Button>
+                            try {
+                              const payload = {
+                                intent: "gift_cards",
+                                 gift_cards: {
+                                   items: items.map(i => ({ 
+                                     amount_cents: i.priceCents, 
+                                     quantity: i.quantity,
+                                     purchased_by_name: purchasedByName || undefined,
+                                     purchased_by_email: purchasedByEmail || undefined,
+                                     is_gift: isGift,
+                                     recipient_name: isGift ? recipientName : undefined,
+                                     recipient_email: isGift ? recipientEmail : undefined,
+                                     gift_message: isGift ? giftMessage : undefined
+                                   }))
+                                 },
+                                currency: "eur"
+                              };
+                             const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
+                             if (error) throw error;
+                             if (data?.url) {
+                               window.location.href = data.url;
+                             }
+                           } catch (e: any) {
+                             toast.error(e.message || t('payment_init_error'));
+                           }
+                         }}>
+                           {t('proceed_to_payment')}
+                         </Button>
                       </div>
                     </div>
                   )}
@@ -422,29 +422,29 @@ const GiftCardsPage = () => {
               {groups.individuales.length > 0 && (
                 <AccordionItem value="tarjetas-individuales" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                    <h2 className="text-lg font-semibold">Tarjetas para Masajes Individuales</h2>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {groups.individuales.map((item) => (
-                        <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">{item.description || item.name}</p>
-                              <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="pt-2">
-                            <Button
-                              size="sm"
-                              className="w-full"
-                              onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
-                            >
-                              Añadir al carrito
-                            </Button>
+                     <h2 className="text-lg font-semibold">{t('individual_massages_packages')}</h2>
+                   </AccordionTrigger>
+                   <AccordionContent className="px-4 pb-4">
+                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                       {groups.individuales.map((item) => (
+                         <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                           <CardHeader className="pb-2">
+                             <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
+                           </CardHeader>
+                           <CardContent className="pb-2">
+                             <div className="space-y-1">
+                               <p className="text-sm text-muted-foreground">{item.description || item.name}</p>
+                               <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                             </div>
+                           </CardContent>
+                           <CardFooter className="pt-2">
+                             <Button
+                               size="sm"
+                               className="w-full"
+                               onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
+                             >
+                               {t('add_to_cart')}
+                             </Button>
                           </CardFooter>
                         </Card>
                       ))}
@@ -456,29 +456,29 @@ const GiftCardsPage = () => {
               {groups.paraDos.length > 0 && (
                 <AccordionItem value="tarjetas-dos-personas" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                    <h2 className="text-lg font-semibold">Tarjetas para Masajes en Pareja</h2>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {groups.paraDos.map((item) => (
-                        <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">{item.description || item.name}</p>
-                              <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="pt-2">
-                            <Button
-                              size="sm"
-                              className="w-full"
-                              onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
-                            >
-                              Añadir al carrito
-                            </Button>
+                     <h2 className="text-lg font-semibold">{t('couples_packages')}</h2>
+                   </AccordionTrigger>
+                   <AccordionContent className="px-4 pb-4">
+                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                       {groups.paraDos.map((item) => (
+                         <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                           <CardHeader className="pb-2">
+                             <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
+                           </CardHeader>
+                           <CardContent className="pb-2">
+                             <div className="space-y-1">
+                               <p className="text-sm text-muted-foreground">{item.description || item.name}</p>
+                               <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                             </div>
+                           </CardContent>
+                           <CardFooter className="pt-2">
+                             <Button
+                               size="sm"
+                               className="w-full"
+                               onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
+                             >
+                               {t('add_to_cart')}
+                             </Button>
                           </CardFooter>
                         </Card>
                       ))}
@@ -490,29 +490,29 @@ const GiftCardsPage = () => {
               {groups.cuatro.length > 0 && (
                 <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                    <h2 className="text-lg font-semibold">Tarjetas para Masajes a 4 Manos</h2>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {groups.cuatro.map((item) => (
-                        <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">{item.description || item.name}</p>
-                              <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="pt-2">
-                            <Button
-                              size="sm"
-                              className="w-full"
-                              onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
-                            >
-                              Añadir al carrito
-                            </Button>
+                     <h2 className="text-lg font-semibold">{t('four_hands_packages')}</h2>
+                   </AccordionTrigger>
+                   <AccordionContent className="px-4 pb-4">
+                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                       {groups.cuatro.map((item) => (
+                         <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                           <CardHeader className="pb-2">
+                             <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
+                           </CardHeader>
+                           <CardContent className="pb-2">
+                             <div className="space-y-1">
+                               <p className="text-sm text-muted-foreground">{item.description || item.name}</p>
+                               <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                             </div>
+                           </CardContent>
+                           <CardFooter className="pt-2">
+                             <Button
+                               size="sm"
+                               className="w-full"
+                               onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
+                             >
+                               {t('add_to_cart')}
+                             </Button>
                           </CardFooter>
                         </Card>
                       ))}
@@ -524,29 +524,29 @@ const GiftCardsPage = () => {
               {groups.rituales.length > 0 && (
                 <AccordionItem value="tarjetas-rituales" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                    <h2 className="text-lg font-semibold">Tarjetas para Rituales</h2>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {groups.rituales.map((item) => (
-                        <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">{item.description || item.name}</p>
-                              <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="pt-2">
-                            <Button
-                              size="sm"
-                              className="w-full"
-                              onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
-                            >
-                              Añadir al carrito
-                            </Button>
+                     <h2 className="text-lg font-semibold">{t('rituals_packages')}</h2>
+                   </AccordionTrigger>
+                   <AccordionContent className="px-4 pb-4">
+                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                       {groups.rituales.map((item) => (
+                         <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                           <CardHeader className="pb-2">
+                             <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
+                           </CardHeader>
+                           <CardContent className="pb-2">
+                             <div className="space-y-1">
+                               <p className="text-sm text-muted-foreground">{item.description || item.name}</p>
+                               <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                             </div>
+                           </CardContent>
+                           <CardFooter className="pt-2">
+                             <Button
+                               size="sm"
+                               className="w-full"
+                               onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
+                             >
+                               {t('add_to_cart')}
+                             </Button>
                           </CardFooter>
                         </Card>
                       ))}
@@ -558,62 +558,62 @@ const GiftCardsPage = () => {
               {/* Importe Personalizado */}
               <AccordionItem value="importe-personalizado" className="border rounded-lg p-0">
                 <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                  <h2 className="text-lg font-semibold">Importe Personalizado</h2>
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base leading-tight">{custom.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <div className="space-y-3">
-                          <p className="text-sm text-muted-foreground">{custom.description}</p>
-                          <div className="flex flex-wrap gap-2">
-                            {presets.map((p) => (
-                              <Button
-                                key={p}
-                                variant={selectedPreset === p ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setSelectedPreset((prev) => (prev === p ? null : p))}
-                              >
-                                {euro(p * 100)}
-                              </Button>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              min={1}
-                              step={1}
-                              value={customAmount === "" ? "" : customAmount}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                if (v === "") {
-                                  setCustomAmount("");
-                                  return;
-                                }
-                                const n = Number(v);
-                                if (!Number.isNaN(n)) setCustomAmount(n);
-                              }}
-                              placeholder="Otro importe (€)"
-                              className="h-9"
-                            />
-                            <Button size="sm" onClick={addCustomToCart}>
-                              Añadir
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="pt-2">
-                        <Button
-                          size="sm"
-                          className="w-full"
-                          onClick={addCustomToCart}
-                        >
-                          Añadir al carrito
-                        </Button>
+                   <h2 className="text-lg font-semibold">{t('custom_amount')}</h2>
+                 </AccordionTrigger>
+                 <AccordionContent className="px-4 pb-4">
+                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                     <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                       <CardHeader className="pb-2">
+                         <CardTitle className="text-base leading-tight">{t('custom_gift_card')}</CardTitle>
+                       </CardHeader>
+                       <CardContent className="pb-2">
+                         <div className="space-y-3">
+                           <p className="text-sm text-muted-foreground">{t('custom_description')}</p>
+                           <div className="flex flex-wrap gap-2">
+                             {presets.map((p) => (
+                               <Button
+                                 key={p}
+                                 variant={selectedPreset === p ? "default" : "outline"}
+                                 size="sm"
+                                 onClick={() => setSelectedPreset((prev) => (prev === p ? null : p))}
+                               >
+                                 {euro(p * 100)}
+                               </Button>
+                             ))}
+                           </div>
+                           <div className="flex items-center gap-2">
+                             <Input
+                               type="number"
+                               inputMode="numeric"
+                               min={1}
+                               step={1}
+                               value={customAmount === "" ? "" : customAmount}
+                               onChange={(e) => {
+                                 const v = e.target.value;
+                                 if (v === "") {
+                                   setCustomAmount("");
+                                   return;
+                                 }
+                                 const n = Number(v);
+                                 if (!Number.isNaN(n)) setCustomAmount(n);
+                               }}
+                               placeholder={t('custom_placeholder')}
+                               className="h-9"
+                             />
+                             <Button size="sm" onClick={addCustomToCart}>
+                               {t('add_to_cart')}
+                             </Button>
+                           </div>
+                         </div>
+                       </CardContent>
+                       <CardFooter className="pt-2">
+                         <Button
+                           size="sm"
+                           className="w-full"
+                           onClick={addCustomToCart}
+                         >
+                           {t('add_to_cart')}
+                         </Button>
                       </CardFooter>
                     </Card>
                   </div>
