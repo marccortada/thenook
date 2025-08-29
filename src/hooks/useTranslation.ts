@@ -80,9 +80,8 @@ const translations = {
     "gift_cards_subtitle": "Elige tu tarjeta regalo. Diseño elegante y 100% responsive.",
     "cart": "Carrito",
     "your_cart": "Tu carrito",
-    "cart_empty": "Tu carrito está vacío.",
-    "remove": "Quitar",
-    "empty_cart": "Vaciar",
+     "cart_empty": "Tu carrito está vacío.",
+     "empty_cart": "Vaciar",
     "proceed_to_payment": "Proceder al Pago",
     "custom_amount": "Importe Personalizado",
     "custom_gift_card": "TARJETA REGALO por VALOR personalizado",
@@ -97,7 +96,14 @@ const translations = {
     "buyer_data_required": "Datos del comprador requeridos",
     "beneficiary_data_required": "Datos del beneficiario requeridos",
     "error": "Error",
-    "payment_init_error": "No se pudo iniciar el pago",
+     "payment_init_error": "No se pudo iniciar el pago",
+     
+     // Error messages
+     "recipient_name_error": "Por favor, indica el nombre del destinatario",
+     "buyer_name_error": "Por favor, indica tu nombre", 
+     "buyer_email_error": "Por favor, indica tu email",
+     "purchase_success": "¡Compra procesada exitosamente!",
+     "purchase_error": "Error al procesar la compra. Inténtalo de nuevo.",
     
     // Client Reservation Page
     "loading_centers": "Cargando centros...",
@@ -155,6 +161,26 @@ const translations = {
      // Form labels
      "name_label": "Nombre",
      "close": "Cerrar",
+     
+     // Package page specific
+     "remove": "Quitar",
+     "purchased_by_name": "Comprado por (nombre)",
+     "buyer_name_placeholder": "Nombre del comprador",
+     "buyer_email": "Email del comprador",
+     "buyer_email_placeholder": "email@ejemplo.com",
+     "is_gift": "¿Es un regalo?",
+     "recipient_name_required": "Para (nombre del destinatario) *",
+     "recipient_name_placeholder": "Nombre del destinatario",
+     "recipient_email": "Email del destinatario",
+     "gift_message": "Mensaje de regalo (opcional)",
+     "gift_message_placeholder": "Tu mensaje personalizado...",
+     "empty_cart_button": "Vaciar",
+     "buy_button": "Comprar",
+     "individual_massages_packages": "Bonos para Masajes Individuales",
+     "four_hands_packages": "Bonos para Masajes a Cuatro Manos",
+     "rituals_packages": "Bonos para Rituales",
+     "couples_packages": "Bonos para Masajes en Pareja",
+     "sessions_count": "sesiones",
   },
   
   en: {
@@ -235,9 +261,8 @@ const translations = {
     "gift_cards_subtitle": "Choose your gift card. Elegant and 100% responsive design.",
     "cart": "Cart",
     "your_cart": "Your cart",
-    "cart_empty": "Your cart is empty.",
-    "remove": "Remove",
-    "empty_cart": "Empty",
+     "cart_empty": "Your cart is empty.",
+     "empty_cart": "Empty",
     "proceed_to_payment": "Proceed to Payment",
     "custom_amount": "Custom Amount",
     "custom_gift_card": "CUSTOM AMOUNT GIFT CARD",
@@ -252,7 +277,14 @@ const translations = {
     "buyer_data_required": "Buyer data required",
     "beneficiary_data_required": "Beneficiary data required",
     "error": "Error",
-    "payment_init_error": "Could not initiate payment",
+     "payment_init_error": "Could not initiate payment",
+     
+     // Error messages
+     "recipient_name_error": "Please enter the recipient's name",
+     "buyer_name_error": "Please enter your name", 
+     "buyer_email_error": "Please enter your email",
+     "purchase_success": "Purchase processed successfully!",
+     "purchase_error": "Error processing purchase. Please try again.",
     
     // Client Reservation Page  
     "loading_centers": "Loading centers...",
@@ -311,6 +343,26 @@ const translations = {
      // Form labels
      "name_label": "Name",
      "close": "Close",
+     
+     // Package page specific
+     "remove": "Remove",
+     "purchased_by_name": "Purchased by (name)",
+     "buyer_name_placeholder": "Buyer's name",
+     "buyer_email": "Buyer's email",
+     "buyer_email_placeholder": "email@example.com",
+     "is_gift": "Is it a gift?",
+     "recipient_name_required": "For (recipient's name) *",
+     "recipient_name_placeholder": "Recipient's name",
+     "recipient_email": "Recipient's email",
+     "gift_message": "Gift message (optional)",
+     "gift_message_placeholder": "Your personalized message...",
+     "empty_cart_button": "Empty",
+     "buy_button": "Buy",
+     "individual_massages_packages": "Individual Massage Packages",
+     "four_hands_packages": "Four Hands Massage Packages",
+     "rituals_packages": "Ritual Packages",
+     "couples_packages": "Couples Massage Packages",
+     "sessions_count": "sessions",
   },
   
   fr: {

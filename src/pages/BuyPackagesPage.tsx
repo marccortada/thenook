@@ -47,47 +47,6 @@ const isDuo = (name?: string) => {
 const isCuatroManos = (name?: string) => !!name?.toLowerCase().includes("cuatro manos");
 const isRitual = (name?: string) => !!name?.toLowerCase().includes("ritual");
 
-const useLocalCart = () => {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    try {
-      const raw = localStorage.getItem("cart:packages");
-      return raw ? (JSON.parse(raw) as CartItem[]) : [];
-    } catch {
-      return [];
-    }
-  });
-  useEffect(() => {
-    localStorage.setItem("cart:packages", JSON.stringify(items));
-  }, [items]);
-
-  const add = (item: Omit<CartItem, "quantity" | "id"> & { quantity?: number }) => {
-    setItems((prev) => {
-      const idx = prev.findIndex(
-        (i) => i.name === item.name && i.priceCents === item.priceCents
-      );
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = { ...copy[idx], quantity: copy[idx].quantity + (item.quantity ?? 1) };
-        return copy;
-      }
-      return [
-        ...prev,
-        { id: crypto.randomUUID(), name: item.name, priceCents: item.priceCents, quantity: item.quantity ?? 1 },
-      ];
-    });
-    toast.success("Añadido al carrito");
-  };
-
-  const remove = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
-  const clear = () => setItems([]);
-  const totalCents = useMemo(
-    () => items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0),
-    [items]
-  );
-
-  return { items, add, remove, clear, totalCents };
-};
-
 const BuyPackagesPage = () => {
   const [packages, setPackages] = useState<any[]>([]);
   const [purchasedByName, setPurchasedByName] = useState("");
@@ -97,6 +56,48 @@ const BuyPackagesPage = () => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [giftMessage, setGiftMessage] = useState("");
   const { t } = useTranslation();
+
+  // Hook para manejo del carrito local
+  const useLocalCart = () => {
+    const [items, setItems] = useState<CartItem[]>(() => {
+      try {
+        const raw = localStorage.getItem("cart:packages");
+        return raw ? (JSON.parse(raw) as CartItem[]) : [];
+      } catch {
+        return [];
+      }
+    });
+    useEffect(() => {
+      localStorage.setItem("cart:packages", JSON.stringify(items));
+    }, [items]);
+
+    const add = (item: Omit<CartItem, "quantity" | "id"> & { quantity?: number }) => {
+      setItems((prev) => {
+        const idx = prev.findIndex(
+          (i) => i.name === item.name && i.priceCents === item.priceCents
+        );
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = { ...copy[idx], quantity: copy[idx].quantity + (item.quantity ?? 1) };
+          return copy;
+        }
+        return [
+          ...prev,
+          { id: crypto.randomUUID(), name: item.name, priceCents: item.priceCents, quantity: item.quantity ?? 1 },
+        ];
+      });
+      toast.success(t('added_to_cart'));
+    };
+
+    const remove = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+    const clear = () => setItems([]);
+    const totalCents = useMemo(
+      () => items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0),
+      [items]
+    );
+
+    return { items, add, remove, clear, totalCents };
+  };
 
   useEffect(() => {
     (async () => {
@@ -174,12 +175,12 @@ const BuyPackagesPage = () => {
                   height={40}
                 />
               </Link>
-              <Link 
-                to="/" 
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted"
-              >
-                ← Volver
-              </Link>
+               <Link 
+                 to="/" 
+                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted"
+               >
+                 ← {t('back')}
+               </Link>
             </div>
             <LanguageSelector />
           </div>
@@ -216,39 +217,39 @@ const BuyPackagesPage = () => {
                               {euro(it.priceCents)} × {it.quantity}
                             </p>
                           </div>
-                          <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
-                            Quitar
-                          </Button>
+                           <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
+                             {t('remove')}
+                           </Button>
                         </div>
                       ))}
                        <div className="flex items-center justify-between border-t pt-3">
-                         <span className="text-sm text-muted-foreground">Total</span>
+                         <span className="text-sm text-muted-foreground">{t('total')}</span>
                          <span className="font-semibold">{euro(totalCents)}</span>
                        </div>
                        
                        {/* Campos de comprado por */}
                        <div className="space-y-3 border-t pt-3">
                          <div>
-                           <Label htmlFor="purchased_by_name" className="text-sm">Comprado por (nombre)</Label>
-                           <Input
-                             id="purchased_by_name"
-                             value={purchasedByName}
-                             onChange={(e) => setPurchasedByName(e.target.value)}
-                             placeholder="Nombre del comprador"
-                             className="mt-1"
-                           />
+                            <Label htmlFor="purchased_by_name" className="text-sm">{t('purchased_by_name')}</Label>
+                            <Input
+                              id="purchased_by_name"
+                              value={purchasedByName}
+                              onChange={(e) => setPurchasedByName(e.target.value)}
+                              placeholder={t('buyer_name_placeholder')}
+                              className="mt-1"
+                            />
                          </div>
                          
                          <div>
-                           <Label htmlFor="purchased_by_email" className="text-sm">Email del comprador</Label>
-                           <Input
-                             id="purchased_by_email"
-                             type="email"
-                             value={purchasedByEmail}
-                             onChange={(e) => setPurchasedByEmail(e.target.value)}
-                             placeholder="email@ejemplo.com"
-                             className="mt-1"
-                           />
+                            <Label htmlFor="purchased_by_email" className="text-sm">{t('buyer_email')}</Label>
+                            <Input
+                              id="purchased_by_email"
+                              type="email"
+                              value={purchasedByEmail}
+                              onChange={(e) => setPurchasedByEmail(e.target.value)}
+                              placeholder={t('buyer_email_placeholder')}
+                              className="mt-1"
+                            />
                           </div>
                         </div>
                         
@@ -260,45 +261,45 @@ const BuyPackagesPage = () => {
                               checked={isGift}
                               onCheckedChange={(checked) => setIsGift(!!checked)}
                             />
-                            <Label htmlFor="is_gift" className="text-sm">¿Es un regalo?</Label>
+                            <Label htmlFor="is_gift" className="text-sm">{t('is_gift')}</Label>
                           </div>
                           
                           {isGift && (
                             <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
                               <div>
-                                <Label htmlFor="recipient_name" className="text-sm">Para (nombre del destinatario) *</Label>
-                                <Input
-                                  id="recipient_name"
-                                  value={recipientName}
-                                  onChange={(e) => setRecipientName(e.target.value)}
-                                  placeholder="Nombre del destinatario"
-                                  className="mt-1"
-                                  required={isGift}
-                                />
+                                 <Label htmlFor="recipient_name" className="text-sm">{t('recipient_name_required')}</Label>
+                                 <Input
+                                   id="recipient_name"
+                                   value={recipientName}
+                                   onChange={(e) => setRecipientName(e.target.value)}
+                                   placeholder={t('recipient_name_placeholder')}
+                                   className="mt-1"
+                                   required={isGift}
+                                 />
                               </div>
                               
                               <div>
-                                <Label htmlFor="recipient_email" className="text-sm">Email del destinatario</Label>
-                                <Input
-                                  id="recipient_email"
-                                  type="email"
-                                  value={recipientEmail}
-                                  onChange={(e) => setRecipientEmail(e.target.value)}
-                                  placeholder="email@ejemplo.com"
-                                  className="mt-1"
-                                />
+                                 <Label htmlFor="recipient_email" className="text-sm">{t('recipient_email')}</Label>
+                                 <Input
+                                   id="recipient_email"
+                                   type="email"
+                                   value={recipientEmail}
+                                   onChange={(e) => setRecipientEmail(e.target.value)}
+                                   placeholder={t('buyer_email_placeholder')}
+                                   className="mt-1"
+                                 />
                               </div>
                               
                               <div>
-                                <Label htmlFor="gift_message" className="text-sm">Mensaje de regalo (opcional)</Label>
-                                <Textarea
-                                  id="gift_message"
-                                  value={giftMessage}
-                                  onChange={(e) => setGiftMessage(e.target.value)}
-                                  placeholder="Tu mensaje personalizado..."
-                                  className="mt-1"
-                                  rows={3}
-                                />
+                                 <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
+                                 <Textarea
+                                   id="gift_message"
+                                   value={giftMessage}
+                                   onChange={(e) => setGiftMessage(e.target.value)}
+                                   placeholder={t('gift_message_placeholder')}
+                                   className="mt-1"
+                                   rows={3}
+                                 />
                               </div>
                             </div>
                           )}
@@ -306,23 +307,23 @@ const BuyPackagesPage = () => {
                         
                         <PaymentMethodsInfo />
                       <div className="flex gap-2 pt-1">
-                        <Button variant="secondary" onClick={clear} className="flex-1">
-                          Vaciar
-                        </Button>
+                         <Button variant="secondary" onClick={clear} className="flex-1">
+                           {t('empty_cart_button')}
+                         </Button>
                          <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
-                           if (items.length === 0) return;
-                           if (isGift && !recipientName.trim()) {
-                             toast.error("Por favor, indica el nombre del destinatario");
-                             return;
-                           }
-                           if (!purchasedByName.trim()) {
-                             toast.error("Por favor, indica tu nombre");
-                             return;
-                           }
-                           if (!purchasedByEmail.trim()) {
-                             toast.error("Por favor, indica tu email");
-                             return;
-                           }
+                            if (items.length === 0) return;
+                            if (isGift && !recipientName.trim()) {
+                              toast.error(t('recipient_name_error'));
+                              return;
+                            }
+                            if (!purchasedByName.trim()) {
+                              toast.error(t('buyer_name_error'));
+                              return;
+                            }
+                            if (!purchasedByEmail.trim()) {
+                              toast.error(t('buyer_email_error'));
+                              return;
+                            }
 
                            try {
                              const { data, error } = await supabase.functions.invoke('purchase-voucher', {
@@ -339,22 +340,22 @@ const BuyPackagesPage = () => {
                                }
                              });
 
-                             if (error) throw error;
+                              if (error) throw error;
 
-                             toast.success("¡Compra procesada exitosamente!");
-                             clear();
-                             setPurchasedByName("");
-                             setPurchasedByEmail("");
-                             setIsGift(false);
-                             setRecipientName("");
-                             setRecipientEmail("");
-                             setGiftMessage("");
-                           } catch (error) {
-                             console.error('Error purchasing packages:', error);
-                             toast.error("Error al procesar la compra. Inténtalo de nuevo.");
-                           }
+                              toast.success(t('purchase_success'));
+                              clear();
+                              setPurchasedByName("");
+                              setPurchasedByEmail("");
+                              setIsGift(false);
+                              setRecipientName("");
+                              setRecipientEmail("");
+                              setGiftMessage("");
+                            } catch (error) {
+                              console.error('Error purchasing packages:', error);
+                              toast.error(t('purchase_error'));
+                            }
                          }}>
-                           Comprar {euro(totalCents)}
+                           {t('buy_button')} {euro(totalCents)}
                          </Button>
                       </div>
                     </div>
@@ -369,7 +370,7 @@ const BuyPackagesPage = () => {
               {groups.individuales.length > 0 && (
                 <AccordionItem value="bonos-individuales" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                    <h2 className="text-lg font-semibold">Bonos para Masajes Individuales</h2>
+                    <h2 className="text-lg font-semibold">{t('individual_massages_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -379,10 +380,10 @@ const BuyPackagesPage = () => {
                             <CardTitle className="text-base leading-tight">{pkg.name}</CardTitle>
                           </CardHeader>
                           <CardContent className="pb-2">
-                            <div className="space-y-1">
-                              {pkg.sessions_count && (
-                                <p className="text-sm text-muted-foreground">{pkg.sessions_count} sesiones</p>
-                              )}
+                             <div className="space-y-1">
+                               {pkg.sessions_count && (
+                                 <p className="text-sm text-muted-foreground">{pkg.sessions_count} {t('sessions_count')}</p>
+                               )}
                               <p className="text-lg font-bold text-primary">{euro(pkg.priceCents!)}</p>
                             </div>
                           </CardContent>
@@ -392,7 +393,7 @@ const BuyPackagesPage = () => {
                               className="w-full"
                               onClick={() => add({ name: pkg.name, priceCents: pkg.priceCents! })}
                             >
-                              Añadir al carrito
+                               {t('add_to_cart')}
                             </Button>
                           </CardFooter>
                         </Card>
@@ -405,7 +406,7 @@ const BuyPackagesPage = () => {
               {groups.paraDos.length > 0 && (
                 <AccordionItem value="bonos-dos-personas" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                    <h2 className="text-lg font-semibold">Bonos para Masajes en Pareja</h2>
+                    <h2 className="text-lg font-semibold">{t('couples_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -417,7 +418,7 @@ const BuyPackagesPage = () => {
                           <CardContent className="pb-2">
                             <div className="space-y-1">
                               {pkg.sessions_count && (
-                                <p className="text-sm text-muted-foreground">{pkg.sessions_count} sesiones</p>
+                                 <p className="text-sm text-muted-foreground">{pkg.sessions_count} {t('sessions_count')}</p>
                               )}
                               <p className="text-lg font-bold text-primary">{euro(pkg.priceCents!)}</p>
                             </div>
@@ -428,7 +429,7 @@ const BuyPackagesPage = () => {
                               className="w-full"
                               onClick={() => add({ name: pkg.name, priceCents: pkg.priceCents! })}
                             >
-                              Añadir al carrito
+                               {t('add_to_cart')}
                             </Button>
                           </CardFooter>
                         </Card>
@@ -441,7 +442,7 @@ const BuyPackagesPage = () => {
               {groups.cuatro.length > 0 && (
                 <AccordionItem value="bonos-cuatro-manos" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                    <h2 className="text-lg font-semibold">Bonos para Masajes a 4 Manos</h2>
+                    <h2 className="text-lg font-semibold">{t('four_hands_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -453,7 +454,7 @@ const BuyPackagesPage = () => {
                           <CardContent className="pb-2">
                             <div className="space-y-1">
                               {pkg.sessions_count && (
-                                <p className="text-sm text-muted-foreground">{pkg.sessions_count} sesiones</p>
+                                 <p className="text-sm text-muted-foreground">{pkg.sessions_count} {t('sessions_count')}</p>
                               )}
                               <p className="text-lg font-bold text-primary">{euro(pkg.priceCents!)}</p>
                             </div>
@@ -464,7 +465,7 @@ const BuyPackagesPage = () => {
                               className="w-full"
                               onClick={() => add({ name: pkg.name, priceCents: pkg.priceCents! })}
                             >
-                              Añadir al carrito
+                               {t('add_to_cart')}
                             </Button>
                           </CardFooter>
                         </Card>
@@ -477,7 +478,7 @@ const BuyPackagesPage = () => {
               {groups.rituales.length > 0 && (
                 <AccordionItem value="bonos-rituales" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                    <h2 className="text-lg font-semibold">Bonos para Rituales</h2>
+                    <h2 className="text-lg font-semibold">{t('rituals_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -489,7 +490,7 @@ const BuyPackagesPage = () => {
                           <CardContent className="pb-2">
                             <div className="space-y-1">
                               {pkg.sessions_count && (
-                                <p className="text-sm text-muted-foreground">{pkg.sessions_count} sesiones</p>
+                                <p className="text-sm text-muted-foreground">{pkg.sessions_count} {t('sessions_count')}</p>
                               )}
                               <p className="text-lg font-bold text-primary">{euro(pkg.priceCents!)}</p>
                             </div>
@@ -500,7 +501,7 @@ const BuyPackagesPage = () => {
                               className="w-full"
                               onClick={() => add({ name: pkg.name, priceCents: pkg.priceCents! })}
                             >
-                              Añadir al carrito
+                              {t('add_to_cart')}
                             </Button>
                           </CardFooter>
                         </Card>
