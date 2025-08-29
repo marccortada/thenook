@@ -181,6 +181,16 @@ const translations = {
      "rituals_packages": "Bonos para Rituales",
      "couples_packages": "Bonos para Masajes en Pareja",
      "sessions_count": "sesiones",
+     
+     // Package names translations
+     "bono_5_masajes_piernas_cansadas": "Bono 5 masajes Piernas Cansadas",
+     "bono_5_masajes_55": "Bono 5 masajes 55'",
+     "bono_5_sesiones_shiatsu": "Bono 5 sesiones de Shiatsu",
+     "bono_5_masajes_relajante": "Bono 5 masajes Relajante",
+     "bono_5_masajes_descontracturante": "Bono 5 masajes Descontracturante",
+     "bono_5_masajes_75_minutos": "Bono 5 masajes 75 minutos",
+     "bono_10_masajes_55": "Bono 10 masajes 55'",
+     "bono_10_masajes_75": "Bono 10 masajes 75'",
   },
   
   en: {
@@ -363,6 +373,16 @@ const translations = {
      "rituals_packages": "Ritual Packages",
      "couples_packages": "Couples Massage Packages",
      "sessions_count": "sessions",
+     
+     // Package names translations
+     "bono_5_masajes_piernas_cansadas": "5 Tired Legs Massage Package",
+     "bono_5_masajes_55": "5 Massage Package 55'",
+     "bono_5_sesiones_shiatsu": "5 Shiatsu Sessions Package",
+     "bono_5_masajes_relajante": "5 Relaxing Massage Package",
+     "bono_5_masajes_descontracturante": "5 Therapeutic Massage Package",
+     "bono_5_masajes_75_minutos": "5 Massage Package 75 minutes",
+     "bono_10_masajes_55": "10 Massage Package 55'",
+     "bono_10_masajes_75": "10 Massage Package 75'",
   },
   
   fr: {
