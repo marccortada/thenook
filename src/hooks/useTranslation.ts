@@ -141,9 +141,16 @@ const translations = {
     "vouchers": "Bonos",
     "vouchers_description": "Compra paquetes de sesiones con descuento",
     "gift_description": "Regala experiencias de bienestar únicas",
-    "our_locations": "Nuestras Ubicaciones",
-    "locations_subtitle": "Encuéntranos en Madrid",
-    "open_maps": "Abrir en Mapas",
+     "our_locations": "Nuestras Ubicaciones",
+     "locations_subtitle": "Encuéntranos en Madrid",
+     "open_maps": "Abrir en Mapas",
+     
+     // Package/Voucher related
+     "massage_vouchers": "Bonos de Masaje",
+     "save_buying_session_packages": "Ahorra comprando paquetes de sesiones con descuento",
+     
+     // Manage Booking
+     "enter_email_or_phone": "Por favor introduce tu email o teléfono",
   },
   
   en: {
@@ -286,9 +293,16 @@ const translations = {
     "vouchers": "Vouchers",
     "vouchers_description": "Buy session packages with discount",
     "gift_description": "Give unique wellness experiences",
-    "our_locations": "Our Locations",
-    "locations_subtitle": "Find us in Madrid",
-    "open_maps": "Open in Maps",
+     "our_locations": "Our Locations",
+     "locations_subtitle": "Find us in Madrid",
+     "open_maps": "Open in Maps",
+     
+     // Package/Voucher related
+     "massage_vouchers": "Massage Vouchers",
+     "save_buying_session_packages": "Save by buying session packages with discount",
+     
+     // Manage Booking
+     "enter_email_or_phone": "Please enter your email or phone",
   },
   
   fr: {
@@ -354,9 +368,16 @@ const translations = {
     "vouchers": "Bons",
     "vouchers_description": "Achetez des forfaits de séances avec remise",
     "gift_description": "Offrez des expériences de bien-être uniques",
-    "our_locations": "Nos Emplacements",
-    "locations_subtitle": "Trouvez-nous à Madrid",
-    "open_maps": "Ouvrir dans Maps",
+     "our_locations": "Nos Emplacements",
+     "locations_subtitle": "Trouvez-nous à Madrid",
+     "open_maps": "Ouvrir dans Maps",
+     
+     // Package/Voucher related
+     "massage_vouchers": "Bons de Massage",
+     "save_buying_session_packages": "Économisez en achetant des forfaits de séances avec remise",
+     
+     // Manage Booking
+     "enter_email_or_phone": "Veuillez saisir votre email ou téléphone",
   },
   
   de: {
@@ -414,9 +435,16 @@ const translations = {
     "vouchers": "Gutscheine",
     "vouchers_description": "Kaufen Sie Sitzungspakete mit Rabatt",
     "gift_description": "Schenken Sie einzigartige Wellness-Erlebnisse",
-    "our_locations": "Unsere Standorte",
-    "locations_subtitle": "Finden Sie uns in Madrid",
-    "open_maps": "In Maps öffnen",
+     "our_locations": "Unsere Standorte",
+     "locations_subtitle": "Finden Sie uns in Madrid",
+     "open_maps": "In Maps öffnen",
+     
+     // Package/Voucher related
+     "massage_vouchers": "Massage-Gutscheine",
+     "save_buying_session_packages": "Sparen Sie beim Kauf von Sitzungspaketen mit Rabatt",
+     
+     // Manage Booking
+     "enter_email_or_phone": "Bitte geben Sie Ihre E-Mail oder Telefon ein",
   },
   
   it: {
@@ -474,9 +502,16 @@ const translations = {
     "vouchers": "Buoni",
     "vouchers_description": "Acquista pacchetti di sessioni con sconto",
     "gift_description": "Regala esperienze di benessere uniche",
-    "our_locations": "Le Nostre Sedi",
-    "locations_subtitle": "Trovaci a Madrid",
-    "open_maps": "Apri in Maps",
+     "our_locations": "Le Nostre Sedi",
+     "locations_subtitle": "Trovaci a Madrid",
+     "open_maps": "Apri in Maps",
+     
+     // Package/Voucher related
+     "massage_vouchers": "Buoni Massaggio",
+     "save_buying_session_packages": "Risparmia acquistando pacchetti di sessioni con sconto",
+     
+     // Manage Booking
+     "enter_email_or_phone": "Per favore inserisci la tua email o telefono",
   },
   
   pt: {
@@ -534,9 +569,16 @@ const translations = {
     "vouchers": "Vouchers",
     "vouchers_description": "Compre pacotes de sessões com desconto",
     "gift_description": "Ofereça experiências de bem-estar únicas",
-    "our_locations": "As Nossas Localizações",
-    "locations_subtitle": "Encontre-nos em Madrid",
-    "open_maps": "Abrir no Maps",
+     "our_locations": "As Nossas Localizações",
+     "locations_subtitle": "Encontre-nos em Madrid",
+     "open_maps": "Abrir no Maps",
+     
+     // Package/Voucher related
+     "massage_vouchers": "Vouchers de Massagem",
+     "save_buying_session_packages": "Poupe comprando pacotes de sessões com desconto",
+     
+     // Manage Booking
+     "enter_email_or_phone": "Por favor insira o seu email ou telefone",
   }
 } as const;
 

@@ -14,6 +14,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 interface Booking {
   id: string;
@@ -28,6 +30,7 @@ interface Booking {
 
 const ManageBooking = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [searchData, setSearchData] = useState({
     email: "",
     phone: "",
@@ -48,8 +51,8 @@ const ManageBooking = () => {
   const searchBookings = async () => {
     if (!searchData.email && !searchData.phone) {
       toast({
-        title: "Error",
-        description: "Por favor introduce tu email o teléfono",
+        title: t('error'),
+        description: t('enter_email_or_phone'),
         variant: "destructive",
       });
       return;
@@ -213,6 +216,7 @@ const ManageBooking = () => {
               </h1>
             </div>
             <div className="flex items-center space-x-2">
+              <LanguageSelector />
               <Button
                 variant="ghost"
                 size="sm"
@@ -221,7 +225,7 @@ const ManageBooking = () => {
               >
                 <Link to="/">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver
+                  {t('back')}
                 </Link>
               </Button>
               <Button
@@ -230,7 +234,7 @@ const ManageBooking = () => {
                 asChild
                 className="text-xs sm:text-sm"
               >
-                <Link to="/admin-login">Admin</Link>
+                <Link to="/admin-login">{t('admin')}</Link>
               </Button>
             </div>
           </div>

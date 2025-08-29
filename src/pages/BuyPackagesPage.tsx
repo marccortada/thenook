@@ -190,22 +190,22 @@ const BuyPackagesPage = () => {
         <article>
           <header className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold">Bonos de Masaje</h1>
+              <h1 className="text-2xl font-bold">{t('massage_vouchers')}</h1>
               <p className="text-sm text-muted-foreground">
-                Ahorra comprando paquetes de sesiones con descuento.
+                {t('save_buying_session_packages')}
               </p>
             </div>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline">Carrito ({items.length})</Button>
+                <Button variant="outline">{t('cart')} ({items.length})</Button>
               </SheetTrigger>
               <SheetContent className="w-[90vw] sm:w-[480px]">
                 <SheetHeader>
-                  <SheetTitle>Tu carrito</SheetTitle>
+                  <SheetTitle>{t('your_cart')}</SheetTitle>
                 </SheetHeader>
                 <div className="mt-4 space-y-4">
                   {items.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Tu carrito está vacío.</p>
+                    <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
                   ) : (
                     <div className="space-y-3">
                       {items.map((it) => (
