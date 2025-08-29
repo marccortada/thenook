@@ -109,6 +109,25 @@ const GiftCardsPage = () => {
   const [giftMessage, setGiftMessage] = useState("");
   const { t } = useTranslation();
 
+  // Función para traducir nombres de paquetes/tarjetas
+  const translatePackageName = (name: string) => {
+    // Normalizar el nombre para usar como clave de traducción
+    const normalizedKey = name
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/'/g, '')
+      .replace(/[^\w_]/g, '')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '');
+    
+    // Buscar en las traducciones
+    const translationKey = normalizedKey as any;
+    const translation = t(translationKey);
+    
+    // Si no hay traducción específica, devolver el nombre original
+    return translation !== translationKey ? translation : name;
+  };
+
   // Hook para manejo del carrito local
   const useLocalCart = () => {
     const [items, setItems] = useState<CartItem[]>(() => {
@@ -221,7 +240,7 @@ const GiftCardsPage = () => {
       toast.error(t('valid_amount'));
       return;
     }
-    add({ name: custom.name, priceCents: Math.round(amount * 100) });
+    add({ name: translatePackageName(custom.name), priceCents: Math.round(amount * 100) });
   };
 
   return (
@@ -429,7 +448,7 @@ const GiftCardsPage = () => {
                        {groups.individuales.map((item) => (
                          <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                            <CardHeader className="pb-2">
-                             <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
+                             <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                            </CardHeader>
                            <CardContent className="pb-2">
                              <div className="space-y-1">
@@ -441,7 +460,7 @@ const GiftCardsPage = () => {
                              <Button
                                size="sm"
                                className="w-full"
-                               onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
+                               onClick={() => add({ name: translatePackageName(item.name), priceCents: item.priceCents! })}
                              >
                                {t('add_to_cart')}
                              </Button>
@@ -463,7 +482,7 @@ const GiftCardsPage = () => {
                        {groups.paraDos.map((item) => (
                          <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                            <CardHeader className="pb-2">
-                             <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
+                             <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                            </CardHeader>
                            <CardContent className="pb-2">
                              <div className="space-y-1">
@@ -475,7 +494,7 @@ const GiftCardsPage = () => {
                              <Button
                                size="sm"
                                className="w-full"
-                               onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
+                               onClick={() => add({ name: translatePackageName(item.name), priceCents: item.priceCents! })}
                              >
                                {t('add_to_cart')}
                              </Button>
@@ -497,7 +516,7 @@ const GiftCardsPage = () => {
                        {groups.cuatro.map((item) => (
                          <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                            <CardHeader className="pb-2">
-                             <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
+                             <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                            </CardHeader>
                            <CardContent className="pb-2">
                              <div className="space-y-1">
@@ -509,7 +528,7 @@ const GiftCardsPage = () => {
                              <Button
                                size="sm"
                                className="w-full"
-                               onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
+                               onClick={() => add({ name: translatePackageName(item.name), priceCents: item.priceCents! })}
                              >
                                {t('add_to_cart')}
                              </Button>
@@ -531,7 +550,7 @@ const GiftCardsPage = () => {
                        {groups.rituales.map((item) => (
                          <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                            <CardHeader className="pb-2">
-                             <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
+                             <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                            </CardHeader>
                            <CardContent className="pb-2">
                              <div className="space-y-1">
@@ -543,7 +562,7 @@ const GiftCardsPage = () => {
                              <Button
                                size="sm"
                                className="w-full"
-                               onClick={() => add({ name: item.name, priceCents: item.priceCents! })}
+                               onClick={() => add({ name: translatePackageName(item.name), priceCents: item.priceCents! })}
                              >
                                {t('add_to_cart')}
                              </Button>
