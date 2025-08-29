@@ -312,7 +312,7 @@ const ClientReservation = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-lg text-muted-foreground">Cargando centros...</p>
+          <p className="text-lg text-muted-foreground">{t('loading_centers')}</p>
         </div>
       </div>
     );
@@ -349,7 +349,7 @@ const ClientReservation = () => {
                 to="/" 
                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted"
               >
-                ← Volver
+                ← {t('back')}
               </Link>
             </div>
             <LanguageSelector />
@@ -380,7 +380,7 @@ const ClientReservation = () => {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="col-span-full sm:col-span-1">
-                    <Label htmlFor="clientName" className="text-sm">Nombre</Label>
+                    <Label htmlFor="clientName" className="text-sm">{t('name_label')}</Label>
                     <Input
                       id="clientName"
                       value={formData.clientName}
@@ -484,17 +484,17 @@ const ClientReservation = () => {
 
                {/* 📍 CENTER SELECTION FIRST */}
                <div className="space-y-3 sm:space-y-4">
-                 <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                   <MapPin className="h-4 w-4" />
-                   <span>Selección de Centro</span>
-                 </h3>
+                  <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                    <MapPin className="h-4 w-4" />
+                    <span>{t('center_selection')}</span>
+                  </h3>
                  
                  <div>
-                   <Label htmlFor="center" className="text-sm">Centro *</Label>
-                    <Select value={formData.center} onValueChange={(value) => { setFormData({ ...formData, center: value }); setSelection(null); }}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Selecciona un centro" />
-                      </SelectTrigger>
+                    <Label htmlFor="center" className="text-sm">{t('center')} *</Label>
+                     <Select value={formData.center} onValueChange={(value) => { setFormData({ ...formData, center: value }); setSelection(null); }}>
+                       <SelectTrigger className="mt-1">
+                         <SelectValue placeholder={t('select_center')} />
+                       </SelectTrigger>
                       <SelectContent 
                         position="popper" 
                         side="bottom" 
@@ -518,16 +518,16 @@ const ClientReservation = () => {
                {/* Service Selection - ONLY after center is selected */}
                {formData.center && (
                  <div className="space-y-3 sm:space-y-4">
-                   <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                     <CalendarDays className="h-4 w-4" />
-                     <span>Selección de Servicio</span>
-                   </h3>
-                   <div>
-                     <Label className="text-sm">Servicio *</Label>
+                    <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                      <CalendarDays className="h-4 w-4" />
+                      <span>{t('service_selection')}</span>
+                    </h3>
+                    <div>
+                      <Label className="text-sm">{t('service')} *</Label>
                      {servicesLoading ? (
                        <div className="flex items-center justify-center p-4">
                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                         <span className="ml-2">Cargando opciones...</span>
+                         <span className="ml-2">{t('loading_options')}</span>
                        </div>
                      ) : (
                        <ServiceSelectorGrouped
@@ -544,14 +544,14 @@ const ClientReservation = () => {
 
                  {/* Date & Time */}
                  <div className="space-y-3 sm:space-y-4 p-4 rounded-lg border border-primary/20 bg-card">
-                   <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                     <Clock className="h-4 w-4" />
-                     <span>Fecha y Hora</span>
-                   </h3>
+                    <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                      <Clock className="h-4 w-4" />
+                      <span>{t('date_time')}</span>
+                    </h3>
                    
                    <div className="grid grid-cols-1 gap-3 sm:gap-4">
                      <div className="relative">
-                       <Label htmlFor="date" className="text-sm">Fecha *</Label>
+                       <Label htmlFor="date" className="text-sm">{t('date')} *</Label>
                        <Popover open={showCalendar} onOpenChange={setShowCalendar}>
                          <PopoverTrigger asChild>
                            <Button
@@ -562,7 +562,7 @@ const ClientReservation = () => {
                              )}
                            >
                              <CalendarIcon className="mr-2 h-4 w-4" />
-                             {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                             {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>{t('select_date')}</span>}
                            </Button>
                          </PopoverTrigger>
                            <PopoverContent 
@@ -590,7 +590,7 @@ const ClientReservation = () => {
                      </div>
                     
                       <div className="relative">
-                        <Label htmlFor="time" className="text-sm">Hora *</Label>
+                        <Label htmlFor="time" className="text-sm">{t('time')} *</Label>
                         <Popover open={showTimeDropdown} onOpenChange={setShowTimeDropdown}>
                           <PopoverTrigger asChild>
                             <Button
@@ -601,7 +601,7 @@ const ClientReservation = () => {
                               )}
                             >
                               <Clock className="mr-2 h-4 w-4" />
-                              {formData.time || "Selecciona una hora"}
+                              {formData.time || t('select_time')}
                             </Button>
                           </PopoverTrigger>
                             <PopoverContent 
@@ -637,12 +637,12 @@ const ClientReservation = () => {
 
               {/* Notes */}
               <div>
-                <Label htmlFor="notes" className="text-sm">Notas (opcional)</Label>
+                <Label htmlFor="notes" className="text-sm">{t('additional_notes')}</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Escribe aquí si quieres comentarnos cualquier cosa"
+                  placeholder={t('notes_placeholder_form')}
                   className="mt-1 min-h-[80px] resize-none"
                 />
               </div>
@@ -650,7 +650,7 @@ const ClientReservation = () => {
               {/* Summary - Inline without modal */}
               {formData.center && formData.date && formData.time && (
                 <div className="bg-accent/20 border-2 border-primary/20 rounded-xl p-6 space-y-4">
-                  <h4 className="font-bold text-lg text-center text-primary">Resumen de la Reserva</h4>
+                  <h4 className="font-bold text-lg text-center text-primary">{t('booking_summary')}</h4>
                   <div className="space-y-3 text-sm">
                     {selection && (() => {
                       const selectedService = services.find(s => s.id === selection.id);
@@ -688,7 +688,7 @@ const ClientReservation = () => {
                       Editar
                     </Button>
                     <Button type="submit" className="flex-1 font-medium">
-                      Confirmar Reserva
+                      {t('confirm_booking')}
                     </Button>
                   </div>
                 </div>

@@ -151,6 +151,10 @@ const translations = {
      
      // Manage Booking
      "enter_email_or_phone": "Por favor introduce tu email o teléfono",
+     
+     // Form labels
+     "name_label": "Nombre",
+     "close": "Cerrar",
   },
   
   en: {
@@ -272,11 +276,11 @@ const translations = {
     "select_date": "Select a date",
     "time": "Time",
     "select_time": "Select a time",
-    "additional_notes": "Additional Notes",
-    "notes_placeholder_form": "Any additional information you consider important...",
-    "booking_summary": "Booking Summary",
-    "admin_assignment": "The administrator will assign the specialist and service type when you arrive at the center.",
-    "confirm_booking": "Confirm Booking",
+     "additional_notes": "Additional Notes",
+     "notes_placeholder_form": "Any additional information you consider important...",
+     "booking_summary": "Booking Summary",
+     "admin_assignment": "The administrator will assign the specialist and service type when you arrive at the center.",
+     "confirm_booking": "Confirm Booking",
     "select_service_error": "Select a service",
     "complete_required_fields": "Please complete all required fields",
     "booking_created": "✅ Booking Created",
@@ -303,6 +307,10 @@ const translations = {
      
      // Manage Booking
      "enter_email_or_phone": "Please enter your email or phone",
+     
+     // Form labels
+     "name_label": "Name",
+     "close": "Close",
   },
   
   fr: {
@@ -378,6 +386,10 @@ const translations = {
      
      // Manage Booking
      "enter_email_or_phone": "Veuillez saisir votre email ou téléphone",
+     
+     // Form labels
+     "name_label": "Nom",
+     "close": "Fermer",
   },
   
   de: {
@@ -445,6 +457,10 @@ const translations = {
      
      // Manage Booking
      "enter_email_or_phone": "Bitte geben Sie Ihre E-Mail oder Telefon ein",
+     
+     // Form labels
+     "name_label": "Name",
+     "close": "Schließen",
   },
   
   it: {
@@ -512,6 +528,10 @@ const translations = {
      
      // Manage Booking
      "enter_email_or_phone": "Per favore inserisci la tua email o telefono",
+     
+     // Form labels
+     "name_label": "Nome",
+     "close": "Chiudi",
   },
   
   pt: {
@@ -579,6 +599,10 @@ const translations = {
      
      // Manage Booking
      "enter_email_or_phone": "Por favor insira o seu email ou telefone",
+     
+     // Form labels
+     "name_label": "Nome",
+     "close": "Fechar",
   }
 } as const;
 
