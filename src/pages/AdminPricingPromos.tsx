@@ -15,6 +15,7 @@ import { Trash2, Plus, Edit, X } from "lucide-react";
 
 import HappyHourManagement from "@/components/HappyHourManagement";
 import PromotionsManagement from "@/components/PromotionsManagement";
+import PriceDisplay from "@/components/PriceDisplay";
 
 const currency = (euros?: number) => typeof euros === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(euros) : "-";
 
@@ -333,7 +334,10 @@ export default function AdminPricingPromos() {
                             <div className="font-medium">{g.name}</div>
                             <div className="text-xs text-muted-foreground">{g.type} · {g.duration_minutes} min</div>
                           </div>
-                          <div className="text-sm font-semibold">{currency(edit.price_euros)}</div>
+                          <PriceDisplay 
+                            originalPrice={edit.price_euros * 100} 
+                            className="text-sm font-semibold"
+                          />
                         </div>
                         <div className="grid grid-cols-2 gap-2 items-end">
                           <div>
@@ -385,9 +389,16 @@ export default function AdminPricingPromos() {
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex-1">
                                 <h3 className="font-semibold text-lg">{service.name}</h3>
-                                <p className="text-sm text-muted-foreground mb-2">
-                                  {service.duration_minutes} min • {currency(service.price_cents / 100)}
-                                </p>
+                                <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
+                                  <span>{service.duration_minutes} min</span>
+                                  <span>•</span>
+                                  <PriceDisplay 
+                                    originalPrice={service.price_cents} 
+                                    serviceId={service.id}
+                                    centerId={service.center_id}
+                                    className="text-sm"
+                                  />
+                                </div>
                                 {service.description && (
                                   <p className="text-xs text-muted-foreground mb-2">{service.description}</p>
                                 )}

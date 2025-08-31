@@ -189,6 +189,69 @@ export const usePromotions = () => {
     return 0;
   };
 
+  const getApplicablePromotions = (serviceId?: string, centerId?: string) => {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const currentTime = now.toTimeString().slice(0, 5);
+    const currentDate = now.toISOString().split('T')[0];
+
+    return promotions.filter(promotion => {
+      if (!promotion.is_active) return false;
+
+      // Check date range
+      if (promotion.start_at && currentDate < promotion.start_at.split('T')[0]) return false;
+      if (promotion.end_at && currentDate > promotion.end_at.split('T')[0]) return false;
+
+      // Check time range
+      if (promotion.time_start && currentTime < promotion.time_start) return false;
+      if (promotion.time_end && currentTime > promotion.time_end) return false;
+
+      // Check days of week
+      if (promotion.days_of_week && promotion.days_of_week.length > 0) {
+        if (!promotion.days_of_week.includes(currentDay)) return false;
+      }
+
+      // Check applies to
+      if (promotion.applies_to === 'all_services') return true;
+      if (promotion.applies_to === 'specific_service' && promotion.target_id === serviceId) return true;
+      if (promotion.applies_to === 'specific_center' && promotion.target_id === centerId) return true;
+
+      return false;
+    });
+  };
+
+  const calculatePriceWithPromotions = (originalPrice: number, serviceId?: string, centerId?: string) => {
+    const applicablePromotions = getApplicablePromotions(serviceId, centerId);
+    
+    if (applicablePromotions.length === 0) {
+      return {
+        originalPrice,
+        finalPrice: originalPrice,
+        discount: 0,
+        appliedPromotions: []
+      };
+    }
+
+    // Apply the best promotion (highest discount)
+    let bestDiscount = 0;
+    let bestPromotion = null;
+
+    for (const promotion of applicablePromotions) {
+      const discount = calculateDiscount(promotion, originalPrice);
+      if (discount > bestDiscount) {
+        bestDiscount = discount;
+        bestPromotion = promotion;
+      }
+    }
+
+    return {
+      originalPrice,
+      finalPrice: originalPrice - bestDiscount,
+      discount: bestDiscount,
+      appliedPromotions: bestPromotion ? [bestPromotion] : []
+    };
+  };
+
   useEffect(() => {
     fetchPromotions();
   }, []);
@@ -203,6 +266,8 @@ export const usePromotions = () => {
     togglePromotionStatus,
     getActivePromotions,
     getPromotionsByCoupon,
-    calculateDiscount
+    calculateDiscount,
+    getApplicablePromotions,
+    calculatePriceWithPromotions
   };
 };

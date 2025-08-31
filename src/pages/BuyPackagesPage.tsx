@@ -15,6 +15,7 @@ import { ArrowLeft } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
+import PriceDisplay from "@/components/PriceDisplay";
 
 interface CartItem {
   id: string;
@@ -403,7 +404,7 @@ const BuyPackagesPage = () => {
                                {pkg.sessions_count && (
                                  <p className="text-sm text-muted-foreground">{pkg.sessions_count} {t('sessions_count')}</p>
                                )}
-                              <p className="text-lg font-bold text-primary">{euro(pkg.priceCents!)}</p>
+                               <PriceDisplay originalPrice={pkg.priceCents!} className="text-lg font-bold" />
                             </div>
                           </CardContent>
                           <CardFooter className="pt-2">
@@ -439,7 +440,7 @@ const BuyPackagesPage = () => {
                               {pkg.sessions_count && (
                                  <p className="text-sm text-muted-foreground">{pkg.sessions_count} {t('sessions_count')}</p>
                               )}
-                              <p className="text-lg font-bold text-primary">{euro(pkg.priceCents!)}</p>
+                               <PriceDisplay originalPrice={pkg.priceCents!} className="text-lg font-bold" />
                             </div>
                           </CardContent>
                           <CardFooter className="pt-2">
@@ -475,7 +476,7 @@ const BuyPackagesPage = () => {
                               {pkg.sessions_count && (
                                  <p className="text-sm text-muted-foreground">{pkg.sessions_count} {t('sessions_count')}</p>
                               )}
-                              <p className="text-lg font-bold text-primary">{euro(pkg.priceCents!)}</p>
+                               <PriceDisplay originalPrice={pkg.priceCents!} className="text-lg font-bold" />
                             </div>
                           </CardContent>
                           <CardFooter className="pt-2">
@@ -511,7 +512,7 @@ const BuyPackagesPage = () => {
                               {pkg.sessions_count && (
                                 <p className="text-sm text-muted-foreground">{pkg.sessions_count} {t('sessions_count')}</p>
                               )}
-                              <p className="text-lg font-bold text-primary">{euro(pkg.priceCents!)}</p>
+                              <PriceDisplay originalPrice={pkg.priceCents!} className="text-lg font-bold" />
                             </div>
                           </CardContent>
                           <CardFooter className="pt-2">
