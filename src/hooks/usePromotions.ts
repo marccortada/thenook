@@ -10,7 +10,6 @@ export interface Promotion {
   value: number;
   applies_to: 'all_services' | 'specific_service' | 'specific_center';
   target_id?: string;
-  coupon_code?: string;
   start_at?: string;
   end_at?: string;
   days_of_week?: number[];
@@ -29,7 +28,6 @@ export interface CreatePromotionData {
   value: number;
   applies_to: 'all_services' | 'specific_service' | 'specific_center';
   target_id?: string;
-  coupon_code?: string;
   start_at?: string;
   end_at?: string;
   days_of_week?: number[];
@@ -174,10 +172,12 @@ export const usePromotions = () => {
     return promotions.filter(p => p.is_active);
   };
 
-  const getPromotionsByCoupon = (couponCode: string) => {
-    return promotions.filter(p => 
-      p.coupon_code?.toLowerCase() === couponCode.toLowerCase() && p.is_active
-    );
+  const getPromotionsByService = (serviceId: string) => {
+    return getApplicablePromotions(serviceId);
+  };
+
+  const getPromotionsByCenter = (centerId: string) => {
+    return getApplicablePromotions(undefined, centerId);
   };
 
   const calculateDiscount = (promotion: Promotion, originalPrice: number) => {
@@ -265,7 +265,8 @@ export const usePromotions = () => {
     deletePromotion,
     togglePromotionStatus,
     getActivePromotions,
-    getPromotionsByCoupon,
+    getPromotionsByService,
+    getPromotionsByCenter,
     calculateDiscount,
     getApplicablePromotions,
     calculatePriceWithPromotions

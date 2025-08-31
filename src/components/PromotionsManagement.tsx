@@ -42,7 +42,6 @@ const PromotionsManagement = () => {
     value: 0,
     applies_to: 'all_services',
     target_id: '',
-    coupon_code: '',
     start_at: '',
     end_at: '',
     days_of_week: [],
@@ -53,19 +52,18 @@ const PromotionsManagement = () => {
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      description: '',
-      type: 'percentage',
-      value: 0,
-      applies_to: 'all_services',
-      target_id: '',
-      coupon_code: '',
-      start_at: '',
-      end_at: '',
-      days_of_week: [],
-      time_start: '',
-      time_end: '',
-      is_active: true
+    name: '',
+    description: '',
+    type: 'percentage',
+    value: 0,
+    applies_to: 'all_services',
+    target_id: '',
+    start_at: '',
+    end_at: '',
+    days_of_week: [],
+    time_start: '',
+    time_end: '',
+    is_active: true
     });
     setEditingPromotion(null);
   };
@@ -93,7 +91,6 @@ const PromotionsManagement = () => {
       value: promotion.value,
       applies_to: promotion.applies_to,
       target_id: promotion.target_id || '',
-      coupon_code: promotion.coupon_code || '',
       start_at: promotion.start_at ? promotion.start_at.split('T')[0] : '',
       end_at: promotion.end_at ? promotion.end_at.split('T')[0] : '',
       days_of_week: promotion.days_of_week || [],
@@ -131,9 +128,9 @@ const PromotionsManagement = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Promociones</h2>
+          <h2 className="text-2xl font-bold">Gestión de Promociones Automáticas</h2>
           <p className="text-muted-foreground">
-            Crea y gestiona promociones, descuentos y ofertas especiales
+            Crea promociones que se aplican automáticamente según horarios, fechas y servicios
           </p>
         </div>
         
@@ -152,7 +149,7 @@ const PromotionsManagement = () => {
             </DialogHeader>
             
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre *</Label>
                   <Input
@@ -163,16 +160,6 @@ const PromotionsManagement = () => {
                     required
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="coupon_code">Código de Cupón</Label>
-                  <Input
-                    id="coupon_code"
-                    value={formData.coupon_code}
-                    onChange={(e) => setFormData(prev => ({ ...prev, coupon_code: e.target.value }))}
-                    placeholder="Ej: VERANO2024"
-                  />
-                </div>
               </div>
 
               <div className="space-y-2">
@@ -181,7 +168,7 @@ const PromotionsManagement = () => {
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Describe los detalles de la promoción..."
+                  placeholder="Describe cuándo y cómo se aplica esta promoción automáticamente..."
                 />
               </div>
 
@@ -337,12 +324,6 @@ const PromotionsManagement = () => {
                     <Badge variant={promotion.is_active ? "default" : "secondary"}>
                       {promotion.is_active ? "Activa" : "Inactiva"}
                     </Badge>
-                    {promotion.coupon_code && (
-                      <Badge variant="outline" className="flex items-center gap-1">
-                        <Tag className="h-3 w-3" />
-                        {promotion.coupon_code}
-                      </Badge>
-                    )}
                   </CardTitle>
                   {promotion.description && (
                     <p className="text-sm text-muted-foreground">{promotion.description}</p>
