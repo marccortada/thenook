@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Trash2, Plus, Edit, X } from "lucide-react";
 
 import HappyHourManagement from "@/components/HappyHourManagement";
+import PromotionsManagement from "@/components/PromotionsManagement";
 
 const currency = (euros?: number) => typeof euros === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(euros) : "-";
 
@@ -914,14 +915,7 @@ export default function AdminPricingPromos() {
           </TabsContent>
 
           <TabsContent value="promotions" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Promociones</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Funcionalidad de promociones en desarrollo...</p>
-              </CardContent>
-            </Card>
+            <PromotionsManagement />
           </TabsContent>
 
           <TabsContent value="happy-hours" className="mt-6">
