@@ -40,10 +40,10 @@ const PAYMENT_STATUSES = [
 ];
 
 const PAYMENT_METHODS = [
-  { value: 'efectivo', label: 'Efectivo' },
-  { value: 'tarjeta', label: 'Tarjeta' },
-  { value: 'transferencia', label: 'Transferencia' },
-  { value: 'bizum', label: 'Bizum' },
+  { value: 'efectivo', label: '💵 Efectivo', icon: '💵' },
+  { value: 'tarjeta', label: '💳 Tarjeta', icon: '💳' },
+  { value: 'transferencia', label: '🏦 Transferencia', icon: '🏦' },
+  { value: 'bizum', label: '📱 Bizum', icon: '📱' },
 ];
 
 export default function BookingManagement() {
@@ -150,9 +150,39 @@ export default function BookingManagement() {
 
       if (error) throw error;
 
+      // Analytics tracking - enviar datos del pago a analytics
+      try {
+        const analyticsData = {
+          event_type: 'payment_processed',
+          booking_id: selectedBooking.id,
+          payment_method: paymentMethod,
+          amount_cents: selectedBooking.total_price_cents,
+          client_id: selectedBooking.profiles?.email,
+          service_name: selectedBooking.services?.name,
+          center_name: selectedBooking.centers?.name,
+          processed_at: new Date().toISOString(),
+          processed_by: 'staff' // Aquí se podría poner el ID del staff que procesó el pago
+        };
+
+        // Insertar en tabla de analytics/métricas
+        await supabase.from('business_metrics').insert({
+          metric_name: 'payment_processed',
+          metric_type: 'revenue',
+          metric_value: selectedBooking.total_price_cents / 100,
+          period_start: new Date().toISOString().split('T')[0],
+          period_end: new Date().toISOString().split('T')[0],
+          metadata: analyticsData
+        });
+
+        console.log('Analytics data sent:', analyticsData);
+      } catch (analyticsError) {
+        console.error('Error sending analytics data:', analyticsError);
+        // No bloquear el proceso de pago si analytics falla
+      }
+
       toast({
-        title: "Pago procesado",
-        description: `Cita cobrada exitosamente por ${paymentMethod}`
+        title: "💰 Pago procesado exitosamente",
+        description: `Cita cobrada por ${PAYMENT_METHODS.find(m => m.value === paymentMethod)?.label} - ${(selectedBooking.total_price_cents / 100).toFixed(2)}€`
       });
 
       setShowPaymentDialog(false);
@@ -352,15 +382,18 @@ export default function BookingManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="payment-method">Forma de Pago</Label>
+                <Label htmlFor="payment-method">💳 Forma de Pago</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar forma de pago" />
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="💰 Seleccionar forma de pago..." />
                   </SelectTrigger>
                   <SelectContent className="z-50 bg-background">
                     {PAYMENT_METHODS.map((method) => (
-                      <SelectItem key={method.value} value={method.value}>
-                        {method.label}
+                      <SelectItem key={method.value} value={method.value} className="py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{method.icon}</span>
+                          <span>{method.label}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -371,14 +404,17 @@ export default function BookingManagement() {
                 <Button
                   onClick={processPayment}
                   disabled={!paymentMethod}
-                  className="flex-1"
+                  className="flex-1 h-12 text-lg"
+                  size="lg"
                 >
-                  Confirmar Pago
+                  <CreditCard className="h-5 w-5 mr-2" />
+                  Confirmar Pago - {selectedBooking && (selectedBooking.total_price_cents / 100).toFixed(2)}€
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setShowPaymentDialog(false)}
-                  className="flex-1"
+                  className="flex-1 h-12"
+                  size="lg"
                 >
                   Cancelar
                 </Button>
