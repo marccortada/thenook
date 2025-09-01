@@ -579,7 +579,7 @@ export default function AdminPricingPromos() {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="z-50 bg-background">
+                      <SelectContent position="item-aligned">
                         {serviceTypes.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
                             {type.label}
@@ -619,7 +619,7 @@ export default function AdminPricingPromos() {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="z-50 bg-background">
+                      <SelectContent position="item-aligned">
                         <SelectItem value="all">Todos los centros</SelectItem>
                         {centers.map((center) => (
                           <SelectItem key={center.id} value={center.id}>
@@ -638,7 +638,7 @@ export default function AdminPricingPromos() {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="z-50 bg-background">
+                      <SelectContent position="item-aligned">
                         <SelectItem value="true">Activo</SelectItem>
                         <SelectItem value="false">Inactivo</SelectItem>
                       </SelectContent>
