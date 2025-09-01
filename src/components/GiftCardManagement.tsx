@@ -28,7 +28,7 @@ import {
   AlertCircle,
   Search
 } from 'lucide-react';
-import { useGiftCards, useExpiringGiftCards, type GiftCard } from '@/hooks/useGiftCards';
+import { useGiftCards, type GiftCard } from '@/hooks/useGiftCards';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ClientSelector from '@/components/ClientSelector';
@@ -40,8 +40,6 @@ const GiftCardManagement = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   
   const { giftCards, loading, error, refetch, createGiftCard, updateGiftCard, deactivateGiftCard } = useGiftCards(searchTerm);
-  const [daysAhead, setDaysAhead] = useState<number>(30);
-  const { expiringGiftCards, loading: expiringLoading, refetch: refetchExpiring } = useExpiringGiftCards(daysAhead);
   const [createClientId, setCreateClientId] = useState<string>('');
 
   const getStatusColor = (status: string) => {
@@ -270,32 +268,7 @@ const GiftCardManagement = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Por Vencer</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {expiringGiftCards.length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Próximos {daysAhead} días
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expiradas</CardTitle>
-            <XCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {giftCards.filter(g => g.status === 'expired').length}
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -315,9 +288,8 @@ const GiftCardManagement = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="all">Todas las Tarjetas</TabsTrigger>
-          <TabsTrigger value="expiring">Por Vencer</TabsTrigger>
           <TabsTrigger value="active">Solo Activas</TabsTrigger>
         </TabsList>
 
@@ -439,66 +411,6 @@ const GiftCardManagement = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="expiring">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Tarjetas por Vencer</CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="daysAhead">Días a futuro:</Label>
-                  <Input
-                    id="daysAhead"
-                    type="number"
-                    min="1"
-                    max="365"
-                    value={daysAhead}
-                    onChange={(e) => setDaysAhead(parseInt(e.target.value) || 30)}
-                    className="w-20"
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {expiringLoading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
-                  ))}
-                </div>
-              ) : expiringGiftCards.length === 0 ? (
-                <div className="text-center py-8">
-                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No hay tarjetas por vencer en los próximos {daysAhead} días</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {expiringGiftCards.map((card) => (
-                    <div key={card.id} className="border rounded-lg p-4 border-yellow-200 bg-yellow-50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="text-sm font-medium">Código: <span className="font-mono">{card.code}</span></div>
-                          <Badge variant="outline" className="border-yellow-500 text-yellow-700">
-                            Vence: {card.expiry_date && format(new Date(card.expiry_date), "dd/MM/yyyy", { locale: es })}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex items-center space-x-4">
-                        <div className="text-sm">
-                          Saldo: €{(card.remaining_balance_cents / 100).toFixed(2)}
-                        </div>
-                        {card.profiles && (
-                          <div className="text-sm">
-                            Cliente: {card.profiles.first_name} {card.profiles.last_name}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="active">
           <Card>
