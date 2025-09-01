@@ -2342,6 +2342,10 @@ export type Database = {
         }
         Returns: Json
       }
+      reset_employee_password: {
+        Args: { new_password: string; user_email: string }
+        Returns: Json
+      }
       search_entities_by_codes: {
         Args: { codes: string[] }
         Returns: {
