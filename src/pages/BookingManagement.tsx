@@ -356,12 +356,13 @@ export default function BookingManagement() {
       </main>
 
       {/* Payment Dialog */}
+      {showPaymentDialog && <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={() => setShowPaymentDialog(false)} />}
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <DialogContent className="sm:max-w-md z-[100] bg-background border shadow-lg">
+        <DialogContent className="sm:max-w-md z-[9999] bg-background border shadow-xl fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              Cobrar Cita
+              💰 Cobrar Cita
             </DialogTitle>
           </DialogHeader>
           {selectedBooking && (
@@ -374,23 +375,23 @@ export default function BookingManagement() {
                 <p className="text-sm text-muted-foreground">
                   Servicio: {selectedBooking.services?.name}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Importe: {(selectedBooking.total_price_cents / 100).toFixed(2)}€
+                <p className="text-sm text-muted-foreground font-bold text-primary">
+                  💶 Importe: {(selectedBooking.total_price_cents / 100).toFixed(2)}€
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="payment-method">💳 Forma de Pago</Label>
+                <Label htmlFor="payment-method" className="text-sm font-medium">💳 Forma de Pago</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger className="h-12 bg-background">
+                  <SelectTrigger className="h-12 bg-background border-2 border-primary/20 focus:border-primary">
                     <SelectValue placeholder="💰 Seleccionar forma de pago..." />
                   </SelectTrigger>
-                  <SelectContent className="z-[200] bg-background border shadow-lg max-h-60">
+                  <SelectContent className="z-[99999] bg-background border-2 shadow-xl" position="popper">
                     {PAYMENT_METHODS.map((method) => (
-                      <SelectItem key={method.value} value={method.value} className="py-3 focus:bg-accent cursor-pointer">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{method.icon}</span>
-                          <span>{method.label}</span>
+                      <SelectItem key={method.value} value={method.value} className="py-3 hover:bg-accent cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{method.icon}</span>
+                          <span className="font-medium">{method.label}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -398,23 +399,27 @@ export default function BookingManagement() {
                 </Select>
               </div>
 
-              <div className="flex gap-2 pt-4">
+              <div className="flex gap-3 pt-4">
                 <Button
                   onClick={processPayment}
                   disabled={!paymentMethod}
-                  className="flex-1 h-12 text-lg"
+                  className="flex-1 h-12 text-lg bg-green-600 hover:bg-green-700 text-white font-bold"
                   size="lg"
                 >
                   <CreditCard className="h-5 w-5 mr-2" />
-                  Confirmar Pago - {selectedBooking && (selectedBooking.total_price_cents / 100).toFixed(2)}€
+                  ✅ Confirmar Pago - {selectedBooking && (selectedBooking.total_price_cents / 100).toFixed(2)}€
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setShowPaymentDialog(false)}
-                  className="flex-1 h-12"
+                  onClick={() => {
+                    setShowPaymentDialog(false);
+                    setPaymentMethod('');
+                    setSelectedBooking(null);
+                  }}
+                  className="h-12 px-6 border-2"
                   size="lg"
                 >
-                  Cancelar
+                  ❌ Cancelar
                 </Button>
               </div>
             </div>
