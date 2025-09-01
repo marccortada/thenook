@@ -106,21 +106,28 @@ export default function AdminPricingPromos() {
   const updateService = async () => {
     if (!editingService) return;
 
+    console.log('Updating service:', editingService);
+
     try {
+      const updateData = {
+        name: editingService.name,
+        description: editingService.description || null,
+        type: editingService.type,
+        duration_minutes: editingService.duration_minutes,
+        price_cents: editingService.price_cents,
+        active: editingService.active,
+        has_discount: editingService.has_discount || false,
+        discount_percentage: editingService.discount_percentage || 0
+      };
+
+      console.log('Update data:', updateData);
+
       const { error } = await supabase.from('services')
-        .update({
-          name: editingService.name,
-          description: editingService.description || null,
-          type: editingService.type,
-          duration_minutes: editingService.duration_minutes,
-          price_cents: editingService.price_cents,
-          active: editingService.active,
-          has_discount: editingService.has_discount,
-          discount_percentage: editingService.discount_percentage
-        })
+        .update(updateData)
         .eq('id', editingService.id);
 
       if (error) {
+        console.error('Update error:', error);
         toast({ title: 'Error', description: `No se pudo actualizar el servicio: ${error.message}`, variant: 'destructive' });
       } else {
         toast({ title: 'Actualizado', description: 'Servicio actualizado exitosamente' });
@@ -469,7 +476,10 @@ export default function AdminPricingPromos() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => setEditingService({ ...service })}
+                                onClick={() => {
+                                  console.log('Editing service:', service);
+                                  setEditingService({ ...service });
+                                }}
                                 className="flex-1"
                               >
                                 <Edit className="h-3 w-3 mr-1" />
@@ -668,8 +678,12 @@ export default function AdminPricingPromos() {
                         id="edit-service-price"
                         type="number"
                         step="0.01"
-                        value={(editingService.price_cents / 100).toFixed(2)}
-                        onChange={(e) => setEditingService({ ...editingService, price_cents: Math.round(parseFloat(e.target.value || '0') * 100) })}
+                         value={editingService.price_cents ? (editingService.price_cents / 100).toFixed(2) : '0.00'}
+                         onChange={(e) => {
+                           const value = parseFloat(e.target.value || '0');
+                           console.log('Price change:', value);
+                           setEditingService({ ...editingService, price_cents: Math.round(value * 100) });
+                         }}
                         min="0"
                       />
                     </div>
@@ -687,6 +701,31 @@ export default function AdminPricingPromos() {
                           <SelectItem value="false">Inactivo</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <input 
+                          type="checkbox" 
+                          id="edit-has-discount"
+                          checked={editingService.has_discount || false}
+                          onChange={(e) => setEditingService({ ...editingService, has_discount: e.target.checked })}
+                          className="rounded"
+                        />
+                        <Label htmlFor="edit-has-discount" className="text-sm">Aplicar descuento</Label>
+                      </div>
+                      {editingService.has_discount && (
+                        <div>
+                          <Label className="text-sm">Descuento (%)</Label>
+                          <Input 
+                            type="number" 
+                            min="0" 
+                            max="100" 
+                            value={editingService.discount_percentage || 0}
+                            onChange={(e) => setEditingService({ ...editingService, discount_percentage: parseInt(e.target.value || '0') })}
+                            className="text-sm"
+                          />
+                        </div>
+                      )}
                     </div>
                     <div className="md:col-span-2 lg:col-span-3">
                       <Label htmlFor="edit-service-description">Descripción</Label>
