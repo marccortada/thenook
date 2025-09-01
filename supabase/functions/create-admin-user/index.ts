@@ -46,15 +46,20 @@ serve(async (req) => {
       throw userError
     }
 
-    // Actualizar perfil para que sea staff
+    // Insertar o actualizar perfil para que sea staff employee
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .update({ 
+      .upsert({ 
+        user_id: user.user.id,
+        email: email,
+        first_name: 'Staff',
+        last_name: 'Employee',
         role: 'employee', 
         is_staff: true, 
         is_active: true 
+      }, {
+        onConflict: 'user_id'
       })
-      .eq('user_id', user.user.id)
 
     if (profileError) {
       console.error('Error updating profile:', profileError)
