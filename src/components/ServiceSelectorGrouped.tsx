@@ -189,7 +189,7 @@ function ServicesAccordions({
                         serviceId={s.id}
                         serviceDiscount={{
                           has_discount: !!(s as any).has_discount,
-                          discount_percentage: (s as any).discount_percentage || 0
+                          discount_price_cents: (s as any).discount_price_cents || 0
                         }}
                         className="text-sm"
                       />

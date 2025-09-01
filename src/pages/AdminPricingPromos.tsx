@@ -30,16 +30,16 @@ export default function AdminPricingPromos() {
   }, []);
 
   // Servicios - edición rápida de precio/estado/descuento
-  const [serviceEdits, setServiceEdits] = useState<Record<string, { price_euros: number; active: boolean; has_discount: boolean; discount_percentage: number }>>({});
+  const [serviceEdits, setServiceEdits] = useState<Record<string, { price_euros: number; active: boolean; has_discount: boolean; discount_price_euros: number }>>({});
 
-  const handleServiceChange = (id: string, field: 'price_euros'|'active'|'has_discount'|'discount_percentage', value: any) => {
+  const handleServiceChange = (id: string, field: 'price_euros'|'active'|'has_discount'|'discount_price_euros', value: any) => {
     setServiceEdits((prev) => ({
       ...prev,
       [id]: { 
         price_euros: prev[id]?.price_euros ?? 0, 
         active: prev[id]?.active ?? true, 
         has_discount: prev[id]?.has_discount ?? false,
-        discount_percentage: prev[id]?.discount_percentage ?? 0,
+        discount_price_euros: prev[id]?.discount_price_euros ?? 0,
         [field]: value 
       }
     }));
@@ -78,7 +78,7 @@ export default function AdminPricingPromos() {
         price_cents: newService.price_cents,
         active: newService.active,
         has_discount: false,
-        discount_percentage: 0,
+        discount_price_cents: 0,
         center_id: newService.center_id || null
       });
 
@@ -115,9 +115,9 @@ export default function AdminPricingPromos() {
         type: editingService.type,
         duration_minutes: editingService.duration_minutes,
         price_cents: editingService.price_cents,
-        active: editingService.active,
-        has_discount: editingService.has_discount || false,
-        discount_percentage: editingService.discount_percentage || 0
+          active: editingService.active,
+          has_discount: editingService.has_discount || false,
+          discount_price_cents: editingService.discount_price_cents || 0
       };
 
       console.log('Update data:', updateData);
@@ -162,7 +162,7 @@ export default function AdminPricingPromos() {
 
   // Agrupar servicios por nombre (normalizado) y duración para evitar duplicados entre centros
   const uniqueServices = useMemo(() => {
-    const map = new Map<string, { key: string; ids: string[]; name: string; type: any; duration_minutes: number; price_euros: number; allActive: boolean; hasDiscount: boolean; discountPercentage: number }>();
+    const map = new Map<string, { key: string; ids: string[]; name: string; type: any; duration_minutes: number; price_euros: number; allActive: boolean; hasDiscount: boolean; discountPriceEuros: number }>();
     services.forEach((s: any) => {
       const key = `${(s.name || '').trim().toLowerCase()}|${s.duration_minutes}`;
       const existing = map.get(key);
@@ -176,13 +176,13 @@ export default function AdminPricingPromos() {
           price_euros: s.price_cents / 100,
           allActive: !!s.active,
           hasDiscount: !!s.has_discount,
-          discountPercentage: s.discount_percentage || 0,
+          discountPriceEuros: (s.discount_price_cents || 0) / 100,
         });
       } else {
         existing.ids.push(s.id);
         existing.allActive = existing.allActive && !!s.active;
         existing.hasDiscount = existing.hasDiscount && !!s.has_discount;
-        existing.discountPercentage = s.discount_percentage || 0;
+        existing.discountPriceEuros = (s.discount_price_cents || 0) / 100;
       }
     });
     return Array.from(map.values());
@@ -193,12 +193,13 @@ export default function AdminPricingPromos() {
     if (!edit) return;
 
     const priceCents = Math.round(edit.price_euros * 100);
+    const discountPriceCents = Math.round(edit.discount_price_euros * 100);
     for (const id of ids) {
       await supabase.from('services').update({ 
         price_cents: priceCents, 
         active: edit.active,
         has_discount: edit.has_discount,
-        discount_percentage: edit.discount_percentage
+        discount_price_cents: discountPriceCents
       }).eq('id', id);
     }
     toast({ title: 'Guardado', description: 'Servicio actualizado en todos los centros' });
@@ -356,7 +357,7 @@ export default function AdminPricingPromos() {
                       price_euros: g.price_euros, 
                       active: g.allActive, 
                       has_discount: g.hasDiscount,
-                      discount_percentage: g.discountPercentage
+                      discount_price_euros: g.discountPriceEuros
                     };
                     return (
                       <div key={g.key} className="border rounded-lg p-3">
@@ -398,13 +399,13 @@ export default function AdminPricingPromos() {
                             </div>
                             {edit.has_discount && (
                               <div className="mb-2">
-                                <Label className="text-sm">Descuento (%)</Label>
+                                <Label className="text-sm">Precio con descuento (€)</Label>
                                 <Input 
                                   type="number" 
+                                  step="0.01"
                                   min="0" 
-                                  max="100" 
-                                  value={edit.discount_percentage}
-                                  onChange={(e) => handleServiceChange(g.key, 'discount_percentage', parseInt(e.target.value || '0'))}
+                                  value={edit.discount_price_euros}
+                                  onChange={(e) => handleServiceChange(g.key, 'discount_price_euros', parseFloat(e.target.value || '0'))}
                                   className="text-sm"
                                 />
                               </div>
@@ -454,7 +455,7 @@ export default function AdminPricingPromos() {
                                      centerId={service.center_id}
                                      serviceDiscount={{
                                        has_discount: !!service.has_discount,
-                                       discount_percentage: service.discount_percentage || 0
+                                       discount_price_cents: service.discount_price_cents || 0
                                      }}
                                      className="text-sm"
                                    />
@@ -718,13 +719,13 @@ export default function AdminPricingPromos() {
                           </div>
                           {editingService.has_discount && (
                             <div>
-                              <Label className="text-sm">Descuento (%)</Label>
+                              <Label className="text-sm">Precio con descuento (€)</Label>
                               <Input 
                                 type="number" 
+                                step="0.01"
                                 min="0" 
-                                max="100" 
-                                value={editingService.discount_percentage || 0}
-                                onChange={(e) => setEditingService({ ...editingService, discount_percentage: parseInt(e.target.value || '0') })}
+                                value={editingService.discount_price_cents ? (editingService.discount_price_cents / 100).toFixed(2) : '0.00'}
+                                onChange={(e) => setEditingService({ ...editingService, discount_price_cents: Math.round(parseFloat(e.target.value || '0') * 100) })}
                                 className="text-sm"
                               />
                             </div>

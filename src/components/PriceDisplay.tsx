@@ -7,7 +7,7 @@ interface PriceDisplayProps {
   centerId?: string;
   className?: string;
   showPromotionBadge?: boolean;
-  serviceDiscount?: { has_discount: boolean; discount_percentage: number };
+  serviceDiscount?: { has_discount: boolean; discount_price_cents: number };
 }
 
 const PriceDisplay = ({ 
@@ -27,9 +27,9 @@ const PriceDisplay = ({
   let discountAmount = 0;
   let discountSource = '';
   
-  if (serviceDiscount?.has_discount && serviceDiscount.discount_percentage > 0) {
-    discountAmount = Math.round(originalPrice * (serviceDiscount.discount_percentage / 100));
-    finalPrice = originalPrice - discountAmount;
+  if (serviceDiscount?.has_discount && serviceDiscount.discount_price_cents > 0 && serviceDiscount.discount_price_cents < originalPrice) {
+    finalPrice = serviceDiscount.discount_price_cents;
+    discountAmount = originalPrice - serviceDiscount.discount_price_cents;
     discountSource = 'service';
   }
   
