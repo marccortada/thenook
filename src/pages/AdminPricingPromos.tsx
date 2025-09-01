@@ -478,6 +478,7 @@ export default function AdminPricingPromos() {
                                 variant="outline"
                                 onClick={() => {
                                   console.log('Editing service:', service);
+                                  console.log('Setting editingService state');
                                   setEditingService({ ...service });
                                 }}
                                 className="flex-1"
@@ -617,137 +618,141 @@ export default function AdminPricingPromos() {
 
             {/* Modal/Form para editar servicio */}
             {editingService && (
-              <Card className="border-primary">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Edit className="h-5 w-5" />
-                      Editando: {editingService.name}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditingService(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="edit-service-name">Nombre *</Label>
-                      <Input
-                        id="edit-service-name"
-                        value={editingService.name}
-                        onChange={(e) => setEditingService({ ...editingService, name: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-service-type">Tipo</Label>
-                      <Select
-                        value={editingService.type}
-                        onValueChange={(value: any) => setEditingService({ ...editingService, type: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="z-50 bg-background">
-                          {serviceTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-service-duration">Duración (min) *</Label>
-                      <Input
-                        id="edit-service-duration"
-                        type="number"
-                        value={editingService.duration_minutes}
-                        onChange={(e) => setEditingService({ ...editingService, duration_minutes: parseInt(e.target.value || '0') })}
-                        min="1"
-                        step="5"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-service-price">Precio (€) *</Label>
-                      <Input
-                        id="edit-service-price"
-                        type="number"
-                        step="0.01"
-                         value={editingService.price_cents ? (editingService.price_cents / 100).toFixed(2) : '0.00'}
-                         onChange={(e) => {
-                           const value = parseFloat(e.target.value || '0');
-                           console.log('Price change:', value);
-                           setEditingService({ ...editingService, price_cents: Math.round(value * 100) });
-                         }}
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-service-status">Estado</Label>
-                      <Select
-                        value={String(editingService.active)}
-                        onValueChange={(value) => setEditingService({ ...editingService, active: value === 'true' })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="z-50 bg-background">
-                          <SelectItem value="true">Activo</SelectItem>
-                          <SelectItem value="false">Inactivo</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-2">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <input 
-                          type="checkbox" 
-                          id="edit-has-discount"
-                          checked={editingService.has_discount || false}
-                          onChange={(e) => setEditingService({ ...editingService, has_discount: e.target.checked })}
-                          className="rounded"
-                        />
-                        <Label htmlFor="edit-has-discount" className="text-sm">Aplicar descuento</Label>
-                      </div>
-                      {editingService.has_discount && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                  <Card className="border-none shadow-none">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <Edit className="h-5 w-5" />
+                          Editando: {editingService.name}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingService(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
-                          <Label className="text-sm">Descuento (%)</Label>
-                          <Input 
-                            type="number" 
-                            min="0" 
-                            max="100" 
-                            value={editingService.discount_percentage || 0}
-                            onChange={(e) => setEditingService({ ...editingService, discount_percentage: parseInt(e.target.value || '0') })}
-                            className="text-sm"
+                          <Label htmlFor="edit-service-name">Nombre *</Label>
+                          <Input
+                            id="edit-service-name"
+                            value={editingService.name}
+                            onChange={(e) => setEditingService({ ...editingService, name: e.target.value })}
                           />
                         </div>
-                      )}
-                    </div>
-                    <div className="md:col-span-2 lg:col-span-3">
-                      <Label htmlFor="edit-service-description">Descripción</Label>
-                      <Textarea
-                        id="edit-service-description"
-                        value={editingService.description || ''}
-                        onChange={(e) => setEditingService({ ...editingService, description: e.target.value })}
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2 mt-4">
-                    <Button variant="outline" onClick={() => setEditingService(null)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={updateService} className="flex items-center gap-2">
-                      <Edit className="h-4 w-4" />
-                      Actualizar Servicio
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                        <div>
+                          <Label htmlFor="edit-service-type">Tipo</Label>
+                          <Select
+                            value={editingService.type}
+                            onValueChange={(value: any) => setEditingService({ ...editingService, type: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-50 bg-background">
+                              {serviceTypes.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-service-duration">Duración (min) *</Label>
+                          <Input
+                            id="edit-service-duration"
+                            type="number"
+                            value={editingService.duration_minutes}
+                            onChange={(e) => setEditingService({ ...editingService, duration_minutes: parseInt(e.target.value || '0') })}
+                            min="1"
+                            step="5"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-service-price">Precio (€) *</Label>
+                          <Input
+                            id="edit-service-price"
+                            type="number"
+                            step="0.01"
+                            value={editingService.price_cents ? (editingService.price_cents / 100).toFixed(2) : '0.00'}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value || '0');
+                              console.log('Price change:', value);
+                              setEditingService({ ...editingService, price_cents: Math.round(value * 100) });
+                            }}
+                            min="0"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-service-status">Estado</Label>
+                          <Select
+                            value={String(editingService.active)}
+                            onValueChange={(value) => setEditingService({ ...editingService, active: value === 'true' })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-50 bg-background">
+                              <SelectItem value="true">Activo</SelectItem>
+                              <SelectItem value="false">Inactivo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-2">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <input 
+                              type="checkbox" 
+                              id="edit-has-discount"
+                              checked={editingService.has_discount || false}
+                              onChange={(e) => setEditingService({ ...editingService, has_discount: e.target.checked })}
+                              className="rounded"
+                            />
+                            <Label htmlFor="edit-has-discount" className="text-sm">Aplicar descuento</Label>
+                          </div>
+                          {editingService.has_discount && (
+                            <div>
+                              <Label className="text-sm">Descuento (%)</Label>
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                max="100" 
+                                value={editingService.discount_percentage || 0}
+                                onChange={(e) => setEditingService({ ...editingService, discount_percentage: parseInt(e.target.value || '0') })}
+                                className="text-sm"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <div className="md:col-span-2 lg:col-span-3">
+                          <Label htmlFor="edit-service-description">Descripción</Label>
+                          <Textarea
+                            id="edit-service-description"
+                            value={editingService.description || ''}
+                            onChange={(e) => setEditingService({ ...editingService, description: e.target.value })}
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-4">
+                        <Button variant="outline" onClick={() => setEditingService(null)}>
+                          Cancelar
+                        </Button>
+                        <Button onClick={updateService} className="flex items-center gap-2">
+                          <Edit className="h-4 w-4" />
+                          Actualizar Servicio
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             )}
           </TabsContent>
 
