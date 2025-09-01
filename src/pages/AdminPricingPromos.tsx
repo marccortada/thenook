@@ -401,11 +401,14 @@ export default function AdminPricingPromos() {
                               <div className="mb-2">
                                 <Label className="text-sm">Precio con descuento (€)</Label>
                                 <Input 
-                                  type="number" 
-                                  step="0.01"
-                                  min="0" 
-                                  value={edit.discount_price_euros}
-                                  onChange={(e) => handleServiceChange(g.key, 'discount_price_euros', parseFloat(e.target.value || '0'))}
+                                  type="text" 
+                                  placeholder="ej: 85,50"
+                                  value={edit.discount_price_euros > 0 ? edit.discount_price_euros.toString().replace('.', ',') : ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(',', '.');
+                                    const numValue = parseFloat(value) || 0;
+                                    handleServiceChange(g.key, 'discount_price_euros', numValue);
+                                  }}
                                   className="text-sm"
                                 />
                               </div>
@@ -721,11 +724,14 @@ export default function AdminPricingPromos() {
                             <div>
                               <Label className="text-sm">Precio con descuento (€)</Label>
                               <Input 
-                                type="number" 
-                                step="0.01"
-                                min="0" 
-                                value={editingService.discount_price_cents ? (editingService.discount_price_cents / 100).toFixed(2) : '0.00'}
-                                onChange={(e) => setEditingService({ ...editingService, discount_price_cents: Math.round(parseFloat(e.target.value || '0') * 100) })}
+                                type="text" 
+                                placeholder="ej: 85,50"
+                                value={editingService.discount_price_cents && editingService.discount_price_cents > 0 ? (editingService.discount_price_cents / 100).toFixed(2).replace('.', ',') : ''}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(',', '.');
+                                  const numValue = parseFloat(value) || 0;
+                                  setEditingService({ ...editingService, discount_price_cents: Math.round(numValue * 100) });
+                                }}
                                 className="text-sm"
                               />
                             </div>
