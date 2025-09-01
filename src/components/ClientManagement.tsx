@@ -104,7 +104,7 @@ const ClientManagement = () => {
       toast({ title: 'Error', description: e.message || 'No se pudo crear el cliente', variant: 'destructive' });
     }
   };
-  const { notes, createNote, refetch: refetchNotes } = useClientNotes(selectedClient?.id);
+  const { notes, createNote, refetch: refetchNotes, error: notesError } = useClientNotes(selectedClient?.id);
 
   const handleCreateNote = async () => {
     if (!selectedClient || !newNote.title || !newNote.content) return;

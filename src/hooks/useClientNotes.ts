@@ -102,14 +102,19 @@ export const useClientNotes = (
       })) || [];
 
       setNotes(transformedData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching client notes:', error);
-      setError('Error al cargar las notas');
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las notas",
-        variant: "destructive",
-      });
+      // Si es un error de permisos, no mostrar el toast de error ya que puede ser normal para empleados
+      if (error?.code !== 'PGRST116' && !error?.message?.includes('permission denied')) {
+        setError('Revisar en useClients hook');
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las notas",
+          variant: "destructive",
+        });
+      } else {
+        setError('Sin permisos para ver notas');
+      }
     } finally {
       setLoading(false);
     }
