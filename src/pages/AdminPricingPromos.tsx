@@ -143,9 +143,39 @@ export default function AdminPricingPromos() {
   const deleteService = async (serviceId: string) => {
     console.log('Delete service called with ID:', serviceId);
     
-    if (!confirm('¿Estás seguro de que quieres eliminar este servicio? Esta acción no se puede deshacer.')) {
-      console.log('Delete cancelled by user');
+    // First check what packages are using this service
+    const { data: relatedPackages, error: packagesError } = await supabase
+      .from('packages')
+      .select('id, name')
+      .eq('service_id', serviceId);
+    
+    if (packagesError) {
+      toast({ title: 'Error', description: 'Error verificando paquetes relacionados', variant: 'destructive' });
       return;
+    }
+    
+    if (relatedPackages && relatedPackages.length > 0) {
+      const packageNames = relatedPackages.map(p => p.name).join(', ');
+      const confirmMessage = `Este servicio está siendo usado en ${relatedPackages.length} paquete(s): ${packageNames}.\n\n¿Quieres eliminar TODOS los paquetes y el servicio? Esta acción no se puede deshacer.`;
+      
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+      
+      // Delete packages first
+      const { error: deletePackagesError } = await supabase
+        .from('packages')
+        .delete()
+        .eq('service_id', serviceId);
+        
+      if (deletePackagesError) {
+        toast({ title: 'Error', description: 'Error eliminando paquetes relacionados', variant: 'destructive' });
+        return;
+      }
+    } else {
+      if (!confirm('¿Estás seguro de que quieres eliminar este servicio? Esta acción no se puede deshacer.')) {
+        return;
+      }
     }
 
     try {
@@ -154,19 +184,15 @@ export default function AdminPricingPromos() {
 
       if (error) {
         console.error('Supabase delete error:', error);
-        if (error.code === '23503') {
-          toast({ 
-            title: 'No se puede eliminar', 
-            description: 'Este servicio está siendo usado en uno o más paquetes. Elimina primero los paquetes que lo usan.',
-            variant: 'destructive' 
-          });
-        } else {
-          toast({ title: 'Error', description: `No se pudo eliminar el servicio: ${error.message}`, variant: 'destructive' });
-        }
+        toast({ title: 'Error', description: `No se pudo eliminar el servicio: ${error.message}`, variant: 'destructive' });
       } else {
         console.log('Service deleted successfully');
-        toast({ title: 'Eliminado', description: 'Servicio eliminado exitosamente' });
+        const message = relatedPackages && relatedPackages.length > 0 
+          ? `Servicio y ${relatedPackages.length} paquete(s) eliminados exitosamente`
+          : 'Servicio eliminado exitosamente';
+        toast({ title: 'Eliminado', description: message });
         refetchServices();
+        refetchPackages();
       }
     } catch (err) {
       console.error('Error deleting service:', err);
