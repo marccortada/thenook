@@ -42,8 +42,6 @@ const PAYMENT_STATUSES = [
 const PAYMENT_METHODS = [
   { value: 'efectivo', label: '💵 Efectivo', icon: '💵' },
   { value: 'tarjeta', label: '💳 Tarjeta', icon: '💳' },
-  { value: 'transferencia', label: '🏦 Transferencia', icon: '🏦' },
-  { value: 'bizum', label: '📱 Bizum', icon: '📱' },
 ];
 
 export default function BookingManagement() {
