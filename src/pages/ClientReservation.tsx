@@ -463,22 +463,24 @@ const ClientReservation = () => {
                      className="mt-1"
                    />
                  </div>
+
+                 {/* Admin Client Selector - Integrado en la sección de información del cliente */}
+                 {isAdmin && (
+                   <div className="pt-4 border-t border-primary/20">
+                     <div className="space-y-3">
+                       <div className="flex items-center gap-2 text-primary">
+                         <Users className="h-4 w-4" />
+                         <span className="text-sm font-medium">Seleccionar Cliente Existente</span>
+                       </div>
+                       <AdminClientSelector onClientSelect={handleClientSelect} />
+                       <p className="text-xs text-muted-foreground italic">
+                         💡 Como administrador, puedes buscar y seleccionar un cliente existente
+                       </p>
+                     </div>
+                   </div>
+                 )}
                  
                </div>
-
-               {/* Admin Client Selector */}
-               {isAdmin && (
-                 <div className="space-y-3 sm:space-y-4 p-4 bg-accent/10 rounded-lg border border-primary/30">
-                   <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base text-primary">
-                     <Users className="h-4 w-4" />
-                     <span>Panel de Administrador</span>
-                   </h3>
-                   <AdminClientSelector onClientSelect={handleClientSelect} />
-                   <p className="text-xs text-muted-foreground">
-                     Como administrador, puedes seleccionar un cliente existente para hacer la reserva en su nombre.
-                   </p>
-                 </div>
-               )}
 
               {/* Existing Bookings */}
               {showExistingBookings && existingBookings.length > 0 && (
