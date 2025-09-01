@@ -402,12 +402,16 @@ export default function AdminPricingPromos() {
                                 <Label className="text-sm">Precio con descuento (€)</Label>
                                 <Input 
                                   type="text" 
-                                  placeholder="ej: 85,50"
-                                  value={edit.discount_price_euros > 0 ? edit.discount_price_euros.toString().replace('.', ',') : ''}
-                                  onChange={(e) => {
-                                    const value = e.target.value.replace(',', '.');
-                                    const numValue = parseFloat(value) || 0;
-                                    handleServiceChange(g.key, 'discount_price_euros', numValue);
+                                  placeholder="Escribe el precio: 85,50"
+                                  defaultValue=""
+                                  onBlur={(e) => {
+                                    if (e.target.value) {
+                                      const value = e.target.value.replace(',', '.');
+                                      const numValue = parseFloat(value);
+                                      if (!isNaN(numValue) && numValue > 0) {
+                                        handleServiceChange(g.key, 'discount_price_euros', numValue);
+                                      }
+                                    }
                                   }}
                                   className="text-sm"
                                 />
@@ -725,12 +729,16 @@ export default function AdminPricingPromos() {
                               <Label className="text-sm">Precio con descuento (€)</Label>
                               <Input 
                                 type="text" 
-                                placeholder="ej: 85,50"
-                                value={editingService.discount_price_cents && editingService.discount_price_cents > 0 ? (editingService.discount_price_cents / 100).toFixed(2).replace('.', ',') : ''}
-                                onChange={(e) => {
-                                  const value = e.target.value.replace(',', '.');
-                                  const numValue = parseFloat(value) || 0;
-                                  setEditingService({ ...editingService, discount_price_cents: Math.round(numValue * 100) });
+                                placeholder="Escribe el precio: 85,50"
+                                defaultValue=""
+                                onBlur={(e) => {
+                                  if (e.target.value) {
+                                    const value = e.target.value.replace(',', '.');
+                                    const numValue = parseFloat(value);
+                                    if (!isNaN(numValue) && numValue > 0) {
+                                      setEditingService({ ...editingService, discount_price_cents: Math.round(numValue * 100) });
+                                    }
+                                  }
                                 }}
                                 className="text-sm"
                               />
