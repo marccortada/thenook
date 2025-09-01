@@ -28,6 +28,7 @@ import NotificationCenter from "@/components/NotificationCenter";
 import ReportsCenter from "@/components/ReportsCenter";
 import AdminPricingPromos from "@/pages/AdminPricingPromos";
 import AdminSettings from "@/pages/AdminSettings";
+import BookingManagement from "@/pages/BookingManagement";
 
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
@@ -118,6 +119,13 @@ const AdminDashboard = () => {
       icon: Percent,
       component: AdminPricingPromos,
       roles: ["admin"]
+    },
+    {
+      id: "gestion-citas",
+      label: "Gestión de Citas",
+      icon: Calendar,
+      component: BookingManagement,
+      roles: ["admin", "employee"]
     },
     {
       id: "configuracion",
