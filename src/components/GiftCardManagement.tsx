@@ -389,15 +389,6 @@ const GiftCardManagement = () => {
                         </div>
                         
                         <div>
-                          <div className="flex items-center space-x-2">
-                            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                              {card.expiry_date 
-                                ? format(new Date(card.expiry_date), "dd/MM/yyyy", { locale: es })
-                                : 'Sin vencimiento'
-                              }
-                            </span>
-                          </div>
                           <p className="text-sm text-muted-foreground">
                             Creada: {format(new Date(card.created_at), "dd/MM/yyyy", { locale: es })}
                           </p>
