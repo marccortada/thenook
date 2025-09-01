@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarDays, Clock, MapPin, User, CalendarIcon } from "lucide-react";
+import { CalendarDays, Clock, MapPin, User, CalendarIcon, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
+import AdminClientSelector from "@/components/AdminClientSelector";
 import { useNavigate } from "react-router-dom";
 
 const ReservationSystem = () => {
@@ -286,6 +287,22 @@ const ReservationSystem = () => {
     }
   };
 
+  // Function to handle client selection from AdminClientSelector
+  const handleClientSelect = (client: any) => {
+    console.log('🔍 Cliente seleccionado:', client);
+    setFormData(prev => ({
+      ...prev,
+      clientName: `${client.first_name} ${client.last_name}`,
+      clientEmail: client.email,
+      clientPhone: client.phone || ''
+    }));
+    
+    toast({
+      title: "Cliente seleccionado",
+      description: `${client.first_name} ${client.last_name} seleccionado para la reserva`
+    });
+  };
+
   const selectedService = services.find(s => s.id === formData.service);
   const selectedPackage = packages.find(p => p.id === formData.service);
   const selectedCenter = centers.find(c => c.id === formData.center);
@@ -424,6 +441,22 @@ const ReservationSystem = () => {
                     placeholder="Email"
                   />
                 </div>
+
+                {/* Admin Client Selector - integrado en la sección de información del cliente */}
+                {isAdmin && (
+                  <div className="pt-4 border-t border-primary/20">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-primary">
+                        <Users className="h-4 w-4" />
+                        <span className="text-sm font-medium">Seleccionar Cliente Existente</span>
+                      </div>
+                      <AdminClientSelector onClientSelect={handleClientSelect} />
+                      <p className="text-xs text-muted-foreground italic">
+                        💡 Como administrador, puedes buscar y seleccionar un cliente existente
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

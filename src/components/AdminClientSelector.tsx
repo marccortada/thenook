@@ -35,6 +35,8 @@ export default function AdminClientSelector({ onClientSelect }: AdminClientSelec
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
+  console.log('🔍 AdminClientSelector rendered');
+
   const fetchClients = async () => {
     setLoading(true);
     try {

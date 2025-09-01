@@ -29,7 +29,10 @@ const ClientReservation = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile, user, loading } = useAuth();
+  
+  // Debug logs para verificar autenticación
+  console.log('🔍 Auth Debug:', { isAdmin, profile, user, loading });
   // hooks para servicios y bonos se declaran después de formData
   
   const [formData, setFormData] = useState({
@@ -465,7 +468,10 @@ const ClientReservation = () => {
                  </div>
 
                  {/* Admin Client Selector - Integrado en la sección de información del cliente */}
-                 {isAdmin && (
+                 {(() => {
+                   console.log('🔍 Checking admin status for selector:', { isAdmin, profile: profile?.role });
+                   return isAdmin;
+                 })() && (
                    <div className="pt-4 border-t border-primary/20">
                      <div className="space-y-3">
                        <div className="flex items-center gap-2 text-primary">
