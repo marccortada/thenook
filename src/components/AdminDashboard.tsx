@@ -21,6 +21,7 @@ import ReservationSystem from "@/components/ReservationSystem";
 import AdvancedCalendarView from "@/components/AdvancedCalendarView";
 import ClientManagement from "@/components/ClientManagement";
 import PackageManagement from "@/components/PackageManagement";
+import GiftCardManagement from "@/components/GiftCardManagement";
 import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 import ControlCenter from "@/components/ControlCenter";
 import NotificationCenter from "@/components/NotificationCenter";
@@ -74,6 +75,13 @@ const AdminDashboard = () => {
       label: "Bonos",
       icon: Gift,
       component: PackageManagement,
+      roles: ["admin", "employee"]
+    },
+    {
+      id: "tarjetas-regalo",
+      label: "Tarjetas Regalo",
+      icon: Gift,
+      component: GiftCardManagement,
       roles: ["admin", "employee"]
     },
     {
