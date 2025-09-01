@@ -52,12 +52,12 @@ export const useClientNotes = (
         .from('client_notes')
         .select(`
           *,
-          profiles!client_notes_client_id_fkey (
+          client:profiles!client_notes_client_id_fkey (
             first_name,
             last_name,
             email
           ),
-          profiles!client_notes_staff_id_fkey (
+          staff:profiles!client_notes_staff_id_fkey (
             first_name,
             last_name,
             email
@@ -95,10 +95,10 @@ export const useClientNotes = (
         is_alert: note.is_alert,
         created_at: note.created_at,
         updated_at: note.updated_at,
-        client_name: `${note.profiles?.first_name || ''} ${note.profiles?.last_name || ''}`.trim(),
-        client_email: note.profiles?.email || '',
-        staff_name: `${note.profiles?.first_name || ''} ${note.profiles?.last_name || ''}`.trim(),
-        staff_email: note.profiles?.email || ''
+        client_name: `${note.client?.first_name || ''} ${note.client?.last_name || ''}`.trim(),
+        client_email: note.client?.email || '',
+        staff_name: `${note.staff?.first_name || ''} ${note.staff?.last_name || ''}`.trim(),
+        staff_email: note.staff?.email || ''
       })) || [];
 
       setNotes(transformedData);
@@ -283,12 +283,12 @@ export const useClientAlerts = () => {
         .from('client_notes')
         .select(`
           *,
-          profiles!client_notes_client_id_fkey (
+          client:profiles!client_notes_client_id_fkey (
             first_name,
             last_name,
             email
           ),
-          profiles!client_notes_staff_id_fkey (
+          staff:profiles!client_notes_staff_id_fkey (
             first_name,
             last_name,
             email
@@ -302,14 +302,14 @@ export const useClientAlerts = () => {
       setAlerts(data?.map(note => ({
         id: note.id,
         client_id: note.client_id,
-        client_name: `${note.profiles?.first_name || ''} ${note.profiles?.last_name || ''}`.trim(),
-        client_email: note.profiles?.email || '',
+        client_name: `${note.client?.first_name || ''} ${note.client?.last_name || ''}`.trim(),
+        client_email: note.client?.email || '',
         title: note.title,
         content: note.content,
         category: note.category,
         priority: note.priority,
         created_at: note.created_at,
-        staff_name: `${note.profiles?.first_name || ''} ${note.profiles?.last_name || ''}`.trim()
+        staff_name: `${note.staff?.first_name || ''} ${note.staff?.last_name || ''}`.trim()
       })) || []);
     } catch (error) {
       console.error('Error fetching client alerts:', error);
