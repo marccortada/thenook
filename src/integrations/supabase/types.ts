@@ -2103,7 +2103,9 @@ export type Database = {
           center_id: string | null
           created_at: string
           description: string | null
+          discount_percentage: number | null
           duration_minutes: number
+          has_discount: boolean | null
           id: string
           name: string
           price_cents: number
@@ -2115,7 +2117,9 @@ export type Database = {
           center_id?: string | null
           created_at?: string
           description?: string | null
+          discount_percentage?: number | null
           duration_minutes: number
+          has_discount?: boolean | null
           id?: string
           name: string
           price_cents: number
@@ -2127,7 +2131,9 @@ export type Database = {
           center_id?: string | null
           created_at?: string
           description?: string | null
+          discount_percentage?: number | null
           duration_minutes?: number
+          has_discount?: boolean | null
           id?: string
           name?: string
           price_cents?: number

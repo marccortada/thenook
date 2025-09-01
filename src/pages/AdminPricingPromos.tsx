@@ -29,13 +29,19 @@ export default function AdminPricingPromos() {
     document.title = "Precios y Promos | The Nook Madrid";
   }, []);
 
-  // Servicios - edición rápida de precio/estado
-  const [serviceEdits, setServiceEdits] = useState<Record<string, { price_euros: number; active: boolean }>>({});
+  // Servicios - edición rápida de precio/estado/descuento
+  const [serviceEdits, setServiceEdits] = useState<Record<string, { price_euros: number; active: boolean; has_discount: boolean; discount_percentage: number }>>({});
 
-  const handleServiceChange = (id: string, field: 'price_euros'|'active', value: any) => {
+  const handleServiceChange = (id: string, field: 'price_euros'|'active'|'has_discount'|'discount_percentage', value: any) => {
     setServiceEdits((prev) => ({
       ...prev,
-      [id]: { price_euros: prev[id]?.price_euros ?? 0, active: prev[id]?.active ?? true, [field]: value }
+      [id]: { 
+        price_euros: prev[id]?.price_euros ?? 0, 
+        active: prev[id]?.active ?? true, 
+        has_discount: prev[id]?.has_discount ?? false,
+        discount_percentage: prev[id]?.discount_percentage ?? 0,
+        [field]: value 
+      }
     }));
   };
 
@@ -71,6 +77,8 @@ export default function AdminPricingPromos() {
         duration_minutes: newService.duration_minutes,
         price_cents: newService.price_cents,
         active: newService.active,
+        has_discount: false,
+        discount_percentage: 0,
         center_id: newService.center_id || null
       });
 
@@ -106,7 +114,9 @@ export default function AdminPricingPromos() {
           type: editingService.type,
           duration_minutes: editingService.duration_minutes,
           price_cents: editingService.price_cents,
-          active: editingService.active
+          active: editingService.active,
+          has_discount: editingService.has_discount,
+          discount_percentage: editingService.discount_percentage
         })
         .eq('id', editingService.id);
 
@@ -145,7 +155,7 @@ export default function AdminPricingPromos() {
 
   // Agrupar servicios por nombre (normalizado) y duración para evitar duplicados entre centros
   const uniqueServices = useMemo(() => {
-    const map = new Map<string, { key: string; ids: string[]; name: string; type: any; duration_minutes: number; price_euros: number; allActive: boolean }>();
+    const map = new Map<string, { key: string; ids: string[]; name: string; type: any; duration_minutes: number; price_euros: number; allActive: boolean; hasDiscount: boolean; discountPercentage: number }>();
     services.forEach((s: any) => {
       const key = `${(s.name || '').trim().toLowerCase()}|${s.duration_minutes}`;
       const existing = map.get(key);
@@ -158,10 +168,14 @@ export default function AdminPricingPromos() {
           duration_minutes: s.duration_minutes,
           price_euros: s.price_cents / 100,
           allActive: !!s.active,
+          hasDiscount: !!s.has_discount,
+          discountPercentage: s.discount_percentage || 0,
         });
       } else {
         existing.ids.push(s.id);
         existing.allActive = existing.allActive && !!s.active;
+        existing.hasDiscount = existing.hasDiscount && !!s.has_discount;
+        existing.discountPercentage = s.discount_percentage || 0;
       }
     });
     return Array.from(map.values());
@@ -173,7 +187,12 @@ export default function AdminPricingPromos() {
 
     const priceCents = Math.round(edit.price_euros * 100);
     for (const id of ids) {
-      await supabase.from('services').update({ price_cents: priceCents, active: edit.active }).eq('id', id);
+      await supabase.from('services').update({ 
+        price_cents: priceCents, 
+        active: edit.active,
+        has_discount: edit.has_discount,
+        discount_percentage: edit.discount_percentage
+      }).eq('id', id);
     }
     toast({ title: 'Guardado', description: 'Servicio actualizado en todos los centros' });
     delete serviceEdits[key];
@@ -326,7 +345,12 @@ export default function AdminPricingPromos() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {uniqueServices.map((g) => {
-                    const edit = serviceEdits[g.key] || { price_euros: g.price_euros, active: g.allActive };
+                    const edit = serviceEdits[g.key] || { 
+                      price_euros: g.price_euros, 
+                      active: g.allActive, 
+                      has_discount: g.hasDiscount,
+                      discount_percentage: g.discountPercentage
+                    };
                     return (
                       <div key={g.key} className="border rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
@@ -353,6 +377,31 @@ export default function AdminPricingPromos() {
                                 <SelectItem value="false">Inactivo</SelectItem>
                               </SelectContent>
                             </Select>
+                          </div>
+                          <div className="col-span-2">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <input 
+                                type="checkbox" 
+                                id={`discount-${g.key}`}
+                                checked={edit.has_discount}
+                                onChange={(e) => handleServiceChange(g.key, 'has_discount', e.target.checked)}
+                                className="rounded"
+                              />
+                              <Label htmlFor={`discount-${g.key}`} className="text-sm">Aplicar descuento</Label>
+                            </div>
+                            {edit.has_discount && (
+                              <div className="mb-2">
+                                <Label className="text-sm">Descuento (%)</Label>
+                                <Input 
+                                  type="number" 
+                                  min="0" 
+                                  max="100" 
+                                  value={edit.discount_percentage}
+                                  onChange={(e) => handleServiceChange(g.key, 'discount_percentage', parseInt(e.target.value || '0'))}
+                                  className="text-sm"
+                                />
+                              </div>
+                            )}
                           </div>
                           <div className="col-span-2 flex items-center justify-between">
                             <div className="text-xs text-muted-foreground">Se actualizará en todos los centros</div>
@@ -392,12 +441,16 @@ export default function AdminPricingPromos() {
                                 <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
                                   <span>{service.duration_minutes} min</span>
                                   <span>•</span>
-                                  <PriceDisplay 
-                                    originalPrice={service.price_cents} 
-                                    serviceId={service.id}
-                                    centerId={service.center_id}
-                                    className="text-sm"
-                                  />
+                                   <PriceDisplay 
+                                     originalPrice={service.price_cents} 
+                                     serviceId={service.id}
+                                     centerId={service.center_id}
+                                     serviceDiscount={{
+                                       has_discount: !!service.has_discount,
+                                       discount_percentage: service.discount_percentage || 0
+                                     }}
+                                     className="text-sm"
+                                   />
                                 </div>
                                 {service.description && (
                                   <p className="text-xs text-muted-foreground mb-2">{service.description}</p>

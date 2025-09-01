@@ -3,6 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import type { Service, Package } from "@/hooks/useDatabase";
 import { cn } from "@/lib/utils";
+import PriceDisplay from "@/components/PriceDisplay";
 
 interface Props {
   // combined: muestra paquetes y servicios en una sola vista (como en la captura)
@@ -33,7 +34,8 @@ const ItemRow: React.FC<{
   subtitle?: string;
   right?: React.ReactNode;
   active?: boolean;
-}> = ({ title, subtitle, right, active }) => (
+  priceElement?: React.ReactNode;
+}> = ({ title, subtitle, right, active, priceElement }) => (
   <div
     className={cn(
       "flex items-center justify-between gap-3 px-3 py-2 rounded-md border flex-wrap sm:flex-nowrap",
@@ -41,9 +43,10 @@ const ItemRow: React.FC<{
       active ? "border-primary/60 ring-1 ring-primary/30" : "border-border"
     )}
   >
-    <div className="min-w-0">
+    <div className="min-w-0 flex-1">
       <p className={cn("text-sm font-medium truncate", active && "text-primary")}>{title}</p>
       {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
+      {priceElement && <div className="mt-1">{priceElement}</div>}
     </div>
     {right && <div className="shrink-0">{right}</div>}
   </div>
@@ -178,8 +181,19 @@ function ServicesAccordions({
                 group.items.map((s) => (
                   <ItemRow
                     key={s.id}
-                    title={s.name}
-                    subtitle={`${s.duration_minutes} min · ${currency(s.price_cents)}`}
+                   title={s.name}
+                    subtitle={`${s.duration_minutes} min`}
+                    priceElement={
+                      <PriceDisplay 
+                        originalPrice={s.price_cents || 0} 
+                        serviceId={s.id}
+                        serviceDiscount={{
+                          has_discount: !!(s as any).has_discount,
+                          discount_percentage: (s as any).discount_percentage || 0
+                        }}
+                        className="text-sm"
+                      />
+                    }
                     right={
                       <Button 
                         type="button" 

@@ -7,6 +7,7 @@ interface PriceDisplayProps {
   centerId?: string;
   className?: string;
   showPromotionBadge?: boolean;
+  serviceDiscount?: { has_discount: boolean; discount_percentage: number };
 }
 
 const PriceDisplay = ({ 
@@ -14,12 +15,32 @@ const PriceDisplay = ({
   serviceId, 
   centerId, 
   className = "",
-  showPromotionBadge = true 
+  showPromotionBadge = true,
+  serviceDiscount 
 }: PriceDisplayProps) => {
   const { calculatePriceWithPromotions } = usePromotions();
   
   const priceInfo = calculatePriceWithPromotions(originalPrice, serviceId, centerId);
-  const hasDiscount = priceInfo.discount > 0;
+  
+  // Aplicar descuento del servicio si existe
+  let finalPrice = originalPrice;
+  let discountAmount = 0;
+  let discountSource = '';
+  
+  if (serviceDiscount?.has_discount && serviceDiscount.discount_percentage > 0) {
+    discountAmount = Math.round(originalPrice * (serviceDiscount.discount_percentage / 100));
+    finalPrice = originalPrice - discountAmount;
+    discountSource = 'service';
+  }
+  
+  // Si hay promociones, aplicar la mejor
+  if (priceInfo.discount > discountAmount) {
+    discountAmount = priceInfo.discount;
+    finalPrice = priceInfo.finalPrice;
+    discountSource = 'promotion';
+  }
+  
+  const hasDiscount = discountAmount > 0;
   
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('es-ES', {
@@ -36,7 +57,7 @@ const PriceDisplay = ({
     );
   }
 
-  const discountPercentage = Math.round((priceInfo.discount / originalPrice) * 100);
+  const discountPercentage = Math.round((discountAmount / originalPrice) * 100);
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -45,7 +66,7 @@ const PriceDisplay = ({
           {formatPrice(originalPrice)}
         </span>
         <span className="font-semibold text-lg text-primary">
-          {formatPrice(priceInfo.finalPrice)}
+          {formatPrice(finalPrice)}
         </span>
       </div>
       
@@ -55,9 +76,15 @@ const PriceDisplay = ({
         </Badge>
       )}
       
-      {priceInfo.appliedPromotions.length > 0 && showPromotionBadge && (
+      {discountSource === 'promotion' && priceInfo.appliedPromotions.length > 0 && showPromotionBadge && (
         <Badge variant="outline" className="text-xs">
           {priceInfo.appliedPromotions[0].name}
+        </Badge>
+      )}
+      
+      {discountSource === 'service' && showPromotionBadge && (
+        <Badge variant="outline" className="text-xs">
+          Descuento
         </Badge>
       )}
     </div>
