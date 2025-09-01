@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search } from "lucide-react";
+import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,8 @@ import { Link } from "react-router-dom";
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import AdminClientSelector from "@/components/AdminClientSelector";
+import { useAuth } from "@/hooks/useAuth";
 
 const ClientReservation = () => {
   const { toast } = useToast();
@@ -27,6 +29,7 @@ const ClientReservation = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
+  const { isAdmin } = useAuth();
   // hooks para servicios y bonos se declaran después de formData
   
   const [formData, setFormData] = useState({
@@ -306,6 +309,21 @@ const ClientReservation = () => {
     }
   };
 
+  // Function to handle client selection from AdminClientSelector
+  const handleClientSelect = (client: any) => {
+    setFormData(prev => ({
+      ...prev,
+      clientName: `${client.first_name} ${client.last_name}`,
+      clientEmail: client.email,
+      clientPhone: client.phone || ''
+    }));
+    
+    // Also trigger existing bookings check
+    setTimeout(() => {
+      checkExistingBookings();
+    }, 100);
+  };
+
 
   // Loading state
   if (!centers || centers.length === 0) {
@@ -446,7 +464,21 @@ const ClientReservation = () => {
                    />
                  </div>
                  
-              </div>
+               </div>
+
+               {/* Admin Client Selector */}
+               {isAdmin && (
+                 <div className="space-y-3 sm:space-y-4 p-4 bg-accent/10 rounded-lg border border-primary/30">
+                   <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base text-primary">
+                     <Users className="h-4 w-4" />
+                     <span>Panel de Administrador</span>
+                   </h3>
+                   <AdminClientSelector onClientSelect={handleClientSelect} />
+                   <p className="text-xs text-muted-foreground">
+                     Como administrador, puedes seleccionar un cliente existente para hacer la reserva en su nombre.
+                   </p>
+                 </div>
+               )}
 
               {/* Existing Bookings */}
               {showExistingBookings && existingBookings.length > 0 && (
