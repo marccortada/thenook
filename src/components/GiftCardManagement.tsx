@@ -81,7 +81,6 @@ const GiftCardManagement = () => {
     const giftCardData = {
       initial_balance_cents: Math.round(parseFloat(formData.get('amount') as string) * 100),
       assigned_client_id: createClientId || undefined,
-      expiry_date: selectedDate ? selectedDate.toISOString() : undefined,
       purchased_by_name: (formData.get('purchased_by_name') as string) || undefined,
       purchased_by_email: (formData.get('purchased_by_email') as string) || undefined,
     };
@@ -212,33 +211,6 @@ const GiftCardManagement = () => {
                     onSelect={(c) => setCreateClientId(c.id)}
                   />
                   <p className="text-xs text-muted-foreground mt-1">Opcional - deja vacío para tarjeta sin cliente asignado</p>
-                </div>
-                <div>
-                  <Label>Fecha de vencimiento (opcional)</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !selectedDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarDays className="mr-2 h-4 w-4" />
-                        {selectedDate ? format(selectedDate, "PPP", { locale: es }) : "Seleccionar fecha"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        disabled={(date) => date < new Date()}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
                 </div>
                 <div>
                   <Label htmlFor="purchased_by_name">Comprado por (nombre)</Label>

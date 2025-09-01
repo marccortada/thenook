@@ -26,7 +26,6 @@ export interface GiftCard {
 export interface CreateGiftCardData {
   initial_balance_cents: number;
   assigned_client_id?: string;
-  expiry_date?: string;
   purchased_by_email?: string;
   purchased_by_name?: string;
 }
@@ -83,7 +82,6 @@ export function useGiftCards(searchTerm?: string) {
           remaining_balance_cents: giftCardData.initial_balance_cents,
           status: 'active',
           assigned_client_id: giftCardData.assigned_client_id,
-          expiry_date: giftCardData.expiry_date,
           purchased_by_email: giftCardData.purchased_by_email,
           purchased_by_name: giftCardData.purchased_by_name,
         })
