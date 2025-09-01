@@ -154,7 +154,15 @@ export default function AdminPricingPromos() {
 
       if (error) {
         console.error('Supabase delete error:', error);
-        toast({ title: 'Error', description: `No se pudo eliminar el servicio: ${error.message}`, variant: 'destructive' });
+        if (error.code === '23503') {
+          toast({ 
+            title: 'No se puede eliminar', 
+            description: 'Este servicio está siendo usado en uno o más paquetes. Elimina primero los paquetes que lo usan.',
+            variant: 'destructive' 
+          });
+        } else {
+          toast({ title: 'Error', description: `No se pudo eliminar el servicio: ${error.message}`, variant: 'destructive' });
+        }
       } else {
         console.log('Service deleted successfully');
         toast({ title: 'Eliminado', description: 'Servicio eliminado exitosamente' });
