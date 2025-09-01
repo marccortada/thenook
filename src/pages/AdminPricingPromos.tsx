@@ -141,16 +141,22 @@ export default function AdminPricingPromos() {
   };
 
   const deleteService = async (serviceId: string) => {
+    console.log('Delete service called with ID:', serviceId);
+    
     if (!confirm('¿Estás seguro de que quieres eliminar este servicio? Esta acción no se puede deshacer.')) {
+      console.log('Delete cancelled by user');
       return;
     }
 
     try {
+      console.log('Attempting to delete service:', serviceId);
       const { error } = await supabase.from('services').delete().eq('id', serviceId);
 
       if (error) {
+        console.error('Supabase delete error:', error);
         toast({ title: 'Error', description: `No se pudo eliminar el servicio: ${error.message}`, variant: 'destructive' });
       } else {
+        console.log('Service deleted successfully');
         toast({ title: 'Eliminado', description: 'Servicio eliminado exitosamente' });
         refetchServices();
       }
