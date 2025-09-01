@@ -655,10 +655,21 @@ export default function AdminPricingPromos() {
                     />
                   </div>
                 </div>
-                <div className="flex justify-end mt-4">
+                <div className="flex gap-2 justify-end mt-4">
                   <Button onClick={createService} className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
                     Crear Servicio
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      // Create service and then open payment dialog
+                      createService();
+                      // TODO: Open payment dialog
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    💳 Cobrar Cita
                   </Button>
                 </div>
               </CardContent>
