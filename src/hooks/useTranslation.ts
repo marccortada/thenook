@@ -99,7 +99,7 @@ const translations = {
      "payment_init_error": "No se pudo iniciar el pago",
      
      // Error messages
-     "recipient_name_error": "Por favor, indica el nombre del destinatario",
+     "recipient_name_error": "Por favor, indica el nombre del beneficiario",
      "buyer_name_error": "Por favor, indica tu nombre", 
      "buyer_email_error": "Por favor, indica tu email",
      "purchase_success": "¡Compra procesada exitosamente!",
@@ -169,9 +169,9 @@ const translations = {
      "buyer_email": "Email del comprador",
      "buyer_email_placeholder": "email@ejemplo.com",
      "is_gift": "¿Es un regalo?",
-     "recipient_name_required": "Para (nombre del destinatario) *",
-     "recipient_name_placeholder": "Nombre del destinatario",
-     "recipient_email": "Email del destinatario",
+     "recipient_name_required": "Para (nombre del beneficiario) *",
+     "recipient_name_placeholder": "Nombre del beneficiario",
+     "recipient_email": "Email del beneficiario",
      "gift_message": "Mensaje de regalo (opcional)",
      "gift_message_placeholder": "Tu mensaje personalizado...",
      "empty_cart_button": "Vaciar",
