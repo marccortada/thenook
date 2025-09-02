@@ -297,12 +297,12 @@ const GiftCardsPage = () => {
               <SheetTrigger asChild>
                 <Button variant="outline">{t('cart')} ({items.length})</Button>
               </SheetTrigger>
-              <SheetContent className="w-[90vw] sm:w-[480px] overflow-hidden">
-                <SheetHeader className="pb-4">
+              <SheetContent className="w-[90vw] sm:w-[480px] flex flex-col max-h-[100vh]">
+                <SheetHeader className="flex-shrink-0 pb-4">
                   <SheetTitle>{t('your_cart')}</SheetTitle>
                 </SheetHeader>
-                <div className="flex flex-col h-full">
-                  <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                <div className="flex flex-col h-full min-h-0">
+                  <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4">
                     {items.length === 0 ? (
                       <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
                     ) : (
@@ -468,13 +468,13 @@ const GiftCardsPage = () => {
                   
                   {/* Botones fijos en la parte inferior */}
                   {items.length > 0 && (
-                    <div className="flex-shrink-0 border-t pt-4 mt-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <Button variant="secondary" onClick={clear} className="h-12">
+                    <div className="flex-shrink-0 border-t pt-4 mt-4 bg-background">
+                      <div className="grid grid-cols-2 gap-3 mb-2">
+                        <Button variant="secondary" onClick={clear} className="h-14 text-sm">
                           {t('empty_cart_button')}
                         </Button>
                         <Button 
-                          className="h-12 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" 
+                          className="h-14 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-sm font-semibold"
                           onClick={async () => {
                             console.log("=== INICIANDO PROCESO DE PAGO ===");
                             console.log("Items en carrito:", items.length);
