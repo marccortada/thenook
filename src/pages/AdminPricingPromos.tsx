@@ -248,6 +248,57 @@ export default function AdminPricingPromos() {
     refetchServices();
   };
 
+  // Sincroniza servicios para que estén activos en ambos centros
+  const syncServicesToBothCenters = async () => {
+    try {
+      const { data: allServices, error: sErr } = await (supabase as any)
+        .from('services')
+        .select('*');
+      if (sErr) throw sErr;
+
+      let updated = 0;
+      const groups = new Map<string, any[]>();
+      (allServices || []).forEach((s: any) => {
+        const key = `${(s.name || '').trim().toLowerCase()}|${s.duration_minutes}|${s.type}`;
+        const arr = groups.get(key) || [];
+        arr.push(s);
+        groups.set(key, arr);
+      });
+
+      for (const [, arr] of groups) {
+        if (arr.length === 1) {
+          const s = arr[0];
+          if (s.center_id !== null) {
+            const { error } = await (supabase as any)
+              .from('services')
+              .update({ center_id: null, active: true })
+              .eq('id', s.id);
+            if (!error) updated += 1;
+          } else if (s.active === false) {
+            const { error } = await (supabase as any)
+              .from('services')
+              .update({ active: true })
+              .eq('id', s.id);
+            if (!error) updated += 1;
+          }
+        } else {
+          // Si hay variantes por centro, activarlas todas
+          const ids = arr.map((x: any) => x.id);
+          const { error } = await (supabase as any)
+            .from('services')
+            .update({ active: true })
+            .in('id', ids);
+          if (!error) updated += ids.length;
+        }
+      }
+
+      toast({ title: 'Servicios sincronizados', description: `Actualizados ${updated} elemento(s)` });
+      refetchServices();
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'No se pudo sincronizar', variant: 'destructive' });
+    }
+  };
+
   // Bonos (paquetes) - edición de precio/sesiones/estado + alta (agrupados sin duplicados entre centros)
   const [packageEdits, setPackageEdits] = useState<Record<string, { price_euros: number; sessions_count: number; active: boolean }>>({});
   const handlePackageChange = (id: string, field: 'price_euros'|'sessions_count'|'active', value: any) => {
@@ -387,8 +438,9 @@ export default function AdminPricingPromos() {
 
           <TabsContent value="services" className="mt-6 space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex items-center justify-between">
                 <CardTitle>Servicios - Edición Rápida</CardTitle>
+                <Button size="sm" variant="outline" onClick={syncServicesToBothCenters}>Activar en ambos centros</Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
