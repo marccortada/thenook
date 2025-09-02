@@ -387,28 +387,27 @@ const ClientReservation = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8">
+      <main className="container mx-auto px-4 py-6">
         {/* Reservation Form */}
-        
-        <div className="max-w-4xl mx-auto px-2 sm:px-0">
+        <div className="max-w-4xl mx-auto">
         <Card className="hover-lift glass-effect border-primary/20">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
-              <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" />
+          <CardHeader className="p-6">
+            <CardTitle className="flex items-center space-x-2 text-xl">
+              <CalendarDays className="h-5 w-5" />
               <span>{t('book_appointment')}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Client Information */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center space-x-2">
                   <User className="h-4 w-4" />
                   <span>{t('personal_information')}</span>
                 </h3>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="col-span-full sm:col-span-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
                     <Label htmlFor="clientName" className="text-sm">{t('name_label')}</Label>
                     <Input
                       id="clientName"
@@ -433,7 +432,7 @@ const ClientReservation = () => {
                       className="mt-1"
                     />
                   </div>
-                  <div className="col-span-full sm:col-span-1">
+                  <div>
                     <Label htmlFor="clientPhone" className="text-sm">{t('phone')}</Label>
                     <Input
                       id="clientPhone"
