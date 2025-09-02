@@ -458,6 +458,32 @@ const AdvancedCalendarView = () => {
     }
   };
 
+  // Move booking to new slot
+  const moveBooking = async (bookingId: string, newCenterId: string, newLaneId: string, newDate: Date, newTime: Date) => {
+    try {
+      const newDateTime = new Date(newDate);
+      newDateTime.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
+
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          center_id: newCenterId,
+          lane_id: newLaneId,
+          booking_datetime: newDateTime.toISOString()
+        })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      toast({ title: 'Reserva movida', description: 'La reserva se ha movido correctamente.' });
+      await refetchBookings();
+    } catch (error) {
+      console.error('Error moving booking:', error);
+      toast({ title: 'Error', description: 'No se pudo mover la reserva.', variant: 'destructive' });
+    }
+  };
+
+
   // Edit existing booking
   const saveBookingEdits = async () => {
     try {
@@ -649,36 +675,68 @@ const AdvancedCalendarView = () => {
                       format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
                      return (
-                        <div
-                          key={lane.id}
-                          className="relative h-12 border-r border-b hover:bg-muted/20 cursor-pointer transition-colors"
-                          onClick={(e) => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
-                        >
-                        {booking && isFirstSlotOfBooking && (
-                          <div
-                             className={cn(
-                               "absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md",
-                               getStatusColor(booking.status)
-                             )}
-                             style={{
-                               height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 4}px`,
-                               zIndex: 2
-                             }}
-                           >
-                             <div className="text-sm font-semibold truncate">{booking.profiles?.first_name} {booking.profiles?.last_name}</div>
-                             {booking.payment_status === 'paid' && (
-                               <div className="absolute top-1 right-1">
-                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                               </div>
-                             )}
-                             <div className="text-xs text-muted-foreground truncate">
-                               {booking.services?.name}
-                             </div>
-                             <div className="text-xs font-medium">
-                               €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
-                             </div>
-                          </div>
-                        )}
+                         <div
+                           key={lane.id}
+                           className="relative h-12 border-r border-b hover:bg-muted/20 cursor-pointer transition-colors"
+                           onClick={(e) => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
+                           onDragOver={(e) => {
+                             e.preventDefault();
+                             e.dataTransfer.dropEffect = 'move';
+                           }}
+                           onDrop={(e) => {
+                             e.preventDefault();
+                             const bookingData = e.dataTransfer.getData('booking');
+                             if (bookingData) {
+                               const booking = JSON.parse(bookingData);
+                               moveBooking(booking.id, selectedCenter, lane.id, selectedDate, timeSlot.time);
+                             }
+                           }}
+                         >
+                         {booking && isFirstSlotOfBooking && (
+                           <div
+                              className={cn(
+                                "absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md cursor-move",
+                                getStatusColor(booking.status)
+                              )}
+                              style={{
+                                height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 4}px`,
+                                zIndex: 2
+                              }}
+                              draggable={true}
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('booking', JSON.stringify(booking));
+                                e.dataTransfer.effectAllowed = 'move';
+                              }}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="text-sm font-semibold truncate">{booking.profiles?.first_name} {booking.profiles?.last_name}</div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {booking.services?.name}
+                                  </div>
+                                  <div className="text-xs font-medium">
+                                    €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  {booking.payment_status === 'paid' && (
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-4 w-4 p-0 hover:bg-red-500 hover:text-white"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteBooking(booking.id);
+                                    }}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                           </div>
+                         )}
                          {isBlocked && !booking && (
                            <div className="absolute top-1 left-1 right-1 bottom-1 rounded bg-gray-400/40 border border-gray-500/60 flex items-center justify-center">
                              <div className="flex items-center gap-2">
@@ -797,30 +855,64 @@ const AdvancedCalendarView = () => {
                         format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
                       return (
-                        <div
-                          key={`${date.toISOString()}-${lane.id}`}
-                          className="relative h-6 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
-                          onClick={(e) => handleSlotClick(selectedCenter, lane.id, date, timeSlot.time, e)}
-                        >
-                          {booking && isFirstSlotOfBooking && (
-                            <div
-                              className={cn(
-                                "absolute inset-0 rounded-sm text-[8px] p-0.5 border-l-2 truncate z-10",
-                                getStatusColor(booking.status)
-                              )}
-                              style={{ 
-                                height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
-                                minHeight: '24px'
-                              }}
-                            >
-                              <div className="font-medium truncate">
-                                {booking.profiles?.first_name?.[0]}{booking.profiles?.last_name?.[0]}
-                              </div>
-                              {booking.payment_status === 'paid' && (
-                                <CheckCircle2 className="h-2 w-2 text-green-600" />
-                              )}
-                            </div>
-                          )}
+                         <div
+                           key={`${date.toISOString()}-${lane.id}`}
+                           className="relative h-6 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
+                           onClick={(e) => handleSlotClick(selectedCenter, lane.id, date, timeSlot.time, e)}
+                           onDragOver={(e) => {
+                             e.preventDefault();
+                             e.dataTransfer.dropEffect = 'move';
+                           }}
+                           onDrop={(e) => {
+                             e.preventDefault();
+                             const bookingData = e.dataTransfer.getData('booking');
+                             if (bookingData) {
+                               const booking = JSON.parse(bookingData);
+                               moveBooking(booking.id, selectedCenter, lane.id, date, timeSlot.time);
+                             }
+                           }}
+                         >
+                           {booking && isFirstSlotOfBooking && (
+                             <div
+                               className={cn(
+                                 "absolute inset-0 rounded-sm text-[8px] p-0.5 border-l-2 truncate z-10 cursor-move",
+                                 getStatusColor(booking.status)
+                               )}
+                               style={{ 
+                                 height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
+                                 minHeight: '24px'
+                               }}
+                               draggable={true}
+                               onDragStart={(e) => {
+                                 e.dataTransfer.setData('booking', JSON.stringify(booking));
+                                 e.dataTransfer.effectAllowed = 'move';
+                               }}
+                             >
+                               <div className="flex justify-between items-start h-full">
+                                 <div className="flex-1">
+                                   <div className="font-medium truncate">
+                                     {booking.profiles?.first_name?.[0]}{booking.profiles?.last_name?.[0]}
+                                   </div>
+                                 </div>
+                                 <div className="flex items-center">
+                                   {booking.payment_status === 'paid' && (
+                                     <CheckCircle2 className="h-2 w-2 text-green-600" />
+                                   )}
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     className="h-3 w-3 p-0 hover:bg-red-500 hover:text-white ml-1"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       deleteBooking(booking.id);
+                                     }}
+                                   >
+                                     <X className="h-2 w-2" />
+                                   </Button>
+                                 </div>
+                               </div>
+                             </div>
+                           )}
                           
                           {isBlocked && !booking && (
                             <div className="absolute inset-0 bg-gray-400/30 rounded-sm flex items-center justify-center">
