@@ -511,6 +511,64 @@ const GiftCardsPage = () => {
             </Sheet>
           </header>
 
+          {/* Configuración de tarjetas de regalo */}
+          <section className="mb-6">
+            <Card className="border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-lg">Configuración de la Tarjeta de Regalo</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show_price_main" className="text-sm">¿Mostrar precio en la tarjeta?</Label>
+                    <Checkbox 
+                      id="show_price_main" 
+                      checked={showPrice}
+                      onCheckedChange={(checked) => setShowPrice(!!checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show_buyer_data_main" className="text-sm">¿Mostrar datos del comprador?</Label>
+                    <Checkbox 
+                      id="show_buyer_data_main" 
+                      checked={showBuyerData}
+                      onCheckedChange={(checked) => setShowBuyerData(!!checked)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">¿A quién enviar la tarjeta?</Label>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="send_to_buyer_main"
+                        name="send_option_main"
+                        checked={sendToBuyer}
+                        onChange={() => setSendToBuyer(true)}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="send_to_buyer_main" className="text-sm">Enviar al comprador</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="send_to_recipient_main"
+                        name="send_option_main"
+                        checked={!sendToBuyer}
+                        onChange={() => setSendToBuyer(false)}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="send_to_recipient_main" className="text-sm">Enviar directamente al beneficiario</Label>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
           <section className="grid gap-6">
             <Accordion type="multiple" defaultValue={[]} className="space-y-4">
               {groups.individuales.length > 0 && (
