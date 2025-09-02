@@ -967,11 +967,14 @@ const AdvancedCalendarView = () => {
       {showBookingModal && (
         <div className="fixed inset-0 bg-black/50 z-50">
           <div 
-            className="absolute bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+            className="absolute bg-background rounded-lg shadow-xl border max-h-[85vh] overflow-y-auto"
             style={{
-              top: `${modalPosition.top}px`,
+              top: `${Math.max(20, modalPosition.top)}px`,
               left: `${modalPosition.left}px`,
-              maxWidth: 'calc(100vw - 40px)'
+              width: window.innerWidth < 768 ? 'calc(100vw - 2rem)' : 'min(500px, calc(100vw - 2rem))',
+              maxWidth: 'calc(100vw - 2rem)',
+              transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
+              marginLeft: window.innerWidth < 768 ? '50vw' : '0'
             }}
           >
             <div className="flex flex-col min-h-[70vh] max-h-[85vh]">
@@ -1159,11 +1162,14 @@ const AdvancedCalendarView = () => {
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 z-50">
           <div 
-            className="absolute bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+            className="absolute bg-background rounded-lg shadow-xl border max-h-[85vh] overflow-y-auto"
             style={{
-              top: `${modalPosition.top}px`,
+              top: `${Math.max(20, modalPosition.top)}px`,
               left: `${modalPosition.left}px`,
-              maxWidth: 'calc(100vw - 40px)'
+              width: window.innerWidth < 768 ? 'calc(100vw - 2rem)' : 'min(600px, calc(100vw - 2rem))',
+              maxWidth: 'calc(100vw - 2rem)',
+              transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
+              marginLeft: window.innerWidth < 768 ? '50vw' : '0'
             }}
           >
             <div className="px-4 pt-4 pb-2 border-b">
