@@ -51,6 +51,8 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
     { label: "Q4 2024", start: new Date(2024, 9, 1), end: new Date(2024, 11, 31), isCurrent: currentQuarter.year === 2024 && currentQuarter.quarter === 4 },
     { label: "Q1 2025", start: new Date(2025, 0, 1), end: new Date(2025, 2, 31), isCurrent: currentQuarter.year === 2025 && currentQuarter.quarter === 1 },
     { label: "Q2 2025", start: new Date(2025, 3, 1), end: new Date(2025, 5, 30), isCurrent: currentQuarter.year === 2025 && currentQuarter.quarter === 2 },
+    { label: "Q3 2025", start: new Date(2025, 6, 1), end: new Date(2025, 8, 31), isCurrent: currentQuarter.year === 2025 && currentQuarter.quarter === 3 },
+    { label: "Q4 2025", start: new Date(2025, 9, 1), end: new Date(2025, 11, 31), isCurrent: currentQuarter.year === 2025 && currentQuarter.quarter === 4 },
   ];
 
   const months = Array.from({ length: 24 }, (_, i) => {
