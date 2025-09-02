@@ -361,9 +361,8 @@ export default function BookingManagement() {
       </main>
 
       {/* Payment Dialog */}
-      {showPaymentDialog && <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={() => setShowPaymentDialog(false)} />}
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <DialogContent className="sm:max-w-md z-[9999] bg-background border shadow-xl fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+        <DialogContent className="sm:max-w-md bg-background border shadow-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
@@ -391,7 +390,7 @@ export default function BookingManagement() {
                   <SelectTrigger className="h-12 bg-background border-2 border-primary/20 focus:border-primary">
                     <SelectValue placeholder="💰 Seleccionar forma de pago..." />
                   </SelectTrigger>
-                  <SelectContent className="z-[99999] bg-background border-2 shadow-xl" position="popper">
+                  <SelectContent className="bg-background border-2 shadow-xl">
                     {PAYMENT_METHODS.map((method) => (
                       <SelectItem key={method.value} value={method.value} className="py-3 hover:bg-accent cursor-pointer">
                         <div className="flex items-center gap-3">
