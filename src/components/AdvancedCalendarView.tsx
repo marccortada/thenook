@@ -57,6 +57,7 @@ interface BookingFormData {
   timeSlot: Date;
   notes: string;
   isWalkIn?: boolean;
+  saveAsClient?: boolean;
 }
 
 const AdvancedCalendarView = () => {
@@ -339,6 +340,10 @@ const AdvancedCalendarView = () => {
         toast({ title: 'Error', description: 'Selecciona un cliente o introduce email', variant: 'destructive' });
         return;
       }
+      if (bookingForm.isWalkIn && !bookingForm.clientName.trim()) {
+        toast({ title: 'Error', description: 'Introduce un nombre para el cliente walk-in', variant: 'destructive' });
+        return;
+      }
 
       // Check availability before creating booking
       const availability = getSlotAvailability(bookingForm.centerId, bookingForm.date, bookingForm.timeSlot);
@@ -354,8 +359,29 @@ const AdvancedCalendarView = () => {
       // Determine client profile
       let clientIdToUse: string | null = createClientId;
       
-      // For walk-in bookings, we don't need a client profile
-      if (!bookingForm.isWalkIn) {
+      // For walk-in bookings, decide if we need to create a client profile
+      if (bookingForm.isWalkIn) {
+        if (bookingForm.saveAsClient) {
+          // Create a new client profile for the walk-in
+          const { data: newProfile, error: profileError } = await supabase
+            .from('profiles')
+            .insert([{
+              first_name: bookingForm.clientName.split(' ')[0],
+              last_name: bookingForm.clientName.split(' ').slice(1).join(' ') || '',
+              phone: bookingForm.clientPhone || null,
+              email: bookingForm.clientEmail || null,
+              role: 'client'
+            }])
+            .select('id')
+            .single();
+          if (profileError) throw profileError;
+          clientIdToUse = (newProfile as any).id as string;
+        } else {
+          // Walk-in without saving as client - no client profile needed
+          clientIdToUse = null;
+        }
+      } else {
+        // Regular booking logic - create/find client profile
         if (!clientIdToUse && bookingForm.clientEmail) {
           const { data: existingProfile } = await supabase
             .from('profiles')
@@ -1098,7 +1124,7 @@ const AdvancedCalendarView = () => {
               {/* Content - Scrollable */}
               <div className="px-4 py-4 overflow-y-auto flex-1 space-y-4">
                 {/* Walk-in Toggle */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -1109,7 +1135,7 @@ const AdvancedCalendarView = () => {
                         setBookingForm((prev) => ({
                           ...prev,
                           isWalkIn,
-                          clientName: isWalkIn ? 'WALK IN' : '',
+                          clientName: isWalkIn ? '' : prev.clientName,
                           clientPhone: isWalkIn ? '' : prev.clientPhone,
                           clientEmail: isWalkIn ? '' : prev.clientEmail,
                         }));
@@ -1120,9 +1146,27 @@ const AdvancedCalendarView = () => {
                       className="h-4 w-4"
                     />
                     <Label htmlFor="walkIn" className="text-sm font-medium">
-                      WALK IN (cliente sin datos)
+                      WALK IN (cliente sin datos previos)
                     </Label>
                   </div>
+                  
+                  {bookingForm.isWalkIn && (
+                    <div className="flex items-center space-x-2 pl-6">
+                      <input
+                        type="checkbox"
+                        id="saveAsClient"
+                        checked={bookingForm.saveAsClient || false}
+                        onChange={(e) => setBookingForm((prev) => ({
+                          ...prev,
+                          saveAsClient: e.target.checked
+                        }))}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="saveAsClient" className="text-sm text-muted-foreground">
+                        Guardar como cliente futuro
+                      </Label>
+                    </div>
+                  )}
                 </div>
 
                 {!bookingForm.isWalkIn && (
@@ -1175,15 +1219,14 @@ const AdvancedCalendarView = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-1.5 sm:space-y-2">
                     <Label htmlFor="clientName" className="text-sm">
-                      Nombre del cliente {!bookingForm.isWalkIn && '*'}
+                      {bookingForm.isWalkIn ? 'Nombre Walk-In' : 'Nombre del cliente'} {!bookingForm.isWalkIn && '*'}
                     </Label>
                     <Input
                       id="clientName"
                       value={bookingForm.clientName}
                       onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
-                      placeholder={bookingForm.isWalkIn ? "WALK IN" : "Nombre y apellidos"}
+                      placeholder={bookingForm.isWalkIn ? "Nombre del cliente walk-in" : "Nombre y apellidos"}
                       className="h-9 sm:h-10"
-                      disabled={bookingForm.isWalkIn}
                     />
                   </div>
                   <div className="space-y-1.5 sm:space-y-2">
