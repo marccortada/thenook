@@ -553,15 +553,13 @@ const ReservationSystem = () => {
                       <span className="ml-2">Cargando servicios...</span>
                     </div>
                   ) : (
-                     <div className="max-h-48 sm:max-h-none overflow-y-auto border rounded-md">
-                       <ServiceSelectorGrouped
-                         mode="individual"
-                         services={services}
-                         packages={[]}
-                         selectedId={formData.service}
-                         onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: 'individual' })}
-                       />
-                     </div>
+                     <ServiceSelectorGrouped
+                       mode="individual"
+                       services={services}
+                       packages={[]}
+                       selectedId={formData.service}
+                       onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: 'individual' })}
+                     />
                   )}
                 </div>
               </div>

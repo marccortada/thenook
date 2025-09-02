@@ -1,12 +1,11 @@
-import React from "react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { Service, Package } from "@/hooks/useDatabase";
 import { cn } from "@/lib/utils";
-import PriceDisplay from "@/components/PriceDisplay";
+import { ChevronDown } from "lucide-react";
+import ServiceModal from "./ServiceModal";
 
 interface Props {
-  // combined: muestra paquetes y servicios en una sola vista (como en la captura)
   mode?: "individual" | "voucher" | "combined";
   services: Service[];
   packages: Package[];
@@ -14,226 +13,49 @@ interface Props {
   onSelect: (id: string, kind: "service" | "package") => void;
 }
 
-// Heurísticas simples para agrupar servicios por nombre/descr. existente en la BD
-const isDuo = (name?: string) => {
-  const txt = (name || "").toLowerCase();
-  return /(dos|pareja|parejas|dúo|duo)/.test(txt) || /\b2\s*personas?\b/.test(txt) || /para\s*2\s*personas?/.test(txt) || /\b(2p|2\s*pax)\b/.test(txt);
-};
-const isCuatroManos = (name?: string) => !!name?.toLowerCase().includes("cuatro manos");
-const isRitual = (name?: string, description?: string) => {
-  const txt = `${name || ""} ${description || ""}`.toLowerCase();
-  return txt.includes("ritual");
-};
-const isTresPersonas = (name?: string) => !!name?.toLowerCase().match(/(tres|3)\s*personas/);
-
-const currency = (cents?: number) =>
-  typeof cents === "number" ? (cents / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" }) : "";
-
-const ItemRow: React.FC<{
-  title: string;
-  subtitle?: string;
-  right?: React.ReactNode;
-  active?: boolean;
-  priceElement?: React.ReactNode;
-}> = ({ title, subtitle, right, active, priceElement }) => (
-  <div
-    className={cn(
-      "flex items-center justify-between gap-3 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md border flex-wrap sm:flex-nowrap",
-      "bg-card text-card-foreground",
-      active ? "border-primary/60 ring-1 ring-primary/30" : "border-border"
-    )}
-  >
-    <div className="min-w-0 flex-1">
-      <p className={cn("text-xs sm:text-sm font-medium truncate", active && "text-primary")}>{title}</p>
-      {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
-      {priceElement && <div className="mt-1">{priceElement}</div>}
-    </div>
-    {right && <div className="shrink-0">{right}</div>}
-  </div>
-);
-
-function PackagesAccordion({
+const ServiceSelectorGrouped: React.FC<Props> = ({
+  mode = "individual",
+  services,
   packages,
   selectedId,
   onSelect,
-}: { packages: Package[]; selectedId?: string; onSelect: (id: string) => void }) {
-  // Deduplicar bonos por nombre, conservando el menor precio
-  const pmap = new Map<string, Package>();
-  for (const p of packages) {
-    const key = (p.name || "").trim().toLowerCase();
-    const existing = pmap.get(key);
-    if (!existing || (typeof p.price_cents === 'number' && p.price_cents < (existing.price_cents ?? Number.MAX_SAFE_INTEGER))) {
-      pmap.set(key, p);
-    }
-  }
-  const dedupedPackages = Array.from(pmap.values());
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Encontrar el servicio/paquete seleccionado para mostrar en el botón
+  const selectedService = services.find(s => s.id === selectedId);
+  const selectedPackage = packages.find(p => p.id === selectedId);
+  const selectedItem = selectedService || selectedPackage;
+
+  const buttonText = selectedItem 
+    ? selectedItem.name 
+    : "Seleccionar servicio";
 
   return (
-    <Accordion type="multiple" defaultValue={[]} className="w-full">
-      {dedupedPackages.filter((pkg) => isDuo((pkg as any).services?.name || pkg.name)).length > 0 && (
-        <AccordionItem value="bonos-dos">
-          <AccordionTrigger className="px-3">Bonos para dos Personas</AccordionTrigger>
-          <AccordionContent className="space-y-2">
-            {dedupedPackages
-              .filter((pkg) => isDuo((pkg as any).services?.name || pkg.name))
-              .map((pkg) => (
-                <ItemRow
-                  key={pkg.id}
-                  title={pkg.name}
-                  subtitle={`${pkg.sessions_count} sesiones${pkg.services?.duration_minutes ? ` · ${pkg.services.duration_minutes} min` : ""} · ${currency(pkg.price_cents)}`}
-                  right={
-                    <Button type="button" size="sm" variant={selectedId === pkg.id ? "default" : "outline"} onClick={() => onSelect(pkg.id)}>
-                      {selectedId === pkg.id ? "Seleccionado" : "Seleccionar"}
-                    </Button>
-                  }
-                  active={selectedId === pkg.id}
-                />
-              ))}
-          </AccordionContent>
-        </AccordionItem>
-      )}
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        className={cn(
+          "w-full justify-between text-left h-10 sm:h-11",
+          !selectedItem && "text-muted-foreground"
+        )}
+        onClick={() => setIsModalOpen(true)}
+      >
+        <span className="truncate">{buttonText}</span>
+        <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-50" />
+      </Button>
 
-      {dedupedPackages.filter((pkg) => !isDuo((pkg as any).services?.name || pkg.name)).length > 0 && (
-        <AccordionItem value="bonos-otros">
-          <AccordionTrigger className="px-3">Otros Bonos</AccordionTrigger>
-          <AccordionContent className="space-y-2">
-            {dedupedPackages
-              .filter((pkg) => !isDuo((pkg as any).services?.name || pkg.name))
-              .map((pkg) => (
-                <ItemRow
-                  key={pkg.id}
-                  title={pkg.name}
-                  subtitle={`${pkg.sessions_count} sesiones${pkg.services?.duration_minutes ? ` · ${pkg.services.duration_minutes} min` : ""} · ${currency(pkg.price_cents)}`}
-                  right={
-                    <Button type="button" size="sm" variant={selectedId === pkg.id ? "default" : "outline"} onClick={() => onSelect(pkg.id)}>
-                      {selectedId === pkg.id ? "Seleccionado" : "Seleccionar"}
-                    </Button>
-                  }
-                  active={selectedId === pkg.id}
-                />
-              ))}
-          </AccordionContent>
-        </AccordionItem>
-      )}
-
-      {dedupedPackages.length === 0 && (
-        <p className="text-sm text-muted-foreground px-3">No hay bonos disponibles para el centro seleccionado.</p>
-      )}
-    </Accordion>
-  );
-}
-
-function ServicesAccordions({
-  services,
-  selectedId,
-  onSelect,
-}: { services: Service[]; selectedId?: string; onSelect: (id: string) => void }) {
-  // Deduplicar por nombre normalizado + duración, conservando el menor precio
-  const map = new Map<string, Service>();
-  for (const s of services) {
-    const key = `${(s.name || "").trim().toLowerCase()}|${s.duration_minutes}`;
-    const existing = map.get(key);
-    if (!existing || (typeof s.price_cents === 'number' && s.price_cents < (existing.price_cents ?? Number.MAX_SAFE_INTEGER))) {
-      map.set(key, s);
-    }
-  }
-  const deduped = Array.from(map.values());
-  const massageServices = deduped.filter((s) => s.active !== false);
-
-  const groups = [
-    {
-      key: "masajes-individuales",
-      title: "Masajes individuales",
-      items: massageServices.filter(
-        (s) => !isDuo(s.name) && !isCuatroManos(s.name) && !isRitual(s.name, s.description)
-      ),
-    },
-    {
-      key: "masajes-dos-personas",
-      title: "Masajes para 2 personas",
-      items: massageServices.filter((s) => isDuo(s.name) && !isCuatroManos(s.name) && !isRitual(s.name, s.description)),
-    },
-    {
-      key: "masajes-cuatro-manos",
-      title: "A 4 manos",
-      items: massageServices.filter((s) => isCuatroManos(s.name)),
-    },
-    {
-      key: "rituales",
-      title: "Rituales",
-      items: massageServices.filter((s) => isRitual(s.name, s.description)),
-    },
-  ];
-
-  // Mostrar SIEMPRE todos los grupos (aunque estén vacíos)
-  return (
-    <div className="max-h-96 overflow-y-auto border rounded-lg bg-background relative z-20">
-      <Accordion type="multiple" defaultValue={[]} className="w-full" onValueChange={() => {}}>
-        {groups.map((group) => (
-          <AccordionItem key={group.key} value={group.key} className="border-none">
-            <AccordionTrigger className="px-3 hover:no-underline sticky top-0 bg-background/95 backdrop-blur-sm z-30 border-b border-border/50" onClick={(e) => e.stopPropagation()}>
-              {group.title}
-            </AccordionTrigger>
-            <AccordionContent className="space-y-2 max-h-60 overflow-y-auto relative z-20">
-              {group.items.length === 0 ? (
-                <p className="text-sm text-muted-foreground px-3">No hay servicios en esta categoría.</p>
-              ) : (
-                group.items.map((s) => (
-                  <ItemRow
-                    key={s.id}
-                   title={s.name}
-                    subtitle={`${s.duration_minutes} min`}
-                    priceElement={
-                      <PriceDisplay 
-                        originalPrice={s.price_cents || 0} 
-                        serviceId={s.id}
-                        serviceDiscount={{
-                          has_discount: !!(s as any).has_discount,
-                          discount_price_cents: (s as any).discount_price_cents || 0
-                        }}
-                        className="text-sm"
-                      />
-                    }
-                    right={
-                      <Button 
-                        type="button" 
-                        size="sm" 
-                        variant={selectedId === s.id ? "default" : "outline"} 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onSelect(s.id);
-                        }}
-                      >
-                        {selectedId === s.id ? "Seleccionado" : "Seleccionar"}
-                      </Button>
-                    }
-                    active={selectedId === s.id}
-                  />
-                ))
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
-    </div>
-  );
-}
-
-const ServiceSelectorGrouped: React.FC<Props> = ({ mode = "combined", services, packages, selectedId, onSelect }) => {
-  if (mode === "voucher") {
-    return <PackagesAccordion packages={packages} selectedId={selectedId} onSelect={(id) => onSelect(id, "package")} />;
-  }
-  if (mode === "individual") {
-    return <ServicesAccordions services={services} selectedId={selectedId} onSelect={(id) => onSelect(id, "service")} />;
-  }
-
-  // combined
-  return (
-    <div className="space-y-4">
-      <PackagesAccordion packages={packages} selectedId={selectedId} onSelect={(id) => onSelect(id, "package")} />
-      <ServicesAccordions services={services} selectedId={selectedId} onSelect={(id) => onSelect(id, "service")} />
-    </div>
+      <ServiceModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        mode={mode}
+        services={services}
+        packages={packages}
+        selectedId={selectedId}
+        onSelect={onSelect}
+      />
+    </>
   );
 };
 
