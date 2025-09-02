@@ -1069,13 +1069,7 @@ const AdvancedCalendarView = () => {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecciona centro" />
               </SelectTrigger>
-              <SelectContent 
-                position="popper"
-                side="bottom"
-                align="start"
-                sideOffset={4}
-                className="z-[100] bg-background border shadow-lg"
-              >
+              <SelectContent className="z-[9999] bg-popover border shadow-lg">
                 {centers.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
                     <div className="flex items-center gap-2">

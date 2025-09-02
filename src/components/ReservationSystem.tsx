@@ -518,15 +518,7 @@ const ReservationSystem = () => {
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona un centro" />
                   </SelectTrigger>
-                  <SelectContent 
-                    className="z-[9999] bg-popover border shadow-md w-[var(--radix-select-trigger-width)]" 
-                    position="popper"
-                    side="bottom"
-                    align="center"
-                    sideOffset={4}
-                    alignOffset={0}
-                    avoidCollisions={false}
-                  >
+                  <SelectContent className="z-[9999] bg-popover border shadow-lg">
                     {centers.map((center) => (
                       <SelectItem key={center.id} value={center.id}>
                         <div className="flex items-center space-x-2">

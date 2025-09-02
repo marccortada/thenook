@@ -535,26 +535,15 @@ const ClientReservation = () => {
                        <SelectTrigger className="mt-1">
                          <SelectValue placeholder={t('select_center')} />
                        </SelectTrigger>
-                       <SelectContent 
-                         position="popper" 
-                         side="bottom" 
-                         align="start"
-                         sideOffset={4}
-                         avoidCollisions={false}
-                         className="z-[9999] bg-popover border border-border shadow-lg !fixed"
-                         style={{ 
-                           position: 'fixed',
-                           transform: 'none !important',
-                         }}
-                       >
-                        {centers.map((center) => (
-                          <SelectItem key={center.id} value={center.id}>
-                            <div className="flex items-center space-x-2">
-                              <MapPin className="h-3 w-3" />
-                              <span>{center.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
+                       <SelectContent className="z-[9999] bg-popover border shadow-lg">
+                         {centers.map((center) => (
+                           <SelectItem key={center.id} value={center.id}>
+                             <div className="flex items-center space-x-2">
+                               <MapPin className="h-3 w-3" />
+                               <span>{center.name}</span>
+                             </div>
+                           </SelectItem>
+                         ))}
                       </SelectContent>
                     </Select>
                  </div>
