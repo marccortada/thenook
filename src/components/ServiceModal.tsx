@@ -1,11 +1,10 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import type { Service, Package } from "@/hooks/useDatabase";
+import { usePromotions } from "@/hooks/usePromotions";
 import { cn } from "@/lib/utils";
-import PriceDisplay from "@/components/PriceDisplay";
+import { Star, Clock, Users, Sparkles, Percent, Tag } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -32,31 +31,156 @@ const isTresPersonas = (name?: string) => !!name?.toLowerCase().match(/(tres|3)\
 const currency = (cents?: number) =>
   typeof cents === "number" ? (cents / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" }) : "";
 
-const ItemRow: React.FC<{
-  title: string;
-  subtitle?: string;
-  right?: React.ReactNode;
+const ServiceCard: React.FC<{
+  service: Service;
   active?: boolean;
-  priceElement?: React.ReactNode;
   onClick?: () => void;
-}> = ({ title, subtitle, right, active, priceElement, onClick }) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      "w-full flex items-center justify-between gap-3 px-3 py-3 rounded-lg border text-left",
-      "bg-card text-card-foreground hover:bg-accent transition-colors duration-200",
-      "touch-manipulation min-h-[44px]",
-      active ? "border-primary/60 ring-2 ring-primary/20 bg-primary/5" : "border-border hover:border-primary/30"
-    )}
-  >
-    <div className="min-w-0 flex-1">
-      <p className={cn("text-sm font-medium truncate", active && "text-primary")}>{title}</p>
-      {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
-      {priceElement && <div className="mt-1">{priceElement}</div>}
-    </div>
-    {right && <div className="flex-shrink-0">{right}</div>}
-  </button>
-);
+  centerId?: string;
+}> = ({ service, active, onClick, centerId }) => {
+  const { calculatePriceWithPromotions } = usePromotions();
+  
+  const priceInfo = calculatePriceWithPromotions(service.price_cents, service.id, centerId);
+  const hasPromotion = priceInfo.discount > 0;
+  
+  // Solo usar promociones ya que no tenemos descuentos de servicio en el tipo Service
+  const finalDiscount = priceInfo.discount;
+  const finalPrice = priceInfo.finalPrice;
+  const showDiscount = finalDiscount > 0;
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full p-4 rounded-xl border text-left transition-all duration-300",
+        "bg-gradient-to-br from-card to-card/80 hover:from-card hover:to-accent/20",
+        "shadow-sm hover:shadow-md touch-manipulation min-h-[120px]",
+        active 
+          ? "border-primary ring-2 ring-primary/20 bg-gradient-to-br from-primary/5 to-primary/10" 
+          : "border-border hover:border-primary/40"
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className={cn(
+              "font-semibold text-sm sm:text-base truncate",
+              active && "text-primary"
+            )}>
+              {service.name}
+            </h4>
+            {showDiscount && (
+              <Badge variant="secondary" className="bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-600 border-orange-300/30">
+                <Percent className="w-3 h-3 mr-1" />
+                {Math.round((finalDiscount / service.price_cents) * 100)}%
+              </Badge>
+            )}
+          </div>
+          
+          {service.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+              {service.description}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span>{service.duration_minutes} min</span>
+            </div>
+            {service.type && (
+              <div className="flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                <span className="capitalize">{service.type.replace('_', ' ')}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex flex-col items-end gap-1">
+          {showDiscount ? (
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground line-through">
+                {currency(service.price_cents)}
+              </p>
+              <p className="text-sm font-bold text-primary">
+                {currency(finalPrice)}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm font-bold text-foreground">
+              {currency(service.price_cents)}
+            </p>
+          )}
+          
+          {hasPromotion && (
+            <Badge variant="secondary" className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-600 border-emerald-300/30 text-xs">
+              <Sparkles className="w-3 h-3 mr-1" />
+              Oferta
+            </Badge>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+};
+
+const PackageCard: React.FC<{
+  package: Package;
+  active?: boolean;
+  onClick?: () => void;
+}> = ({ package: pkg, active, onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full p-4 rounded-xl border text-left transition-all duration-300",
+        "bg-gradient-to-br from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100",
+        "shadow-sm hover:shadow-md touch-manipulation min-h-[120px]",
+        active 
+          ? "border-violet-400 ring-2 ring-violet-300/30 bg-gradient-to-br from-violet-100 to-purple-100" 
+          : "border-violet-200 hover:border-violet-300"
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Tag className="w-4 h-4 text-violet-600" />
+            <h4 className={cn(
+              "font-semibold text-sm sm:text-base truncate",
+              active ? "text-violet-700" : "text-violet-600"
+            )}>
+              {pkg.name}
+            </h4>
+            <Badge className="bg-violet-500 text-white text-xs">
+              Paquete
+            </Badge>
+          </div>
+          
+          {pkg.description && (
+            <p className="text-xs text-violet-600/70 line-clamp-2 mb-2">
+              {pkg.description}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-2 text-xs text-violet-600/80">
+            <span>{pkg.sessions_count} sesiones</span>
+            {pkg.discount_percentage > 0 && (
+              <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-orange-200">
+                -{pkg.discount_percentage}%
+              </Badge>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex flex-col items-end">
+          <p className="text-sm font-bold text-violet-700">
+            {currency(pkg.price_cents)}
+          </p>
+        </div>
+      </div>
+    </button>
+  );
+};
 
 const ServiceModal: React.FC<Props> = ({
   open,
@@ -69,7 +193,7 @@ const ServiceModal: React.FC<Props> = ({
 }) => {
   const handleSelect = (id: string, kind: "service" | "package") => {
     onSelect(id, kind);
-    onOpenChange(false); // Cerrar modal al seleccionar
+    onOpenChange(false);
   };
 
   // Grouping logic
@@ -84,30 +208,35 @@ const ServiceModal: React.FC<Props> = ({
     !isTresPersonas(s.name)
   );
 
-  const ServiceGroup: React.FC<{ title: string; services: Service[]; packages?: Package[] }> = ({ title, services, packages = [] }) => {
+  const ServiceGroup: React.FC<{ 
+    title: string; 
+    services: Service[]; 
+    packages?: Package[];
+    icon?: React.ReactNode;
+  }> = ({ title, services, packages = [], icon }) => {
     if (services.length === 0 && packages.length === 0) return null;
 
     return (
       <div className="space-y-3">
-        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide px-1">{title}</h4>
-        <div className="space-y-2">
+        <div className="flex items-center gap-2 px-1">
+          {icon}
+          <h4 className="font-semibold text-base text-foreground">{title}</h4>
+          <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
+        </div>
+        <div className="grid gap-3">
           {services.map((service) => (
-            <ItemRow
+            <ServiceCard
               key={service.id}
-              title={service.name}
-              subtitle={service.description}
+              service={service}
               active={selectedId === service.id}
-              priceElement={<span className="text-sm font-medium text-primary">{currency(service.price_cents)}</span>}
               onClick={() => handleSelect(service.id, "service")}
             />
           ))}
           {packages.map((pkg) => (
-            <ItemRow
+            <PackageCard
               key={pkg.id}
-              title={pkg.name}
-              subtitle={pkg.description}
+              package={pkg}
               active={selectedId === pkg.id}
-              priceElement={<span className="text-sm font-medium text-primary">{currency(pkg.price_cents)}</span>}
               onClick={() => handleSelect(pkg.id, "package")}
             />
           ))}
@@ -118,25 +247,65 @@ const ServiceModal: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-[95vw] mx-auto max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle>Seleccionar Servicio</DialogTitle>
+      <DialogContent className="max-w-2xl w-[95vw] mx-auto max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-br from-background to-accent/5">
+        <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-primary/5 to-violet-500/5 -mx-6 px-6 -mt-6 pt-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-primary to-violet-600 bg-clip-text text-transparent">
+                Seleccionar Servicio
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</p>
+            </div>
+          </div>
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto -mx-6 px-6 service-modal-scroll">
-          <div className="space-y-4 py-2">
+          <div className="space-y-6 py-4">
             {mode === "combined" && packages.length > 0 && (
-              <ServiceGroup title="Paquetes" services={[]} packages={packages} />
+              <ServiceGroup 
+                title="Paquetes Especiales" 
+                services={[]} 
+                packages={packages}
+                icon={<Tag className="w-5 h-5 text-violet-500" />}
+              />
             )}
             
-            <ServiceGroup title="Servicios Dúo" services={duoServices} />
-            <ServiceGroup title="Cuatro Manos" services={cuatroManosServices} />
-            <ServiceGroup title="Rituales" services={ritualServices} />
-            <ServiceGroup title="Tres Personas" services={tresPersonasServices} />
-            <ServiceGroup title="Otros Servicios" services={otherServices} />
+            <ServiceGroup 
+              title="Servicios en Pareja" 
+              services={duoServices}
+              icon={<Users className="w-5 h-5 text-pink-500" />}
+            />
+            <ServiceGroup 
+              title="Tratamientos Cuatro Manos" 
+              services={cuatroManosServices}
+              icon={<Star className="w-5 h-5 text-amber-500" />}
+            />
+            <ServiceGroup 
+              title="Rituales Especiales" 
+              services={ritualServices}
+              icon={<Sparkles className="w-5 h-5 text-purple-500" />}
+            />
+            <ServiceGroup 
+              title="Tratamientos Grupales" 
+              services={tresPersonasServices}
+              icon={<Users className="w-5 h-5 text-blue-500" />}
+            />
+            <ServiceGroup 
+              title="Tratamientos Individuales" 
+              services={otherServices}
+              icon={<Star className="w-5 h-5 text-emerald-500" />}
+            />
             
             {mode === "voucher" && packages.length > 0 && (
-              <ServiceGroup title="Paquetes" services={[]} packages={packages} />
+              <ServiceGroup 
+                title="Paquetes Disponibles" 
+                services={[]} 
+                packages={packages}
+                icon={<Tag className="w-5 h-5 text-violet-500" />}
+              />
             )}
           </div>
         </div>
