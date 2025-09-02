@@ -590,7 +590,7 @@ export default function AdminPricingPromos() {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                       <SelectContent position="popper" align="start" sideOffset={4}>
+                       <SelectContent position="popper" side="bottom" align="start" sideOffset={4} className="z-50 bg-background border shadow-lg">
                         {serviceTypes.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
                             {type.label}
