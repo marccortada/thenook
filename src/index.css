@@ -212,6 +212,49 @@ All colors MUST be HSL.
     transform-origin: left top !important;
   }
 
+  /* Mobile touch optimization */
+  @media (max-width: 768px) {
+    /* Ensure touch targets are large enough */
+    .touch-manipulation {
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    /* Improve calendar and select interactions on mobile */
+    [data-radix-popover-content],
+    [data-radix-select-content] {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    /* Calendar day cells - ensure they're tappable */
+    .react-day-picker button {
+      min-height: 44px !important;
+      min-width: 44px !important;
+      touch-action: manipulation !important;
+    }
+
+    /* Select items - ensure they're tappable */
+    [data-radix-select-item] {
+      min-height: 44px !important;
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Popover and select content positioning fixes */
+    [data-radix-popover-content][data-side="bottom"] {
+      margin-top: 8px !important;
+    }
+
+    [data-radix-select-content][data-side="bottom"] {
+      margin-top: 8px !important;
+    }
+  }
+
   /* Mobile responsive improvements */
   @media (max-width: 768px) {
     /* Hide scrollbars on mobile but keep functionality */
