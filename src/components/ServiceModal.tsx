@@ -270,17 +270,12 @@ const ServiceModal: React.FC<Props> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl w-[95vw] mx-auto max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-br from-background to-accent/5">
-        <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-primary/5 to-violet-500/5 -mx-6 px-6 -mt-6 pt-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Sparkles className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-primary to-violet-600 bg-clip-text text-transparent">
-                Seleccionar Servicio
-              </DialogTitle>
-              <p className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</p>
-            </div>
+        <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 -mx-6 px-6 -mt-6 pt-6">
+          <div>
+            <DialogTitle className="text-xl font-bold text-foreground">
+              Seleccionar Servicio
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</p>
           </div>
         </DialogHeader>
         
