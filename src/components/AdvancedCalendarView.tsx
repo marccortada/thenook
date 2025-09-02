@@ -986,14 +986,12 @@ const AdvancedCalendarView = () => {
 
       {/* New Booking Modal - Positioned above clicked slot */}
       {showBookingModal && (
-        <div className="fixed inset-0 bg-black/50 z-50">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-0 sm:p-4">
           <div 
-            className="absolute bg-background rounded-lg shadow-xl border overflow-y-auto animate-scale-in"
+            className="bg-background w-full h-full sm:w-auto sm:h-auto sm:rounded-lg sm:shadow-xl sm:border overflow-hidden flex flex-col sm:animate-scale-in"
             style={{
-              top: `${modalPosition.top}px`,
-              left: `${modalPosition.left}px`,
-              width: window.innerWidth < 768 ? `${window.innerWidth - 40}px` : 'min(500px, calc(100vw - 2rem))',
-              maxHeight: '80vh'
+              width: window.innerWidth < 768 ? '100%' : 'min(600px, calc(100vw - 2rem))',
+              maxHeight: window.innerWidth < 768 ? '100%' : '90vh'
             }}
           >
             <div className="flex flex-col min-h-[70vh] max-h-[85vh]">
@@ -1115,17 +1113,11 @@ const AdvancedCalendarView = () => {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent 
-                        className="w-auto p-0 z-[200] sm:relative sm:transform-none" 
+                        className="w-auto p-0 z-[300]"
                         align="center"
                         side="bottom"
                         sideOffset={8}
-                        style={{
-                          position: window.innerWidth < 768 ? 'fixed' : 'absolute',
-                          left: window.innerWidth < 768 ? '50%' : 'auto',
-                          transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
-                          top: window.innerWidth < 768 ? '50vh' : 'auto',
-                          marginTop: window.innerWidth < 768 ? '-150px' : '0'
-                        }}
+                        collisionPadding={16}
                       >
                         <Calendar
                           mode="single"
@@ -1153,19 +1145,12 @@ const AdvancedCalendarView = () => {
                         <SelectValue placeholder="Hora" />
                       </SelectTrigger>
                       <SelectContent 
-                        className="z-[200] bg-background border shadow-xl max-h-[300px] overflow-y-auto"
+                        className="z-[300] bg-background border shadow-xl max-h-[300px] overflow-y-auto"
                         position="popper"
                         side="bottom"
                         align="center"
                         sideOffset={4}
-                        style={{
-                          position: window.innerWidth < 768 ? 'fixed' : 'absolute',
-                          left: window.innerWidth < 768 ? '50%' : 'auto',
-                          transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
-                          width: window.innerWidth < 768 ? 'min(300px, calc(100vw - 2rem))' : 'auto',
-                          top: window.innerWidth < 768 ? '50vh' : 'auto',
-                          marginTop: window.innerWidth < 768 ? '-150px' : '0'
-                        }}
+                        collisionPadding={16}
                       >
                         {timeOptions5m.map((t) => (
                           <SelectItem key={t} value={t}>{t}</SelectItem>
