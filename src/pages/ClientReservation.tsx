@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search, Users } from "lucide-react";
+import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,8 +27,6 @@ const ClientReservation = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
-  
-  // hooks para servicios y bonos se declaran después de formData
   
   const [formData, setFormData] = useState({
     clientName: "",
@@ -307,8 +305,6 @@ const ClientReservation = () => {
     }
   };
 
-
-
   // Loading state
   if (!centers || centers.length === 0) {
     return (
@@ -447,153 +443,135 @@ const ClientReservation = () => {
                      className="mt-1"
                    />
                  </div>
-
-                 
-               </div>
+                  
+                </div>
 
               {/* Existing Bookings */}
               {showExistingBookings && existingBookings.length > 0 && (
-                 <div className="space-y-3 sm:space-y-4">
-                   <div className="flex items-center justify-between">
-                     <h3 className="font-medium text-sm sm:text-base">{t('your_bookings_vouchers')}</h3>
-                     <Button
-                       type="button"
-                       variant="ghost"
-                       size="sm"
-                       onClick={() => setShowExistingBookings(false)}
-                     >
-                       <X className="h-4 w-4" />
-                     </Button>
-                   </div>
-                   <div className="space-y-2">
-                      {existingBookings.map((booking) => (
-                        <Card key={booking.id} className="p-3 sm:p-4">
-                          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-                            <div className="flex-1">
-                              <p className="font-medium text-sm sm:text-base">{booking.services?.name}</p>
-                               <p className="text-xs sm:text-sm text-muted-foreground">
-                                 {format(new Date(booking.booking_datetime), "PPP 'a las' HH:mm", { locale: es })}
-                               </p>
-                               <p className="text-xs sm:text-sm text-muted-foreground">
-                                 {booking.centers?.name}
-                               </p>
-                            </div>
-                          </div>
-                        </Card>
+                <div className="space-y-3 p-4 bg-accent/20 border border-primary/20 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm flex items-center space-x-2">
+                      <Search className="h-4 w-4" />
+                      <span>Reservas Existentes</span>
+                    </h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowExistingBookings(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                     {existingBookings.map((booking) => (
+                       <Card key={booking.id} className="p-3 sm:p-4">
+                         <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                           <div className="flex-1">
+                             <p className="font-medium text-sm sm:text-base">{booking.services?.name}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">
+                                {format(new Date(booking.booking_datetime), "PPP 'a las' HH:mm", { locale: es })}
+                              </p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">
+                                {booking.centers?.name}
+                              </p>
+                           </div>
+                         </div>
+                       </Card>
+                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Center Selection */}
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                  <MapPin className="h-4 w-4" />
+                  <span>{t('center_selection')}</span>
+                </h3>
+                <div>
+                  <Label htmlFor="center" className="text-sm">{t('center')} *</Label>
+                  <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value })}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder={t('select_center')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {centers.map((center) => (
+                        <SelectItem key={center.id} value={center.id}>
+                          {center.name}
+                        </SelectItem>
                       ))}
-                   </div>
-                 </div>
-               )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-               {/* 📍 CENTER SELECTION FIRST */}
-               <div className="space-y-3 sm:space-y-4">
+              {/* Service Selection */}
+              {formData.center && (
+                <div className="space-y-3 sm:space-y-4">
                   <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                    <MapPin className="h-4 w-4" />
-                    <span>{t('center_selection')}</span>
+                    <CalendarDays className="h-4 w-4" />
+                    <span>{t('service_selection')}</span>
                   </h3>
-                 
-                 <div>
-                    <Label htmlFor="center" className="text-sm">{t('center')} *</Label>
-                     <Select value={formData.center} onValueChange={(value) => { setFormData({ ...formData, center: value }); setSelection(null); }}>
-                       <SelectTrigger className="mt-1">
-                         <SelectValue placeholder={t('select_center')} />
-                       </SelectTrigger>
-                      <SelectContent 
-                        position="popper" 
-                        side="bottom" 
-                        align="start"
-                        sideOffset={4}
-                        className="z-[60] bg-popover border border-border shadow-lg"
-                      >
-                        {centers.map((center) => (
-                          <SelectItem key={center.id} value={center.id}>
-                            <div className="flex items-center space-x-2">
-                              <MapPin className="h-3 w-3" />
-                              <span>{center.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                 </div>
-               </div>
+                  <ServiceSelectorGrouped
+                    center_id={formData.center}
+                    onSelectionChange={setSelection}
+                    selectedSelection={selection}
+                  />
+                </div>
+              )}
 
-               {/* Service Selection - ONLY after center is selected */}
-               {formData.center && (
-                 <div className="space-y-3 sm:space-y-4">
-                    <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                      <CalendarDays className="h-4 w-4" />
-                      <span>{t('service_selection')}</span>
-                    </h3>
+              {/* Date and Time Selection */}
+              {formData.center && selection && (
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
+                    <Clock className="h-4 w-4" />
+                    <span>{t('datetime_selection')}</span>
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    {/* Date picker */}
                     <div>
-                      <Label className="text-sm">{t('service')} *</Label>
-                     {servicesLoading ? (
-                       <div className="flex items-center justify-center p-4">
-                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                         <span className="ml-2">{t('loading_options')}</span>
-                       </div>
-                     ) : (
-                       <ServiceSelectorGrouped
-                         mode="individual"
-                         services={services}
-                         packages={[]}
-                         selectedId={selection?.id}
-                         onSelect={(id) => setSelection({ id, kind: "service" })}
-                       />
-                     )}
-                   </div>
-                 </div>
-               )}
+                      <Label className="text-sm">{t('date_label')} *</Label>
+                      <Popover open={showCalendar} onOpenChange={setShowCalendar}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal mt-1",
+                              !formData.date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.date ? format(formData.date, "PPP", { locale: es }) : t('select_date')}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent 
+                          className="w-auto p-0 z-50 bg-popover border border-border shadow-lg"
+                          align="start"
+                          side="bottom"
+                          sideOffset={4}
+                          alignOffset={0}
+                          avoidCollisions={true}
+                        >
+                          <Calendar
+                            mode="single"
+                            selected={formData.date}
+                            onSelect={(date) => {
+                              setFormData({ ...formData, date });
+                              setShowCalendar(false);
+                            }}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                            locale={es}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
 
-                 {/* Date & Time */}
-                 <div className="space-y-3 sm:space-y-4 p-4 rounded-lg border border-primary/20 bg-card">
-                    <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                      <Clock className="h-4 w-4" />
-                      <span>{t('date_time')}</span>
-                    </h3>
-                   
-                   <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                     <div className="relative">
-                       <Label htmlFor="date" className="text-sm">{t('date')} *</Label>
-                       <Popover open={showCalendar} onOpenChange={setShowCalendar}>
-                         <PopoverTrigger asChild>
-                           <Button
-                             variant="outline"
-                             className={cn(
-                               "w-full justify-start text-left font-normal mt-1",
-                               !formData.date && "text-muted-foreground"
-                             )}
-                           >
-                             <CalendarIcon className="mr-2 h-4 w-4" />
-                             {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>{t('select_date')}</span>}
-                           </Button>
-                         </PopoverTrigger>
-                           <PopoverContent 
-                             className="w-auto p-0 z-50 bg-popover border border-border shadow-lg"
-                             align="start"
-                             side="bottom"
-                             sideOffset={4}
-                             alignOffset={0}
-                             avoidCollisions={true}
-                             onInteractOutside={() => setShowCalendar(false)}
-                           >
-                           <Calendar
-                             mode="single"
-                             selected={formData.date}
-                             onSelect={(date) => {
-                               setFormData({ ...formData, date });
-                               setShowCalendar(false);
-                             }}
-                             disabled={(date) => date < new Date()}
-                             className={cn("p-3 pointer-events-auto")}
-                             initialFocus
-                           />
-                         </PopoverContent>
-                       </Popover>
-                     </div>
-                    
-                      <div className="relative">
-                        <Label htmlFor="time" className="text-sm">{t('time')} *</Label>
+                    {/* Time picker */}
+                    <div>
+                      <Label className="text-sm">{t('time_label')} *</Label>
                         <Popover open={showTimeDropdown} onOpenChange={setShowTimeDropdown}>
                           <PopoverTrigger asChild>
                             <Button
@@ -636,6 +614,7 @@ const ClientReservation = () => {
                       </div>
                    </div>
                  </div>
+              )}
 
 
               {/* Notes */}
@@ -650,49 +629,29 @@ const ClientReservation = () => {
                 />
               </div>
 
-              {/* Summary - Inline without modal */}
-              {formData.center && formData.date && formData.time && (
-                <div className="bg-accent/20 border-2 border-primary/20 rounded-xl p-6 space-y-4">
-                  <h4 className="font-bold text-lg text-center text-primary">{t('booking_summary')}</h4>
-                  <div className="space-y-3 text-sm">
-                    {selection && (() => {
-                      const selectedService = services.find(s => s.id === selection.id);
-                      return selectedService && (
-                        <div className="flex justify-between py-2 border-b">
-                          <span className="text-muted-foreground">Tratamiento:</span>
-                          <span className="font-medium">{selectedService.name}</span>
-                        </div>
-                      );
-                    })()}
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-muted-foreground">Centro:</span>
+              {/* Booking Summary */}
+              {formData.center && formData.date && formData.time && selection && (
+                <div className="p-4 bg-accent/20 border border-primary/20 rounded-lg space-y-3">
+                  <h4 className="font-medium text-sm sm:text-base">{t('booking_summary')}</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">{t('center')}:</span>
                       <span className="font-medium">{selectedCenter?.name}</span>
                     </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-muted-foreground">Dirección:</span>
-                      <span className="font-medium text-right">{selectedCenter?.address}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-muted-foreground">Fecha:</span>
+                    {selection.kind === 'service' && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">{t('service')}:</span>
+                        <span className="font-medium">{services.find(s => s.id === selection.id)?.name}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">{t('date')}:</span>
                       <span className="font-medium">{format(formData.date, "PPP", { locale: es })}</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground">Hora:</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">{t('time')}:</span>
                       <span className="font-medium">{formData.time}</span>
                     </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setFormData(prev => ({ ...prev, center: "", date: undefined, time: "" }))}
-                      className="flex-1"
-                    >
-                      Editar
-                    </Button>
-                    <Button type="submit" className="flex-1 font-medium">
-                      {t('confirm_booking')}
-                    </Button>
                   </div>
                 </div>
               )}
