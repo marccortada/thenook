@@ -1114,7 +1114,19 @@ const AdvancedCalendarView = () => {
                           {bookingForm.date ? format(bookingForm.date, "d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                      <PopoverContent 
+                        className="w-auto p-0 z-[200] sm:relative sm:transform-none" 
+                        align="center"
+                        side="bottom"
+                        sideOffset={8}
+                        style={{
+                          position: window.innerWidth < 768 ? 'fixed' : 'absolute',
+                          left: window.innerWidth < 768 ? '50%' : 'auto',
+                          transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
+                          top: window.innerWidth < 768 ? '50vh' : 'auto',
+                          marginTop: window.innerWidth < 768 ? '-150px' : '0'
+                        }}
+                      >
                         <Calendar
                           mode="single"
                           selected={bookingForm.date}
@@ -1141,13 +1153,19 @@ const AdvancedCalendarView = () => {
                         <SelectValue placeholder="Hora" />
                       </SelectTrigger>
                       <SelectContent 
-                        className="z-[200] bg-background border shadow-xl"
+                        className="z-[200] bg-background border shadow-xl max-h-[300px] overflow-y-auto"
                         position="popper"
                         side="bottom"
-                        align="start"
+                        align="center"
                         sideOffset={4}
-                        avoidCollisions={true}
-                        sticky="always"
+                        style={{
+                          position: window.innerWidth < 768 ? 'fixed' : 'absolute',
+                          left: window.innerWidth < 768 ? '50%' : 'auto',
+                          transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
+                          width: window.innerWidth < 768 ? 'min(300px, calc(100vw - 2rem))' : 'auto',
+                          top: window.innerWidth < 768 ? '50vh' : 'auto',
+                          marginTop: window.innerWidth < 768 ? '-150px' : '0'
+                        }}
                       >
                         {timeOptions5m.map((t) => (
                           <SelectItem key={t} value={t}>{t}</SelectItem>
