@@ -657,12 +657,10 @@ const ClientReservation = () => {
                 </div>
               )}
 
-              {/* Submit Button - Only show if summary is not visible */}
-              {!(formData.center && formData.date && formData.time) && (
-                <Button type="submit" className="w-full h-11 text-sm sm:text-base font-medium">
-                  Continuar
-                </Button>
-              )}
+              {/* Submit Button */}
+              <Button type="submit" className="w-full h-11 text-sm sm:text-base font-medium">
+                Continuar
+              </Button>
             </form>
           </CardContent>
         </Card>
