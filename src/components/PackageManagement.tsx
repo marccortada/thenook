@@ -315,10 +315,8 @@ const PackageManagement = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="bonos-all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="bonos-all">Todos los Bonos</TabsTrigger>
-          <TabsTrigger value="bonos-active">Solo Bonos Activos</TabsTrigger>
+      <Tabs defaultValue="tarjetas-all" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="tarjetas-all">Todas las Tarjetas</TabsTrigger>
           <TabsTrigger value="tarjetas-active">Solo Tarjetas Activas</TabsTrigger>
         </TabsList>
