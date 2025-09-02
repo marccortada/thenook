@@ -977,12 +977,13 @@ const AdvancedCalendarView = () => {
       {showBookingModal && (
         <div className="fixed inset-0 bg-black/50 z-50">
           <div 
-            className="absolute bg-background rounded-lg shadow-xl border max-h-[85vh] overflow-y-auto"
+            className="absolute bg-background rounded-lg shadow-xl border overflow-y-auto"
             style={{
               top: `${Math.max(20, modalPosition.top)}px`,
               left: `${modalPosition.left}px`,
               width: window.innerWidth < 768 ? 'calc(100vw - 2rem)' : 'min(500px, calc(100vw - 2rem))',
               maxWidth: 'calc(100vw - 2rem)',
+              maxHeight: `calc(100vh - ${Math.max(20, modalPosition.top)}px - 20px)`,
               transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
               marginLeft: window.innerWidth < 768 ? '50vw' : '0'
             }}
@@ -1172,12 +1173,13 @@ const AdvancedCalendarView = () => {
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 z-50">
           <div 
-            className="absolute bg-background rounded-lg shadow-xl border max-h-[85vh] overflow-y-auto"
+            className="absolute bg-background rounded-lg shadow-xl border overflow-y-auto"
             style={{
               top: `${Math.max(20, modalPosition.top)}px`,
               left: `${modalPosition.left}px`,
               width: window.innerWidth < 768 ? 'calc(100vw - 2rem)' : 'min(600px, calc(100vw - 2rem))',
               maxWidth: 'calc(100vw - 2rem)',
+              maxHeight: `calc(100vh - ${Math.max(20, modalPosition.top)}px - 20px)`,
               transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
               marginLeft: window.innerWidth < 768 ? '50vw' : '0'
             }}
