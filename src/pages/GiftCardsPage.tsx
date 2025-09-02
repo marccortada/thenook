@@ -6,15 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
+import { loadStripe } from "@stripe/stripe-js";
+
+const stripePromise = loadStripe("pk_test_51QUQJnAyNEkKfkLVZCjXBFLcYhbcJZKlQVfK8PTqzgxO3F1pv6rV6mNMdkgHfpOmYZGY7jANXs4QWWNKhJhNPcgr00wQ7BSEuK"); // Replace with your actual Stripe publishable key
 interface CartItem {
   id: string;
   name: string;
@@ -112,6 +115,11 @@ const GiftCardsPage = () => {
   const [showPrice, setShowPrice] = useState(true);
   const [sendToBuyer, setSendToBuyer] = useState(true); // true = comprador, false = beneficiario
   const [showBuyerData, setShowBuyerData] = useState(true);
+  
+  // Estados para el modal de Stripe
+  const [showStripeModal, setShowStripeModal] = useState(false);
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
+  
   const { t } = useTranslation();
 
   // Función para traducir nombres de paquetes/tarjetas
@@ -489,14 +497,14 @@ const GiftCardsPage = () => {
                                  },
                                  currency: "eur"
                                };
-                              const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-                              if (error) throw error;
-                              if (data?.url) {
-                                // Abrir Stripe checkout en una nueva pestaña
-                                window.open(data.url, '_blank');
-                              } else {
-                                toast.error("No se recibió URL de pago");
-                              }
+                               const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
+                               if (error) throw error;
+                               if (data?.client_secret) {
+                                 setStripeClientSecret(data.client_secret);
+                                 setShowStripeModal(true);
+                               } else {
+                                 toast.error("No se recibió configuración de pago");
+                               }
                            } catch (e: any) {
                              toast.error(e.message || t('payment_init_error'));
                            }
@@ -510,6 +518,30 @@ const GiftCardsPage = () => {
               </SheetContent>
             </Sheet>
           </header>
+
+          {/* Modal de Stripe Checkout */}
+          <Dialog open={showStripeModal} onOpenChange={setShowStripeModal}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center justify-between">
+                  Completar Pago
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => setShowStripeModal(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DialogTitle>
+              </DialogHeader>
+              {stripeClientSecret && (
+                <StripeCheckoutModal 
+                  clientSecret={stripeClientSecret}
+                  onClose={() => setShowStripeModal(false)}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
 
           <section className="grid gap-6">
             <Accordion type="multiple" defaultValue={[]} className="space-y-4">
@@ -717,6 +749,56 @@ const GiftCardsPage = () => {
           </section>
         </article>
       </main>
+    </div>
+  );
+};
+
+// Componente para el modal de Stripe Checkout
+const StripeCheckoutModal = ({ 
+  clientSecret, 
+  onClose 
+}: { 
+  clientSecret: string; 
+  onClose: () => void; 
+}) => {
+  const [stripe, setStripe] = useState<any>(null);
+
+  useEffect(() => {
+    const initializeStripe = async () => {
+      const stripeInstance = await stripePromise;
+      setStripe(stripeInstance);
+    };
+    initializeStripe();
+  }, []);
+
+  useEffect(() => {
+    if (!stripe || !clientSecret) return;
+
+    const checkout = stripe.elements({
+      mode: 'payment',
+      currency: 'eur',
+      clientSecret: clientSecret,
+    });
+
+    const checkoutElement = checkout.create('payment');
+    checkoutElement.mount('#stripe-checkout');
+
+    checkoutElement.on('ready', () => {
+      console.log('Stripe checkout ready');
+    });
+
+    return () => {
+      checkoutElement.unmount();
+    };
+  }, [stripe, clientSecret]);
+
+  if (!stripe) {
+    return <div className="p-8 text-center">Cargando...</div>;
+  }
+
+  return (
+    <div className="p-4">
+      <div id="stripe-checkout" className="min-h-[400px]"></div>
     </div>
   );
 };

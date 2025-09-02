@@ -144,15 +144,18 @@ serve(async (req) => {
 const session = await stripe.checkout.sessions.create({
   line_items,
   mode: "payment",
-  success_url: `${origin}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`,
-  cancel_url: `${origin}/pago-cancelado`,
+  ui_mode: "embedded",
+  return_url: `${origin}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`,
   metadata,
   payment_intent_data: {
     metadata,
   },
 });
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ 
+      client_secret: session.client_secret,
+      session_id: session.id 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

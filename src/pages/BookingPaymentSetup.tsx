@@ -4,7 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 // Extend Window interface for Stripe
 declare global {
   interface Window {
-    Stripe: any;
+    StripeInstance: any;
   }
 }
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +42,7 @@ export default function BookingPaymentSetup() {
 
   useEffect(() => {
     const loadStripe = async () => {
-      if (window.Stripe) {
+      if (window.StripeInstance) {
         setStripeLoaded(true);
         return;
       }
