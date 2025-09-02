@@ -985,24 +985,23 @@ const AdvancedCalendarView = () => {
 
       {/* New Booking Modal - Positioned above clicked slot */}
       {showBookingModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4">
            <div 
-            className="bg-background w-full h-full sm:w-auto sm:h-auto sm:rounded-lg sm:shadow-xl sm:border-0 sm:border overflow-hidden flex flex-col sm:animate-scale-in"
+            className="bg-background w-full h-fit max-h-[95vh] sm:w-auto sm:rounded-lg sm:shadow-xl sm:border overflow-hidden flex flex-col sm:animate-scale-in"
             style={{
-              width: window.innerWidth < 768 ? '100vw' : 'min(600px, calc(100vw - 2rem))',
-              maxHeight: window.innerWidth < 768 ? '100vh' : '90vh',
-              margin: window.innerWidth < 768 ? '0' : 'auto'
+              width: window.innerWidth < 768 ? 'calc(100vw - 1rem)' : 'min(600px, calc(100vw - 2rem))',
+              maxHeight: '95vh'
             }}
           >
-            <div className="flex flex-col h-full">
-              <div className="px-0 sm:px-4 pt-0 sm:pt-4 pb-2 sm:pb-2 border-b-0 sm:border-b flex-shrink-0">
-                <h3 className="text-base sm:text-lg font-semibold px-4 sm:px-0 pt-4 sm:pt-0">Nueva Reserva</h3>
-                <p className="text-xs sm:text-sm text-gray-600 px-4 sm:px-0">
+            <div className="flex flex-col max-h-full">
+              <div className="px-4 pt-4 pb-2 border-b flex-shrink-0">
+                <h3 className="text-lg font-semibold">Nueva Reserva</h3>
+                <p className="text-sm text-gray-600">
                   Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
                 </p>
               </div>
 
-              <div className="space-y-4 sm:space-y-4 px-4 sm:px-4 py-4 sm:py-3 overflow-auto flex-1 pb-4 sm:pb-4">
+              <div className="space-y-4 px-4 py-3 overflow-auto flex-1">
                 <div className="space-y-2">
                   <RepeatClientSelector
                     label="Cliente habitual (opcional)"
