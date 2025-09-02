@@ -468,10 +468,10 @@ const ClientReservation = () => {
                  </div>
 
                  {/* Admin Client Selector - Integrado en la sección de información del cliente */}
-                 {(() => {
-                   console.log('🔍 Checking admin status for selector:', { isAdmin, profile: profile?.role });
-                   return isAdmin;
-                 })() && (
+                  {(() => {
+                    console.log('🔍 Checking admin status for selector:', { isAdmin, profile: profile?.role, user });
+                    return isAdmin && profile?.role === 'admin' && user && !loading;
+                  })() && (
                    <div className="pt-4 border-t border-primary/20">
                      <div className="space-y-3">
                        <div className="flex items-center gap-2 text-primary">
