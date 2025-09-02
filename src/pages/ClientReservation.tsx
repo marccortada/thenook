@@ -360,7 +360,7 @@ const ClientReservation = () => {
         {/* Reservation Form */}
         
         <div className="max-w-4xl mx-auto">
-        <Card className="hover-lift glass-effect border-primary/20">
+        <Card className="glass-effect border-primary/20">
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
               <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" />
