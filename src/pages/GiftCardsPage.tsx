@@ -13,11 +13,9 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { ArrowLeft, X } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
-import { loadStripe } from "@stripe/stripe-js";
-
-const stripePromise = loadStripe("pk_test_51QUQJnAyNEkKfkLVZCjXBFLcYhbcJZKlQVfK8PTqzgxO3F1pv6rV6mNMdkgHfpOmYZGY7jANXs4QWWNKhJhNPcgr00wQ7BSEuK"); // Replace with your actual Stripe publishable key
 interface CartItem {
   id: string;
   name: string;
@@ -797,56 +795,6 @@ const GiftCardsPage = () => {
           </section>
         </article>
       </main>
-    </div>
-  );
-};
-
-// Componente para el modal de Stripe Checkout
-const StripeCheckoutModal = ({ 
-  clientSecret, 
-  onClose 
-}: { 
-  clientSecret: string; 
-  onClose: () => void; 
-}) => {
-  const [stripe, setStripe] = useState<any>(null);
-
-  useEffect(() => {
-    const initializeStripe = async () => {
-      const stripeInstance = await stripePromise;
-      setStripe(stripeInstance);
-    };
-    initializeStripe();
-  }, []);
-
-  useEffect(() => {
-    if (!stripe || !clientSecret) return;
-
-    const checkout = stripe.elements({
-      mode: 'payment',
-      currency: 'eur',
-      clientSecret: clientSecret,
-    });
-
-    const checkoutElement = checkout.create('payment');
-    checkoutElement.mount('#stripe-checkout');
-
-    checkoutElement.on('ready', () => {
-      console.log('Stripe checkout ready');
-    });
-
-    return () => {
-      checkoutElement.unmount();
-    };
-  }, [stripe, clientSecret]);
-
-  if (!stripe) {
-    return <div className="p-8 text-center">Cargando...</div>;
-  }
-
-  return (
-    <div className="p-4">
-      <div id="stripe-checkout" className="min-h-[400px]"></div>
     </div>
   );
 };

@@ -16,6 +16,7 @@ import PaymentSetupSuccess from "./pages/PaymentSetupSuccess";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PagoExitoso from "./pages/PagoExitoso";
 
 const queryClient = new QueryClient();
 
@@ -53,7 +54,8 @@ const App = () => (
             />
             
             {/* Páginas de resultado de pago */}
-            <Route path="/pago-exitoso" element={<PaymentSuccess />} />
+            <Route path="/pago-exitoso" element={<PagoExitoso />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/pago-cancelado" element={<PaymentCanceled />} />
             
             {/* Redirigir cualquier ruta no válida al panel admin o página principal */}
