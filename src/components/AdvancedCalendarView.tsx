@@ -27,7 +27,6 @@ import {
   Trash2
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -572,7 +571,7 @@ const AdvancedCalendarView = () => {
         <CardHeader className="p-3">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+              <CalendarIcon className="h-4 w-4" />
               <span className="text-sm">{centerName}</span>
               <Badge variant="secondary" className="ml-2 text-xs">
                 {format(selectedDate, "d MMM", { locale: es })}
@@ -732,7 +731,7 @@ const AdvancedCalendarView = () => {
         <CardHeader className="p-3">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+              <CalendarIcon className="h-4 w-4" />
               <span className="text-sm">Vista Semanal - {centerName}</span>
               <Badge variant="secondary" className="ml-2 text-xs">
                 {format(weekDates[0], "d MMM", { locale: es })} - {format(weekDates[6], "d MMM", { locale: es })}
