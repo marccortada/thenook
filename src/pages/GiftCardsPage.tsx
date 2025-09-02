@@ -289,11 +289,11 @@ const GiftCardsPage = () => {
               <SheetTrigger asChild>
                 <Button variant="outline">{t('cart')} ({items.length})</Button>
               </SheetTrigger>
-              <SheetContent className="w-[90vw] sm:w-[480px]">
-                <SheetHeader>
+              <SheetContent className="w-[90vw] sm:w-[480px] flex flex-col">
+                <SheetHeader className="flex-shrink-0">
                   <SheetTitle>{t('your_cart')}</SheetTitle>
                 </SheetHeader>
-                <div className="mt-4 space-y-4">
+                <div className="flex-1 overflow-y-auto space-y-4 mt-4 pr-2">
                   {items.length === 0 ? (
                     <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
                   ) : (
