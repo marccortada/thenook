@@ -562,9 +562,9 @@ const ClientReservation = () => {
                          </svg>
                        </button>
                        
-                        {showCenterDropdown && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-y-auto"
-                               style={{ position: 'absolute' }}>
+                         {showCenterDropdown && (
+                           <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-y-auto"
+                                style={{ position: 'absolute' }}>
                            {centers.map((center) => (
                              <button
                                key={center.id}
@@ -680,9 +680,9 @@ const ClientReservation = () => {
                              </svg>
                            </button>
                            
-                            {showTimeDropdown && (
-                              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-y-auto"
-                                   style={{ position: 'absolute' }}>
+                             {showTimeDropdown && (
+                               <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-y-auto"
+                                    style={{ position: 'absolute' }}>
                                {timeSlots.map((time) => (
                                  <button
                                    key={time}
