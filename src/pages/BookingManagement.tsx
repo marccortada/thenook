@@ -53,6 +53,7 @@ export default function BookingManagement() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -340,8 +341,18 @@ export default function BookingManagement() {
                     </div>
 
                     <Button
-                      onClick={() => {
+                      onClick={(e) => {
                         console.log('Cobrar Cita clicked - booking:', booking);
+                        
+                        // Obtener la posición del botón clickeado
+                        const buttonRect = e.currentTarget.getBoundingClientRect();
+                        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                        
+                        setModalPosition({
+                          top: buttonRect.top + scrollTop - 100, // 100px arriba del botón
+                          left: Math.max(20, buttonRect.left - 200) // Centrado respecto al botón, mínimo 20px del borde
+                        });
+                        
                         setSelectedBooking(booking);
                         setShowPaymentDialog(true);
                         console.log('Payment dialog should be showing:', true);
@@ -360,10 +371,17 @@ export default function BookingManagement() {
         </div>
       </main>
 
-      {/* Payment Modal - Responsive Implementation */}
+      {/* Payment Modal - Positioned above selected booking */}
       {showPaymentDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 z-50">
+          <div 
+            className="absolute bg-white rounded-lg shadow-xl w-full max-w-2xl lg:max-w-3xl max-h-[80vh] overflow-y-auto"
+            style={{
+              top: `${modalPosition.top}px`,
+              left: `${modalPosition.left}px`,
+              maxWidth: 'calc(100vw - 40px)' // Ensure it doesn't go off screen
+            }}
+          >
             <div className="p-6 lg:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <DollarSign className="h-6 w-6" />
