@@ -194,6 +194,13 @@ All colors MUST be HSL.
     z-index: 50 !important;
   }
 
+  [data-radix-select-content] {
+    background: hsl(var(--popover)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+    z-index: 50 !important;
+  }
+
   /* Mobile responsive improvements */
   @media (max-width: 768px) {
     /* Hide scrollbars on mobile but keep functionality */

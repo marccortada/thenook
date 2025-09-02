@@ -518,16 +518,23 @@ const ReservationSystem = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un centro" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {centers.map((center) => (
-                      <SelectItem key={center.id} value={center.id}>
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="h-3 w-3" />
-                          <span>{center.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                   <SelectContent 
+                     position="popper"
+                     side="bottom"
+                     align="start"
+                     sideOffset={4}
+                     avoidCollisions={true}
+                     collisionPadding={20}
+                   >
+                     {centers.map((center) => (
+                       <SelectItem key={center.id} value={center.id}>
+                         <div className="flex items-center space-x-2">
+                           <MapPin className="h-3 w-3" />
+                           <span>{center.name}</span>
+                         </div>
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
                 </Select>
               </div>
             </div>
