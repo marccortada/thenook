@@ -79,7 +79,7 @@ export default function AdminPricingPromos() {
         active: newService.active,
         has_discount: false,
         discount_price_cents: 0,
-        center_id: newService.center_id || null
+        center_id: null // Sin centro específico, aplica a todos
       });
 
       if (error) {
@@ -558,9 +558,12 @@ export default function AdminPricingPromos() {
                   <Plus className="h-5 w-5" />
                   Crear Nuevo Servicio
                 </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Los servicios se crean para todos los centros automáticamente
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
                     <Label htmlFor="service-name">Nombre *</Label>
                     <Input
@@ -611,25 +614,6 @@ export default function AdminPricingPromos() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="service-center">Centro</Label>
-                    <Select
-                      value={newService.center_id || 'all'}
-                      onValueChange={(value) => setNewService({ ...newService, center_id: value === 'all' ? '' : value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent position="item-aligned">
-                        <SelectItem value="all">Todos los centros</SelectItem>
-                        {centers.map((center) => (
-                          <SelectItem key={center.id} value={center.id}>
-                            {center.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
                     <Label htmlFor="service-status">Estado</Label>
                     <Select
                       value={String(newService.active)}
@@ -644,7 +628,7 @@ export default function AdminPricingPromos() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="md:col-span-2 lg:col-span-3">
+                   <div className="md:col-span-2 lg:col-span-4">
                     <Label htmlFor="service-description">Descripción</Label>
                     <Textarea
                       id="service-description"
