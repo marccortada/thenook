@@ -985,23 +985,21 @@ const AdvancedCalendarView = () => {
 
       {/* New Booking Modal - Positioned above clicked slot */}
       {showBookingModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
            <div 
-            className="bg-background w-full h-fit max-h-[95vh] sm:w-auto sm:rounded-lg sm:shadow-xl sm:border overflow-hidden flex flex-col sm:animate-scale-in"
-            style={{
-              width: window.innerWidth < 768 ? 'calc(100vw - 1rem)' : 'min(600px, calc(100vw - 2rem))',
-              maxHeight: '95vh'
-            }}
+            className="bg-background w-full max-w-md max-h-[90vh] rounded-lg shadow-xl border overflow-hidden flex flex-col"
           >
-            <div className="flex flex-col max-h-full">
-              <div className="px-4 pt-4 pb-2 border-b flex-shrink-0">
+            <div className="flex flex-col h-full max-h-[90vh]">
+              {/* Header - Fixed */}
+              <div className="px-4 pt-4 pb-3 border-b flex-shrink-0 bg-background">
                 <h3 className="text-lg font-semibold">Nueva Reserva</h3>
                 <p className="text-sm text-gray-600">
                   Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
                 </p>
               </div>
 
-              <div className="space-y-4 px-4 py-3 overflow-auto flex-1">
+              {/* Content - Scrollable */}
+              <div className="px-4 py-4 overflow-y-auto flex-1 space-y-4">
                 <div className="space-y-2">
                   <RepeatClientSelector
                     label="Cliente habitual (opcional)"
@@ -1172,14 +1170,15 @@ const AdvancedCalendarView = () => {
                 </div>
               </div>
 
-              <div className="mt-auto px-4 sm:px-4 py-3 sm:py-3 border-t-0 sm:border-t bg-background">
-                <div className="flex flex-col sm:flex-row justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowBookingModal(false)} className="w-full sm:w-auto text-sm h-9">
-                    <X className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+              {/* Footer - Fixed */}
+              <div className="px-4 py-3 border-t bg-background flex-shrink-0">
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setShowBookingModal(false)} className="text-sm">
+                    <X className="h-4 w-4 mr-2" />
                     Cancelar
                   </Button>
-                  <Button onClick={createBooking} className="w-full sm:w-auto text-sm h-9">
-                    <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                  <Button onClick={createBooking} className="text-sm">
+                    <Save className="h-4 w-4 mr-2" />
                     Crear Reserva
                   </Button>
                 </div>
