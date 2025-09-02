@@ -199,6 +199,17 @@ All colors MUST be HSL.
     border: 1px solid hsl(var(--border)) !important;
     box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
     z-index: 50 !important;
+    position: fixed !important;
+    transform-origin: var(--radix-select-content-transform-origin) !important;
+  }
+
+  /* Force all select dropdowns to use proper positioning */
+  [data-radix-select-content][data-side="bottom"] {
+    transform: translateY(4px) !important;
+  }
+
+  [data-radix-select-content][data-align="start"] {
+    transform-origin: left top !important;
   }
 
   /* Mobile responsive improvements */

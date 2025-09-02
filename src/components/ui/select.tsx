@@ -78,14 +78,18 @@ const SelectContent = React.forwardRef<
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
         className
       )}
-      position={position}
+      position="popper"
+      side="bottom"
+      align="start"
+      sideOffset={4}
+      avoidCollisions={true}
+      collisionPadding={20}
       {...props}
     >
       <SelectPrimitive.Viewport
         className={cn(
           "p-1",
-          position === "popper" &&
-            "w-full min-w-[var(--radix-select-trigger-width)] max-w-[90vw]"
+          "w-full min-w-[var(--radix-select-trigger-width)] max-w-[90vw]"
         )}
       >
         {children}
