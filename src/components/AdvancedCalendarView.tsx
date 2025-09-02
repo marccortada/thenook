@@ -1100,31 +1100,15 @@ const AdvancedCalendarView = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div className="space-y-2 md:col-span-1">
                     <Label>Fecha</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal h-11",
-                            !bookingForm.date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {bookingForm.date ? format(bookingForm.date, "d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
-                        </Button>
-                      </PopoverTrigger>
-                       <PopoverContent 
-                        className="w-auto p-0 z-[9999] bg-background shadow-2xl border-2"
-                        align="center"
-                        side="bottom"
-                        sideOffset={4}
-                        avoidCollisions={true}
-                        collisionPadding={20}
-                        onPointerDownOutside={(e) => e.preventDefault()}
-                      >
-                         {/* Calendar temporarily disabled */}
-                      </PopoverContent>
-                    </Popover>
+                    <Input
+                      type="date"
+                      value={format(bookingForm.date, 'yyyy-MM-dd')}
+                      onChange={(e) => {
+                        const date = new Date(e.target.value);
+                        setBookingForm({ ...bookingForm, date });
+                      }}
+                      className="h-11"
+                    />
                   </div>
                   <div className="space-y-2 md:col-span-1">
                     <Label>Hora</Label>
