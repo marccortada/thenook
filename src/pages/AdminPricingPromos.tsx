@@ -770,6 +770,28 @@ export default function AdminPricingPromos() {
                             <option value="false">Inactivo</option>
                           </select>
                         </div>
+                        <div>
+                          <Label htmlFor="edit-service-center">Centro</Label>
+                          <select
+                            id="edit-service-center"
+                            value={editingService.center_id || 'all'}
+                            onChange={(e) => {
+                              console.log('Centro changed to:', e.target.value);
+                              setEditingService({ 
+                                ...editingService, 
+                                center_id: e.target.value === 'all' ? null : e.target.value 
+                              });
+                            }}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="all">Ambos centros</option>
+                            {centers.map((center) => (
+                              <option key={center.id} value={center.id}>
+                                {center.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         <div className="col-span-2">
                           <div className="flex items-center space-x-2 mb-2">
                             <input 
