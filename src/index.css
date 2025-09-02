@@ -280,21 +280,16 @@ All colors MUST be HSL.
       padding: 1rem;
     }
 
-    /* Mobile-specific Select dropdown fixes */
-    [data-radix-select-content] {
-      position: fixed !important;
-      z-index: 9999 !important;
-      background: hsl(var(--popover)) !important;
-      border: 1px solid hsl(var(--border)) !important;
-      border-radius: calc(var(--radius) - 2px) !important;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-      max-height: 60vh !important;
-      overflow-y: auto !important;
+    /* Mobile dropdown positioning fixes */
+    .relative {
+      position: relative !important;
     }
-
-    /* Ensure proper scrolling on mobile */
-    [data-radix-select-viewport] {
-      max-height: inherit !important;
+    
+    /* Ensure dropdowns appear below their triggers on mobile */
+    [style*="position: absolute"][style*="top: calc(100% + 4px)"] {
+      position: absolute !important;
+      top: calc(100% + 4px) !important;
+      transform: none !important;
     }
   }
 }

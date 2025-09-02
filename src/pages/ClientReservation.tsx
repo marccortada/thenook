@@ -546,7 +546,8 @@ const ClientReservation = () => {
                        </button>
                        
                        {showCenterDropdown && (
-                         <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto min-w-full">
+                         <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-popover border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-y-auto min-w-full"
+                              style={{ position: 'absolute', top: 'calc(100% + 4px)' }}>
                            {centers.map((center) => (
                              <button
                                key={center.id}
@@ -663,7 +664,8 @@ const ClientReservation = () => {
                            </button>
                            
                            {showTimeDropdown && (
-                             <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto min-w-full">
+                             <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-popover border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-y-auto min-w-full"
+                                  style={{ position: 'absolute', top: 'calc(100% + 4px)' }}>
                                {timeSlots.map((time) => (
                                  <button
                                    key={time}
