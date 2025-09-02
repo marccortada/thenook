@@ -236,19 +236,19 @@ const PackageManagement = () => {
       {/* Header with Actions */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Bonos y Tarjetas Regalo</h2>
-          <p className="text-muted-foreground">Administra los bonos, paquetes de sesiones y tarjetas regalo</p>
+          <h2 className="text-2xl font-bold">Gestión de Bonos</h2>
+          <p className="text-muted-foreground">Administra los bonos y paquetes de sesiones</p>
         </div>
         <div className="flex space-x-2">
-          <Button onClick={() => { refetch(); refetchGiftCards(); }} variant="outline" size="sm">
+          <Button onClick={refetch} variant="outline" size="sm">
             <RotateCcw className="mr-2 h-4 w-4" />
             Actualizar
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards - Combinando bonos y tarjetas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Stats Cards - Solo bonos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Bonos Activos</CardTitle>
@@ -257,18 +257,6 @@ const PackageManagement = () => {
           <CardContent>
             <div className="text-2xl font-bold">
               {packages.filter(p => p.status === 'active').length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tarjetas Activas</CardTitle>
-            <CreditCard className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {giftCards.filter(g => g.status === 'active').length}
             </div>
           </CardContent>
         </Card>
@@ -284,21 +272,6 @@ const PackageManagement = () => {
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Tarjetas</CardTitle>
-            <Euro className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              €{giftCards
-                .filter(g => g.status === 'active')
-                .reduce((sum, g) => sum + (g.remaining_balance_cents / 100), 0)
-                .toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Search Bar */}
@@ -306,7 +279,7 @@ const PackageManagement = () => {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Buscar tarjetas por código, nombre o email..."
+            placeholder="Buscar bonos por código o cliente..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -315,10 +288,10 @@ const PackageManagement = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="tarjetas-all" className="w-full">
+      <Tabs defaultValue="bonos-all" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="tarjetas-all">Todas las Tarjetas</TabsTrigger>
-          <TabsTrigger value="tarjetas-active">Solo Tarjetas Activas</TabsTrigger>
+          <TabsTrigger value="bonos-all">Todos los Bonos</TabsTrigger>
+          <TabsTrigger value="bonos-active">Solo Bonos Activos</TabsTrigger>
         </TabsList>
 
         {/* Pestañas de Bonos */}
@@ -549,279 +522,7 @@ const PackageManagement = () => {
           </Card>
         </TabsContent>
 
-        {/* Pestañas de Tarjetas Regalo */}
-        <TabsContent value="tarjetas-all">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Todas las Tarjetas Regalo</CardTitle>
-              <Dialog open={showCreateGiftCardDialog} onOpenChange={setShowCreateGiftCardDialog}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Crear Tarjeta Regalo
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Crear Nueva Tarjeta Regalo</DialogTitle>
-                    <DialogDescription>Crea una nueva tarjeta regalo especificando el monto.</DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleCreateGiftCard} className="space-y-4">
-                    <div>
-                      <Label htmlFor="amount">Monto (€)</Label>
-                      <Input
-                        id="amount"
-                        name="amount"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        required
-                        placeholder="50.00"
-                      />
-                    </div>
-                    <div>
-                      <Label>Cliente (opcional)</Label>
-                      <ClientSelector
-                        placeholder="Busca por nombre, email o teléfono"
-                        onSelect={(c) => setCreateGiftCardClientId(c.id)}
-                      />
-                    </div>
-                    <div>
-                      <Label>Fecha de vencimiento (opcional)</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !selectedDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarDays className="mr-2 h-4 w-4" />
-                            {selectedDate ? format(selectedDate, "PPP", { locale: es }) : "Seleccionar fecha"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={setSelectedDate}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                            className="p-3 pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div>
-                      <Label htmlFor="purchased_by_name">Comprado por (nombre)</Label>
-                      <Input
-                        id="purchased_by_name"
-                        name="purchased_by_name"
-                        placeholder="Nombre del comprador"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="purchased_by_email">Email del comprador</Label>
-                      <Input
-                        id="purchased_by_email"
-                        name="purchased_by_email"
-                        type="email"
-                        placeholder="email@ejemplo.com"
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button type="button" variant="outline" onClick={() => setShowCreateGiftCardDialog(false)}>
-                        Cancelar
-                      </Button>
-                      <Button type="submit">
-                        Crear Tarjeta Regalo
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent>
-              {giftCards.length === 0 ? (
-                <div className="text-center py-8">
-                  <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No hay tarjetas regalo registradas</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {giftCards.map((card) => (
-                    <div key={card.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="text-sm font-medium">Código: <span className="font-mono">{card.code}</span></div>
-                          <Badge className={getStatusColor(card.status)}>
-                            {getStatusLabel(card.status)}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setEditingGiftCard(card)}
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </Button>
-                          {card.status === 'active' && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Desactivar tarjeta regalo?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta acción marcará la tarjeta como expirada.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeactivateGiftCard(card.id)}>
-                                    Confirmar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          {card.profiles ? (
-                            <div className="flex items-center space-x-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">
-                                {card.profiles.first_name} {card.profiles.last_name}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="text-sm text-muted-foreground">
-                              {card.purchased_by_name || 'Sin asignar'}
-                            </div>
-                          )}
-                          <p className="text-sm text-muted-foreground">
-                            {card.profiles?.email || card.purchased_by_email || ''}
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <Euro className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                              €{(card.remaining_balance_cents / 100).toFixed(2)} / €{(card.initial_balance_cents / 100).toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${100 - getUsagePercentage(card.remaining_balance_cents, card.initial_balance_cents)}%` }}
-                              />
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                              {100 - getUsagePercentage(card.remaining_balance_cents, card.initial_balance_cents)}%
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                              {card.expiry_date 
-                                ? format(new Date(card.expiry_date), "dd/MM/yyyy", { locale: es })
-                                : 'Sin vencimiento'
-                              }
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="tarjetas-active">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tarjetas Activas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {giftCards.filter(card => card.status === 'active').map((card) => (
-                  <div key={card.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium">Código: <span className="font-mono">{card.code}</span></div>
-                      <Badge className={getStatusColor(card.status)}>
-                        {getStatusLabel(card.status)}
-                      </Badge>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between">
-                      <div className="text-sm">
-                        Saldo: €{(card.remaining_balance_cents / 100).toFixed(2)}
-                      </div>
-                      {card.profiles && (
-                        <div className="text-sm">
-                          {card.profiles.first_name} {card.profiles.last_name}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
-
-      {/* Edit Gift Card Dialog */}
-      {editingGiftCard && (
-        <Dialog open={!!editingGiftCard} onOpenChange={() => setEditingGiftCard(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar Tarjeta Regalo</DialogTitle>
-              <DialogDescription>Modifica los datos de la tarjeta regalo</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Código</Label>
-                <Input value={editingGiftCard.code} disabled />
-              </div>
-              <div>
-                <Label>Saldo Restante (€)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={(editingGiftCard.remaining_balance_cents / 100).toString()}
-                  onChange={(e) => setEditingGiftCard({
-                    ...editingGiftCard,
-                    remaining_balance_cents: Math.round(parseFloat(e.target.value) * 100)
-                  })}
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setEditingGiftCard(null)}>
-                  Cancelar
-                </Button>
-                <Button onClick={() => handleUpdateGiftCard(editingGiftCard.id, { remaining_balance_cents: editingGiftCard.remaining_balance_cents })}>
-                  Guardar
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 };
