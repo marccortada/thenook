@@ -63,6 +63,7 @@ const AdvancedCalendarView = () => {
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [selectedCenter, setSelectedCenter] = useState<string>('');
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
   
   // Filter state
@@ -225,11 +226,29 @@ const AdvancedCalendarView = () => {
   };
 
   // Handle slot click
-  const handleSlotClick = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
+  const handleSlotClick = (centerId: string, laneId: string, date: Date, timeSlot: Date, event?: React.MouseEvent) => {
     // Si estamos en modo bloqueo
     if (blockingMode) {
       handleBlockingSlotClick(laneId, timeSlot);
       return;
+    }
+
+    // Calcular posición del modal basada en el elemento clickeado
+    if (event?.currentTarget) {
+      const slotRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowWidth = window.innerWidth;
+      
+      // Calcular el centro del slot
+      const slotCenterX = slotRect.left + (slotRect.width / 2);
+      
+      // Ancho del modal (responsive)
+      const modalWidth = windowWidth < 768 ? windowWidth - 40 : Math.min(500, windowWidth - 40);
+      
+      setModalPosition({
+        top: slotRect.top + scrollTop - 20, // 20px arriba del slot
+        left: Math.max(20, Math.min(slotCenterX - (modalWidth / 2), windowWidth - modalWidth - 20))
+      });
     }
 
     const existingBooking = getBookingForSlot(centerId, laneId, date, timeSlot);
@@ -613,7 +632,7 @@ const AdvancedCalendarView = () => {
                         <div
                           key={lane.id}
                           className="relative h-12 border-r border-b hover:bg-muted/20 cursor-pointer transition-colors"
-                          onClick={() => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time)}
+                          onClick={(e) => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
                         >
                         {booking && isFirstSlotOfBooking && (
                           <div
@@ -761,7 +780,7 @@ const AdvancedCalendarView = () => {
                         <div
                           key={`${date.toISOString()}-${lane.id}`}
                           className="relative h-6 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
-                          onClick={() => handleSlotClick(selectedCenter, lane.id, date, timeSlot.time)}
+                          onClick={(e) => handleSlotClick(selectedCenter, lane.id, date, timeSlot.time, e)}
                         >
                           {booking && isFirstSlotOfBooking && (
                             <div
@@ -944,230 +963,108 @@ const AdvancedCalendarView = () => {
       {/* Calendar View */}
       {viewMode === 'day' ? renderDayView() : renderWeekView()}
 
-      {/* New Booking Modal */}
-      <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
-        <DialogContent className="w-[98vw] sm:max-w-lg md:max-w-xl p-0">
-          <div className="flex flex-col min-h-[70vh] max-h-[95vh]">
-            <DialogHeader className="px-4 pt-4 pb-2 border-b">
-              <DialogTitle>Nueva Reserva</DialogTitle>
-              <DialogDescription>
-                Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-4">
-              <div className="space-y-2">
-                <RepeatClientSelector
-                  label="Cliente habitual (opcional)"
-                  placeholder="Buscar cliente que haya venido más de una vez..."
-                  onSelect={(c) => {
-                    setCreateClientId(c.id);
-                    setBookingForm((prev) => ({
-                      ...prev,
-                      clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
-                      clientPhone: c.phone || '',
-                      clientEmail: c.email || '',
-                    }));
-                  }}
-                />
+      {/* New Booking Modal - Positioned above clicked slot */}
+      {showBookingModal && (
+        <div className="fixed inset-0 bg-black/50 z-50">
+          <div 
+            className="absolute bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+            style={{
+              top: `${modalPosition.top}px`,
+              left: `${modalPosition.left}px`,
+              maxWidth: 'calc(100vw - 40px)'
+            }}
+          >
+            <div className="flex flex-col min-h-[70vh] max-h-[85vh]">
+              <div className="px-4 pt-4 pb-2 border-b">
+                <h3 className="text-lg font-semibold">Nueva Reserva</h3>
+                <p className="text-sm text-gray-600">
+                  Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
+                </p>
               </div>
 
-              <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
-                <span>O crear nueva reserva para cliente nuevo:</span>
-                <ClientSelectionModal
-                  onSelect={(c) => {
-                    console.log('Cliente seleccionado desde modal:', c); // Debug log
-                    setCreateClientId(c.id);
-                    setBookingForm((prev) => ({
-                      ...prev,
-                      clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
-                      clientPhone: c.phone || '',
-                      clientEmail: c.email || '',
-                    }));
-                  }}
-                >
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    type="button"
-                    onClick={() => console.log('Botón Ver todos los clientes clickeado')} // Debug log
+              <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-4">
+                <div className="space-y-2">
+                  <RepeatClientSelector
+                    label="Cliente habitual (opcional)"
+                    placeholder="Buscar cliente que haya venido más de una vez..."
+                    onSelect={(c) => {
+                      setCreateClientId(c.id);
+                      setBookingForm((prev) => ({
+                        ...prev,
+                        clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                        clientPhone: c.phone || '',
+                        clientEmail: c.email || '',
+                      }));
+                    }}
+                  />
+                </div>
+
+                <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
+                  <span>O crear nueva reserva para cliente nuevo:</span>
+                  <ClientSelectionModal
+                    onSelect={(c) => {
+                      console.log('Cliente seleccionado desde modal:', c);
+                      setCreateClientId(c.id);
+                      setBookingForm((prev) => ({
+                        ...prev,
+                        clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                        clientPhone: c.phone || '',
+                        clientEmail: c.email || '',
+                      }));
+                    }}
                   >
-                    <User className="w-4 h-4 mr-2" />
-                    Ver todos los clientes
-                  </Button>
-                </ClientSelectionModal>
-              </div>
-
-              {/* Client Information Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="clientName">Nombre del cliente *</Label>
-                  <Input
-                    id="clientName"
-                    value={bookingForm.clientName}
-                    onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
-                    placeholder="Nombre y apellidos"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="clientPhone">Teléfono</Label>
-                  <Input
-                    id="clientPhone"
-                    value={bookingForm.clientPhone}
-                    onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
-                    placeholder="+34 600 000 000"
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="clientEmail">Email</Label>
-                  <Input
-                    id="clientEmail"
-                    type="email"
-                    value={bookingForm.clientEmail}
-                    onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
-                    placeholder="cliente@example.com"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="serviceId">Servicio *</Label>
-                <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Seleccionar servicio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
-                      <SelectItem key={service.id} value={service.id}>
-                        {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="space-y-2 md:col-span-1">
-                  <Label>Hora</Label>
-                  <Select value={format(bookingForm.timeSlot, 'HH:mm')} onValueChange={(val) => {
-                    const [h, m] = val.split(':').map(Number);
-                    const d = new Date(bookingForm.timeSlot);
-                    d.setHours(h, m, 0, 0);
-                    setBookingForm({ ...bookingForm, timeSlot: d });
-                  }}>
-                    <SelectTrigger className="h-11 min-w-[140px]">
-                      <SelectValue placeholder="Hora" />
-                    </SelectTrigger>
-                    <SelectContent 
-                      className="z-[200] bg-background border shadow-xl"
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      sideOffset={4}
-                      avoidCollisions={true}
-                      sticky="always"
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      type="button"
+                      onClick={() => console.log('Botón Ver todos los clientes clickeado')}
                     >
-                      {timeOptions5m.map((t) => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <User className="w-4 h-4 mr-2" />
+                      Ver todos los clientes
+                    </Button>
+                  </ClientSelectionModal>
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="notes">Notas (opcional)</Label>
-                  <Textarea
-                    id="notes"
-                    value={bookingForm.notes}
-                    onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
-                    placeholder="Notas adicionales..."
-                    rows={6}
-                    className="resize-none"
-                  />
-                </div>
-              </div>
 
-              <div className="border-t pt-3 space-y-3">
-                <Label>Canjear código (opcional)</Label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <Label>Código</Label>
-                    <Input value={redeemCode} onChange={(e) => setRedeemCode(e.target.value)} placeholder="ABCD1234" />
+                {/* Client Information Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="clientName">Nombre del cliente *</Label>
+                    <Input
+                      id="clientName"
+                      value={bookingForm.clientName}
+                      onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
+                      placeholder="Nombre y apellidos"
+                    />
                   </div>
-                  <div>
-                    <Label>Importe (€) solo si es tarjeta</Label>
-                    <Input type="number" step="0.01" min="0" value={redeemAmountEUR ?? ''} onChange={(e) => setRedeemAmountEUR(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="Ej. 50.00" />
+                  <div className="space-y-2">
+                    <Label htmlFor="clientPhone">Teléfono</Label>
+                    <Input
+                      id="clientPhone"
+                      value={bookingForm.clientPhone}
+                      onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
+                      placeholder="+34 600 000 000"
+                    />
                   </div>
-                  <div className="md:col-span-1 flex items-end">
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input type="checkbox" className="accent-current" checked={redeemOnCreate} onChange={(e) => setRedeemOnCreate(e.target.checked)} />
-                      Canjear al crear
-                    </label>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="clientEmail">Email</Label>
+                    <Input
+                      id="clientEmail"
+                      type="email"
+                      value={bookingForm.clientEmail}
+                      onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
+                      placeholder="cliente@example.com"
+                    />
                   </div>
                 </div>
-                <div>
-                  <Label>Notas de canje</Label>
-                  <Textarea rows={2} value={redeemNotes} onChange={(e) => setRedeemNotes(e.target.value)} placeholder="Observaciones del canje" />
-                </div>
-              </div>
 
-            </div>
-
-            <div className="mt-auto px-4 py-3 border-t bg-background">
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowBookingModal(false)}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancelar
-                </Button>
-                <Button onClick={createBooking}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Crear Reserva
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Booking Modal */}
-      <Dialog open={showEditModal} onOpenChange={(open) => { setShowEditModal(open); if (!open) setEditingBooking(null); }}>
-        <DialogContent className="max-w-lg mx-4 sm:mx-auto">
-          <DialogHeader>
-            <DialogTitle>Editar Reserva</DialogTitle>
-            <DialogDescription>Modifica notas, pago y cliente.</DialogDescription>
-          </DialogHeader>
-
-          {editingBooking && (
-            <div className="space-y-4">
-              <ClientSelector
-                label="Cliente"
-                selectedId={editingBooking.client_id || undefined}
-                onSelect={(c) => setEditClientId(c.id)}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Nombre</Label>
-                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nombre y apellidos" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Teléfono</Label>
-                  <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+34 600 000 000" />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Email</Label>
-                  <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="cliente@example.com" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Servicio</Label>
-                  <Select value={editServiceId} onValueChange={(v) => setEditServiceId(v)}>
-                    <SelectTrigger>
+                  <Label htmlFor="serviceId">Servicio *</Label>
+                  <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
+                    <SelectTrigger className="h-11">
                       <SelectValue placeholder="Seleccionar servicio" />
                     </SelectTrigger>
                     <SelectContent>
-                      {services.filter(s => s.center_id === (editingBooking.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
+                      {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
                         <SelectItem key={service.id} value={service.id}>
                           {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
                         </SelectItem>
@@ -1175,143 +1072,282 @@ const AdvancedCalendarView = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Hora</Label>
-                  <Select value={format(editTime, 'HH:mm')} onValueChange={(val) => {
-                    const [h,m] = val.split(':').map(Number);
-                    const d = new Date(editTime);
-                    d.setHours(h, m, 0, 0);
-                    setEditTime(d);
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  <SelectContent>
-                    {timeOptions5m.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                  </Select>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="space-y-2 md:col-span-1">
+                    <Label>Hora</Label>
+                    <Select value={format(bookingForm.timeSlot, 'HH:mm')} onValueChange={(val) => {
+                      const [h, m] = val.split(':').map(Number);
+                      const d = new Date(bookingForm.timeSlot);
+                      d.setHours(h, m, 0, 0);
+                      setBookingForm({ ...bookingForm, timeSlot: d });
+                    }}>
+                      <SelectTrigger className="h-11 min-w-[140px]">
+                        <SelectValue placeholder="Hora" />
+                      </SelectTrigger>
+                      <SelectContent 
+                        className="z-[200] bg-background border shadow-xl"
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        sideOffset={4}
+                        avoidCollisions={true}
+                        sticky="always"
+                      >
+                        {timeOptions5m.map((t) => (
+                          <SelectItem key={t} value={t}>{t}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="notes">Notas (opcional)</Label>
+                    <Textarea
+                      id="notes"
+                      value={bookingForm.notes}
+                      onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
+                      placeholder="Notas adicionales..."
+                      rows={6}
+                      className="resize-none"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Duración (min)</Label>
-                  <Input type="number" min={15} step={15} value={editDuration} onChange={(e) => setEditDuration(parseInt(e.target.value || '60', 10))} />
+
+                <div className="border-t pt-3 space-y-3">
+                  <Label>Canjear código (opcional)</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <Label>Código</Label>
+                      <Input value={redeemCode} onChange={(e) => setRedeemCode(e.target.value)} placeholder="ABCD1234" />
+                    </div>
+                    <div>
+                      <Label>Importe (€) solo si es tarjeta</Label>
+                      <Input type="number" step="0.01" min="0" value={redeemAmountEUR ?? ''} onChange={(e) => setRedeemAmountEUR(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="Ej. 50.00" />
+                    </div>
+                    <div className="md:col-span-1 flex items-end">
+                      <label className="inline-flex items-center gap-2 text-sm">
+                        <input type="checkbox" className="accent-current" checked={redeemOnCreate} onChange={(e) => setRedeemOnCreate(e.target.checked)} />
+                        Canjear al crear
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Notas de canje</Label>
+                    <Textarea rows={2} value={redeemNotes} onChange={(e) => setRedeemNotes(e.target.value)} placeholder="Observaciones del canje" />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="payment">Estado de pago</Label>
-                  <Select value={editPaymentStatus} onValueChange={(v) => setEditPaymentStatus(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pendiente</SelectItem>
-                      <SelectItem value="paid">Pagado</SelectItem>
-                      <SelectItem value="failed">Fallido</SelectItem>
-                      <SelectItem value="refunded">Reembolsado</SelectItem>
-                      <SelectItem value="partial_refund">Reembolso Parcial</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="bookingStatus">Estado de reserva</Label>
-                  <Select value={editBookingStatus} onValueChange={(v) => setEditBookingStatus(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pendiente</SelectItem>
-                      <SelectItem value="requested">Solicitada</SelectItem>
-                      <SelectItem value="confirmed">Confirmada</SelectItem>
-                      <SelectItem value="new">Nueva</SelectItem>
-                      <SelectItem value="online">Online</SelectItem>
-                      <SelectItem value="completed">Completada</SelectItem>
-                      <SelectItem value="cancelled">Cancelada</SelectItem>
-                      <SelectItem value="no_show">No Show</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notesEdit">Notas internas</Label>
-                <Textarea
-                  id="notesEdit"
-                  value={editNotes}
-                  onChange={(e) => setEditNotes(e.target.value)}
-                  rows={4}
-                  placeholder="Añade notas internas..."
-                />
-              </div>
-
-              {/* Action Buttons - Responsive Layout */}
-              <div className="space-y-3">
-                {/* Primary Actions */}
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="default"
-                    className="flex-1"
-                    onClick={() => {
-                      setEditPaymentStatus('paid');
-                      setEditBookingStatus('confirmed');
-                    }}
-                  >
-                    💳 Cobrar
+              <div className="mt-auto px-4 py-3 border-t bg-background">
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowBookingModal(false)}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar
                   </Button>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive" className="flex-1">
-                        <Trash2 className="h-4 w-4 mr-2" /> Borrar
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="mx-4 sm:mx-auto">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>¿Borrar reserva?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta acción elimina la reserva definitivamente. No se puede deshacer.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                        <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => deleteBooking(editingBooking.id)}
-                          className="w-full sm:w-auto"
-                        >
-                          Sí, borrar
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-                
-                {/* Secondary Actions */}
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => { setShowEditModal(false); setEditingBooking(null); }}
-                  >
-                    <X className="h-4 w-4 mr-2" /> Cancelar
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    onClick={saveBookingEdits}
-                    className="flex-1"
-                  >
-                    <Save className="h-4 w-4 mr-2" /> Guardar
+                  <Button onClick={createBooking}>
+                    <Save className="h-4 w-4 mr-2" />
+                    Crear Reserva
                   </Button>
                 </div>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Booking Modal - Positioned above clicked slot */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 z-50">
+          <div 
+            className="absolute bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+            style={{
+              top: `${modalPosition.top}px`,
+              left: `${modalPosition.left}px`,
+              maxWidth: 'calc(100vw - 40px)'
+            }}
+          >
+            <div className="px-4 pt-4 pb-2 border-b">
+              <h3 className="text-lg font-semibold">Editar Reserva</h3>
+              <p className="text-sm text-gray-600">Modifica notas, pago y cliente.</p>
+            </div>
+
+            {editingBooking && (
+              <div className="space-y-4 p-4">
+                <ClientSelector
+                  label="Cliente"
+                  selectedId={editingBooking.client_id || undefined}
+                  onSelect={(c) => setEditClientId(c.id)}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Nombre</Label>
+                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nombre y apellidos" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Teléfono</Label>
+                    <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+34 600 000 000" />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Email</Label>
+                    <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="cliente@example.com" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Servicio</Label>
+                    <Select value={editServiceId} onValueChange={(v) => setEditServiceId(v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar servicio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {services.filter(s => s.center_id === (editingBooking.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Hora</Label>
+                    <Select value={format(editTime, 'HH:mm')} onValueChange={(val) => {
+                      const [h,m] = val.split(':').map(Number);
+                      const d = new Date(editTime);
+                      d.setHours(h, m, 0, 0);
+                      setEditTime(d);
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    <SelectContent>
+                      {timeOptions5m.map((t) => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Duración (min)</Label>
+                    <Input type="number" min={15} step={15} value={editDuration} onChange={(e) => setEditDuration(parseInt(e.target.value || '60', 10))} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="payment">Estado de pago</Label>
+                    <Select value={editPaymentStatus} onValueChange={(v) => setEditPaymentStatus(v as any)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pendiente</SelectItem>
+                        <SelectItem value="paid">Pagado</SelectItem>
+                        <SelectItem value="failed">Fallido</SelectItem>
+                        <SelectItem value="refunded">Reembolsado</SelectItem>
+                        <SelectItem value="partial_refund">Reembolso Parcial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingStatus">Estado de reserva</Label>
+                    <Select value={editBookingStatus} onValueChange={(v) => setEditBookingStatus(v as any)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pendiente</SelectItem>
+                        <SelectItem value="requested">Solicitada</SelectItem>
+                        <SelectItem value="confirmed">Confirmada</SelectItem>
+                        <SelectItem value="new">Nueva</SelectItem>
+                        <SelectItem value="online">Online</SelectItem>
+                        <SelectItem value="completed">Completada</SelectItem>
+                        <SelectItem value="cancelled">Cancelada</SelectItem>
+                        <SelectItem value="no_show">No Show</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notesEdit">Notas internas</Label>
+                  <Textarea
+                    id="notesEdit"
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    rows={4}
+                    placeholder="Añade notas internas..."
+                  />
+                </div>
+
+                {/* Action Buttons - Responsive Layout */}
+                <div className="space-y-3">
+                  {/* Primary Actions */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="default"
+                      className="flex-1"
+                      onClick={() => {
+                        setEditPaymentStatus('paid');
+                        setEditBookingStatus('confirmed');
+                      }}
+                    >
+                      💳 Cobrar
+                    </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" className="flex-1">
+                          <Trash2 className="h-4 w-4 mr-2" /> Borrar
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="mx-4 sm:mx-auto">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Borrar reserva?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción elimina la reserva definitivamente. No se puede deshacer.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                          <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => deleteBooking(editingBooking.id)}
+                            className="w-full sm:w-auto"
+                          >
+                            Sí, borrar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                  
+                  {/* Secondary Actions */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => { setShowEditModal(false); setEditingBooking(null); }}
+                    >
+                      <X className="h-4 w-4 mr-2" /> Cancelar
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={saveBookingEdits}
+                      className="flex-1"
+                    >
+                      <Save className="h-4 w-4 mr-2" /> Guardar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
