@@ -31,7 +31,7 @@ export function LanguageSelector() {
         <SelectTrigger className="w-[140px] h-8 text-xs bg-background/80 border-border/50">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="bg-background border-border z-[60] min-w-[140px]" sideOffset={5}>
+        <SelectContent sideOffset={5}>
           {languages.map((lang) => (
             <SelectItem key={lang.code} value={lang.code} className="text-xs">
               <span className="flex items-center gap-2">

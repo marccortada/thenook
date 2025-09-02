@@ -420,7 +420,7 @@ export default function AdminPricingPromos() {
                             <Label>Estado</Label>
                             <Select value={String(edit.active)} onValueChange={(v) => handleServiceChange(g.key, 'active', v === 'true')}>
                               <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent className="z-50 bg-background">
+                              <SelectContent>
                                 <SelectItem value="true">Activo</SelectItem>
                                 <SelectItem value="false">Inactivo</SelectItem>
                               </SelectContent>
@@ -714,7 +714,7 @@ export default function AdminPricingPromos() {
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="z-50 bg-background">
+                            <SelectContent>
                               {serviceTypes.map((type) => (
                                 <SelectItem key={type.value} value={type.value}>
                                   {type.label}
@@ -758,7 +758,7 @@ export default function AdminPricingPromos() {
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="z-50 bg-background">
+                            <SelectContent>
                               <SelectItem value="true">Activo</SelectItem>
                               <SelectItem value="false">Inactivo</SelectItem>
                             </SelectContent>
@@ -847,7 +847,7 @@ export default function AdminPricingPromos() {
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar servicio" />
                         </SelectTrigger>
-                        <SelectContent className="z-50 bg-background">
+                        <SelectContent>
                           <SelectItem value="all">Todos los servicios</SelectItem>
                           {services.map((service: any) => (
                             <SelectItem key={service.id} value={service.id}>
@@ -882,7 +882,7 @@ export default function AdminPricingPromos() {
                         <SelectTrigger>
                           <SelectValue placeholder="Todos los centros" />
                         </SelectTrigger>
-                        <SelectContent className="z-50 bg-background">
+                        <SelectContent>
                           <SelectItem value="all">Todos los centros</SelectItem>
                           {centers.map((center) => (
                             <SelectItem key={center.id} value={center.id}>
@@ -956,7 +956,7 @@ export default function AdminPricingPromos() {
                               <Label>Estado</Label>
                               <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(g.key, 'active', v === 'true')}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent className="z-50 bg-background">
+                                <SelectContent>
                                   <SelectItem value="true">Activo</SelectItem>
                                   <SelectItem value="false">Inactivo</SelectItem>
                                 </SelectContent>
@@ -1020,7 +1020,7 @@ export default function AdminPricingPromos() {
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="z-50 bg-background">
+                        <SelectContent>
                           <SelectItem value="true">Activo</SelectItem>
                           <SelectItem value="false">Inactivo</SelectItem>
                         </SelectContent>
@@ -1066,7 +1066,7 @@ export default function AdminPricingPromos() {
                               <Label>Estado</Label>
                               <Select value={String(edit.active)} onValueChange={(v) => handleGiftChange(opt.id, 'active', v === 'true')}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent className="z-50 bg-background">
+                                <SelectContent>
                                   <SelectItem value="true">Activo</SelectItem>
                                   <SelectItem value="false">Inactivo</SelectItem>
                                 </SelectContent>

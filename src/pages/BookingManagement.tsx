@@ -311,7 +311,7 @@ export default function BookingManagement() {
                         <SelectTrigger className="w-40">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="z-50 bg-background">
+                        <SelectContent>
                           {BOOKING_STATUSES.map((status) => (
                             <SelectItem key={status.value} value={status.value}>
                               {status.label}
@@ -330,7 +330,7 @@ export default function BookingManagement() {
                         <SelectTrigger className="w-40">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="z-50 bg-background">
+                        <SelectContent>
                           {PAYMENT_STATUSES.map((status) => (
                             <SelectItem key={status.value} value={status.value}>
                               {status.label}
