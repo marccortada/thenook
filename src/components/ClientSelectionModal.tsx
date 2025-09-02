@@ -59,8 +59,8 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[85vh] mx-auto p-4 sm:p-6">
-        <DialogHeader className="pb-4">
+      <DialogContent className="w-[95vw] sm:w-full max-w-2xl h-[90vh] sm:h-auto sm:max-h-[85vh] mx-auto p-4 sm:p-6 flex flex-col">
+        <DialogHeader className="pb-4 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <User className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="truncate">Seleccionar Cliente ({filteredClients.length})</span>
@@ -68,7 +68,7 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
         </DialogHeader>
         
         {/* Search Input */}
-        <div className="relative mb-4">
+        <div className="relative mb-4 flex-shrink-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre, email o teléfono..."
@@ -79,19 +79,20 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
         </div>
 
         {/* Client List */}
-        <ScrollArea className="flex-1 max-h-[50vh] sm:max-h-96 -mx-1 px-1">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-sm text-muted-foreground">Cargando clientes...</div>
-            </div>
-          ) : filteredClients.length === 0 ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-sm text-muted-foreground">
-                {searchQuery ? 'No se encontraron clientes' : 'No hay clientes registrados'}
+        <div className="flex-1 min-h-0 -mx-2 px-2">
+          <ScrollArea className="h-full">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-sm text-muted-foreground">Cargando clientes...</div>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-2 px-1">
+            ) : filteredClients.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-sm text-muted-foreground">
+                  {searchQuery ? 'No se encontraron clientes' : 'No hay clientes registrados'}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2 py-2">
               {filteredClients.map((client) => (
                 <div
                   key={client.id}
@@ -139,11 +140,12 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-        </ScrollArea>
+              </div>
+            )}
+          </ScrollArea>
+        </div>
 
-        <div className="flex justify-end pt-4 border-t mt-4">
+        <div className="flex justify-end pt-4 border-t mt-4 flex-shrink-0">
           <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto text-sm">
             Cancelar
           </Button>
