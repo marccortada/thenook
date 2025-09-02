@@ -314,13 +314,38 @@ const PackageManagement = () => {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Navigation - Mobile Dropdown / Desktop Tabs */}
       <Tabs defaultValue="bonos-all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="bonos-all">Todos los Bonos</TabsTrigger>
-          <TabsTrigger value="bonos-active">Solo Bonos Activos</TabsTrigger>
-          <TabsTrigger value="tarjetas-all">Todas las Tarjetas</TabsTrigger>
-          <TabsTrigger value="tarjetas-active">Solo Tarjetas Activas</TabsTrigger>
+        {/* Mobile Dropdown */}
+        <div className="sm:hidden mb-4">
+          <Card>
+            <CardContent className="p-4">
+              <Label className="text-sm font-medium mb-2 block">Filtrar por:</Label>
+              <Select defaultValue="bonos-all" onValueChange={(value) => {
+                // Find the tab trigger and click it
+                const tabTrigger = document.querySelector(`[value="${value}"]`) as HTMLButtonElement;
+                if (tabTrigger) tabTrigger.click();
+              }}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bonos-all">Todos los Bonos</SelectItem>
+                  <SelectItem value="bonos-active">Solo Bonos Activos</SelectItem>
+                  <SelectItem value="tarjetas-all">Todas las Tarjetas</SelectItem>
+                  <SelectItem value="tarjetas-active">Solo Tarjetas Activas</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Desktop Tabs */}
+        <TabsList className="hidden sm:grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
+          <TabsTrigger value="bonos-all" className="text-xs sm:text-sm p-2">Todos los Bonos</TabsTrigger>
+          <TabsTrigger value="bonos-active" className="text-xs sm:text-sm p-2">Solo Bonos Activos</TabsTrigger>
+          <TabsTrigger value="tarjetas-all" className="text-xs sm:text-sm p-2">Todas las Tarjetas</TabsTrigger>
+          <TabsTrigger value="tarjetas-active" className="text-xs sm:text-sm p-2">Solo Tarjetas Activas</TabsTrigger>
         </TabsList>
 
         {/* Pestañas de Bonos */}
