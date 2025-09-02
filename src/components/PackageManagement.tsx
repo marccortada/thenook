@@ -326,7 +326,14 @@ const PackageManagement = () => {
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent 
+                  className="z-[9999] bg-popover border shadow-lg"
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  sideOffset={4}
+                  avoidCollisions={false}
+                >
                   <SelectItem value="bonos-all">Todos los Bonos</SelectItem>
                   <SelectItem value="bonos-active">Solo Bonos Activos</SelectItem>
                   <SelectItem value="tarjetas-all">Todas las Tarjetas</SelectItem>
