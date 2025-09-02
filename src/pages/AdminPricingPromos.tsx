@@ -524,7 +524,9 @@ export default function AdminPricingPromos() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
                                   console.log('Editing service:', service);
                                   console.log('Setting editingService state');
                                   setEditingService({ ...service });
@@ -537,7 +539,11 @@ export default function AdminPricingPromos() {
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                onClick={() => deleteService(service.id)}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  deleteService(service.id);
+                                }}
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
