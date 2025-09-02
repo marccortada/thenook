@@ -148,8 +148,7 @@ export const useServices = (centerId?: string) => {
         .eq('active', true);
 
       if (centerId) {
-        // Incluir servicios globales (center_id = null) además de los del centro
-        query = query.or(`center_id.is.null,center_id.eq.${centerId}`);
+        query = query.eq('center_id', centerId);
       }
 
       const { data, error } = await query.order('name');
