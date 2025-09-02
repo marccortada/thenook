@@ -362,6 +362,12 @@ const AdvancedCalendarView = () => {
       // For walk-in bookings, decide if we need to create a client profile
       if (bookingForm.isWalkIn) {
         if (bookingForm.saveAsClient) {
+          console.log('🏃‍♂️ Creando perfil de cliente para WALK IN:', {
+            name: bookingForm.clientName,
+            phone: bookingForm.clientPhone,
+            email: bookingForm.clientEmail
+          });
+          
           // Create a new client profile for the walk-in
           const { data: newProfile, error: profileError } = await supabase
             .from('profiles')
@@ -374,9 +380,16 @@ const AdvancedCalendarView = () => {
             }])
             .select('id')
             .single();
-          if (profileError) throw profileError;
+          
+          if (profileError) {
+            console.error('❌ Error al crear cliente WALK IN:', profileError);
+            throw profileError;
+          }
+          
+          console.log('✅ Cliente WALK IN creado exitosamente:', newProfile);
           clientIdToUse = (newProfile as any).id as string;
         } else {
+          console.log('🚶‍♂️ WALK IN sin guardar como cliente:', bookingForm.clientName);
           // Walk-in without saving as client - no client profile needed
           clientIdToUse = null;
         }
@@ -461,7 +474,13 @@ const AdvancedCalendarView = () => {
         }
       }
 
-      toast({ title: '✅ Reserva Creada', description: 'Reserva creada correctamente.' });
+      const successMessage = bookingForm.isWalkIn 
+        ? (bookingForm.saveAsClient 
+            ? `✅ Reserva WALK IN creada y cliente ${bookingForm.clientName} guardado para futuras visitas`
+            : `✅ Reserva WALK IN creada para ${bookingForm.clientName}`)
+        : '✅ Reserva Creada';
+      
+      toast({ title: successMessage, description: 'Reserva creada correctamente.' });
 
       setShowBookingModal(false);
       setSelectedSlot(null);
