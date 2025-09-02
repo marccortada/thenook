@@ -56,6 +56,7 @@ interface BookingFormData {
   date: Date;
   timeSlot: Date;
   notes: string;
+  isWalkIn?: boolean;
 }
 
 const AdvancedCalendarView = () => {
@@ -334,7 +335,7 @@ const AdvancedCalendarView = () => {
         toast({ title: 'Error', description: 'Selecciona un servicio', variant: 'destructive' });
         return;
       }
-      if (!createClientId && !bookingForm.clientEmail) {
+      if (!bookingForm.isWalkIn && !createClientId && !bookingForm.clientEmail) {
         toast({ title: 'Error', description: 'Selecciona un cliente o introduce email', variant: 'destructive' });
         return;
       }
@@ -352,34 +353,38 @@ const AdvancedCalendarView = () => {
 
       // Determine client profile
       let clientIdToUse: string | null = createClientId;
-      if (!clientIdToUse && bookingForm.clientEmail) {
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', bookingForm.clientEmail)
-          .maybeSingle();
-        if (existingProfile) {
-          clientIdToUse = existingProfile.id as string;
-          await updateClient(existingProfile.id as string, {
-            first_name: bookingForm.clientName.split(' ')[0],
-            last_name: bookingForm.clientName.split(' ').slice(1).join(' '),
-            phone: bookingForm.clientPhone,
-            email: bookingForm.clientEmail,
-          });
-        } else {
-          const { data: newProfile, error: profileError } = await supabase
+      
+      // For walk-in bookings, we don't need a client profile
+      if (!bookingForm.isWalkIn) {
+        if (!clientIdToUse && bookingForm.clientEmail) {
+          const { data: existingProfile } = await supabase
             .from('profiles')
-            .insert([{
-              email: bookingForm.clientEmail,
+            .select('id')
+            .eq('email', bookingForm.clientEmail)
+            .maybeSingle();
+          if (existingProfile) {
+            clientIdToUse = existingProfile.id as string;
+            await updateClient(existingProfile.id as string, {
               first_name: bookingForm.clientName.split(' ')[0],
               last_name: bookingForm.clientName.split(' ').slice(1).join(' '),
               phone: bookingForm.clientPhone,
-              role: 'client'
-            }])
-            .select('id')
-            .single();
-          if (profileError) throw profileError;
-          clientIdToUse = (newProfile as any).id as string;
+              email: bookingForm.clientEmail,
+            });
+          } else {
+            const { data: newProfile, error: profileError } = await supabase
+              .from('profiles')
+              .insert([{
+                email: bookingForm.clientEmail,
+                first_name: bookingForm.clientName.split(' ')[0],
+                last_name: bookingForm.clientName.split(' ').slice(1).join(' '),
+                phone: bookingForm.clientPhone,
+                role: 'client'
+              }])
+              .select('id')
+              .single();
+            if (profileError) throw profileError;
+            clientIdToUse = (newProfile as any).id as string;
+          }
         }
       }
 
@@ -1092,58 +1097,93 @@ const AdvancedCalendarView = () => {
 
               {/* Content - Scrollable */}
               <div className="px-4 py-4 overflow-y-auto flex-1 space-y-4">
+                {/* Walk-in Toggle */}
                 <div className="space-y-2">
-                  <RepeatClientSelector
-                    label="Cliente habitual (opcional)"
-                    placeholder="Buscar cliente que haya venido más de una vez..."
-                    onSelect={(c) => {
-                      setCreateClientId(c.id);
-                      setBookingForm((prev) => ({
-                        ...prev,
-                        clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
-                        clientPhone: c.phone || '',
-                        clientEmail: c.email || '',
-                      }));
-                    }}
-                  />
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="walkIn"
+                      checked={bookingForm.isWalkIn || false}
+                      onChange={(e) => {
+                        const isWalkIn = e.target.checked;
+                        setBookingForm((prev) => ({
+                          ...prev,
+                          isWalkIn,
+                          clientName: isWalkIn ? 'WALK IN' : '',
+                          clientPhone: isWalkIn ? '' : prev.clientPhone,
+                          clientEmail: isWalkIn ? '' : prev.clientEmail,
+                        }));
+                        if (isWalkIn) {
+                          setCreateClientId(null);
+                        }
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="walkIn" className="text-sm font-medium">
+                      WALK IN (cliente sin datos)
+                    </Label>
+                  </div>
                 </div>
 
-                <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
-                  <span>O crear nueva reserva para cliente nuevo:</span>
-                  <ClientSelectionModal
-                    onSelect={(c) => {
-                      console.log('Cliente seleccionado desde modal:', c);
-                      setCreateClientId(c.id);
-                      setBookingForm((prev) => ({
-                        ...prev,
-                        clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
-                        clientPhone: c.phone || '',
-                        clientEmail: c.email || '',
-                      }));
-                    }}
-                  >
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      type="button"
-                      onClick={() => console.log('Botón Ver todos los clientes clickeado')}
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      Ver todos los clientes
-                    </Button>
-                  </ClientSelectionModal>
-                </div>
+                {!bookingForm.isWalkIn && (
+                  <>
+                    <div className="space-y-2">
+                      <RepeatClientSelector
+                        label="Cliente habitual (opcional)"
+                        placeholder="Buscar cliente que haya venido más de una vez..."
+                        onSelect={(c) => {
+                          setCreateClientId(c.id);
+                          setBookingForm((prev) => ({
+                            ...prev,
+                            clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                            clientPhone: c.phone || '',
+                            clientEmail: c.email || '',
+                          }));
+                        }}
+                      />
+                    </div>
+
+                    <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
+                      <span>O crear nueva reserva para cliente nuevo:</span>
+                      <ClientSelectionModal
+                        onSelect={(c) => {
+                          console.log('Cliente seleccionado desde modal:', c);
+                          setCreateClientId(c.id);
+                          setBookingForm((prev) => ({
+                            ...prev,
+                            clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                            clientPhone: c.phone || '',
+                            clientEmail: c.email || '',
+                          }));
+                        }}
+                      >
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          type="button"
+                          onClick={() => console.log('Botón Ver todos los clientes clickeado')}
+                        >
+                          <User className="w-4 h-4 mr-2" />
+                          Ver todos los clientes
+                        </Button>
+                      </ClientSelectionModal>
+                    </div>
+                  </>
+                )}
 
                 {/* Client Information Fields */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-1.5 sm:space-y-2">
-                    <Label htmlFor="clientName" className="text-sm">Nombre del cliente *</Label>
+                    <Label htmlFor="clientName" className="text-sm">
+                      Nombre del cliente {!bookingForm.isWalkIn && '*'}
+                    </Label>
                     <Input
                       id="clientName"
                       value={bookingForm.clientName}
                       onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
-                      placeholder="Nombre y apellidos"
+                      placeholder={bookingForm.isWalkIn ? "WALK IN" : "Nombre y apellidos"}
                       className="h-9 sm:h-10"
+                      disabled={bookingForm.isWalkIn}
                     />
                   </div>
                   <div className="space-y-1.5 sm:space-y-2">
