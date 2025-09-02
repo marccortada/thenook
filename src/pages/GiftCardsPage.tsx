@@ -476,20 +476,36 @@ const GiftCardsPage = () => {
                         <Button 
                           className="h-12 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" 
                           onClick={async () => {
-                            if (items.length === 0) return;
+                            console.log("=== INICIANDO PROCESO DE PAGO ===");
+                            console.log("Items en carrito:", items.length);
+                            console.log("Es regalo:", isGift);
+                            console.log("Nombre comprador:", purchasedByName);
+                            console.log("Email comprador:", purchasedByEmail);
+                            
+                            if (items.length === 0) {
+                              console.log("❌ Carrito vacío");
+                              return;
+                            }
+                            
                             if (isGift && !recipientName.trim()) {
+                              console.log("❌ Falta nombre del beneficiario");
                               toast.error(t('recipient_name_error'));
                               return;
                             }
+                            
                             try {
                               if (!purchasedByName.trim()) {
+                                console.log("❌ Falta nombre del comprador");
                                 toast.error(t('buyer_name_error'));
                                 return;
                               }
                               if (!purchasedByEmail.trim()) {
+                                console.log("❌ Falta email del comprador");
                                 toast.error(t('buyer_email_error'));
                                 return;
                               }
+                              
+                              console.log("✅ Validaciones pasadas, creando payload...");
                               
                               const payload = {
                                 intent: "gift_cards",
@@ -512,15 +528,31 @@ const GiftCardsPage = () => {
                                 },
                                 currency: "eur"
                               };
+                              
+                              console.log("📦 Payload creado:", payload);
+                              console.log("🚀 Llamando a create-checkout...");
+                              
                               const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-                              if (error) throw error;
+                              
+                              console.log("📥 Respuesta recibida:");
+                              console.log("Data:", data);
+                              console.log("Error:", error);
+                              
+                              if (error) {
+                                console.log("❌ Error en la función:", error);
+                                throw error;
+                              }
+                              
                               if (data?.client_secret) {
+                                console.log("✅ Client secret recibido, abriendo modal...");
                                 setStripeClientSecret(data.client_secret);
                                 setShowStripeModal(true);
                               } else {
+                                console.log("❌ No se recibió client_secret");
                                 toast.error("No se recibió configuración de pago");
                               }
                             } catch (e: any) {
+                              console.log("💥 Error capturado:", e);
                               toast.error(e.message || t('payment_init_error'));
                             }
                           }}
