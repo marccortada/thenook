@@ -43,9 +43,10 @@ const ItemRow: React.FC<{
   <button
     onClick={onClick}
     className={cn(
-      "w-full flex items-center justify-between gap-3 px-3 py-3 rounded-md border text-left touch-manipulation",
-      "bg-card text-card-foreground hover:bg-accent transition-colors",
-      active ? "border-primary/60 ring-1 ring-primary/30 bg-primary/5" : "border-border"
+      "w-full flex items-center justify-between gap-3 px-3 py-3 rounded-lg border text-left",
+      "bg-card text-card-foreground hover:bg-accent transition-colors duration-200",
+      "touch-manipulation min-h-[44px]",
+      active ? "border-primary/60 ring-2 ring-primary/20 bg-primary/5" : "border-border hover:border-primary/30"
     )}
   >
     <div className="min-w-0 flex-1">
@@ -87,8 +88,8 @@ const ServiceModal: React.FC<Props> = ({
     if (services.length === 0 && packages.length === 0) return null;
 
     return (
-      <div className="space-y-2">
-        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">{title}</h4>
+      <div className="space-y-3">
+        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide px-1">{title}</h4>
         <div className="space-y-2">
           {services.map((service) => (
             <ItemRow
@@ -117,13 +118,13 @@ const ServiceModal: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md mx-auto max-h-[85vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-md w-[95vw] mx-auto max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Seleccionar Servicio</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 px-1">
-          <div className="space-y-6 pb-4">
+        <div className="flex-1 overflow-y-auto -mx-6 px-6 service-modal-scroll">
+          <div className="space-y-4 py-2">
             {mode === "combined" && packages.length > 0 && (
               <ServiceGroup title="Paquetes" services={[]} packages={packages} />
             )}
@@ -135,13 +136,10 @@ const ServiceModal: React.FC<Props> = ({
             <ServiceGroup title="Otros Servicios" services={otherServices} />
             
             {mode === "voucher" && packages.length > 0 && (
-              <>
-                <Separator />
-                <ServiceGroup title="Paquetes" services={[]} packages={packages} />
-              </>
+              <ServiceGroup title="Paquetes" services={[]} packages={packages} />
             )}
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

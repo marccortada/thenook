@@ -212,6 +212,18 @@ All colors MUST be HSL.
     transform-origin: left top !important;
   }
 
+  /* Service Modal optimization */
+  [data-radix-dialog-content] {
+    max-height: 85vh !important;
+  }
+
+  /* Ensure modal scroll works properly */
+  .service-modal-scroll {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+  }
+
   /* Mobile touch optimization */
   @media (max-width: 768px) {
     /* Ensure touch targets are large enough */
