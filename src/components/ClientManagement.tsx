@@ -165,15 +165,15 @@ const ClientManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Users className="h-6 w-6" />
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+          <Users className="h-5 w-5 sm:h-6 sm:w-6" />
           Gestión de Clientes
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
             <SelectContent>
@@ -183,18 +183,22 @@ const ClientManagement = () => {
               <SelectItem value="created_at">Fecha de inclusión</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            aria-label="Cambiar orden"
-          >
-            <ArrowUpDown className="h-4 w-4 mr-2" />
-            {sortOrder === 'asc' ? 'Asc' : 'Desc'}
-          </Button>
-          <Button onClick={() => setShowCreateClient(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo cliente
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              aria-label="Cambiar orden"
+              className="flex-1 sm:flex-none"
+            >
+              <ArrowUpDown className="h-4 w-4 mr-2" />
+              {sortOrder === 'asc' ? 'Asc' : 'Desc'}
+            </Button>
+            <Button onClick={() => setShowCreateClient(true)} className="flex-1 sm:flex-none">
+              <Plus className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Nuevo cliente</span>
+              <span className="sm:hidden">Nuevo</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -282,45 +286,45 @@ const ClientManagement = () => {
               className="cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => handleClientClick(client)}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <Avatar className="flex-shrink-0">
                       <AvatarFallback>
                         {client.first_name.charAt(0)}{client.last_name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <h3 className="font-medium">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium truncate">
                         {client.first_name} {client.last_name}
                       </h3>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {client.email}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <Mail className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{client.email}</span>
                         </div>
                         {client.phone && (
                           <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {client.phone}
+                            <Phone className="h-3 w-3 flex-shrink-0" />
+                            <span>{client.phone}</span>
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="text-right">
-                    <div className="flex gap-2 mb-2">
-                      <Badge variant="secondary">
+                  <div className="flex flex-col sm:text-right">
+                    <div className="flex flex-wrap gap-1 sm:gap-2 mb-2">
+                      <Badge variant="secondary" className="text-xs">
                         {client.total_bookings} reservas
                       </Badge>
-                      <Badge variant="outline">
+                      <Badge variant="outline" className="text-xs">
                         €{((client.total_spent || 0) / 100).toFixed(2)}
                       </Badge>
                     </div>
                     {client.last_booking && (
                       <p className="text-xs text-muted-foreground">
-                        Última visita: {format(new Date(client.last_booking), 'dd/MM/yyyy', { locale: es })}
+                        Última: {format(new Date(client.last_booking), 'dd/MM/yy', { locale: es })}
                       </p>
                     )}
                   </div>
@@ -333,11 +337,11 @@ const ClientManagement = () => {
 
       {/* Client Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Ficha de Cliente: {selectedClient?.first_name} {selectedClient?.last_name}
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <User className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="truncate">Ficha: {selectedClient?.first_name} {selectedClient?.last_name}</span>
             </DialogTitle>
           </DialogHeader>
 
