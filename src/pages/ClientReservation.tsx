@@ -470,13 +470,13 @@ const ClientReservation = () => {
                  </div>
 
                  {/* Admin Client Selector - Integrado en la sección de información del cliente */}
-                  {/* Admin Client Selector - Solo para staff autenticado con localStorage */}
+                  {/* Admin Client Selector - Solo para administradores únicamente */}
                   {(() => {
                     console.log('🔍 Checking admin status for selector:', { isAdmin, isEmployee, user });
-                    // Solo mostrar si hay sesión de staff válida en localStorage
-                    const hasValidStaffSession = user && (user.role === 'admin' || user.role === 'employee') && !loading;
-                    console.log('🔍 Has valid staff session:', hasValidStaffSession);
-                    return hasValidStaffSession;
+                    // Solo mostrar si hay sesión de ADMIN válida en localStorage (no empleados)
+                    const hasValidAdminSession = user && user.role === 'admin' && !loading;
+                    console.log('🔍 Has valid admin session:', hasValidAdminSession);
+                    return hasValidAdminSession;
                   })() && (
                     <div className="pt-4 border-t border-primary/20">
                       <div className="space-y-3">
