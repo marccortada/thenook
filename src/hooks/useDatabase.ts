@@ -21,6 +21,8 @@ export interface Service {
   price_cents: number;
   center_id: string;
   active: boolean;
+  has_discount?: boolean;
+  discount_price_cents?: number;
   created_at: string;
   updated_at: string;
 }

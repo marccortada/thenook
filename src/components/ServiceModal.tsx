@@ -39,13 +39,25 @@ const ServiceCard: React.FC<{
 }> = ({ service, active, onClick, centerId }) => {
   const { calculatePriceWithPromotions } = usePromotions();
   
-  const priceInfo = calculatePriceWithPromotions(service.price_cents, service.id, centerId);
+  // Calcular precio considerando descuentos de servicio Y promociones
+  let basePrice = service.price_cents;
+  let serviceDiscount = 0;
+  let hasServiceDiscount = false;
+  
+  // Primero aplicar descuento del servicio si existe
+  if (service.has_discount && service.discount_price_cents && service.discount_price_cents < service.price_cents) {
+    basePrice = service.discount_price_cents;
+    serviceDiscount = service.price_cents - service.discount_price_cents;
+    hasServiceDiscount = true;
+  }
+  
+  // Luego aplicar promociones sobre el precio ya descontado
+  const priceInfo = calculatePriceWithPromotions(basePrice, service.id, centerId);
   const hasPromotion = priceInfo.discount > 0;
   
-  // Solo usar promociones ya que no tenemos descuentos de servicio en el tipo Service
-  const finalDiscount = priceInfo.discount;
-  const finalPrice = priceInfo.finalPrice;
-  const showDiscount = finalDiscount > 0;
+  const totalDiscount = serviceDiscount + priceInfo.discount;
+  const finalPrice = service.price_cents - totalDiscount;
+  const showDiscount = totalDiscount > 0;
 
   return (
     <button
@@ -71,7 +83,7 @@ const ServiceCard: React.FC<{
             {showDiscount && (
               <Badge variant="secondary" className="bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-600 border-orange-300/30">
                 <Percent className="w-3 h-3 mr-1" />
-                {Math.round((finalDiscount / service.price_cents) * 100)}%
+                {Math.round((totalDiscount / service.price_cents) * 100)}%
               </Badge>
             )}
           </div>
@@ -112,11 +124,21 @@ const ServiceCard: React.FC<{
             </p>
           )}
           
-          {hasPromotion && (
-            <Badge variant="secondary" className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-600 border-emerald-300/30 text-xs">
-              <Sparkles className="w-3 h-3 mr-1" />
-              Oferta
-            </Badge>
+          {(hasPromotion || hasServiceDiscount) && (
+            <div className="flex flex-col gap-1">
+              {hasServiceDiscount && (
+                <Badge variant="secondary" className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 text-blue-600 border-blue-300/30 text-xs">
+                  <Tag className="w-3 h-3 mr-1" />
+                  Descuento
+                </Badge>
+              )}
+              {hasPromotion && (
+                <Badge variant="secondary" className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-600 border-emerald-300/30 text-xs">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Oferta
+                </Badge>
+              )}
+            </div>
           )}
         </div>
       </div>
