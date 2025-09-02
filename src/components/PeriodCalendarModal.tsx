@@ -30,13 +30,27 @@ const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) =
   const [centers, setCenters] = useState<{ id: string; name: string }[]>([]);
   const [selectedCenter, setSelectedCenter] = useState<string>('all');
 
+  // Función para obtener el trimestre actual
+  const getCurrentQuarter = () => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    if (currentMonth <= 2) return { year: currentYear, quarter: 1 };
+    if (currentMonth <= 5) return { year: currentYear, quarter: 2 };
+    if (currentMonth <= 8) return { year: currentYear, quarter: 3 };
+    return { year: currentYear, quarter: 4 };
+  };
+
+  const currentQuarter = getCurrentQuarter();
+
   const quarters = [
-    { label: "Q1 2024", start: new Date(2024, 0, 1), end: new Date(2024, 2, 31) },
-    { label: "Q2 2024", start: new Date(2024, 3, 1), end: new Date(2024, 5, 30) },
-    { label: "Q3 2024", start: new Date(2024, 6, 1), end: new Date(2024, 8, 30) },
-    { label: "Q4 2024", start: new Date(2024, 9, 1), end: new Date(2024, 11, 31) },
-    { label: "Q1 2025", start: new Date(2025, 0, 1), end: new Date(2025, 2, 31) },
-    { label: "Q2 2025", start: new Date(2025, 3, 1), end: new Date(2025, 5, 30) },
+    { label: "Q1 2024", start: new Date(2024, 0, 1), end: new Date(2024, 2, 31), isCurrent: currentQuarter.year === 2024 && currentQuarter.quarter === 1 },
+    { label: "Q2 2024", start: new Date(2024, 3, 1), end: new Date(2024, 5, 30), isCurrent: currentQuarter.year === 2024 && currentQuarter.quarter === 2 },
+    { label: "Q3 2024", start: new Date(2024, 6, 1), end: new Date(2024, 8, 30), isCurrent: currentQuarter.year === 2024 && currentQuarter.quarter === 3 },
+    { label: "Q4 2024", start: new Date(2024, 9, 1), end: new Date(2024, 11, 31), isCurrent: currentQuarter.year === 2024 && currentQuarter.quarter === 4 },
+    { label: "Q1 2025", start: new Date(2025, 0, 1), end: new Date(2025, 2, 31), isCurrent: currentQuarter.year === 2025 && currentQuarter.quarter === 1 },
+    { label: "Q2 2025", start: new Date(2025, 3, 1), end: new Date(2025, 5, 30), isCurrent: currentQuarter.year === 2025 && currentQuarter.quarter === 2 },
   ];
 
   const months = Array.from({ length: 24 }, (_, i) => {
@@ -314,24 +328,42 @@ const fetchPeriodStats = async () => {
                   <CardTitle>Seleccionar Trimestre</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {quarters.map((quarter) => (
-                      <Button
-                        key={quarter.label}
-                        variant={selectedRange?.from?.getTime() === quarter.start.getTime() ? "default" : "outline"}
-                        className="h-auto p-4 flex flex-col items-center"
-                        onClick={() => handleQuickSelection(quarter.start, quarter.end)}
-                      >
-                        <span className="font-bold text-lg">{quarter.label}</span>
-                        <span className="text-sm text-muted-foreground mt-2">
-                          {format(quarter.start, 'dd MMM', { locale: es })} - {format(quarter.end, 'dd MMM', { locale: es })}
-                        </span>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {Math.ceil((quarter.end.getTime() - quarter.start.getTime()) / (1000 * 60 * 60 * 24)) + 1} días
-                        </span>
-                      </Button>
-                    ))}
-                  </div>
+                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                     {quarters.map((quarter) => {
+                       const isSelected = selectedRange?.from?.getTime() === quarter.start.getTime();
+                       const isCurrent = quarter.isCurrent;
+                       
+                       return (
+                         <Button
+                           key={quarter.label}
+                           variant={isSelected ? "default" : "outline"}
+                           className={cn(
+                             "h-auto p-4 flex flex-col items-center relative",
+                             isCurrent && "ring-2 ring-primary ring-offset-2"
+                           )}
+                           onClick={() => handleQuickSelection(quarter.start, quarter.end)}
+                         >
+                           {isCurrent && (
+                             <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-bold">
+                               ACTUAL
+                             </div>
+                           )}
+                           <span className={cn(
+                             "font-bold text-lg",
+                             isCurrent && "text-primary"
+                           )}>
+                             {quarter.label}
+                           </span>
+                           <span className="text-sm text-muted-foreground mt-2">
+                             {format(quarter.start, 'dd MMM', { locale: es })} - {format(quarter.end, 'dd MMM', { locale: es })}
+                           </span>
+                           <span className="text-xs text-muted-foreground mt-1">
+                             {Math.ceil((quarter.end.getTime() - quarter.start.getTime()) / (1000 * 60 * 60 * 24)) + 1} días
+                           </span>
+                         </Button>
+                       );
+                      })}
+                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
