@@ -279,5 +279,13 @@ All colors MUST be HSL.
       margin: 0.5rem 0;
       padding: 1rem;
     }
+
+    /* Mobile-specific Select dropdown fixes */
+    [data-radix-select-content] {
+      position: fixed !important;
+      z-index: 9999 !important;
+      max-width: calc(100vw - 2rem) !important;
+      width: var(--radix-select-trigger-width) !important;
+    }
   }
 }
