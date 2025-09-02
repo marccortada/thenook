@@ -759,12 +759,15 @@ export default function AdminPricingPromos() {
                           <Label htmlFor="edit-service-status">Estado</Label>
                           <Select
                             value={String(editingService.active ?? true)}
-                            onValueChange={(value) => setEditingService({ ...editingService, active: value === 'true' })}
+                            onValueChange={(value) => {
+                              console.log('Estado changed to:', value);
+                              setEditingService({ ...editingService, active: value === 'true' });
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper">
                               <SelectItem value="true">Activo</SelectItem>
                               <SelectItem value="false">Inactivo</SelectItem>
                             </SelectContent>
