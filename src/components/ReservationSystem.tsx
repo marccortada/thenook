@@ -346,16 +346,16 @@ const ReservationSystem = () => {
   const selectedItem = getSelectedItem();
 
   return (
-    <div className="max-w-4xl mx-auto px-2 sm:px-4">
-      <Card className="w-full">
-        <CardHeader className="px-4 sm:px-6">
-          <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
-            <CalendarDays className="h-5 w-5" />
+    <div className="w-full max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
+      <Card className="w-full border-0 sm:border sm:shadow-sm">
+        <CardHeader className="px-3 py-4 sm:px-6 sm:py-6">
+          <CardTitle className="flex items-center space-x-2 text-base sm:text-lg lg:text-xl">
+            <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" />
             <span>Nueva Reserva</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-4 sm:px-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <CardContent className="px-3 pb-4 sm:px-6 sm:pb-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Client Information - Only show if user is not authenticated */}
             {!isAuthenticated && (
               <div className="space-y-4">
@@ -571,57 +571,62 @@ const ReservationSystem = () => {
                 <span>Fecha y Hora</span>
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date">Fecha *</Label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="date" className="text-sm font-medium">Fecha *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
+                          "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
                           !formData.date && "text-muted-foreground"
                         )}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                        <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
+                        </span>
                       </Button>
                     </PopoverTrigger>
                      <PopoverContent 
-                       className="w-auto p-0 z-[60] bg-popover border border-border shadow-lg" 
+                       className="w-auto p-0 z-[70] bg-background border shadow-lg" 
                        align="start"
                        side="bottom"
-                       sideOffset={4}
+                       sideOffset={8}
                        alignOffset={0}
                        avoidCollisions={true}
-                       collisionPadding={10}
+                       collisionPadding={16}
                      >
                        <Calendar
                          mode="single"
                          selected={formData.date}
-                         onSelect={(date) => setFormData({ ...formData, date })}
+                         onSelect={(date) => {
+                           console.log('Fecha seleccionada:', date);
+                           setFormData({ ...formData, date });
+                         }}
                          disabled={(date) => date < new Date()}
                          initialFocus
-                         className="p-3 pointer-events-auto touch-manipulation"
+                         className="p-2 sm:p-3 touch-manipulation"
                          classNames={{
-                           months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                           months: "flex flex-col space-y-4",
                            month: "space-y-4",
-                           caption: "flex justify-center pt-1 relative items-center",
+                           caption: "flex justify-center pt-1 relative items-center px-8",
                            caption_label: "text-sm font-medium",
                            nav: "space-x-1 flex items-center",
-                           nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 touch-manipulation",
-                           nav_button_previous: "absolute left-1",
-                           nav_button_next: "absolute right-1",
+                           nav_button: "h-8 w-8 bg-transparent p-0 opacity-70 hover:opacity-100 touch-manipulation border border-input hover:bg-accent hover:text-accent-foreground",
+                           nav_button_previous: "absolute left-0",
+                           nav_button_next: "absolute right-0",
                            table: "w-full border-collapse space-y-1",
-                           head_row: "flex",
-                           head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                           head_row: "flex w-full",
+                           head_cell: "text-muted-foreground rounded-md w-8 sm:w-9 font-normal text-xs sm:text-sm flex items-center justify-center",
                            row: "flex w-full mt-2",
-                           cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 touch-manipulation",
-                           day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md touch-manipulation cursor-pointer",
+                           cell: "text-center text-sm p-0 relative touch-manipulation",
+                           day: "h-8 w-8 sm:h-9 sm:w-9 p-0 font-normal text-xs sm:text-sm touch-manipulation cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors",
                            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                           day_today: "bg-accent text-accent-foreground",
+                           day_today: "bg-accent text-accent-foreground font-semibold",
                            day_outside: "text-muted-foreground opacity-50",
-                           day_disabled: "text-muted-foreground opacity-50 cursor-not-allowed",
+                           day_disabled: "text-muted-foreground opacity-30 cursor-not-allowed",
                            day_hidden: "invisible",
                          }}
                        />
@@ -629,24 +634,34 @@ const ReservationSystem = () => {
                   </Popover>
                 </div>
                 
-                <div>
-                  <Label htmlFor="time">Hora *</Label>
-                  <Select value={formData.time} onValueChange={(value) => setFormData({ ...formData, time: value })}>
-                    <SelectTrigger>
+                <div className="space-y-2">
+                  <Label htmlFor="time" className="text-sm font-medium">Hora *</Label>
+                  <Select 
+                    value={formData.time} 
+                    onValueChange={(value) => {
+                      console.log('Hora seleccionada:', value);
+                      setFormData({ ...formData, time: value });
+                    }}
+                  >
+                    <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder="Selecciona una hora" />
                     </SelectTrigger>
                      <SelectContent 
-                       className="max-h-60 overflow-y-auto z-[60] touch-manipulation"
+                       className="max-h-48 sm:max-h-60 overflow-y-auto z-[70] touch-manipulation"
                        position="popper"
                        side="bottom"
                        align="start"
-                       sideOffset={4}
+                       sideOffset={8}
                        alignOffset={0}
                        avoidCollisions={true}
-                       collisionPadding={10}
+                       collisionPadding={16}
                      >
                        {timeSlots.map((time) => (
-                         <SelectItem key={time} value={time} className="touch-manipulation cursor-pointer">
+                         <SelectItem 
+                           key={time} 
+                           value={time} 
+                           className="touch-manipulation cursor-pointer h-10 sm:h-auto text-sm sm:text-base"
+                         >
                            {time}
                          </SelectItem>
                        ))}

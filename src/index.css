@@ -229,29 +229,71 @@ All colors MUST be HSL.
     [data-radix-select-content] {
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
+      position: fixed !important;
     }
 
     /* Calendar day cells - ensure they're tappable */
-    .react-day-picker button {
+    .react-day-picker button,
+    [role="gridcell"] button {
       min-height: 44px !important;
       min-width: 44px !important;
       touch-action: manipulation !important;
+      -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+      cursor: pointer !important;
     }
 
     /* Select items - ensure they're tappable */
     [data-radix-select-item] {
       min-height: 44px !important;
       touch-action: manipulation !important;
-      -webkit-tap-highlight-color: transparent;
+      -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+      cursor: pointer !important;
+      padding: 12px 8px !important;
+    }
+
+    /* PopoverTrigger and SelectTrigger improvements */
+    [data-radix-popover-trigger],
+    [data-radix-select-trigger] {
+      min-height: 44px !important;
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+    }
+
+    /* Improve calendar navigation buttons */
+    .react-day-picker .rdp-nav_button {
+      min-height: 44px !important;
+      min-width: 44px !important;
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+    }
+
+    /* Ensure input elements don't zoom on iOS */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    textarea,
+    select {
+      font-size: 16px !important;
+      transform: translateZ(0);
+      -webkit-appearance: none;
     }
 
     /* Popover and select content positioning fixes */
     [data-radix-popover-content][data-side="bottom"] {
       margin-top: 8px !important;
+      max-width: calc(100vw - 32px) !important;
     }
 
     [data-radix-select-content][data-side="bottom"] {
       margin-top: 8px !important;
+      max-width: calc(100vw - 32px) !important;
+      max-height: 50vh !important;
+    }
+
+    /* Prevent viewport zoom on double tap */
+    * {
+      touch-action: manipulation;
     }
   }
 
