@@ -895,8 +895,8 @@ const AdvancedCalendarView = () => {
             <div className="block sm:hidden">
               <div className="p-4 space-y-3">
                 {timeSlots.map((timeSlot) => (
-                  <div key={timeSlot.time} className="border rounded-lg p-3 bg-card">
-                    <div className="font-medium text-sm mb-2">{timeSlot.time}</div>
+                  <div key={timeSlot.time.toISOString()} className="border rounded-lg p-3 bg-card">
+                    <div className="font-medium text-sm mb-2">{format(timeSlot.time, 'HH:mm')}</div>
                     <div className="space-y-2">
                       {getCenterLanes(selectedCenter).map((lane) => {
                         const booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, timeSlot.time);
@@ -942,18 +942,9 @@ const AdvancedCalendarView = () => {
                         </div>
                       </div>
                     </div>
-                ))}
-                    <div className="p-1 text-center font-medium border-r bg-muted/50">
-                      <div className="font-semibold text-[9px]">
-                        {format(date, "EEE", { locale: es })} - {(lane.name || '').replace(/ra[ií]l/gi, 'C')}
-                      </div>
-                      <div className="text-[8px] text-muted-foreground">
-                        {format(date, "d/M", { locale: es })}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              )}
+                  ))
+                ).flat()}
+              </div>
 
               {/* Time slots for week view */}
               {timeSlots.map((timeSlot, timeIndex) => (
