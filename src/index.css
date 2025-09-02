@@ -178,21 +178,24 @@ All colors MUST be HSL.
 
   /* Fix for dropdown transparency issues */
   [data-radix-select-content] {
-    background: hsl(var(--background)) !important;
+    background: hsl(var(--popover)) !important;
     border: 1px solid hsl(var(--border)) !important;
-    z-index: 60 !important;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+    z-index: 50 !important;
   }
 
   [data-radix-dropdown-menu-content] {
-    background: hsl(var(--background)) !important;
+    background: hsl(var(--popover)) !important;
     border: 1px solid hsl(var(--border)) !important;
-    z-index: 60 !important;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+    z-index: 50 !important;
   }
 
   [data-radix-popover-content] {
-    background: hsl(var(--background)) !important;
+    background: hsl(var(--popover)) !important;
     border: 1px solid hsl(var(--border)) !important;
-    z-index: 60 !important;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+    z-index: 50 !important;
   }
 
   /* Mobile responsive improvements */
@@ -254,9 +257,10 @@ All colors MUST be HSL.
     [data-radix-popover-content] {
       max-width: calc(100vw - 2rem) !important;
       transform-origin: center !important;
-      z-index: 60 !important;
-      background: hsl(var(--background)) !important;
+      z-index: 50 !important;
+      background: hsl(var(--popover)) !important;
       border: 1px solid hsl(var(--border)) !important;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
     }
   }
 
