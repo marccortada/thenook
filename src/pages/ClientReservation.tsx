@@ -19,8 +19,6 @@ import { Link } from "react-router-dom";
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import AdminClientSelector from "@/components/AdminClientSelector";
-import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 
 const ClientReservation = () => {
   const { toast } = useToast();
@@ -29,12 +27,7 @@ const ClientReservation = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
-  const authData = useSimpleAuth();
-  console.log('🔍 useSimpleAuth returned:', authData);
-  const { isAdmin, isEmployee, user, loading } = authData;
   
-  // Debug logs para verificar autenticación
-  console.log('🔍 Auth Debug:', { isAdmin, isEmployee, user, loading });
   // hooks para servicios y bonos se declaran después de formData
   
   const [formData, setFormData] = useState({
@@ -314,20 +307,6 @@ const ClientReservation = () => {
     }
   };
 
-  // Function to handle client selection from AdminClientSelector
-  const handleClientSelect = (client: any) => {
-    setFormData(prev => ({
-      ...prev,
-      clientName: `${client.first_name} ${client.last_name}`,
-      clientEmail: client.email,
-      clientPhone: client.phone || ''
-    }));
-    
-    // Also trigger existing bookings check
-    setTimeout(() => {
-      checkExistingBookings();
-    }, 100);
-  };
 
 
   // Loading state
@@ -469,33 +448,6 @@ const ClientReservation = () => {
                    />
                  </div>
 
-                 {/* Admin Client Selector - Integrado en la sección de información del cliente */}
-                  {/* Admin Client Selector - Solo para administradores únicamente */}
-                  {(() => {
-                    console.log('🔍 Checking admin status for selector:', { isAdmin, isEmployee, user });
-                    // Solo mostrar si hay sesión de ADMIN válida en localStorage (no empleados)
-                    const hasValidAdminSession = user && user.role === 'admin' && !loading;
-                    console.log('🔍 Has valid admin session:', hasValidAdminSession);
-                    return hasValidAdminSession;
-                  })() && (
-                    <div className="pt-4 border-t border-primary/20">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-primary">
-                            <Users className="h-4 w-4" />
-                            <span className="text-sm font-medium">Seleccionar Cliente Existente</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
-                            🔐 Sesión Admin: {user?.email}
-                          </div>
-                        </div>
-                        <AdminClientSelector onClientSelect={handleClientSelect} />
-                        <p className="text-xs text-muted-foreground italic">
-                          💡 Como {user?.role}, puedes buscar y seleccionar un cliente existente
-                        </p>
-                      </div>
-                    </div>
-                  )}
                  
                </div>
 
