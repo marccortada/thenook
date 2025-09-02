@@ -244,7 +244,7 @@ export default function BookingManagement() {
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="grid gap-6">
             {bookings.map((booking) => (
-              <Card key={booking.id} className="shadow-md">
+              <Card key={booking.id} className="shadow-md booking-card">
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start">
                     <div className="space-y-2">
@@ -344,14 +344,24 @@ export default function BookingManagement() {
                       onClick={(e) => {
                         console.log('Cobrar Cita clicked - booking:', booking);
                         
-                        // Obtener la posición del botón clickeado
-                        const buttonRect = e.currentTarget.getBoundingClientRect();
-                        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                        
-                        setModalPosition({
-                          top: buttonRect.top + scrollTop - 100, // 100px arriba del botón
-                          left: Math.max(20, buttonRect.left - 200) // Centrado respecto al botón, mínimo 20px del borde
-                        });
+                        // Obtener la posición de toda la tarjeta de reserva (el Card parent)
+                        const cardElement = e.currentTarget.closest('.booking-card');
+                        if (cardElement) {
+                          const cardRect = cardElement.getBoundingClientRect();
+                          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                          const windowWidth = window.innerWidth;
+                          
+                          // Calcular el centro de la tarjeta
+                          const cardCenterX = cardRect.left + (cardRect.width / 2);
+                          
+                          // Ancho del modal (responsive)
+                          const modalWidth = windowWidth < 768 ? windowWidth - 40 : Math.min(600, windowWidth - 40);
+                          
+                          setModalPosition({
+                            top: cardRect.top + scrollTop - 20, // 20px arriba de la tarjeta
+                            left: Math.max(20, Math.min(cardCenterX - (modalWidth / 2), windowWidth - modalWidth - 20))
+                          });
+                        }
                         
                         setSelectedBooking(booking);
                         setShowPaymentDialog(true);
