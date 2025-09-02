@@ -527,7 +527,7 @@ const ClientReservation = () => {
                          type="button"
                          onClick={() => setShowCenterDropdown(!showCenterDropdown)}
                          className={cn(
-                           "w-full justify-between text-left font-normal border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md flex items-center",
+                           "w-full justify-between text-left font-normal border border-input bg-background px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md flex items-center min-h-[40px]",
                            !formData.center && "text-muted-foreground"
                          )}
                        >
@@ -546,7 +546,7 @@ const ClientReservation = () => {
                        </button>
                        
                        {showCenterDropdown && (
-                         <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                         <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto min-w-full">
                            {centers.map((center) => (
                              <button
                                key={center.id}
@@ -556,7 +556,7 @@ const ClientReservation = () => {
                                  setSelection(null);
                                  setShowCenterDropdown(false);
                                }}
-                               className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 text-sm"
+                               className="w-full text-left px-3 py-2.5 hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 text-sm min-h-[40px] transition-colors"
                              >
                                <MapPin className="h-3 w-3" />
                                <span>{center.name}</span>
@@ -649,7 +649,7 @@ const ClientReservation = () => {
                              type="button"
                              onClick={() => setShowTimeDropdown(!showTimeDropdown)}
                              className={cn(
-                               "w-full justify-between text-left font-normal border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md flex items-center",
+                               "w-full justify-between text-left font-normal border border-input bg-background px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md flex items-center min-h-[40px]",
                                !formData.time && "text-muted-foreground"
                              )}
                            >
@@ -663,7 +663,7 @@ const ClientReservation = () => {
                            </button>
                            
                            {showTimeDropdown && (
-                             <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                             <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto min-w-full">
                                {timeSlots.map((time) => (
                                  <button
                                    key={time}
@@ -672,7 +672,7 @@ const ClientReservation = () => {
                                      setFormData({ ...formData, time });
                                      setShowTimeDropdown(false);
                                    }}
-                                   className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 text-sm"
+                                   className="w-full text-left px-3 py-2.5 hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 text-sm min-h-[40px] transition-colors"
                                  >
                                    <Clock className="h-3 w-3" />
                                    <span>{time}</span>
