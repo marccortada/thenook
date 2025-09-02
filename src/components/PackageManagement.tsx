@@ -47,6 +47,7 @@ const PackageManagement = () => {
   const [editingGiftCard, setEditingGiftCard] = useState<GiftCard | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('bonos-all');
   
   // Hooks para bonos
   const { packages, loading, error, refetch, createPackage, usePackageSession, cancelPackage, updatePackageNotes } = useClientPackages(selectedClient);
@@ -315,17 +316,13 @@ const PackageManagement = () => {
       </div>
 
       {/* Navigation - Mobile Dropdown / Desktop Tabs */}
-      <Tabs defaultValue="bonos-all" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Mobile Dropdown */}
         <div className="sm:hidden mb-4">
           <Card>
             <CardContent className="p-4">
               <Label className="text-sm font-medium mb-2 block">Filtrar por:</Label>
-              <Select defaultValue="bonos-all" onValueChange={(value) => {
-                // Find the tab trigger and click it
-                const tabTrigger = document.querySelector(`[value="${value}"]`) as HTMLButtonElement;
-                if (tabTrigger) tabTrigger.click();
-              }}>
+              <Select value={activeTab} onValueChange={setActiveTab}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
