@@ -518,7 +518,13 @@ const ReservationSystem = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un centro" />
                   </SelectTrigger>
-                  <SelectContent className="z-[100] bg-background border shadow-lg">
+                  <SelectContent 
+                    className="z-[100] bg-background border shadow-lg" 
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    sideOffset={4}
+                  >
                     {centers.map((center) => (
                       <SelectItem key={center.id} value={center.id}>
                         <div className="flex items-center space-x-2">
