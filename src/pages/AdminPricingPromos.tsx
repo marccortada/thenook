@@ -758,7 +758,7 @@ export default function AdminPricingPromos() {
                         <div>
                           <Label htmlFor="edit-service-status">Estado</Label>
                           <Select
-                            value={String(editingService.active)}
+                            value={String(editingService.active ?? true)}
                             onValueChange={(value) => setEditingService({ ...editingService, active: value === 'true' })}
                           >
                             <SelectTrigger>
