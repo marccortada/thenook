@@ -341,8 +341,10 @@ export default function BookingManagement() {
 
                     <Button
                       onClick={() => {
+                        console.log('Cobrar Cita clicked - booking:', booking);
                         setSelectedBooking(booking);
                         setShowPaymentDialog(true);
+                        console.log('Payment dialog should be showing:', true);
                       }}
                       className="flex items-center gap-2"
                       variant="outline"
