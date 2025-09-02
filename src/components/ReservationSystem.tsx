@@ -518,7 +518,7 @@ const ReservationSystem = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un centro" />
                   </SelectTrigger>
-                  <SelectContent className="z-[100] bg-background border shadow-lg">
+                  <SelectContent className="z-50 bg-popover border border-border shadow-lg">
                     {centers.map((center) => (
                       <SelectItem key={center.id} value={center.id}>
                         <div className="flex items-center space-x-2">
@@ -580,14 +580,14 @@ const ReservationSystem = () => {
                         {formData.date ? format(formData.date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-auto p-0 z-[200] bg-background border shadow-xl" 
-                      align="start"
-                      side="bottom"
-                      sideOffset={4}
-                      avoidCollisions={true}
-                      sticky="always"
-                    >
+                     <PopoverContent 
+                       className="w-auto p-0 z-50 bg-popover border border-border shadow-lg" 
+                       align="start"
+                       side="bottom"
+                       sideOffset={4}
+                       alignOffset={0}
+                       avoidCollisions={true}
+                     >
                       <Calendar
                         mode="single"
                         selected={formData.date}
@@ -627,15 +627,15 @@ const ReservationSystem = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona una hora" />
                     </SelectTrigger>
-                    <SelectContent 
-                      className="z-[200] bg-background border shadow-xl max-h-60 overflow-y-auto"
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      sideOffset={4}
-                      avoidCollisions={true}
-                      sticky="always"
-                    >
+                     <SelectContent 
+                       className="z-50 bg-popover border border-border shadow-lg max-h-60 overflow-y-auto"
+                       position="popper"
+                       side="bottom"
+                       align="start"
+                       sideOffset={4}
+                       alignOffset={0}
+                       avoidCollisions={true}
+                     >
                       {timeSlots.map((time) => (
                         <SelectItem key={time} value={time}>
                           {time}
