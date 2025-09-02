@@ -20,7 +20,7 @@ import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import AdminClientSelector from "@/components/AdminClientSelector";
-import { useAuth } from "@/hooks/useAuth";
+import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 
 const ClientReservation = () => {
   const { toast } = useToast();
@@ -29,10 +29,10 @@ const ClientReservation = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
-  const { isAdmin, profile, user, loading } = useAuth();
+  const { isAdmin, isEmployee, user, loading } = useSimpleAuth();
   
   // Debug logs para verificar autenticación
-  console.log('🔍 Auth Debug:', { isAdmin, profile, user, loading });
+  console.log('🔍 Auth Debug:', { isAdmin, isEmployee, user, loading });
   // hooks para servicios y bonos se declaran después de formData
   
   const [formData, setFormData] = useState({
@@ -468,23 +468,27 @@ const ClientReservation = () => {
                  </div>
 
                  {/* Admin Client Selector - Integrado en la sección de información del cliente */}
+                  {/* Admin Client Selector - Solo para staff autenticado con localStorage */}
                   {(() => {
-                    console.log('🔍 Checking admin status for selector:', { isAdmin, profile: profile?.role, user });
-                    return isAdmin && profile?.role === 'admin' && user && !loading;
+                    console.log('🔍 Checking admin status for selector:', { isAdmin, isEmployee, user });
+                    // Solo mostrar si hay sesión de staff válida en localStorage
+                    const hasValidStaffSession = user && (user.role === 'admin' || user.role === 'employee') && !loading;
+                    console.log('🔍 Has valid staff session:', hasValidStaffSession);
+                    return hasValidStaffSession;
                   })() && (
-                   <div className="pt-4 border-t border-primary/20">
-                     <div className="space-y-3">
-                       <div className="flex items-center gap-2 text-primary">
-                         <Users className="h-4 w-4" />
-                         <span className="text-sm font-medium">Seleccionar Cliente Existente</span>
-                       </div>
-                       <AdminClientSelector onClientSelect={handleClientSelect} />
-                       <p className="text-xs text-muted-foreground italic">
-                         💡 Como administrador, puedes buscar y seleccionar un cliente existente
-                       </p>
-                     </div>
-                   </div>
-                 )}
+                    <div className="pt-4 border-t border-primary/20">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-primary">
+                          <Users className="h-4 w-4" />
+                          <span className="text-sm font-medium">Seleccionar Cliente Existente</span>
+                        </div>
+                        <AdminClientSelector onClientSelect={handleClientSelect} />
+                        <p className="text-xs text-muted-foreground italic">
+                          💡 Como {user?.role}, puedes buscar y seleccionar un cliente existente
+                        </p>
+                      </div>
+                    </div>
+                  )}
                  
                </div>
 
