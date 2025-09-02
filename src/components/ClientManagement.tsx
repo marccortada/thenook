@@ -165,7 +165,7 @@ const ClientManagement = () => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
           <Users className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -347,87 +347,91 @@ const ClientManagement = () => {
 
           {selectedClient && (
             <Tabs defaultValue="info" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="info">Información</TabsTrigger>
-                <TabsTrigger value="bookings">Reservas</TabsTrigger>
-                <TabsTrigger value="notes">Notas</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 h-auto">
+                <TabsTrigger value="info" className="text-xs sm:text-sm px-2 py-2">Info</TabsTrigger>
+                <TabsTrigger value="bookings" className="text-xs sm:text-sm px-2 py-2">Reservas</TabsTrigger>
+                <TabsTrigger value="notes" className="text-xs sm:text-sm px-2 py-2">Notas</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="info" className="space-y-4">
+              <TabsContent value="info" className="space-y-3 sm:space-y-4 mt-4">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Datos del Cliente</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Datos del Cliente</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <CardContent className="space-y-3 sm:space-y-4 p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <Label htmlFor="first_name">Nombre</Label>
+                        <Label htmlFor="first_name" className="text-sm">Nombre</Label>
                         <Input
                           id="first_name"
                           value={editingClient.first_name || ""}
                           onChange={(e) => setEditingClient({ ...editingClient, first_name: e.target.value })}
+                          className="mt-1"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="last_name">Apellidos</Label>
+                        <Label htmlFor="last_name" className="text-sm">Apellidos</Label>
                         <Input
                           id="last_name"
                           value={editingClient.last_name || ""}
                           onChange={(e) => setEditingClient({ ...editingClient, last_name: e.target.value })}
+                          className="mt-1"
                         />
                       </div>
                     </div>
                     
                     <div>
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email" className="text-sm">Email</Label>
                       <Input
                         id="email"
                         type="email"
                         value={editingClient.email || ""}
                         onChange={(e) => setEditingClient({ ...editingClient, email: e.target.value })}
+                        className="mt-1"
                       />
                     </div>
                     
                     <div>
-                      <Label htmlFor="phone">Teléfono</Label>
+                      <Label htmlFor="phone" className="text-sm">Teléfono</Label>
                       <Input
                         id="phone"
                         value={editingClient.phone || ""}
                         onChange={(e) => setEditingClient({ ...editingClient, phone: e.target.value })}
+                        className="mt-1"
                       />
                     </div>
 
-                    <Button onClick={handleUpdateClient} className="w-full">
+                    <Button onClick={handleUpdateClient} className="w-full mt-4">
                       <Edit className="h-4 w-4 mr-2" />
-                      Guardar Cambios
+                      <span className="text-sm">Guardar Cambios</span>
                     </Button>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Estadísticas</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Estadísticas</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <p className="text-2xl font-bold text-primary">{selectedClient.total_bookings}</p>
-                        <p className="text-sm text-muted-foreground">Total Reservas</p>
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
+                      <div className="p-3 bg-primary/5 rounded-lg">
+                        <p className="text-xl sm:text-2xl font-bold text-primary">{selectedClient.total_bookings}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Total Reservas</p>
                       </div>
-                      <div>
-                        <p className="text-2xl font-bold text-green-600">
+                      <div className="p-3 bg-green-50 rounded-lg">
+                        <p className="text-xl sm:text-2xl font-bold text-green-600">
                           €{((selectedClient.total_spent || 0) / 100).toFixed(2)}
                         </p>
-                        <p className="text-sm text-muted-foreground">Total Gastado</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Total Gastado</p>
                       </div>
-                      <div>
-                        <p className="text-2xl font-bold text-blue-600">
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <p className="text-xl sm:text-2xl font-bold text-blue-600">
                           {selectedClient.last_booking 
                             ? format(new Date(selectedClient.last_booking), 'dd/MM/yy', { locale: es })
                             : 'N/A'
                           }
                         </p>
-                        <p className="text-sm text-muted-foreground">Última Visita</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Última Visita</p>
                       </div>
                     </div>
                   </CardContent>
