@@ -79,58 +79,60 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
         </div>
 
         {/* Client List */}
-        <div className="flex-1 min-h-0 -mx-2 px-2">
-          <ScrollArea className="h-full">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-sm text-muted-foreground">Cargando clientes...</div>
-              </div>
-            ) : filteredClients.length === 0 ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-sm text-muted-foreground">
-                  {searchQuery ? 'No se encontraron clientes' : 'No hay clientes registrados'}
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full max-h-[calc(90vh-200px)] sm:max-h-[calc(85vh-200px)]">
+            <div className="px-1">
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-sm text-muted-foreground">Cargando clientes...</div>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-3 py-2">
-                {filteredClients.map((client) => (
-                  <div
-                    key={client.id}
-                    className="border rounded-lg p-3 hover:bg-muted/50 cursor-pointer transition-colors active:bg-muted"
-                    onClick={() => handleClientSelect(client)}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <h4 className="font-medium text-sm truncate flex-1">
-                        {client.first_name} {client.last_name}
-                      </h4>
-                      <Button variant="outline" size="sm" className="text-xs px-3 py-1 shrink-0">
-                        Seleccionar
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-1">
-                      {client.email && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Mail className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{client.email}</span>
-                        </div>
-                      )}
-                      {client.phone && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Phone className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{client.phone}</span>
-                        </div>
-                      )}
-                      {client.total_bookings && client.total_bookings > 1 && (
-                        <Badge variant="secondary" className="text-xs">
-                          {client.total_bookings} visitas
-                        </Badge>
-                      )}
-                    </div>
+              ) : filteredClients.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-sm text-muted-foreground">
+                    {searchQuery ? 'No se encontraron clientes' : 'No hay clientes registrados'}
                   </div>
-              ))}
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="space-y-3 py-2 pb-4">
+                  {filteredClients.map((client) => (
+                    <div
+                      key={client.id}
+                      className="border rounded-lg p-3 hover:bg-muted/50 cursor-pointer transition-colors active:bg-muted"
+                      onClick={() => handleClientSelect(client)}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h4 className="font-medium text-sm truncate flex-1">
+                          {client.first_name} {client.last_name}
+                        </h4>
+                        <Button variant="outline" size="sm" className="text-xs px-3 py-1 shrink-0">
+                          Seleccionar
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        {client.email && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Mail className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{client.email}</span>
+                          </div>
+                        )}
+                        {client.phone && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Phone className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{client.phone}</span>
+                          </div>
+                        )}
+                        {client.total_bookings && client.total_bookings > 1 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {client.total_bookings} visitas
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </ScrollArea>
         </div>
 
