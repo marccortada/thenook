@@ -1069,16 +1069,23 @@ const AdvancedCalendarView = () => {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecciona centro" />
               </SelectTrigger>
-              <SelectContent>
-                {centers.map((center) => (
-                  <SelectItem key={center.id} value={center.id}>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      {center.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
+               <SelectContent 
+                 position="popper"
+                 side="bottom"
+                 align="start"
+                 sideOffset={4}
+                 avoidCollisions={true}
+                 collisionPadding={20}
+               >
+                 {centers.map((center) => (
+                   <SelectItem key={center.id} value={center.id}>
+                     <div className="flex items-center gap-2">
+                       <MapPin className="w-4 h-4" />
+                       {center.name}
+                     </div>
+                   </SelectItem>
+                 ))}
+               </SelectContent>
             </Select>
           </div>
 
@@ -1096,17 +1103,24 @@ const AdvancedCalendarView = () => {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los estados</SelectItem>
-                  <SelectItem value="no_show">Solo No Shows</SelectItem>
-                  <SelectItem value="cancelled">Solo Canceladas</SelectItem>
-                  <SelectItem value="pending">Solo Pendientes</SelectItem>
-                  <SelectItem value="confirmed">Solo Confirmadas</SelectItem>
-                  <SelectItem value="requested">Solo Solicitadas</SelectItem>
-                  <SelectItem value="new">Solo Nuevas</SelectItem>
-                  <SelectItem value="online">Solo Online</SelectItem>
-                  <SelectItem value="completed">Solo Completadas</SelectItem>
-                </SelectContent>
+                 <SelectContent 
+                   position="popper"
+                   side="bottom"
+                   align="start"
+                   sideOffset={4}
+                   avoidCollisions={true}
+                   collisionPadding={20}
+                 >
+                   <SelectItem value="all">Todos los estados</SelectItem>
+                   <SelectItem value="no_show">Solo No Shows</SelectItem>
+                   <SelectItem value="cancelled">Solo Canceladas</SelectItem>
+                   <SelectItem value="pending">Solo Pendientes</SelectItem>
+                   <SelectItem value="confirmed">Solo Confirmadas</SelectItem>
+                   <SelectItem value="requested">Solo Solicitadas</SelectItem>
+                   <SelectItem value="new">Solo Nuevas</SelectItem>
+                   <SelectItem value="online">Solo Online</SelectItem>
+                   <SelectItem value="completed">Solo Completadas</SelectItem>
+                 </SelectContent>
               </Select>
             </div>
           )}
@@ -1300,7 +1314,14 @@ const AdvancedCalendarView = () => {
                     <SelectTrigger className="h-9 sm:h-10">
                       <SelectValue placeholder="Seleccionar servicio" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent 
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      sideOffset={4}
+                      avoidCollisions={true}
+                      collisionPadding={20}
+                    >
                       {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
                         <SelectItem key={service.id} value={service.id}>
                           {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
@@ -1452,7 +1473,14 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar servicio" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent 
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        sideOffset={4}
+                        avoidCollisions={true}
+                        collisionPadding={20}
+                      >
                         {services.filter(s => s.center_id === (editingBooking.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
                           <SelectItem key={service.id} value={service.id}>
                             {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
@@ -1472,11 +1500,18 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                    <SelectContent>
-                      {timeOptions5m.map((t) => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                      ))}
-                    </SelectContent>
+                     <SelectContent 
+                       position="popper"
+                       side="bottom"
+                       align="start"
+                       sideOffset={4}
+                       avoidCollisions={true}
+                       collisionPadding={20}
+                     >
+                       {timeOptions5m.map((t) => (
+                         <SelectItem key={t} value={t}>{t}</SelectItem>
+                       ))}
+                     </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -1492,13 +1527,20 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pendiente</SelectItem>
-                        <SelectItem value="paid">Pagado</SelectItem>
-                        <SelectItem value="failed">Fallido</SelectItem>
-                        <SelectItem value="refunded">Reembolsado</SelectItem>
-                        <SelectItem value="partial_refund">Reembolso Parcial</SelectItem>
-                      </SelectContent>
+                       <SelectContent 
+                         position="popper"
+                         side="bottom"
+                         align="start"
+                         sideOffset={4}
+                         avoidCollisions={true}
+                         collisionPadding={20}
+                       >
+                         <SelectItem value="pending">Pendiente</SelectItem>
+                         <SelectItem value="paid">Pagado</SelectItem>
+                         <SelectItem value="failed">Fallido</SelectItem>
+                         <SelectItem value="refunded">Reembolsado</SelectItem>
+                         <SelectItem value="partial_refund">Reembolso Parcial</SelectItem>
+                       </SelectContent>
                     </Select>
                   </div>
                   
@@ -1508,16 +1550,23 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pendiente</SelectItem>
-                        <SelectItem value="requested">Solicitada</SelectItem>
-                        <SelectItem value="confirmed">Confirmada</SelectItem>
-                        <SelectItem value="new">Nueva</SelectItem>
-                        <SelectItem value="online">Online</SelectItem>
-                        <SelectItem value="completed">Completada</SelectItem>
-                        <SelectItem value="cancelled">Cancelada</SelectItem>
-                        <SelectItem value="no_show">No Show</SelectItem>
-                      </SelectContent>
+                       <SelectContent 
+                         position="popper"
+                         side="bottom"
+                         align="start"
+                         sideOffset={4}
+                         avoidCollisions={true}
+                         collisionPadding={20}
+                       >
+                         <SelectItem value="pending">Pendiente</SelectItem>
+                         <SelectItem value="requested">Solicitada</SelectItem>
+                         <SelectItem value="confirmed">Confirmada</SelectItem>
+                         <SelectItem value="new">Nueva</SelectItem>
+                         <SelectItem value="online">Online</SelectItem>
+                         <SelectItem value="completed">Completada</SelectItem>
+                         <SelectItem value="cancelled">Cancelada</SelectItem>
+                         <SelectItem value="no_show">No Show</SelectItem>
+                       </SelectContent>
                     </Select>
                   </div>
                 </div>
