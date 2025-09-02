@@ -757,21 +757,18 @@ export default function AdminPricingPromos() {
                         </div>
                         <div>
                           <Label htmlFor="edit-service-status">Estado</Label>
-                          <Select
-                            value={String(editingService.active ?? true)}
-                            onValueChange={(value) => {
-                              console.log('Estado changed to:', value);
-                              setEditingService({ ...editingService, active: value === 'true' });
+                          <select
+                            id="edit-service-status"
+                            value={editingService.active ? 'true' : 'false'}
+                            onChange={(e) => {
+                              console.log('Estado changed to:', e.target.value);
+                              setEditingService({ ...editingService, active: e.target.value === 'true' });
                             }}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent position="item-aligned" className="z-50 bg-background">
-                              <SelectItem value="true">Activo</SelectItem>
-                              <SelectItem value="false">Inactivo</SelectItem>
-                            </SelectContent>
-                          </Select>
+                            <option value="true">Activo</option>
+                            <option value="false">Inactivo</option>
+                          </select>
                         </div>
                         <div className="col-span-2">
                           <div className="flex items-center space-x-2 mb-2">
