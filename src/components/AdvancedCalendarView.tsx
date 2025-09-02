@@ -1114,14 +1114,17 @@ const AdvancedCalendarView = () => {
                         </Button>
                       </PopoverTrigger>
                        <PopoverContent 
-                        className="w-auto p-0 z-[9999] bg-background shadow-2xl border"
+                        className="w-auto p-0 z-[9999] bg-background shadow-2xl border-2"
                         align="start"
                         side="bottom"
-                        sideOffset={4}
+                        sideOffset={8}
                         avoidCollisions={false}
-                        collisionPadding={0}
-                        sticky="always"
-                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        collisionPadding={16}
+                        style={{ 
+                          position: 'absolute',
+                          transform: 'translateZ(0)',
+                          backfaceVisibility: 'hidden'
+                        }}
                       >
                         <Calendar
                           mode="single"
@@ -1149,13 +1152,18 @@ const AdvancedCalendarView = () => {
                         <SelectValue placeholder="Hora" />
                       </SelectTrigger>
                        <SelectContent 
-                        className="z-[9999] bg-background border shadow-2xl max-h-[300px] overflow-y-auto fixed"
+                        className="z-[9999] bg-background border-2 shadow-2xl max-h-[300px] overflow-y-auto"
                         position="popper"
                         side="bottom"
                         align="start"
-                        sideOffset={4}
+                        sideOffset={8}
                         avoidCollisions={false}
-                        collisionPadding={0}
+                        collisionPadding={16}
+                        style={{ 
+                          position: 'absolute',
+                          transform: 'translateZ(0)',
+                          backfaceVisibility: 'hidden'
+                        }}
                       >
                         {timeOptions5m.map((t) => (
                           <SelectItem key={t} value={t}>{t}</SelectItem>
