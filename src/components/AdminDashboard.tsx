@@ -22,6 +22,8 @@ import AdvancedCalendarView from "@/components/AdvancedCalendarView";
 import ClientManagement from "@/components/ClientManagement";
 import PackageManagement from "@/components/PackageManagement";
 import GiftCardManagement from "@/components/GiftCardManagement";
+import Analytics from "@/components/Analytics";
+import AdvancedDashboard from "@/components/AdvancedDashboard";
 
 
 import NotificationCenter from "@/components/NotificationCenter";
@@ -84,6 +86,20 @@ const AdminDashboard = () => {
       icon: Gift,
       component: GiftCardManagement,
       roles: ["admin", "employee"]
+    },
+    {
+      id: "analytics",
+      label: "Analytics",
+      icon: TrendingUp,
+      component: Analytics,
+      roles: ["admin"]
+    },
+    {
+      id: "advanced-analytics",
+      label: "Dashboard Avanzado",
+      icon: BarChart3,
+      component: AdvancedDashboard,
+      roles: ["admin"]
     },
     {
       id: "notificaciones",
