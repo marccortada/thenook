@@ -143,7 +143,7 @@ export default function AdminClientSelector({ onClientSelect }: AdminClientSelec
           Ver Clientes Existentes
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-hidden flex flex-col w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl h-[90vh] sm:h-[80vh]">
+      <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />

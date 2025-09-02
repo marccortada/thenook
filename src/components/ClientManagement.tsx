@@ -48,6 +48,13 @@ const ClientManagement = () => {
 
   // Use the new hook
   const { clients, loading, updateClient, fetchClientBookings, refetch } = useClients();
+  // Debug logs para diagnosticar problemas de carga
+  console.log('🔍 ClientManagement Debug:', {
+    clientsCount: clients?.length || 0,
+    loading,
+    error: 'Revisar en useClients hook',
+    clients: clients?.slice(0, 3) // Solo primeros 3 clientes para no saturar console
+  });
 
   // Filter clients based on search query
   useEffect(() => {
@@ -64,14 +71,6 @@ const ClientManagement = () => {
   }, [searchQuery, clients]);
 
   const handleClientClick = async (client: Client) => {
-    setSelectedClient(client);
-    setEditingClient(client);
-    const bookings = await fetchClientBookings(client.id);
-    setClientBookings(bookings);
-    setIsDialogOpen(true);
-  };
-
-  const openClientDialog = async (client: Client) => {
     setSelectedClient(client);
     setEditingClient(client);
     const bookings = await fetchClientBookings(client.id);
@@ -105,8 +104,7 @@ const ClientManagement = () => {
       toast({ title: 'Error', description: e.message || 'No se pudo crear el cliente', variant: 'destructive' });
     }
   };
-
-  const { notes, createNote, refetch: refetchNotes } = useClientNotes(selectedClient?.id);
+  const { notes, createNote, refetch: refetchNotes, error: notesError } = useClientNotes(selectedClient?.id);
 
   const handleCreateNote = async () => {
     if (!selectedClient || !newNote.title || !newNote.content) return;
@@ -154,6 +152,9 @@ const ClientManagement = () => {
     }
   };
 
+  // Debug visual para verificar que el componente se renderiza
+  console.log('🔍 ClientManagement se está renderizando');
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -164,15 +165,15 @@ const ClientManagement = () => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-          <Users className="h-5 w-5 sm:h-6 sm:w-6" />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Users className="h-6 w-6" />
           Gestión de Clientes
         </h2>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="flex items-center gap-2">
           <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className="w-48">
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
             <SelectContent>
@@ -186,12 +187,11 @@ const ClientManagement = () => {
             variant="outline"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
             aria-label="Cambiar orden"
-            className="w-full sm:w-auto"
           >
             <ArrowUpDown className="h-4 w-4 mr-2" />
             {sortOrder === 'asc' ? 'Asc' : 'Desc'}
           </Button>
-          <Button onClick={() => setShowCreateClient(true)} className="w-full sm:w-auto">
+          <Button onClick={() => setShowCreateClient(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nuevo cliente
           </Button>
@@ -210,56 +210,32 @@ const ClientManagement = () => {
       </div>
 
       <Dialog open={showCreateClient} onOpenChange={setShowCreateClient}>
-        <DialogContent className="max-w-[95vw] sm:max-w-lg mx-4">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Nuevo Cliente</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="nc_name">Nombre</Label>
-                <Input 
-                  id="nc_name" 
-                  value={newClient.first_name} 
-                  onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })} 
-                />
+                <Input id="nc_name" value={newClient.first_name} onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })} />
               </div>
               <div>
                 <Label htmlFor="nc_last">Apellidos</Label>
-                <Input 
-                  id="nc_last" 
-                  value={newClient.last_name} 
-                  onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })} 
-                />
+                <Input id="nc_last" value={newClient.last_name} onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })} />
               </div>
             </div>
             <div>
               <Label htmlFor="nc_email">Email</Label>
-              <Input 
-                id="nc_email" 
-                type="email" 
-                value={newClient.email} 
-                onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} 
-              />
+              <Input id="nc_email" type="email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} />
             </div>
             <div>
               <Label htmlFor="nc_phone">Teléfono</Label>
-              <Input 
-                id="nc_phone" 
-                value={newClient.phone} 
-                onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} 
-              />
+              <Input id="nc_phone" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} />
             </div>
-            <div className="flex flex-col sm:flex-row justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowCreateClient(false)}>
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleCreateClient} 
-                disabled={!newClient.first_name || !newClient.email}
-              >
-                Crear
-              </Button>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreateClient(false)}>Cancelar</Button>
+              <Button onClick={handleCreateClient} disabled={!newClient.first_name || !newClient.email}>Crear</Button>
             </div>
           </div>
         </DialogContent>
@@ -304,41 +280,41 @@ const ClientManagement = () => {
             <Card 
               key={client.id} 
               className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => openClientDialog(client)}
+              onClick={() => handleClientClick(client)}
             >
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarFallback>
                         {client.first_name.charAt(0)}{client.last_name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-sm sm:text-base truncate">
+                    <div>
+                      <h3 className="font-medium">
                         {client.first_name} {client.last_name}
                       </h3>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1 truncate">
-                          <Mail className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">{client.email}</span>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {client.email}
                         </div>
                         {client.phone && (
                           <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3 flex-shrink-0" />
-                            <span>{client.phone}</span>
+                            <Phone className="h-3 w-3" />
+                            {client.phone}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex flex-col items-start sm:items-end text-left sm:text-right w-full sm:w-auto">
-                    <div className="flex flex-wrap gap-1 sm:gap-2 mb-2">
-                      <Badge variant="secondary" className="text-xs">
+                  <div className="text-right">
+                    <div className="flex gap-2 mb-2">
+                      <Badge variant="secondary">
                         {client.total_bookings} reservas
                       </Badge>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline">
                         €{((client.total_spent || 0) / 100).toFixed(2)}
                       </Badge>
                     </div>
@@ -357,7 +333,7 @@ const ClientManagement = () => {
 
       {/* Client Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
@@ -367,10 +343,10 @@ const ClientManagement = () => {
 
           {selectedClient && (
             <Tabs defaultValue="info" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 h-auto">
-                <TabsTrigger value="info" className="text-xs sm:text-sm">Información</TabsTrigger>
-                <TabsTrigger value="bookings" className="text-xs sm:text-sm">Reservas</TabsTrigger>
-                <TabsTrigger value="notes" className="text-xs sm:text-sm">Notas</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="info">Información</TabsTrigger>
+                <TabsTrigger value="bookings">Reservas</TabsTrigger>
+                <TabsTrigger value="notes">Notas</TabsTrigger>
               </TabsList>
 
               <TabsContent value="info" className="space-y-4">
@@ -378,8 +354,8 @@ const ClientManagement = () => {
                   <CardHeader>
                     <CardTitle className="text-lg">Datos del Cliente</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4 p-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="first_name">Nombre</Label>
                         <Input
@@ -429,7 +405,7 @@ const ClientManagement = () => {
                     <CardTitle className="text-lg">Estadísticas</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
                         <p className="text-2xl font-bold text-primary">{selectedClient.total_bookings}</p>
                         <p className="text-sm text-muted-foreground">Total Reservas</p>
@@ -442,7 +418,10 @@ const ClientManagement = () => {
                       </div>
                       <div>
                         <p className="text-2xl font-bold text-blue-600">
-                          {selectedClient.last_booking ? format(new Date(selectedClient.last_booking), 'dd/MM', { locale: es }) : '-'}
+                          {selectedClient.last_booking 
+                            ? format(new Date(selectedClient.last_booking), 'dd/MM/yy', { locale: es })
+                            : 'N/A'
+                          }
                         </p>
                         <p className="text-sm text-muted-foreground">Última Visita</p>
                       </div>
@@ -457,54 +436,50 @@ const ClientManagement = () => {
                     <CardTitle className="text-lg">Historial de Reservas</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ScrollArea className="h-[400px]">
-                      {clientBookings.length === 0 ? (
-                        <div className="text-center py-8">
-                          <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                          <p className="text-muted-foreground">Este cliente no tiene reservas aún</p>
-                        </div>
-                      ) : (
+                    {clientBookings.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        No hay reservas registradas
+                      </p>
+                    ) : (
+                      <ScrollArea className="h-[400px]">
                         <div className="space-y-3">
                           {clientBookings.map((booking) => (
                             <div key={booking.id} className="border rounded-lg p-3">
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
-                                <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
                                   <div className="flex items-center gap-2 mb-1">
                                     <Calendar className="h-4 w-4" />
-                                    <span className="font-medium text-sm">
-                                      {format(new Date(booking.booking_datetime), 'PPP', { locale: es })}
+                                    <span className="font-medium">
+                                      {format(new Date(booking.booking_datetime), 'dd/MM/yyyy HH:mm', { locale: es })}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <MapPin className="h-3 w-3" />
-                                    <span>{booking.center_name}</span>
+                                    {booking.center_name}
                                   </div>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Badge 
-                                    className={`text-xs ${getStatusColor(booking.status)}`}
-                                  >
+                                <div className="text-right">
+                                  <Badge className={getStatusColor(booking.status)}>
                                     {getStatusText(booking.status)}
                                   </Badge>
-                                  <span className="text-sm font-medium">
-                                    {booking.service_name}
-                                  </span>
+                                  <p className="text-sm font-medium mt-1">
+                                    €{(booking.total_price_cents / 100).toFixed(2)}
+                                  </p>
                                 </div>
                               </div>
-                              <div className="text-sm text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                  <Clock className="h-3 w-3" />
-                                  <span>
-                                    {format(new Date(booking.booking_datetime), 'HH:mm', { locale: es })} - 
-                                    {booking.service_name}
-                                  </span>
-                                </div>
+                              
+                              <div className="text-sm">
+                                <p><strong>Servicio:</strong> {booking.service_name}</p>
+                                <p><strong>Duración:</strong> {booking.duration_minutes} min</p>
+                                {booking.notes && (
+                                  <p><strong>Notas:</strong> {booking.notes}</p>
+                                )}
                               </div>
                             </div>
                           ))}
                         </div>
-                      )}
-                    </ScrollArea>
+                      </ScrollArea>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -514,52 +489,66 @@ const ClientManagement = () => {
                   <CardHeader>
                     <CardTitle className="text-lg">Añadir Nueva Nota</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="note_title">Título</Label>
-                        <Input
-                          id="note_title"
-                          value={newNote.title}
-                          onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
-                          placeholder="Título de la nota"
-                        />
-                      </div>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="note_title">Título</Label>
+                      <Input
+                        id="note_title"
+                        value={newNote.title}
+                        onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+                        placeholder="Título de la nota"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="note_category">Categoría</Label>
-                        <Select 
-                          value={newNote.category} 
-                          onValueChange={(value) => setNewNote({ ...newNote, category: value })}
-                        >
+                        <Select value={newNote.category} onValueChange={(value) => setNewNote({ ...newNote, category: value })}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="general">General</SelectItem>
+                            <SelectItem value="preferences">Preferencias</SelectItem>
                             <SelectItem value="medical">Médico</SelectItem>
-                            <SelectItem value="preference">Preferencia</SelectItem>
-                            <SelectItem value="issue">Problema</SelectItem>
+                            <SelectItem value="allergies">Alergias</SelectItem>
+                            <SelectItem value="behavior">Comportamiento</SelectItem>
+                            <SelectItem value="payment">Pago</SelectItem>
+                            <SelectItem value="complaints">Quejas</SelectItem>
+                            <SelectItem value="compliments">Cumplidos</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="note_priority">Prioridad</Label>
+                        <Select value={newNote.priority} onValueChange={(value) => setNewNote({ ...newNote, priority: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Baja</SelectItem>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="high">Alta</SelectItem>
+                            <SelectItem value="urgent">Urgente</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                     
-                    <div className="mt-4">
+                    <div>
                       <Label htmlFor="note_content">Contenido</Label>
                       <Textarea
                         id="note_content"
                         value={newNote.content}
                         onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
-                        placeholder="Escribe aquí la nota del cliente..."
+                        placeholder="Escribe aquí el contenido de la nota..."
                         rows={3}
                       />
                     </div>
                     
-                    <Button 
-                      onClick={handleCreateNote} 
-                      className="w-full mt-4"
-                      disabled={!newNote.title || !newNote.content}
-                    >
+                    <Button onClick={handleCreateNote} className="w-full">
+                      <Plus className="h-4 w-4 mr-2" />
                       Añadir Nota
                     </Button>
                   </CardContent>
@@ -567,27 +556,27 @@ const ClientManagement = () => {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Notas del Cliente</CardTitle>
+                    <CardTitle className="text-lg">Notas Existentes</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ScrollArea className="h-[300px]">
-                      {notes?.length === 0 ? (
-                        <div className="text-center py-8">
-                          <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                          <p className="text-muted-foreground">No hay notas para este cliente</p>
-                        </div>
-                      ) : (
+                    {notes.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        No hay notas registradas
+                      </p>
+                    ) : (
+                      <ScrollArea className="h-[300px]">
                         <div className="space-y-3">
-                          {notes?.map((note) => (
+                          {notes.map((note) => (
                             <div key={note.id} className="border rounded-lg p-3">
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
-                                <h4 className="font-medium text-sm">{note.title}</h4>
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium">{note.title}</h4>
                                 <div className="flex gap-1">
                                   <Badge variant="outline" className="text-xs">
                                     {note.category}
                                   </Badge>
                                   <Badge 
-                                    variant={note.priority === 'high' ? 'destructive' : 'secondary'}
+                                    variant={note.priority === 'urgent' ? 'destructive' : 
+                                           note.priority === 'high' ? 'default' : 'secondary'}
                                     className="text-xs"
                                   >
                                     {note.priority}
@@ -596,13 +585,13 @@ const ClientManagement = () => {
                               </div>
                               <p className="text-sm text-muted-foreground mb-2">{note.content}</p>
                               <p className="text-xs text-muted-foreground">
-                                {format(new Date(note.created_at), 'PPp', { locale: es })}
+                                {format(new Date(note.created_at), 'dd/MM/yyyy HH:mm', { locale: es })} • {note.staff_name}
                               </p>
                             </div>
                           ))}
                         </div>
-                      )}
-                    </ScrollArea>
+                      </ScrollArea>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

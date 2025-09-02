@@ -515,10 +515,10 @@ const ReservationSystem = () => {
               <div>
                 <Label htmlFor="center">Centro *</Label>
                 <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value, service: "", employee: "", lane: "" })}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue placeholder="Selecciona un centro" />
                   </SelectTrigger>
-                  <SelectContent className="z-[9999] bg-popover border shadow-lg">
+                  <SelectContent className="z-[100] bg-background border shadow-lg">
                     {centers.map((center) => (
                       <SelectItem key={center.id} value={center.id}>
                         <div className="flex items-center space-x-2">
