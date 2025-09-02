@@ -987,11 +987,12 @@ const AdvancedCalendarView = () => {
       {/* New Booking Modal - Positioned above clicked slot */}
       {showBookingModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-0 sm:p-4">
-          <div 
-            className="bg-background w-full h-full sm:w-auto sm:h-auto sm:rounded-lg sm:shadow-xl sm:border overflow-hidden flex flex-col sm:animate-scale-in"
+           <div 
+            className="bg-background w-full h-full sm:w-auto sm:h-auto sm:rounded-lg sm:shadow-xl sm:border-0 sm:border overflow-hidden flex flex-col sm:animate-scale-in"
             style={{
-              width: window.innerWidth < 768 ? '100%' : 'min(600px, calc(100vw - 2rem))',
-              maxHeight: window.innerWidth < 768 ? '100%' : '90vh'
+              width: window.innerWidth < 768 ? '100vw' : 'min(600px, calc(100vw - 2rem))',
+              maxHeight: window.innerWidth < 768 ? '100vh' : '90vh',
+              margin: window.innerWidth < 768 ? '0' : 'auto'
             }}
           >
             <div className="flex flex-col h-full">
@@ -1112,13 +1113,13 @@ const AdvancedCalendarView = () => {
                           {bookingForm.date ? format(bookingForm.date, "d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent 
+                       <PopoverContent 
                         className="w-auto p-0 z-[9999] bg-background shadow-2xl border"
-                        align="center"
-                        side="top"
-                        sideOffset={8}
-                        avoidCollisions={true}
-                        sticky="always"
+                        align="start"
+                        side="bottom"
+                        sideOffset={4}
+                        avoidCollisions={false}
+                        collisionPadding={0}
                       >
                         <Calendar
                           mode="single"
@@ -1145,14 +1146,14 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger className="h-11 min-w-[140px]">
                         <SelectValue placeholder="Hora" />
                       </SelectTrigger>
-                      <SelectContent 
+                       <SelectContent 
                         className="z-[9999] bg-background border shadow-2xl max-h-[300px] overflow-y-auto"
                         position="popper"
-                        side="top"
-                        align="center"
+                        side="bottom"
+                        align="start"
                         sideOffset={4}
-                        avoidCollisions={true}
-                        sticky="always"
+                        avoidCollisions={false}
+                        collisionPadding={0}
                       >
                         {timeOptions5m.map((t) => (
                           <SelectItem key={t} value={t}>{t}</SelectItem>
