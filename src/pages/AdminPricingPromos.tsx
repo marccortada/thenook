@@ -53,7 +53,9 @@ export default function AdminPricingPromos() {
     duration_minutes: 60,
     price_cents: 5000,
     active: true,
-    center_id: ''
+    center_id: '',
+    has_discount: false,
+    discount_price_cents: 0
   });
   const [editingService, setEditingService] = useState<any>(null);
 
@@ -77,8 +79,8 @@ export default function AdminPricingPromos() {
         duration_minutes: newService.duration_minutes,
         price_cents: newService.price_cents,
         active: newService.active,
-        has_discount: false,
-        discount_price_cents: 0,
+        has_discount: newService.has_discount,
+        discount_price_cents: newService.discount_price_cents,
         center_id: newService.center_id || null
       });
 
@@ -93,7 +95,9 @@ export default function AdminPricingPromos() {
           duration_minutes: 60,
           price_cents: 5000,
           active: true,
-          center_id: ''
+          center_id: '',
+          has_discount: false,
+          discount_price_cents: 0
         });
         refetchServices();
       }
@@ -651,6 +655,31 @@ export default function AdminPricingPromos() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="col-span-2">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <input 
+                        type="checkbox" 
+                        id="new-has-discount"
+                        checked={newService.has_discount}
+                        onChange={(e) => setNewService({ ...newService, has_discount: e.target.checked })}
+                        className="rounded"
+                      />
+                      <Label htmlFor="new-has-discount" className="text-sm">Aplicar descuento</Label>
+                    </div>
+                    {newService.has_discount && (
+                      <div>
+                        <Label className="text-sm">Precio con descuento (€)</Label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          value={(newService.discount_price_cents / 100).toFixed(2)}
+                          onChange={(e) => setNewService({ ...newService, discount_price_cents: Math.round(parseFloat(e.target.value || '0') * 100) })}
+                          min="0"
+                          className="text-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
                   <div className="md:col-span-2 lg:col-span-3">
                     <Label htmlFor="service-description">Descripción</Label>
                     <Textarea
@@ -666,17 +695,6 @@ export default function AdminPricingPromos() {
                   <Button onClick={createService} className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
                     Crear Servicio
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      // Create service and then open payment dialog
-                      createService();
-                      // TODO: Open payment dialog
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    💳 Cobrar Cita
                   </Button>
                 </div>
               </CardContent>
