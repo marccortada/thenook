@@ -29,7 +29,9 @@ const ClientReservation = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
-  const { isAdmin, isEmployee, user, loading } = useSimpleAuth();
+  const authData = useSimpleAuth();
+  console.log('🔍 useSimpleAuth returned:', authData);
+  const { isAdmin, isEmployee, user, loading } = authData;
   
   // Debug logs para verificar autenticación
   console.log('🔍 Auth Debug:', { isAdmin, isEmployee, user, loading });
