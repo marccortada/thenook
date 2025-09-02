@@ -66,7 +66,7 @@ export default function PublicLandingPage() {
           </Card>
 
           {/* Bonos */}
-          <Card className="hover-lift glass-effect border-primary/20 shadow-lg">
+          <Card className="glass-effect border-primary/20 shadow-lg">
             <CardHeader className="text-center p-4 sm:p-6">
               <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
                 <Gift className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
@@ -90,7 +90,7 @@ export default function PublicLandingPage() {
           </Card>
 
           {/* Tarjetas de Regalo */}
-          <Card className="hover-lift glass-effect border-primary/20 shadow-lg sm:col-span-2 lg:col-span-1">
+          <Card className="glass-effect border-primary/20 shadow-lg sm:col-span-2 lg:col-span-1">
             <CardHeader className="text-center p-4 sm:p-6">
               <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
                 <Star className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
