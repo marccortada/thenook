@@ -1120,9 +1120,9 @@ const AdvancedCalendarView = () => {
                         sideOffset={4}
                         avoidCollisions={true}
                         collisionPadding={20}
-                        sticky="always"
+                        onPointerDownOutside={(e) => e.preventDefault()}
                       >
-                        <Calendar
+                         <Calendar
                           mode="single"
                           selected={bookingForm.date}
                           onSelect={(date) => {
