@@ -235,7 +235,6 @@ const AdvancedCalendarView = () => {
 
     // Calcular posición del modal basada en el elemento clickeado
     if (event?.currentTarget) {
-      const slotRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
@@ -251,14 +250,16 @@ const AdvancedCalendarView = () => {
         viewportBottom - estimatedModalHeight - 20
       ));
       
-      // En móvil, centrar horizontalmente en la pantalla
+      // En móvil, centrar perfectamente en la pantalla
       if (windowWidth < 768) {
+        const modalWidth = windowWidth - 40; // 20px margin on each side
         setModalPosition({
           top: modalTop,
-          left: 20 // Usar padding fijo en móvil
+          left: (windowWidth - modalWidth) / 2 // Centrar perfectamente
         });
       } else {
         // En desktop, centrar basado en el slot clickeado
+        const slotRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
         const slotCenterX = slotRect.left + (slotRect.width / 2);
         const modalWidth = Math.min(500, windowWidth - 40);
         setModalPosition({
@@ -988,8 +989,7 @@ const AdvancedCalendarView = () => {
             style={{
               top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
-              width: window.innerWidth < 768 ? 'calc(100vw - 2.5rem)' : 'min(500px, calc(100vw - 2rem))',
-              maxWidth: window.innerWidth < 768 ? 'calc(100vw - 2.5rem)' : 'calc(100vw - 2rem)',
+              width: window.innerWidth < 768 ? `${window.innerWidth - 40}px` : 'min(500px, calc(100vw - 2rem))',
               maxHeight: '80vh'
             }}
           >
@@ -1182,8 +1182,7 @@ const AdvancedCalendarView = () => {
             style={{
               top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
-              width: window.innerWidth < 768 ? 'calc(100vw - 2.5rem)' : 'min(600px, calc(100vw - 2rem))',
-              maxWidth: window.innerWidth < 768 ? 'calc(100vw - 2.5rem)' : 'calc(100vw - 2rem)',
+              width: window.innerWidth < 768 ? `${window.innerWidth - 40}px` : 'min(600px, calc(100vw - 2rem))',
               maxHeight: '80vh'
             }}
           >
