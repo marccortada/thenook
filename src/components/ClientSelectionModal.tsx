@@ -59,7 +59,7 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -98,14 +98,14 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
                   className="border rounded-lg p-3 hover:bg-muted/50 cursor-pointer transition-colors"
                   onClick={() => handleClientSelect(client)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                        <h4 className="font-medium text-sm sm:text-base truncate">
                           {client.first_name} {client.last_name}
                         </h4>
                         {client.total_bookings && client.total_bookings > 1 && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs self-start">
                             {client.total_bookings} visitas
                           </Badge>
                         )}
@@ -113,26 +113,26 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
                       
                       <div className="space-y-1">
                         {client.email && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="h-3 w-3" />
-                            <span>{client.email}</span>
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <Mail className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{client.email}</span>
                           </div>
                         )}
                         {client.phone && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="h-3 w-3" />
-                            <span>{client.phone}</span>
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <Phone className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{client.phone}</span>
                           </div>
                         )}
                         {client.last_booking && (
                           <div className="text-xs text-muted-foreground">
-                            Última visita: {new Date(client.last_booking).toLocaleDateString('es-ES')}
+                            Última visita: {new Date(client.last_booking).toLocaleDateString("es-ES")}
                           </div>
                         )}
                       </div>
                     </div>
                     
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto flex-shrink-0">
                       Seleccionar
                     </Button>
                   </div>
@@ -143,7 +143,7 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
         </ScrollArea>
 
         <div className="flex justify-end pt-4 border-t">
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">
             Cancelar
           </Button>
         </div>
