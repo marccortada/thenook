@@ -994,15 +994,15 @@ const AdvancedCalendarView = () => {
               maxHeight: window.innerWidth < 768 ? '100%' : '90vh'
             }}
           >
-            <div className="flex flex-col min-h-[70vh] max-h-[85vh]">
-              <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2 border-b">
-                <h3 className="text-base sm:text-lg font-semibold">Nueva Reserva</h3>
-                <p className="text-xs sm:text-sm text-gray-600">
+            <div className="flex flex-col h-full">
+              <div className="px-0 sm:px-4 pt-0 sm:pt-4 pb-2 sm:pb-2 border-b-0 sm:border-b flex-shrink-0">
+                <h3 className="text-base sm:text-lg font-semibold px-4 sm:px-0 pt-4 sm:pt-0">Nueva Reserva</h3>
+                <p className="text-xs sm:text-sm text-gray-600 px-4 sm:px-0">
                   Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
                 </p>
               </div>
 
-              <div className="space-y-3 sm:space-y-4 px-3 sm:px-4 py-2 sm:py-3 overflow-auto flex-1 pb-3 sm:pb-4">
+              <div className="space-y-4 sm:space-y-4 px-4 sm:px-4 py-4 sm:py-3 overflow-auto flex-1 pb-4 sm:pb-4">
                 <div className="space-y-2">
                   <RepeatClientSelector
                     label="Cliente habitual (opcional)"
@@ -1113,11 +1113,12 @@ const AdvancedCalendarView = () => {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent 
-                        className="w-auto p-0 z-[300]"
+                        className="w-auto p-0 z-[9999] bg-background shadow-2xl border"
                         align="center"
-                        side="bottom"
+                        side="top"
                         sideOffset={8}
-                        collisionPadding={16}
+                        avoidCollisions={true}
+                        sticky="always"
                       >
                         <Calendar
                           mode="single"
@@ -1145,12 +1146,13 @@ const AdvancedCalendarView = () => {
                         <SelectValue placeholder="Hora" />
                       </SelectTrigger>
                       <SelectContent 
-                        className="z-[300] bg-background border shadow-xl max-h-[300px] overflow-y-auto"
+                        className="z-[9999] bg-background border shadow-2xl max-h-[300px] overflow-y-auto"
                         position="popper"
-                        side="bottom"
+                        side="top"
                         align="center"
                         sideOffset={4}
-                        collisionPadding={16}
+                        avoidCollisions={true}
+                        sticky="always"
                       >
                         {timeOptions5m.map((t) => (
                           <SelectItem key={t} value={t}>{t}</SelectItem>
@@ -1196,7 +1198,7 @@ const AdvancedCalendarView = () => {
                 </div>
               </div>
 
-              <div className="mt-auto px-3 sm:px-4 py-2 sm:py-3 border-t bg-background">
+              <div className="mt-auto px-4 sm:px-4 py-3 sm:py-3 border-t-0 sm:border-t bg-background">
                 <div className="flex flex-col sm:flex-row justify-end gap-2">
                   <Button variant="outline" onClick={() => setShowBookingModal(false)} className="w-full sm:w-auto text-sm h-9">
                     <X className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
