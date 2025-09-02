@@ -360,76 +360,71 @@ export default function BookingManagement() {
         </div>
       </main>
 
-      {/* Payment Dialog */}
-      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <DialogContent className="sm:max-w-md bg-background border shadow-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      {/* Payment Modal - Simple Implementation */}
+      {showPaymentDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-2 mb-4">
               <DollarSign className="h-5 w-5" />
-              💰 Cobrar Cita
-            </DialogTitle>
-          </DialogHeader>
-          {selectedBooking && (
-            <div className="space-y-4">
-              <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-medium mb-2">Detalles de la cita</h4>
-                <p className="text-sm text-muted-foreground">
-                  Cliente: {selectedBooking.profiles?.first_name} {selectedBooking.profiles?.last_name}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Servicio: {selectedBooking.services?.name}
-                </p>
-                <p className="text-sm text-muted-foreground font-bold text-primary">
-                  💶 Importe: {(selectedBooking.total_price_cents / 100).toFixed(2)}€
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="payment-method" className="text-sm font-medium">💳 Forma de Pago</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger className="h-12 bg-background border-2 border-primary/20 focus:border-primary">
-                    <SelectValue placeholder="💰 Seleccionar forma de pago..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-2 shadow-xl">
-                    {PAYMENT_METHODS.map((method) => (
-                      <SelectItem key={method.value} value={method.value} className="py-3 hover:bg-accent cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <span className="text-xl">{method.icon}</span>
-                          <span className="font-medium">{method.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={processPayment}
-                  disabled={!paymentMethod}
-                  className="flex-1 h-12 text-lg bg-green-600 hover:bg-green-700 text-white font-bold"
-                  size="lg"
-                >
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  ✅ Confirmar Pago - {selectedBooking && (selectedBooking.total_price_cents / 100).toFixed(2)}€
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowPaymentDialog(false);
-                    setPaymentMethod('');
-                    setSelectedBooking(null);
-                  }}
-                  className="h-12 px-6 border-2"
-                  size="lg"
-                >
-                  ❌ Cancelar
-                </Button>
-              </div>
+              <h3 className="text-lg font-semibold">💰 Cobrar Cita</h3>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            
+            {selectedBooking && (
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-100 rounded-lg">
+                  <h4 className="font-medium mb-2">Detalles de la cita</h4>
+                  <p className="text-sm text-gray-600">
+                    Cliente: {selectedBooking.profiles?.first_name} {selectedBooking.profiles?.last_name}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Servicio: {selectedBooking.services?.name}
+                  </p>
+                  <p className="text-sm font-bold text-blue-600">
+                    💶 Importe: {(selectedBooking.total_price_cents / 100).toFixed(2)}€
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">💳 Forma de Pago</label>
+                  <select 
+                    value={paymentMethod} 
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full h-12 px-3 border-2 border-gray-300 rounded-lg focus:border-blue-500"
+                  >
+                    <option value="">💰 Seleccionar forma de pago...</option>
+                    {PAYMENT_METHODS.map((method) => (
+                      <option key={method.value} value={method.value}>
+                        {method.icon} {method.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={processPayment}
+                    disabled={!paymentMethod}
+                    className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    <CreditCard className="h-5 w-5 mr-2 inline" />
+                    ✅ Confirmar Pago - {(selectedBooking.total_price_cents / 100).toFixed(2)}€
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPaymentDialog(false);
+                      setPaymentMethod('');
+                      setSelectedBooking(null);
+                    }}
+                    className="h-12 px-6 border-2 border-gray-300 rounded-lg hover:bg-gray-100"
+                  >
+                    ❌ Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
