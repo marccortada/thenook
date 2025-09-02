@@ -1120,6 +1120,8 @@ const AdvancedCalendarView = () => {
                         sideOffset={4}
                         avoidCollisions={false}
                         collisionPadding={0}
+                        sticky="always"
+                        onOpenAutoFocus={(e) => e.preventDefault()}
                       >
                         <Calendar
                           mode="single"
@@ -1147,7 +1149,7 @@ const AdvancedCalendarView = () => {
                         <SelectValue placeholder="Hora" />
                       </SelectTrigger>
                        <SelectContent 
-                        className="z-[9999] bg-background border shadow-2xl max-h-[300px] overflow-y-auto"
+                        className="z-[9999] bg-background border shadow-2xl max-h-[300px] overflow-y-auto fixed"
                         position="popper"
                         side="bottom"
                         align="start"
