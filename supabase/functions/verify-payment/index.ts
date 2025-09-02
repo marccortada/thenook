@@ -68,12 +68,16 @@ serve(async (req) => {
           items: { 
             amount_cents: number; 
             quantity?: number;
+            name?: string;
             purchased_by_name?: string;
             purchased_by_email?: string;
             is_gift?: boolean;
             recipient_name?: string;
             recipient_email?: string;
             gift_message?: string;
+            show_price?: boolean;
+            send_to_buyer?: boolean;
+            show_buyer_data?: boolean;
           }[] 
         };
         
@@ -88,20 +92,27 @@ serve(async (req) => {
           recipient_name?: string;
           recipient_email?: string;
           gift_message?: string;
+          show_price?: boolean;
+          send_to_buyer?: boolean;
+          show_buyer_data?: boolean;
         }> = [];
         
         for (const it of payload.items) {
           const qty = it.quantity ?? 1;
           
-          // Buscar el nombre de la tarjeta regalo según el valor
-          const { data: giftCardOption, error: optionError } = await supabaseAdmin
-            .from("gift_card_options")
-            .select("name")
-            .eq("amount_cents", it.amount_cents)
-            .eq("is_active", true)
-            .maybeSingle();
           
-          const giftCardName = giftCardOption?.name || `Tarjeta ${(it.amount_cents / 100).toFixed(2)}€`;
+          // Usar el nombre del item si está disponible, si no buscar por amount_cents
+          let giftCardName = it.name;
+          if (!giftCardName) {
+            const { data: giftCardOption, error: optionError } = await supabaseAdmin
+              .from("gift_card_options")
+              .select("name")
+              .eq("amount_cents", it.amount_cents)
+              .eq("is_active", true)
+              .maybeSingle();
+            
+            giftCardName = giftCardOption?.name || `Tarjeta ${(it.amount_cents / 100).toFixed(2)}€`;
+          }
           
           for (let i = 0; i < qty; i++) {
             const { data: code, error: codeErr } = await supabaseAdmin.rpc("generate_voucher_code");
@@ -131,7 +142,10 @@ serve(async (req) => {
               is_gift: it.is_gift,
               recipient_name: it.recipient_name,
               recipient_email: it.recipient_email,
-              gift_message: it.gift_message
+              gift_message: it.gift_message,
+              show_price: it.show_price ?? true,
+              send_to_buyer: it.send_to_buyer ?? true,
+              show_buyer_data: it.show_buyer_data ?? true
             });
           }
         }

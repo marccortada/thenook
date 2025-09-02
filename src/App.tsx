@@ -13,6 +13,8 @@ import BuyPackagesPage from "./pages/BuyPackagesPage";
 import GiftCardsPage from "./pages/GiftCardsPage";
 import BookingPaymentSetup from "./pages/BookingPaymentSetup";
 import PaymentSetupSuccess from "./pages/PaymentSetupSuccess";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCanceled from "./pages/PaymentCanceled";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -50,10 +52,12 @@ const App = () => (
               } 
             />
             
+            {/* Páginas de resultado de pago */}
+            <Route path="/pago-exitoso" element={<PaymentSuccess />} />
+            <Route path="/pago-cancelado" element={<PaymentCanceled />} />
+            
             {/* Redirigir cualquier ruta no válida al panel admin o página principal */}
             <Route path="/admin/*" element={<Navigate to="/panel-gestion-nook-madrid-2024" replace />} />
-            <Route path="/pago-exitoso" element={<Navigate to="/panel-gestion-nook-madrid-2024" replace />} />
-            <Route path="/pago-cancelado" element={<Navigate to="/panel-gestion-nook-madrid-2024" replace />} />
             <Route path="/canjear" element={<Navigate to="/panel-gestion-nook-madrid-2024" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -104,6 +104,7 @@ const translations = {
      "buyer_email_error": "Por favor, indica tu email",
      "purchase_success": "¡Compra procesada exitosamente!",
      "purchase_error": "Error al procesar la compra. Inténtalo de nuevo.",
+     "buy_button": "Comprar",
     
     // Client Reservation Page
     "loading_centers": "Cargando centros...",
@@ -175,7 +176,6 @@ const translations = {
      "gift_message": "Mensaje de regalo (opcional)",
      "gift_message_placeholder": "Tu mensaje personalizado...",
      "empty_cart_button": "Vaciar",
-     "buy_button": "Comprar",
      "individual_massages_packages": "Bonos para Masajes Individuales",
      "four_hands_packages": "Bonos para Masajes a Cuatro Manos",
      "rituals_packages": "Bonos para Rituales",
@@ -313,6 +313,7 @@ const translations = {
      "buyer_email_error": "Please enter your email",
      "purchase_success": "Purchase processed successfully!",
      "purchase_error": "Error processing purchase. Please try again.",
+     "buy_button": "Buy",
     
     // Client Reservation Page  
     "loading_centers": "Loading centers...",
@@ -385,7 +386,6 @@ const translations = {
      "gift_message": "Gift message (optional)",
      "gift_message_placeholder": "Your personalized message...",
      "empty_cart_button": "Empty",
-     "buy_button": "Buy",
      "individual_massages_packages": "Individual Massage Packages",
      "four_hands_packages": "Four Hands Massage Packages",
      "rituals_packages": "Ritual Packages",

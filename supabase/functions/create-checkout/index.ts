@@ -12,12 +12,16 @@ const corsHeaders = {
 interface GiftCardItemReq { 
   amount_cents: number; 
   quantity?: number;
+  name?: string;
   purchased_by_name?: string;
   purchased_by_email?: string;
   is_gift?: boolean;
   recipient_name?: string;
   recipient_email?: string;
   gift_message?: string;
+  show_price?: boolean;
+  send_to_buyer?: boolean;
+  show_buyer_data?: boolean;
 }
 interface PackageVoucherReq {
   package_id: string;
@@ -30,7 +34,7 @@ interface BookingPaymentReq { booking_id: string }
 
 interface CreateCheckoutBody {
   intent: "gift_cards" | "package_voucher" | "booking_payment";
-  gift_cards?: { items: GiftCardItemReq[] };
+  gift_cards?: { items: GiftCardItemReq[]; total_cents?: number };
   package_voucher?: PackageVoucherReq;
   booking_payment?: BookingPaymentReq;
   currency?: string; // default eur
@@ -62,13 +66,26 @@ serve(async (req) => {
     if (body.intent === "gift_cards") {
       const items = body.gift_cards?.items || [];
       if (!items.length) throw new Error("Sin tarjetas en la petición");
-      // Validate amounts and build line items
+      
+      // Validar datos del comprador
+      const hasValidBuyer = items.every(it => it.purchased_by_name?.trim() && it.purchased_by_email?.trim());
+      if (!hasValidBuyer) throw new Error("Datos del comprador requeridos");
+      
+      // Validar datos del beneficiario si es regalo
+      const hasGifts = items.some(it => it.is_gift);
+      if (hasGifts) {
+        const hasValidRecipient = items.every(it => !it.is_gift || (it.recipient_name?.trim()));
+        if (!hasValidRecipient) throw new Error("Datos del beneficiario requeridos");
+      }
+      
+      // Construir line items
       for (const it of items) {
         if (!it.amount_cents || it.amount_cents <= 0) throw new Error("Importe inválido");
+        const productName = it.name || "Tarjeta Regalo The Nook Madrid";
         line_items.push({
           price_data: {
             currency,
-            product_data: { name: "Tarjeta Regalo The Nook Madrid" },
+            product_data: { name: productName },
             unit_amount: it.amount_cents,
           },
           quantity: it.quantity ?? 1,

@@ -107,6 +107,11 @@ const GiftCardsPage = () => {
   const [recipientName, setRecipientName] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [giftMessage, setGiftMessage] = useState("");
+  
+  // Nuevas opciones para tarjetas de regalo
+  const [showPrice, setShowPrice] = useState(true);
+  const [sendToBuyer, setSendToBuyer] = useState(true); // true = comprador, false = beneficiario
+  const [showBuyerData, setShowBuyerData] = useState(true);
   const { t } = useTranslation();
 
   // Función para traducir nombres de paquetes/tarjetas
@@ -374,19 +379,72 @@ const GiftCardsPage = () => {
                                  />
                                </div>
                                
-                               <div>
-                                 <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
-                                 <Textarea
-                                   id="gift_message"
-                                   value={giftMessage}
-                                   onChange={(e) => setGiftMessage(e.target.value)}
-                                   placeholder={t('gift_message_placeholder')}
-                                   className="mt-1"
-                                   rows={3}
-                                 />
+                                <div>
+                                  <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
+                                  <Textarea
+                                    id="gift_message"
+                                    value={giftMessage}
+                                    onChange={(e) => setGiftMessage(e.target.value)}
+                                    placeholder={t('gift_message_placeholder')}
+                                    className="mt-1"
+                                    rows={3}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                         </div>
+                         
+                         {/* Opciones de personalización de tarjeta de regalo */}
+                         <div className="border-t pt-3 space-y-3">
+                           <h4 className="text-sm font-medium">Opciones de la tarjeta</h4>
+                           
+                           <div className="space-y-3">
+                             <div className="flex items-center justify-between">
+                               <Label htmlFor="show_price" className="text-sm">¿Mostrar precio en la tarjeta?</Label>
+                               <Checkbox 
+                                 id="show_price" 
+                                 checked={showPrice}
+                                 onCheckedChange={(checked) => setShowPrice(!!checked)}
+                               />
+                             </div>
+                             
+                             <div className="space-y-2">
+                               <Label className="text-sm">¿A quién enviar la tarjeta?</Label>
+                               <div className="space-y-2">
+                                 <div className="flex items-center space-x-2">
+                                   <input
+                                     type="radio"
+                                     id="send_to_buyer"
+                                     name="send_option"
+                                     checked={sendToBuyer}
+                                     onChange={() => setSendToBuyer(true)}
+                                     className="h-4 w-4"
+                                   />
+                                   <Label htmlFor="send_to_buyer" className="text-sm">Enviar al comprador</Label>
+                                 </div>
+                                 <div className="flex items-center space-x-2">
+                                   <input
+                                     type="radio"
+                                     id="send_to_recipient"
+                                     name="send_option"
+                                     checked={!sendToBuyer}
+                                     onChange={() => setSendToBuyer(false)}
+                                     className="h-4 w-4"
+                                   />
+                                   <Label htmlFor="send_to_recipient" className="text-sm">Enviar directamente al beneficiario</Label>
+                                 </div>
                                </div>
                              </div>
-                           )}
+                             
+                             <div className="flex items-center justify-between">
+                               <Label htmlFor="show_buyer_data" className="text-sm">¿Mostrar datos del comprador en la tarjeta?</Label>
+                               <Checkbox 
+                                 id="show_buyer_data" 
+                                 checked={showBuyerData}
+                                 onCheckedChange={(checked) => setShowBuyerData(!!checked)}
+                               />
+                             </div>
+                           </div>
                         </div>
                         
                         <PaymentMethodsInfo />
@@ -400,33 +458,50 @@ const GiftCardsPage = () => {
                               toast.error(t('recipient_name_error'));
                               return;
                             }
-                            try {
-                              const payload = {
-                                intent: "gift_cards",
+                             try {
+                               if (!purchasedByName.trim()) {
+                                 toast.error(t('buyer_name_error'));
+                                 return;
+                               }
+                               if (!purchasedByEmail.trim()) {
+                                 toast.error(t('buyer_email_error'));
+                                 return;
+                               }
+                               
+                               const payload = {
+                                 intent: "gift_cards",
                                  gift_cards: {
                                    items: items.map(i => ({ 
                                      amount_cents: i.priceCents, 
                                      quantity: i.quantity,
-                                     purchased_by_name: purchasedByName || undefined,
-                                     purchased_by_email: purchasedByEmail || undefined,
+                                     name: i.name,
+                                     purchased_by_name: purchasedByName,
+                                     purchased_by_email: purchasedByEmail,
                                      is_gift: isGift,
                                      recipient_name: isGift ? recipientName : undefined,
                                      recipient_email: isGift ? recipientEmail : undefined,
-                                     gift_message: isGift ? giftMessage : undefined
-                                   }))
+                                     gift_message: isGift ? giftMessage : undefined,
+                                     show_price: showPrice,
+                                     send_to_buyer: sendToBuyer,
+                                     show_buyer_data: showBuyerData
+                                   })),
+                                   total_cents: totalCents
                                  },
-                                currency: "eur"
-                              };
-                             const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-                             if (error) throw error;
-                             if (data?.url) {
-                               window.location.href = data.url;
-                             }
+                                 currency: "eur"
+                               };
+                              const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
+                              if (error) throw error;
+                              if (data?.url) {
+                                // Abrir Stripe checkout en una nueva pestaña
+                                window.open(data.url, '_blank');
+                              } else {
+                                toast.error("No se recibió URL de pago");
+                              }
                            } catch (e: any) {
                              toast.error(e.message || t('payment_init_error'));
                            }
                          }}>
-                           {t('proceed_to_payment')}
+                            {t('buy_button')} - {euro(totalCents)}
                          </Button>
                       </div>
                     </div>
