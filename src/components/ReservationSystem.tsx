@@ -580,27 +580,24 @@ const ReservationSystem = () => {
                         type="button"
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal h-12 text-base touch-manipulation",
-                          "border-2 hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
+                          "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
                           !formData.date && "text-muted-foreground"
                         )}
-                        onClick={() => console.log('Date picker clicked')}
                       >
-                        <CalendarIcon className="mr-3 h-5 w-5 flex-shrink-0 text-primary" />
+                        <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
                         <span className="flex-1 truncate">
-                          {formData.date ? format(formData.date, "PPP", { locale: es }) : "📅 Toca para seleccionar fecha"}
+                          {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
                         </span>
-                        <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-60" />
+                        <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                      <PopoverContent 
-                       className="w-auto p-0 z-[70] bg-background border shadow-lg" 
+                       className="w-auto p-0" 
                        align="start"
                        side="bottom"
                        sideOffset={4}
-                       alignOffset={0}
                        avoidCollisions={true}
-                       collisionPadding={8}
+                       collisionPadding={20}
                      >
                        <Calendar
                          mode="single"
