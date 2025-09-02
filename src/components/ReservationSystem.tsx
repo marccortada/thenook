@@ -518,7 +518,7 @@ const ReservationSystem = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un centro" />
                   </SelectTrigger>
-                  <SelectContent className="z-50 bg-popover border border-border shadow-lg">
+                  <SelectContent>
                     {centers.map((center) => (
                       <SelectItem key={center.id} value={center.id}>
                         <div className="flex items-center space-x-2">
@@ -628,7 +628,7 @@ const ReservationSystem = () => {
                       <SelectValue placeholder="Selecciona una hora" />
                     </SelectTrigger>
                      <SelectContent 
-                       className="z-50 bg-popover border border-border shadow-lg max-h-60 overflow-y-auto"
+                       className="max-h-60 overflow-y-auto"
                        position="popper"
                        side="bottom"
                        align="start"

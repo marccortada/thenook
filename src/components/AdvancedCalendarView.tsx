@@ -1069,7 +1069,7 @@ const AdvancedCalendarView = () => {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecciona centro" />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-popover border border-border shadow-lg">
+              <SelectContent>
                 {centers.map((center) => (
                   <SelectItem key={center.id} value={center.id}>
                     <div className="flex items-center gap-2">
@@ -1096,7 +1096,7 @@ const AdvancedCalendarView = () => {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
-                <SelectContent className="z-50 bg-popover border border-border shadow-lg">
+                <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="no_show">Solo No Shows</SelectItem>
                   <SelectItem value="cancelled">Solo Canceladas</SelectItem>
@@ -1300,7 +1300,7 @@ const AdvancedCalendarView = () => {
                     <SelectTrigger className="h-9 sm:h-10">
                       <SelectValue placeholder="Seleccionar servicio" />
                     </SelectTrigger>
-                    <SelectContent className="z-50 bg-popover border border-border shadow-lg">
+                    <SelectContent>
                       {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
                         <SelectItem key={service.id} value={service.id}>
                           {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
@@ -1335,7 +1335,7 @@ const AdvancedCalendarView = () => {
                         <SelectValue placeholder="Hora" />
                       </SelectTrigger>
                        <SelectContent 
-                        className="z-50 bg-popover border border-border shadow-lg max-h-[300px] overflow-y-auto"
+                        className="max-h-[300px] overflow-y-auto"
                         position="popper"
                         side="bottom"
                         align="center"
@@ -1452,7 +1452,7 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar servicio" />
                       </SelectTrigger>
-                      <SelectContent className="z-50 bg-popover border border-border shadow-lg">
+                      <SelectContent>
                         {services.filter(s => s.center_id === (editingBooking.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
                           <SelectItem key={service.id} value={service.id}>
                             {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
@@ -1472,7 +1472,7 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                    <SelectContent className="z-50 bg-popover border border-border shadow-lg">
+                    <SelectContent>
                       {timeOptions5m.map((t) => (
                         <SelectItem key={t} value={t}>{t}</SelectItem>
                       ))}
@@ -1492,7 +1492,7 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="z-50 bg-popover border border-border shadow-lg">
+                      <SelectContent>
                         <SelectItem value="pending">Pendiente</SelectItem>
                         <SelectItem value="paid">Pagado</SelectItem>
                         <SelectItem value="failed">Fallido</SelectItem>
@@ -1508,7 +1508,7 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="z-50 bg-popover border border-border shadow-lg">
+                      <SelectContent>
                         <SelectItem value="pending">Pendiente</SelectItem>
                         <SelectItem value="requested">Solicitada</SelectItem>
                         <SelectItem value="confirmed">Confirmada</SelectItem>
