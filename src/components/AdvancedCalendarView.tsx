@@ -994,14 +994,14 @@ const AdvancedCalendarView = () => {
             }}
           >
             <div className="flex flex-col min-h-[70vh] max-h-[85vh]">
-              <div className="px-4 pt-4 pb-2 border-b">
-                <h3 className="text-lg font-semibold">Nueva Reserva</h3>
-                <p className="text-sm text-gray-600">
+              <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2 border-b">
+                <h3 className="text-base sm:text-lg font-semibold">Nueva Reserva</h3>
+                <p className="text-xs sm:text-sm text-gray-600">
                   Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
                 </p>
               </div>
 
-              <div className="space-y-4 px-4 py-3 overflow-auto flex-1 pb-4">
+              <div className="space-y-3 sm:space-y-4 px-3 sm:px-4 py-2 sm:py-3 overflow-auto flex-1 pb-3 sm:pb-4">
                 <div className="space-y-2">
                   <RepeatClientSelector
                     label="Cliente habitual (opcional)"
@@ -1045,41 +1045,44 @@ const AdvancedCalendarView = () => {
                 </div>
 
                 {/* Client Information Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="clientName">Nombre del cliente *</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <Label htmlFor="clientName" className="text-sm">Nombre del cliente *</Label>
                     <Input
                       id="clientName"
                       value={bookingForm.clientName}
                       onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
                       placeholder="Nombre y apellidos"
+                      className="h-9 sm:h-10"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="clientPhone">Teléfono</Label>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <Label htmlFor="clientPhone" className="text-sm">Teléfono</Label>
                     <Input
                       id="clientPhone"
                       value={bookingForm.clientPhone}
                       onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
                       placeholder="+34 600 000 000"
+                      className="h-9 sm:h-10"
                     />
                   </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="clientEmail">Email</Label>
+                  <div className="space-y-1.5 sm:space-y-2 sm:col-span-2">
+                    <Label htmlFor="clientEmail" className="text-sm">Email</Label>
                     <Input
                       id="clientEmail"
                       type="email"
                       value={bookingForm.clientEmail}
                       onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
                       placeholder="cliente@example.com"
+                      className="h-9 sm:h-10"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="serviceId">Servicio *</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="serviceId" className="text-sm">Servicio *</Label>
                   <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
-                    <SelectTrigger className="h-11">
+                    <SelectTrigger className="h-9 sm:h-10">
                       <SelectValue placeholder="Seleccionar servicio" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1157,14 +1160,14 @@ const AdvancedCalendarView = () => {
                 </div>
               </div>
 
-              <div className="mt-auto px-4 py-3 border-t bg-background">
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowBookingModal(false)}>
-                    <X className="h-4 w-4 mr-2" />
+              <div className="mt-auto px-3 sm:px-4 py-2 sm:py-3 border-t bg-background">
+                <div className="flex flex-col sm:flex-row justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowBookingModal(false)} className="w-full sm:w-auto text-sm h-9">
+                    <X className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                     Cancelar
                   </Button>
-                  <Button onClick={createBooking}>
-                    <Save className="h-4 w-4 mr-2" />
+                  <Button onClick={createBooking} className="w-full sm:w-auto text-sm h-9">
+                    <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                     Crear Reserva
                   </Button>
                 </div>

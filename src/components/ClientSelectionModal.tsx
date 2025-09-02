@@ -59,7 +59,7 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="w-[95vw] sm:w-full max-w-2xl h-[90vh] sm:h-auto sm:max-h-[85vh] mx-auto p-4 sm:p-6 flex flex-col">
+      <DialogContent className="w-screen h-screen sm:w-full sm:h-auto max-w-2xl sm:max-h-[85vh] m-0 sm:mx-auto p-3 sm:p-6 flex flex-col rounded-none sm:rounded-lg">
         <DialogHeader className="pb-4 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <User className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -92,53 +92,42 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="space-y-2 py-2">
-              {filteredClients.map((client) => (
-                <div
-                  key={client.id}
-                  className="border rounded-lg p-3 hover:bg-muted/50 cursor-pointer transition-colors active:bg-muted"
-                  onClick={() => handleClientSelect(client)}
-                >
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                          <h4 className="font-medium text-sm sm:text-base truncate">
-                            {client.first_name} {client.last_name}
-                          </h4>
-                          {client.total_bookings && client.total_bookings > 1 && (
-                            <Badge variant="secondary" className="text-xs self-start shrink-0">
-                              {client.total_bookings} visitas
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" className="shrink-0 text-xs px-2 py-1">
+              <div className="space-y-3 py-2">
+                {filteredClients.map((client) => (
+                  <div
+                    key={client.id}
+                    className="border rounded-lg p-3 hover:bg-muted/50 cursor-pointer transition-colors active:bg-muted"
+                    onClick={() => handleClientSelect(client)}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <h4 className="font-medium text-sm truncate flex-1">
+                        {client.first_name} {client.last_name}
+                      </h4>
+                      <Button variant="outline" size="sm" className="text-xs px-3 py-1 shrink-0">
                         Seleccionar
                       </Button>
                     </div>
                     
                     <div className="space-y-1">
                       {client.email && (
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Mail className="h-3 w-3 shrink-0" />
                           <span className="truncate">{client.email}</span>
                         </div>
                       )}
                       {client.phone && (
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Phone className="h-3 w-3 shrink-0" />
                           <span className="truncate">{client.phone}</span>
                         </div>
                       )}
-                      {client.last_booking && (
-                        <div className="text-xs text-muted-foreground">
-                          Última visita: {new Date(client.last_booking).toLocaleDateString("es-ES")}
-                        </div>
+                      {client.total_bookings && client.total_bookings > 1 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {client.total_bookings} visitas
+                        </Badge>
                       )}
                     </div>
                   </div>
-                </div>
               ))}
               </div>
             )}
