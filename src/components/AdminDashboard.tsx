@@ -13,7 +13,7 @@ import {
   Percent, 
   Settings,
   Calendar,
-  Activity
+  
 } from "lucide-react";
 
 // Import components for each section
@@ -23,7 +23,7 @@ import ClientManagement from "@/components/ClientManagement";
 import PackageManagement from "@/components/PackageManagement";
 import GiftCardManagement from "@/components/GiftCardManagement";
 import IntelligentAnalytics from "@/components/IntelligentAnalytics";
-import ControlCenter from "@/components/ControlCenter";
+
 import NotificationCenter from "@/components/NotificationCenter";
 import ReportsCenter from "@/components/ReportsCenter";
 import AdminPricingPromos from "@/pages/AdminPricingPromos";
@@ -90,13 +90,6 @@ const AdminDashboard = () => {
       label: "Analytics",
       icon: TrendingUp,
       component: IntelligentAnalytics,
-      roles: ["admin"]
-    },
-    {
-      id: "centro-control",
-      label: "Centro de Control",
-      icon: Activity,
-      component: ControlCenter,
       roles: ["admin"]
     },
     {

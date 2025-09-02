@@ -20,7 +20,7 @@ import ReportsCenter from "@/components/ReportsCenter";
 
 import AdvancedReports from "@/components/AdvancedReports";
 import NotificationCenter from "@/components/NotificationCenter";
-import UnifiedDashboard from "@/components/UnifiedDashboard";
+
 import IntelligentAnalytics from "@/components/IntelligentAnalytics";
 
 import SimpleCenterCalendar from "@/components/SimpleCenterCalendar";
@@ -130,7 +130,7 @@ const Index = () => {
                   
                   {(isAdmin || isEmployee) && <option value="packages">🎁 Bonos</option>}
                   {(isAdmin || isOwner) && <option value="analytics">📈 Analytics</option>}
-                  {(isAdmin || isOwner) && <option value="control">🎛️ Centro de Control</option>}
+                  
                 </select>
               </div>
             </div>
@@ -187,16 +187,6 @@ const Index = () => {
                 </Button>
               )}
               
-              {(isAdmin || isOwner) && (
-                <Button
-                  variant={activeTab === "control" ? "default" : "outline"}
-                  onClick={() => setActiveTab("control")}
-                  className="h-auto p-3 xl:p-4 flex flex-col items-center justify-center gap-2 transition-all hover:scale-105 shadow-sm text-xs xl:text-sm"
-                >
-                  <BarChart3 className="h-4 w-4 xl:h-5 xl:w-5" />
-                  <span className="font-medium">Centro Control</span>
-                </Button>
-              )}
             </div>
 
             <TabsContent value="reservations" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
@@ -224,11 +214,6 @@ const Index = () => {
             )}
 
 
-            {(isAdmin || isOwner) && (
-              <TabsContent value="control" className="mt-0">
-                <UnifiedDashboard />
-              </TabsContent>
-            )}
           </Tabs>
         </div>
       </main>
