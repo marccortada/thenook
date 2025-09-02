@@ -279,20 +279,29 @@ All colors MUST be HSL.
       -webkit-appearance: none;
     }
 
-    /* Popover and select content positioning fixes */
-    [data-radix-popover-content] {
+    /* Popover and select content positioning fixes for mobile */
+    [data-radix-popover-content],
+    [data-radix-select-content] {
       position: fixed !important;
       transform: none !important;
-      top: auto !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      margin-top: 8px !important;
-      max-width: calc(100vw - 32px) !important;
+      max-width: calc(100vw - 24px) !important;
+      max-height: 50vh !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
     }
 
-    [data-radix-popover-content][data-side="bottom"] {
-      top: var(--radix-popover-trigger-height, 44px) !important;
-      margin-top: 8px !important;
+    /* Force dropdowns to appear below triggers */
+    [data-radix-popover-content][data-side="bottom"],
+    [data-radix-select-content][data-side="bottom"] {
+      top: calc(var(--radix-popover-trigger-height, 44px) + 8px) !important;
+      margin-top: 0 !important;
+    }
+
+    /* Center horizontally relative to trigger */
+    [data-radix-popover-content][data-align="start"],
+    [data-radix-select-content][data-align="start"] {
+      left: var(--radix-popover-trigger-left, 16px) !important;
+      transform: none !important;
     }
 
     [data-radix-select-content][data-side="bottom"] {

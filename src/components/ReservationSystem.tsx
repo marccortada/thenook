@@ -519,12 +519,13 @@ const ReservationSystem = () => {
                     <SelectValue placeholder="Selecciona un centro" />
                   </SelectTrigger>
                    <SelectContent 
+                     className="z-50 bg-popover border shadow-md"
                      position="popper"
                      side="bottom"
                      align="start"
-                     sideOffset={4}
-                     avoidCollisions={true}
-                     collisionPadding={20}
+                     sideOffset={8}
+                     avoidCollisions={false}
+                     collisionPadding={0}
                    >
                      {centers.map((center) => (
                        <SelectItem key={center.id} value={center.id}>
@@ -592,12 +593,13 @@ const ReservationSystem = () => {
                       </Button>
                     </PopoverTrigger>
                      <PopoverContent 
-                       className="w-auto p-0" 
+                       className="w-auto p-0 z-50 bg-popover border shadow-md" 
                        align="start"
                        side="bottom"
-                       sideOffset={4}
-                       avoidCollisions={true}
-                       collisionPadding={20}
+                       sideOffset={8}
+                       avoidCollisions={false}
+                       collisionPadding={0}
+                       sticky="always"
                      >
                        <Calendar
                          mode="single"
@@ -648,14 +650,13 @@ const ReservationSystem = () => {
                       <SelectValue placeholder="Selecciona una hora" />
                     </SelectTrigger>
                      <SelectContent 
-                       className="max-h-48 sm:max-h-60 overflow-y-auto z-[70] touch-manipulation"
+                       className="max-h-48 sm:max-h-60 overflow-y-auto z-50 bg-popover border shadow-md"
                        position="popper"
                        side="bottom"
                        align="start"
                        sideOffset={8}
-                       alignOffset={0}
-                       avoidCollisions={true}
-                       collisionPadding={16}
+                       avoidCollisions={false}
+                       collisionPadding={0}
                      >
                        {timeSlots.map((time) => (
                          <SelectItem 
