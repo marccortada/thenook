@@ -50,6 +50,23 @@ const ClientReservation = () => {
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [showCenterDropdown, setShowCenterDropdown] = useState(false);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setShowCenterDropdown(false);
+        setShowTimeDropdown(false);
+        setShowCalendar(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const { services, loading: servicesLoading } = useServices(formData.center);
 
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
@@ -520,7 +537,7 @@ const ClientReservation = () => {
                     <span>{t('center_selection')}</span>
                   </h3>
                  
-                  <div className="relative">
+                  <div className="relative dropdown-container">
                      <Label htmlFor="center" className="text-sm">{t('center')} *</Label>
                      <div className="relative mt-1">
                        <button
@@ -545,9 +562,9 @@ const ClientReservation = () => {
                          </svg>
                        </button>
                        
-                       {showCenterDropdown && (
-                         <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-popover border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-y-auto min-w-full"
-                              style={{ position: 'absolute', top: 'calc(100% + 4px)' }}>
+                        {showCenterDropdown && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-y-auto"
+                               style={{ position: 'absolute' }}>
                            {centers.map((center) => (
                              <button
                                key={center.id}
@@ -557,7 +574,7 @@ const ClientReservation = () => {
                                  setSelection(null);
                                  setShowCenterDropdown(false);
                                }}
-                               className="w-full text-left px-3 py-2.5 hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 text-sm min-h-[40px] transition-colors"
+                                className="w-full text-left px-3 py-2.5 hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 text-sm transition-colors"
                              >
                                <MapPin className="h-3 w-3" />
                                <span>{center.name}</span>
@@ -643,7 +660,7 @@ const ClientReservation = () => {
                        </Popover>
                      </div>
                     
-                       <div className="relative">
+                        <div className="relative dropdown-container">
                          <Label htmlFor="time" className="text-sm">{t('time')} *</Label>
                          <div className="relative mt-1">
                            <button
@@ -663,9 +680,9 @@ const ClientReservation = () => {
                              </svg>
                            </button>
                            
-                           {showTimeDropdown && (
-                             <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-popover border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-y-auto min-w-full"
-                                  style={{ position: 'absolute', top: 'calc(100% + 4px)' }}>
+                            {showTimeDropdown && (
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-y-auto"
+                                   style={{ position: 'absolute' }}>
                                {timeSlots.map((time) => (
                                  <button
                                    key={time}
@@ -674,7 +691,7 @@ const ClientReservation = () => {
                                      setFormData({ ...formData, time });
                                      setShowTimeDropdown(false);
                                    }}
-                                   className="w-full text-left px-3 py-2.5 hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 text-sm min-h-[40px] transition-colors"
+                                   className="w-full text-left px-3 py-2.5 hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 text-sm transition-colors"
                                  >
                                    <Clock className="h-3 w-3" />
                                    <span>{time}</span>
