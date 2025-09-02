@@ -40,11 +40,11 @@ const PAYMENT_STATUSES = [
 ];
 
 const PAYMENT_METHODS = [
-  { value: 'efectivo', label: '💵 Efectivo', icon: '💵' },
-  { value: 'tarjeta', label: '💳 Tarjeta', icon: '💳' },
-  { value: 'bizum', label: '📱 Bizum', icon: '📱' },
-  { value: 'paypal', label: '🟦 PayPal', icon: '🟦' },
-  { value: 'apple_pay', label: '🍎 Apple Pay', icon: '🍎' },
+  { value: 'efectivo', label: 'Efectivo' },
+  { value: 'tarjeta', label: 'Tarjeta' },
+  { value: 'bizum', label: 'Bizum' },
+  { value: 'paypal', label: 'PayPal' },
+  { value: 'apple_pay', label: 'Apple Pay' },
 ];
 
 export default function BookingManagement() {
@@ -360,68 +360,83 @@ export default function BookingManagement() {
         </div>
       </main>
 
-      {/* Payment Modal - Simple Implementation */}
+      {/* Payment Modal - Responsive Implementation */}
       {showPaymentDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-2 mb-4">
-              <DollarSign className="h-5 w-5" />
-              <h3 className="text-lg font-semibold">💰 Cobrar Cita</h3>
-            </div>
-            
-            {selectedBooking && (
-              <div className="space-y-4">
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <h4 className="font-medium mb-2">Detalles de la cita</h4>
-                  <p className="text-sm text-gray-600">
-                    Cliente: {selectedBooking.profiles?.first_name} {selectedBooking.profiles?.last_name}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Servicio: {selectedBooking.services?.name}
-                  </p>
-                  <p className="text-sm font-bold text-blue-600">
-                    💶 Importe: {(selectedBooking.total_price_cents / 100).toFixed(2)}€
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">💳 Forma de Pago</label>
-                  <select 
-                    value={paymentMethod} 
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full h-12 px-3 border-2 border-gray-300 rounded-lg focus:border-blue-500"
-                  >
-                    <option value="">💰 Seleccionar forma de pago...</option>
-                    {PAYMENT_METHODS.map((method) => (
-                      <option key={method.value} value={method.value}>
-                        {method.icon} {method.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={processPayment}
-                    disabled={!paymentMethod}
-                    className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    <CreditCard className="h-5 w-5 mr-2 inline" />
-                    ✅ Confirmar Pago - {(selectedBooking.total_price_cents / 100).toFixed(2)}€
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowPaymentDialog(false);
-                      setPaymentMethod('');
-                      setSelectedBooking(null);
-                    }}
-                    className="h-12 px-6 border-2 border-gray-300 rounded-lg hover:bg-gray-100"
-                  >
-                    ❌ Cancelar
-                  </button>
-                </div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 lg:p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <DollarSign className="h-6 w-6" />
+                <h3 className="text-2xl font-semibold">Cobrar Cita</h3>
               </div>
-            )}
+              
+              {selectedBooking && (
+                <div className="space-y-6">
+                  <div className="p-6 bg-gray-50 rounded-lg">
+                    <h4 className="text-lg font-semibold mb-4">Detalles de la cita</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Cliente</p>
+                        <p className="font-medium text-lg">
+                          {selectedBooking.profiles?.first_name} {selectedBooking.profiles?.last_name}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Servicio</p>
+                        <p className="font-medium text-lg">{selectedBooking.services?.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Centro</p>
+                        <p className="font-medium">{selectedBooking.centers?.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Importe</p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {(selectedBooking.total_price_cents / 100).toFixed(2)}€
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-lg font-medium block">Forma de Pago</label>
+                    <select 
+                      value={paymentMethod} 
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-full h-14 px-4 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                    >
+                      <option value="">Seleccionar forma de pago...</option>
+                      {PAYMENT_METHODS.map((method) => (
+                        <option key={method.value} value={method.value}>
+                          {method.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                    <button
+                      onClick={processPayment}
+                      disabled={!paymentMethod}
+                      className="flex-1 h-14 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed text-lg flex items-center justify-center gap-2"
+                    >
+                      <CreditCard className="h-5 w-5" />
+                      Confirmar Pago - {(selectedBooking.total_price_cents / 100).toFixed(2)}€
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPaymentDialog(false);
+                        setPaymentMethod('');
+                        setSelectedBooking(null);
+                      }}
+                      className="h-14 px-8 border-2 border-gray-300 rounded-lg hover:bg-gray-100 text-lg font-medium"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
