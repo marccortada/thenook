@@ -297,36 +297,42 @@ const GiftCardsPage = () => {
               <SheetTrigger asChild>
                 <Button variant="outline">{t('cart')} ({items.length})</Button>
               </SheetTrigger>
-              <SheetContent className="w-[90vw] sm:w-[480px] flex flex-col">
-                <SheetHeader className="flex-shrink-0">
+              <SheetContent className="w-[90vw] sm:w-[480px] overflow-hidden">
+                <SheetHeader className="pb-4">
                   <SheetTitle>{t('your_cart')}</SheetTitle>
                 </SheetHeader>
-                <div className="flex-1 overflow-y-auto space-y-4 mt-4 pr-2">
-                  {items.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {items.map((it) => (
-                        <div key={it.id} className="flex items-center justify-between gap-3 border rounded-md p-3">
-                          <div>
-                            <p className="text-sm font-medium leading-tight">{it.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {euro(it.priceCents)} × {it.quantity}
-                            </p>
-                          </div>
-                          <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
-                            {t('remove')}
-                          </Button>
+                <div className="flex flex-col h-full">
+                  <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                    {items.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
+                    ) : (
+                      <>
+                        {/* Lista de productos */}
+                        <div className="space-y-3">
+                          {items.map((it) => (
+                            <div key={it.id} className="flex items-center justify-between gap-3 border rounded-md p-3">
+                              <div>
+                                <p className="text-sm font-medium leading-tight">{it.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {euro(it.priceCents)} × {it.quantity}
+                                </p>
+                              </div>
+                              <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
+                                {t('remove')}
+                              </Button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                       <div className="flex items-center justify-between border-t pt-3">
-                         <span className="text-sm text-muted-foreground">{t('total')}</span>
-                         <span className="font-semibold">{euro(totalCents)}</span>
-                       </div>
-                       
-                       {/* Campos de comprado por */}
-                       <div className="space-y-3 border-t pt-3">
-                         <div>
+
+                        {/* Total */}
+                        <div className="flex items-center justify-between border-t pt-3">
+                          <span className="text-sm text-muted-foreground">{t('total')}</span>
+                          <span className="font-semibold">{euro(totalCents)}</span>
+                        </div>
+                        
+                        {/* Campos de comprador */}
+                        <div className="space-y-3 border-t pt-3">
+                          <div>
                             <Label htmlFor="purchased_by_name" className="text-sm">{t('purchased_by_name')}</Label>
                             <Input
                               id="purchased_by_name"
@@ -347,10 +353,10 @@ const GiftCardsPage = () => {
                               placeholder={t('buyer_email_placeholder')}
                               className="mt-1"
                             />
-                           </div>
+                          </div>
                         </div>
                         
-                        {/* ¿Es un regalo? */}
+                        {/* Checkbox ¿Es un regalo? */}
                         <div className="border-t pt-3">
                           <div className="flex items-center space-x-2">
                             <Checkbox 
@@ -358,159 +364,169 @@ const GiftCardsPage = () => {
                               checked={isGift}
                               onCheckedChange={(checked) => setIsGift(!!checked)}
                             />
-                             <Label htmlFor="is_gift" className="text-sm">{t('is_gift')}</Label>
-                           </div>
-                           
-                           {isGift && (
-                             <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
-                               <div>
-                                 <Label htmlFor="recipient_name" className="text-sm">{t('recipient_name_required')}</Label>
-                                 <Input
-                                   id="recipient_name"
-                                   value={recipientName}
-                                   onChange={(e) => setRecipientName(e.target.value)}
-                                   placeholder={t('recipient_name_placeholder')}
-                                   className="mt-1"
-                                   required={isGift}
-                                 />
-                               </div>
-                               
-                               <div>
-                                 <Label htmlFor="recipient_email" className="text-sm">{t('recipient_email')}</Label>
-                                 <Input
-                                   id="recipient_email"
-                                   type="email"
-                                   value={recipientEmail}
-                                   onChange={(e) => setRecipientEmail(e.target.value)}
-                                   placeholder={t('buyer_email_placeholder')}
-                                   className="mt-1"
-                                 />
-                               </div>
-                               
-                                <div>
-                                  <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
-                                  <Textarea
-                                    id="gift_message"
-                                    value={giftMessage}
-                                    onChange={(e) => setGiftMessage(e.target.value)}
-                                    placeholder={t('gift_message_placeholder')}
-                                    className="mt-1"
-                                    rows={3}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                         </div>
-                         
-                          {/* Opciones de personalización de tarjeta de regalo */}
-                          <div className="border-t pt-4 space-y-4">
-                            <h4 className="text-sm font-semibold">Configuración de la Tarjeta</h4>
-                            
-                            <div className="grid gap-4">
-                              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                                <Label htmlFor="show_price" className="text-sm">¿Mostrar precio en la tarjeta?</Label>
-                                <Checkbox 
-                                  id="show_price" 
-                                  checked={showPrice}
-                                  onCheckedChange={(checked) => setShowPrice(!!checked)}
+                            <Label htmlFor="is_gift" className="text-sm">{t('is_gift')}</Label>
+                          </div>
+                          
+                          {isGift && (
+                            <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
+                              <div>
+                                <Label htmlFor="recipient_name" className="text-sm">{t('recipient_name_required')}</Label>
+                                <Input
+                                  id="recipient_name"
+                                  value={recipientName}
+                                  onChange={(e) => setRecipientName(e.target.value)}
+                                  placeholder={t('recipient_name_placeholder')}
+                                  className="mt-1"
+                                  required={isGift}
                                 />
                               </div>
                               
-                              <div className="p-3 bg-muted/50 rounded-lg">
-                                <Label className="text-sm font-medium mb-3 block">¿A quién enviar la tarjeta?</Label>
-                                <div className="grid gap-2">
-                                  <div className="flex items-center space-x-2">
-                                    <input
-                                      type="radio"
-                                      id="send_to_buyer"
-                                      name="send_option"
-                                      checked={sendToBuyer}
-                                      onChange={() => setSendToBuyer(true)}
-                                      className="h-4 w-4"
-                                    />
-                                    <Label htmlFor="send_to_buyer" className="text-sm">Enviar al comprador</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <input
-                                      type="radio"
-                                      id="send_to_recipient"
-                                      name="send_option"
-                                      checked={!sendToBuyer}
-                                      onChange={() => setSendToBuyer(false)}
-                                      className="h-4 w-4"
-                                    />
-                                    <Label htmlFor="send_to_recipient" className="text-sm">Enviar directamente al beneficiario</Label>
-                                  </div>
-                                </div>
+                              <div>
+                                <Label htmlFor="recipient_email" className="text-sm">{t('recipient_email')}</Label>
+                                <Input
+                                  id="recipient_email"
+                                  type="email"
+                                  value={recipientEmail}
+                                  onChange={(e) => setRecipientEmail(e.target.value)}
+                                  placeholder={t('buyer_email_placeholder')}
+                                  className="mt-1"
+                                />
                               </div>
                               
-                              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                                <Label htmlFor="show_buyer_data" className="text-sm">¿Mostrar datos del comprador?</Label>
-                                <Checkbox 
-                                  id="show_buyer_data" 
-                                  checked={showBuyerData}
-                                  onCheckedChange={(checked) => setShowBuyerData(!!checked)}
+                              <div>
+                                <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
+                                <Textarea
+                                  id="gift_message"
+                                  value={giftMessage}
+                                  onChange={(e) => setGiftMessage(e.target.value)}
+                                  placeholder={t('gift_message_placeholder')}
+                                  className="mt-1"
+                                  rows={3}
                                 />
                               </div>
                             </div>
-                         </div>
-                         
-                         <PaymentMethodsInfo />
-                       <div className="grid grid-cols-2 gap-3 pt-1">
-                          <Button variant="secondary" onClick={clear} className="h-12">
-                            {t('empty_cart_button')}
-                          </Button>
-                           <Button className="h-12 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
+                          )}
+                        </div>
+                        
+                        {/* Opciones de personalización */}
+                        <div className="border-t pt-4 space-y-4">
+                          <h4 className="text-sm font-semibold">Configuración de la Tarjeta</h4>
+                          
+                          <div className="grid gap-4">
+                            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                              <Label htmlFor="show_price" className="text-sm">¿Mostrar precio en la tarjeta?</Label>
+                              <Checkbox 
+                                id="show_price" 
+                                checked={showPrice}
+                                onCheckedChange={(checked) => setShowPrice(!!checked)}
+                              />
+                            </div>
+                            
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                              <Label className="text-sm font-medium mb-3 block">¿A quién enviar la tarjeta?</Label>
+                              <div className="grid gap-2">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    id="send_to_buyer"
+                                    name="send_option"
+                                    checked={sendToBuyer}
+                                    onChange={() => setSendToBuyer(true)}
+                                    className="h-4 w-4"
+                                  />
+                                  <Label htmlFor="send_to_buyer" className="text-sm">Enviar al comprador</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    id="send_to_recipient"
+                                    name="send_option"
+                                    checked={!sendToBuyer}
+                                    onChange={() => setSendToBuyer(false)}
+                                    className="h-4 w-4"
+                                  />
+                                  <Label htmlFor="send_to_recipient" className="text-sm">Enviar directamente al beneficiario</Label>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                              <Label htmlFor="show_buyer_data" className="text-sm">¿Mostrar datos del comprador?</Label>
+                              <Checkbox 
+                                id="show_buyer_data" 
+                                checked={showBuyerData}
+                                onCheckedChange={(checked) => setShowBuyerData(!!checked)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <PaymentMethodsInfo />
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* Botones fijos en la parte inferior */}
+                  {items.length > 0 && (
+                    <div className="flex-shrink-0 border-t pt-4 mt-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button variant="secondary" onClick={clear} className="h-12">
+                          {t('empty_cart_button')}
+                        </Button>
+                        <Button 
+                          className="h-12 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" 
+                          onClick={async () => {
                             if (items.length === 0) return;
                             if (isGift && !recipientName.trim()) {
                               toast.error(t('recipient_name_error'));
                               return;
                             }
-                             try {
-                               if (!purchasedByName.trim()) {
-                                 toast.error(t('buyer_name_error'));
-                                 return;
-                               }
-                               if (!purchasedByEmail.trim()) {
-                                 toast.error(t('buyer_email_error'));
-                                 return;
-                               }
-                               
-                               const payload = {
-                                 intent: "gift_cards",
-                                 gift_cards: {
-                                   items: items.map(i => ({ 
-                                     amount_cents: i.priceCents, 
-                                     quantity: i.quantity,
-                                     name: i.name,
-                                     purchased_by_name: purchasedByName,
-                                     purchased_by_email: purchasedByEmail,
-                                     is_gift: isGift,
-                                     recipient_name: isGift ? recipientName : undefined,
-                                     recipient_email: isGift ? recipientEmail : undefined,
-                                     gift_message: isGift ? giftMessage : undefined,
-                                     show_price: showPrice,
-                                     send_to_buyer: sendToBuyer,
-                                     show_buyer_data: showBuyerData
-                                   })),
-                                   total_cents: totalCents
-                                 },
-                                 currency: "eur"
-                               };
-                               const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-                               if (error) throw error;
-                               if (data?.client_secret) {
-                                 setStripeClientSecret(data.client_secret);
-                                 setShowStripeModal(true);
-                               } else {
-                                 toast.error("No se recibió configuración de pago");
-                               }
-                           } catch (e: any) {
-                             toast.error(e.message || t('payment_init_error'));
-                           }
-                         }}>
-                            {t('buy_button')} - {euro(totalCents)}
-                         </Button>
+                            try {
+                              if (!purchasedByName.trim()) {
+                                toast.error(t('buyer_name_error'));
+                                return;
+                              }
+                              if (!purchasedByEmail.trim()) {
+                                toast.error(t('buyer_email_error'));
+                                return;
+                              }
+                              
+                              const payload = {
+                                intent: "gift_cards",
+                                gift_cards: {
+                                  items: items.map(i => ({ 
+                                    amount_cents: i.priceCents, 
+                                    quantity: i.quantity,
+                                    name: i.name,
+                                    purchased_by_name: purchasedByName,
+                                    purchased_by_email: purchasedByEmail,
+                                    is_gift: isGift,
+                                    recipient_name: isGift ? recipientName : undefined,
+                                    recipient_email: isGift ? recipientEmail : undefined,
+                                    gift_message: isGift ? giftMessage : undefined,
+                                    show_price: showPrice,
+                                    send_to_buyer: sendToBuyer,
+                                    show_buyer_data: showBuyerData
+                                  })),
+                                  total_cents: totalCents
+                                },
+                                currency: "eur"
+                              };
+                              const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
+                              if (error) throw error;
+                              if (data?.client_secret) {
+                                setStripeClientSecret(data.client_secret);
+                                setShowStripeModal(true);
+                              } else {
+                                toast.error("No se recibió configuración de pago");
+                              }
+                            } catch (e: any) {
+                              toast.error(e.message || t('payment_init_error'));
+                            }
+                          }}
+                        >
+                          {t('buy_button')} - {euro(totalCents)}
+                        </Button>
                       </div>
                     </div>
                   )}
