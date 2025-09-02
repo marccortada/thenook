@@ -115,9 +115,10 @@ export default function AdminPricingPromos() {
         type: editingService.type,
         duration_minutes: editingService.duration_minutes,
         price_cents: editingService.price_cents,
-          active: editingService.active,
-          has_discount: editingService.has_discount || false,
-          discount_price_cents: editingService.discount_price_cents || 0
+        center_id: editingService.center_id,
+        active: editingService.active,
+        has_discount: editingService.has_discount || false,
+        discount_price_cents: editingService.discount_price_cents || 0
       };
 
       console.log('Update data:', updateData);
