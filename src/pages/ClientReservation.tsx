@@ -48,6 +48,7 @@ const ClientReservation = () => {
   const [selection, setSelection] = useState<{ id: string; kind: "service" } | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+  const [showCenterDropdown, setShowCenterDropdown] = useState(false);
 
   const { services, loading: servicesLoading } = useServices(formData.center);
 
@@ -342,12 +343,13 @@ const ClientReservation = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
       {/* Overlay para cerrar dropdowns al hacer clic fuera */}
-      {(showCalendar || showTimeDropdown) && (
+      {(showCalendar || showTimeDropdown || showCenterDropdown) && (
         <div 
-          className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
           onClick={() => {
             setShowCalendar(false);
             setShowTimeDropdown(false);
+            setShowCenterDropdown(false);
           }}
         />
       )}
@@ -529,24 +531,52 @@ const ClientReservation = () => {
                     <span>{t('center_selection')}</span>
                   </h3>
                  
-                 <div>
-                    <Label htmlFor="center" className="text-sm">{t('center')} *</Label>
-                     <Select value={formData.center} onValueChange={(value) => { setFormData({ ...formData, center: value }); setSelection(null); }}>
-                       <SelectTrigger className="mt-1">
-                         <SelectValue placeholder={t('select_center')} />
-                       </SelectTrigger>
-                       <SelectContent className="z-[9999] bg-popover border shadow-lg">
-                         {centers.map((center) => (
-                           <SelectItem key={center.id} value={center.id}>
-                             <div className="flex items-center space-x-2">
+                  <div className="relative">
+                     <Label htmlFor="center" className="text-sm">{t('center')} *</Label>
+                     <div className="relative mt-1">
+                       <button
+                         type="button"
+                         onClick={() => setShowCenterDropdown(!showCenterDropdown)}
+                         className={cn(
+                           "w-full justify-between text-left font-normal border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md flex items-center",
+                           !formData.center && "text-muted-foreground"
+                         )}
+                       >
+                         <div className="flex items-center space-x-2">
+                           <MapPin className="h-3 w-3" />
+                           <span>
+                             {formData.center 
+                               ? centers.find(c => c.id === formData.center)?.name 
+                               : t('select_center')
+                             }
+                           </span>
+                         </div>
+                         <svg className="h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                           <polyline points="6,9 12,15 18,9"></polyline>
+                         </svg>
+                       </button>
+                       
+                       {showCenterDropdown && (
+                         <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                           {centers.map((center) => (
+                             <button
+                               key={center.id}
+                               type="button"
+                               onClick={() => {
+                                 setFormData({ ...formData, center: center.id });
+                                 setSelection(null);
+                                 setShowCenterDropdown(false);
+                               }}
+                               className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 text-sm"
+                             >
                                <MapPin className="h-3 w-3" />
                                <span>{center.name}</span>
-                             </div>
-                           </SelectItem>
-                         ))}
-                      </SelectContent>
-                    </Select>
-                 </div>
+                             </button>
+                           ))}
+                         </div>
+                       )}
+                     </div>
+                  </div>
                </div>
 
                {/* Service Selection - ONLY after center is selected */}
@@ -623,48 +653,46 @@ const ClientReservation = () => {
                        </Popover>
                      </div>
                     
-                      <div className="relative">
-                        <Label htmlFor="time" className="text-sm">{t('time')} *</Label>
-                        <Popover open={showTimeDropdown} onOpenChange={setShowTimeDropdown}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full justify-start text-left font-normal mt-1",
-                                !formData.time && "text-muted-foreground"
-                              )}
-                            >
-                              <Clock className="mr-2 h-4 w-4" />
-                              {formData.time || t('select_time')}
-                            </Button>
-                          </PopoverTrigger>
-                            <PopoverContent 
-                              className="w-full p-0 z-50 bg-popover border border-border shadow-lg max-h-60 overflow-y-auto"
-                              align="start"
-                              side="bottom"
-                              sideOffset={4}
-                              alignOffset={0}
-                              avoidCollisions={true}
-                              onInteractOutside={() => setShowTimeDropdown(false)}
-                            >
-                            <div className="p-1">
-                              {timeSlots.map((time) => (
-                                <button
-                                  key={time}
-                                  onClick={() => {
-                                    setFormData({ ...formData, time });
-                                    setShowTimeDropdown(false);
-                                  }}
-                                  className="w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 rounded-md transition-colors"
-                                >
-                                  <Clock className="h-3 w-3" />
-                                  <span>{time}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
+                       <div className="relative">
+                         <Label htmlFor="time" className="text-sm">{t('time')} *</Label>
+                         <div className="relative mt-1">
+                           <button
+                             type="button"
+                             onClick={() => setShowTimeDropdown(!showTimeDropdown)}
+                             className={cn(
+                               "w-full justify-between text-left font-normal border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md flex items-center",
+                               !formData.time && "text-muted-foreground"
+                             )}
+                           >
+                             <div className="flex items-center space-x-2">
+                               <Clock className="h-3 w-3" />
+                               <span>{formData.time || t('select_time')}</span>
+                             </div>
+                             <svg className="h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                               <polyline points="6,9 12,15 18,9"></polyline>
+                             </svg>
+                           </button>
+                           
+                           {showTimeDropdown && (
+                             <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                               {timeSlots.map((time) => (
+                                 <button
+                                   key={time}
+                                   type="button"
+                                   onClick={() => {
+                                     setFormData({ ...formData, time });
+                                     setShowTimeDropdown(false);
+                                   }}
+                                   className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 text-sm"
+                                 >
+                                   <Clock className="h-3 w-3" />
+                                   <span>{time}</span>
+                                 </button>
+                               ))}
+                             </div>
+                           )}
+                         </div>
+                       </div>
                    </div>
                  </div>
 
