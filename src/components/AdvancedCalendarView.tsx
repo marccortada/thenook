@@ -240,12 +240,6 @@ const AdvancedCalendarView = () => {
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
       
-      // Calcular el centro del slot
-      const slotCenterX = slotRect.left + (slotRect.width / 2);
-      
-      // Ancho del modal (responsive)
-      const modalWidth = windowWidth < 768 ? windowWidth - 40 : Math.min(500, windowWidth - 40);
-      
       // Altura estimada del modal
       const estimatedModalHeight = 600;
       
@@ -257,10 +251,21 @@ const AdvancedCalendarView = () => {
         viewportBottom - estimatedModalHeight - 20
       ));
       
-      setModalPosition({
-        top: modalTop,
-        left: Math.max(20, Math.min(slotCenterX - (modalWidth / 2), windowWidth - modalWidth - 20))
-      });
+      // En móvil, centrar horizontalmente en la pantalla
+      if (windowWidth < 768) {
+        setModalPosition({
+          top: modalTop,
+          left: 20 // Usar padding fijo en móvil
+        });
+      } else {
+        // En desktop, centrar basado en el slot clickeado
+        const slotCenterX = slotRect.left + (slotRect.width / 2);
+        const modalWidth = Math.min(500, windowWidth - 40);
+        setModalPosition({
+          top: modalTop,
+          left: Math.max(20, Math.min(slotCenterX - (modalWidth / 2), windowWidth - modalWidth - 20))
+        });
+      }
     }
 
     const existingBooking = getBookingForSlot(centerId, laneId, date, timeSlot);
@@ -983,11 +988,9 @@ const AdvancedCalendarView = () => {
             style={{
               top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
-              width: window.innerWidth < 768 ? 'calc(100vw - 2rem)' : 'min(500px, calc(100vw - 2rem))',
-              maxWidth: 'calc(100vw - 2rem)',
-              maxHeight: '80vh',
-              transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
-              marginLeft: window.innerWidth < 768 ? '50vw' : '0'
+              width: window.innerWidth < 768 ? 'calc(100vw - 2.5rem)' : 'min(500px, calc(100vw - 2rem))',
+              maxWidth: window.innerWidth < 768 ? 'calc(100vw - 2.5rem)' : 'calc(100vw - 2rem)',
+              maxHeight: '80vh'
             }}
           >
             <div className="flex flex-col min-h-[70vh] max-h-[85vh]">
@@ -1179,11 +1182,9 @@ const AdvancedCalendarView = () => {
             style={{
               top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
-              width: window.innerWidth < 768 ? 'calc(100vw - 2rem)' : 'min(600px, calc(100vw - 2rem))',
-              maxWidth: 'calc(100vw - 2rem)',
-              maxHeight: '80vh',
-              transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
-              marginLeft: window.innerWidth < 768 ? '50vw' : '0'
+              width: window.innerWidth < 768 ? 'calc(100vw - 2.5rem)' : 'min(600px, calc(100vw - 2rem))',
+              maxWidth: window.innerWidth < 768 ? 'calc(100vw - 2.5rem)' : 'calc(100vw - 2rem)',
+              maxHeight: '80vh'
             }}
           >
             <div className="px-4 pt-4 pb-2 border-b">
