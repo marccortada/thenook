@@ -1122,17 +1122,7 @@ const AdvancedCalendarView = () => {
                         collisionPadding={20}
                         onPointerDownOutside={(e) => e.preventDefault()}
                       >
-                         <Calendar
-                          mode="single"
-                          selected={bookingForm.date}
-                          onSelect={(date) => {
-                            if (date) {
-                              setBookingForm({ ...bookingForm, date });
-                            }
-                          }}
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
+                         {/* Calendar temporarily disabled */}
                       </PopoverContent>
                     </Popover>
                   </div>
