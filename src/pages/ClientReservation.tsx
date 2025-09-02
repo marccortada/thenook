@@ -480,9 +480,14 @@ const ClientReservation = () => {
                   })() && (
                     <div className="pt-4 border-t border-primary/20">
                       <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-primary">
-                          <Users className="h-4 w-4" />
-                          <span className="text-sm font-medium">Seleccionar Cliente Existente</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-primary">
+                            <Users className="h-4 w-4" />
+                            <span className="text-sm font-medium">Seleccionar Cliente Existente</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+                            🔐 Sesión Admin: {user?.email}
+                          </div>
                         </div>
                         <AdminClientSelector onClientSelect={handleClientSelect} />
                         <p className="text-xs text-muted-foreground italic">
