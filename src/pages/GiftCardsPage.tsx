@@ -569,15 +569,8 @@ const GiftCardsPage = () => {
           <Dialog open={showStripeModal} onOpenChange={setShowStripeModal}>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle className="flex items-center justify-between">
+                <DialogTitle>
                   Completar Pago
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => setShowStripeModal(false)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
                 </DialogTitle>
               </DialogHeader>
               {stripeClientSecret && (
