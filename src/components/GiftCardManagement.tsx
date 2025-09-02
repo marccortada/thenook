@@ -165,26 +165,28 @@ const GiftCardManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-4 lg:px-6">
       {/* Header with Actions */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Gestión de Tarjetas Regalo</h2>
-          <p className="text-muted-foreground">Administra las tarjetas regalo y su saldo</p>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl sm:text-2xl font-bold truncate">Gestión de Tarjetas Regalo</h2>
+          <p className="text-sm text-muted-foreground">Administra las tarjetas regalo y su saldo</p>
         </div>
-        <div className="flex space-x-2">
-          <Button onClick={refetch} variant="outline" size="sm">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button onClick={refetch} variant="outline" size="sm" className="w-full sm:w-auto">
             <RotateCcw className="mr-2 h-4 w-4" />
-            Actualizar
+            <span className="hidden sm:inline">Actualizar</span>
+            <span className="sm:hidden">Actualizar</span>
           </Button>
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
-                Crear Tarjeta Regalo
+                <span className="hidden sm:inline">Crear Tarjeta Regalo</span>
+                <span className="sm:hidden">Crear</span>
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Crear Nueva Tarjeta Regalo</DialogTitle>
                 <DialogDescription>Crea una nueva tarjeta regalo especificando el monto y cliente opcional.</DialogDescription>
@@ -227,11 +229,11 @@ const GiftCardManagement = () => {
                     placeholder="email@ejemplo.com"
                   />
                 </div>
-                <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
+                <div className="flex flex-col sm:flex-row justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)} className="w-full sm:w-auto">
                     Cancelar
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" className="w-full sm:w-auto">
                     Crear Tarjeta Regalo
                   </Button>
                 </div>
@@ -243,7 +245,7 @@ const GiftCardManagement = () => {
 
       {/* Search Bar */}
       <div className="flex items-center space-x-2">
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Buscar por código, nombre o email..."
@@ -255,28 +257,26 @@ const GiftCardManagement = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tarjetas Activas</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Tarjetas Activas</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">
               {giftCards.filter(g => g.status === 'active').length}
             </div>
           </CardContent>
         </Card>
 
-
-
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total Activo</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Valor Total Activo</CardTitle>
             <Euro className="h-4 w-4 text-blue-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">
               €{giftCards
                 .filter(g => g.status === 'active')
                 .reduce((sum, g) => sum + (g.remaining_balance_cents / 100), 0)
@@ -288,9 +288,9 @@ const GiftCardManagement = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="all">Todas las Tarjetas</TabsTrigger>
-          <TabsTrigger value="active">Solo Activas</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 h-auto p-1">
+          <TabsTrigger value="all" className="text-xs sm:text-sm px-2 py-2">Todas</TabsTrigger>
+          <TabsTrigger value="active" className="text-xs sm:text-sm px-2 py-2">Activas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all">
@@ -305,41 +305,44 @@ const GiftCardManagement = () => {
                   <p className="text-muted-foreground">No hay tarjetas regalo registradas</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {giftCards.map((card) => (
-                    <div key={card.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="text-sm font-medium">Código: <span className="font-mono">{card.code}</span></div>
-                          <Badge className={getStatusColor(card.status)}>
+                    <div key={card.id} className="border rounded-lg p-3 sm:p-4 hover:bg-muted/50 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0">
+                          <div className="text-xs sm:text-sm font-medium truncate">
+                            Código: <span className="font-mono">{card.code}</span>
+                          </div>
+                          <Badge className={`${getStatusColor(card.status)} text-xs`}>
                             {getStatusLabel(card.status)}
                           </Badge>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
                           <Button 
                             size="sm" 
                             variant="outline"
                             onClick={() => setEditingCard(card)}
+                            className="h-8 w-8 p-0"
                           >
-                            <Edit3 className="h-4 w-4" />
+                            <Edit3 className="h-3 w-3" />
                           </Button>
                           {card.status === 'active' && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="destructive">
-                                  <Trash2 className="h-4 w-4" />
+                                <Button size="sm" variant="destructive" className="h-8 w-8 p-0">
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              <AlertDialogContent className="w-[95vw] max-w-md mx-auto">
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>¿Desactivar tarjeta regalo?</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Esta acción marcará la tarjeta como expirada. El saldo restante se perderá.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeactivateGiftCard(card.id)}>
+                                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                  <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeactivateGiftCard(card.id)} className="w-full sm:w-auto">
                                     Confirmar
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -349,29 +352,29 @@ const GiftCardManagement = () => {
                         </div>
                       </div>
                       
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
+                      <div className="mt-3 space-y-2 sm:mt-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0">
+                        <div className="min-w-0">
                           {card.profiles ? (
                             <div className="flex items-center space-x-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">
+                              <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="text-xs sm:text-sm font-medium truncate">
                                 {card.profiles.first_name} {card.profiles.last_name}
                               </span>
                             </div>
                           ) : (
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-xs sm:text-sm text-muted-foreground truncate">
                               {card.purchased_by_name || 'Sin asignar'}
                             </div>
                           )}
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground truncate">
                             {card.profiles?.email || card.purchased_by_email || ''}
                           </p>
                         </div>
                         
-                        <div>
+                        <div className="min-w-0">
                           <div className="flex items-center space-x-2">
-                            <Euro className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
+                            <Euro className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-xs sm:text-sm font-medium truncate">
                               €{(card.remaining_balance_cents / 100).toFixed(2)} / €{(card.initial_balance_cents / 100).toFixed(2)}
                             </span>
                           </div>
@@ -382,14 +385,14 @@ const GiftCardManagement = () => {
                                 style={{ width: `${100 - getUsagePercentage(card.remaining_balance_cents, card.initial_balance_cents)}%` }}
                               />
                             </div>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
                               {100 - getUsagePercentage(card.remaining_balance_cents, card.initial_balance_cents)}%
                             </span>
                           </div>
                         </div>
                         
-                        <div>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">
                             Creada: {format(new Date(card.created_at), "dd/MM/yyyy", { locale: es })}
                           </p>
                         </div>
