@@ -249,14 +249,16 @@ const AdvancedCalendarView = () => {
       // Altura estimada del modal
       const estimatedModalHeight = 600;
       
-      // Calcular posición Y: si el modal se saldría por abajo, posicionarlo arriba del slot
-      let topPosition = slotRect.top + scrollTop - 20;
-      if (topPosition + estimatedModalHeight > scrollTop + windowHeight) {
-        topPosition = Math.max(20, slotRect.top + scrollTop - estimatedModalHeight - 20);
-      }
+      // Posición vertical: centrar en el viewport visible
+      const viewportTop = scrollTop;
+      const viewportBottom = scrollTop + windowHeight;
+      const modalTop = Math.max(viewportTop + 20, Math.min(
+        viewportTop + (windowHeight - estimatedModalHeight) / 2,
+        viewportBottom - estimatedModalHeight - 20
+      ));
       
       setModalPosition({
-        top: Math.max(20, topPosition),
+        top: modalTop,
         left: Math.max(20, Math.min(slotCenterX - (modalWidth / 2), windowWidth - modalWidth - 20))
       });
     }
@@ -977,13 +979,13 @@ const AdvancedCalendarView = () => {
       {showBookingModal && (
         <div className="fixed inset-0 bg-black/50 z-50">
           <div 
-            className="absolute bg-background rounded-lg shadow-xl border overflow-y-auto"
+            className="absolute bg-background rounded-lg shadow-xl border overflow-y-auto animate-scale-in"
             style={{
-              top: `${Math.max(20, modalPosition.top)}px`,
+              top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
               width: window.innerWidth < 768 ? 'calc(100vw - 2rem)' : 'min(500px, calc(100vw - 2rem))',
               maxWidth: 'calc(100vw - 2rem)',
-              maxHeight: `calc(100vh - ${Math.max(20, modalPosition.top)}px - 20px)`,
+              maxHeight: '80vh',
               transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
               marginLeft: window.innerWidth < 768 ? '50vw' : '0'
             }}
@@ -1173,13 +1175,13 @@ const AdvancedCalendarView = () => {
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 z-50">
           <div 
-            className="absolute bg-background rounded-lg shadow-xl border overflow-y-auto"
+            className="absolute bg-background rounded-lg shadow-xl border overflow-y-auto animate-scale-in"
             style={{
-              top: `${Math.max(20, modalPosition.top)}px`,
+              top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
               width: window.innerWidth < 768 ? 'calc(100vw - 2rem)' : 'min(600px, calc(100vw - 2rem))',
               maxWidth: 'calc(100vw - 2rem)',
-              maxHeight: `calc(100vh - ${Math.max(20, modalPosition.top)}px - 20px)`,
+              maxHeight: '80vh',
               transform: window.innerWidth < 768 ? 'translateX(-50%)' : 'none',
               marginLeft: window.innerWidth < 768 ? '50vw' : '0'
             }}
