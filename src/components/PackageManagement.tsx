@@ -318,7 +318,7 @@ const PackageManagement = () => {
       {/* Navigation - Mobile Dropdown / Desktop Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Mobile Dropdown */}
-        <div className="sm:hidden mb-4">
+        <div className="md:hidden mb-4">
           <Card>
             <CardContent className="p-4">
               <Label className="text-sm font-medium mb-2 block">Filtrar por:</Label>
@@ -338,7 +338,7 @@ const PackageManagement = () => {
         </div>
 
         {/* Desktop Tabs */}
-        <TabsList className="hidden sm:grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
+        <TabsList className="hidden md:grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
           <TabsTrigger value="bonos-all" className="text-xs sm:text-sm p-2">Todos los Bonos</TabsTrigger>
           <TabsTrigger value="bonos-active" className="text-xs sm:text-sm p-2">Solo Bonos Activos</TabsTrigger>
           <TabsTrigger value="tarjetas-all" className="text-xs sm:text-sm p-2">Todas las Tarjetas</TabsTrigger>

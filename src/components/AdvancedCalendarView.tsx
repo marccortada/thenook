@@ -891,14 +891,58 @@ const AdvancedCalendarView = () => {
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[85vh]">
-            <div className="grid grid-cols-[50px_repeat(28,1fr)] gap-0 min-w-[1200px]">
-              {/* Week header */}
-              <div className="sticky top-0 z-10 bg-background border-b">
-                <div className="p-1 text-center font-medium border-r bg-muted/50 text-xs">Hora</div>
+            {/* Mobile View */}
+            <div className="block sm:hidden">
+              <div className="p-4 space-y-3">
+                {timeSlots.map((timeSlot) => (
+                  <div key={timeSlot.time} className="border rounded-lg p-3 bg-card">
+                    <div className="font-medium text-sm mb-2">{timeSlot.time}</div>
+                    <div className="space-y-2">
+                      {getCenterLanes(selectedCenter).map((lane) => {
+                        const booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, timeSlot.time);
+                        return (
+                          <div
+                            key={lane.id}
+                            className={`p-2 rounded text-xs cursor-pointer transition-colors ${
+                              booking 
+                                ? 'bg-primary/20 text-primary border border-primary/30' 
+                                : 'bg-muted hover:bg-muted/80 border border-border'
+                            }`}
+                            onClick={(e) => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
+                          >
+                            <div className="font-medium">{lane.name}</div>
+                            {booking && (
+                              <div className="mt-1 text-xs opacity-80 truncate">
+                                Reservado
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
-              {weekDates.map((date) => 
-                centerLanes.map((lane) => (
-                  <div key={`${date.toISOString()}-${lane.id}`} className="sticky top-0 z-10 bg-background border-b">
+            </div>
+
+            {/* Desktop View */}
+            <div className="hidden sm:block overflow-x-auto">
+              <div className="grid grid-cols-[50px_repeat(28,1fr)] gap-0 min-w-[1200px]">
+                {/* Week header */}
+                <div className="sticky top-0 z-10 bg-background border-b">
+                  <div className="p-1 text-center font-medium border-r bg-muted/50 text-xs">Hora</div>
+                </div>
+                {weekDates.map((date, index) => 
+                  centerLanes.map((lane) => (
+                    <div key={`${index}-${lane.id}`} className="sticky top-0 z-10 bg-background border-b">
+                      <div className="p-1 text-center text-xs border-r bg-muted/50 min-h-[40px] flex items-center justify-center">
+                        <div>
+                          <div className="font-medium">{format(date, 'EEE dd', { locale: es })}</div>
+                          <div className="text-xs opacity-75">{lane.name}</div>
+                        </div>
+                      </div>
+                    </div>
+                ))}
                     <div className="p-1 text-center font-medium border-r bg-muted/50">
                       <div className="font-semibold text-[9px]">
                         {format(date, "EEE", { locale: es })} - {(lane.name || '').replace(/ra[ií]l/gi, 'C')}
@@ -908,7 +952,7 @@ const AdvancedCalendarView = () => {
                       </div>
                     </div>
                   </div>
-                ))
+                ))}
               )}
 
               {/* Time slots for week view */}

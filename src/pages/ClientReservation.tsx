@@ -361,7 +361,7 @@ const ClientReservation = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
       {/* Simple Header */}
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link to="/" className="inline-flex items-center hover:opacity-80 transition-opacity">
@@ -387,10 +387,10 @@ const ClientReservation = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8">
         {/* Reservation Form */}
         
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto px-2 sm:px-0">
         <Card className="hover-lift glass-effect border-primary/20">
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
