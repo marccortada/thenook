@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarDays, Clock, MapPin, User, CalendarIcon, Users } from "lucide-react";
+import { CalendarDays, Clock, MapPin, User, CalendarIcon, Users, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
@@ -577,16 +577,20 @@ const ReservationSystem = () => {
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
+                        type="button"
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
+                          "w-full justify-start text-left font-normal h-12 text-base touch-manipulation",
+                          "border-2 hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20",
                           !formData.date && "text-muted-foreground"
                         )}
+                        onClick={() => console.log('Date picker clicked')}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">
-                          {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
+                        <CalendarIcon className="mr-3 h-5 w-5 flex-shrink-0 text-primary" />
+                        <span className="flex-1 truncate">
+                          {formData.date ? format(formData.date, "PPP", { locale: es }) : "📅 Toca para seleccionar fecha"}
                         </span>
+                        <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-60" />
                       </Button>
                     </PopoverTrigger>
                      <PopoverContent 
