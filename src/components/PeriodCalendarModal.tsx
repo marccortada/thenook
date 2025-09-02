@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, CreditCard, CheckCircle, CheckCircle2, Clock, TrendingUp, Users, DollarSign } from "lucide-react";
+import { Calendar as CalendarIcon, CreditCard, CheckCircle, TrendingUp, Users, DollarSign } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -302,52 +302,23 @@ const fetchPeriodStats = async () => {
                   <CardTitle>Seleccionar Mes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-80 overflow-y-auto">
-                    {months.map((month, index) => {
-                      const isSelected = selectedRange?.from?.getTime() === month.start.getTime();
-                      // Colores alternos para meses
-                      const monthColors = [
-                        'from-indigo-400 to-indigo-600 border-indigo-500',
-                        'from-pink-400 to-pink-600 border-pink-500',
-                        'from-teal-400 to-teal-600 border-teal-500',
-                        'from-amber-400 to-amber-600 border-amber-500'
-                      ];
-                      const colorClass = monthColors[index % 4];
-                      
-                      return (
-                        <div
-                          key={month.label}
-                          className={cn(
-                            "relative cursor-pointer transition-all duration-300 hover:scale-105",
-                            isSelected && "ring-4 ring-primary ring-offset-2"
-                          )}
-                          onClick={() => handleQuickSelection(month.start, month.end)}
-                        >
-                          <div className={cn(
-                            "bg-gradient-to-br p-4 rounded-lg border-2 shadow-md text-white text-center",
-                            colorClass
-                          )}>
-                            <div className="text-sm font-bold">{month.label}</div>
-                            <div className="text-xs mt-2 bg-white/20 rounded p-1">
-                              <div className="flex items-center justify-center">
-                                <CalendarIcon className="h-3 w-3 mr-1" />
-                                {format(month.start, 'dd MMM', { locale: es })} - {format(month.end, 'dd MMM', { locale: es })}
-                              </div>
-                              <div className="flex items-center justify-center mt-1">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {Math.ceil((month.end.getTime() - month.start.getTime()) / (1000 * 60 * 60 * 24)) + 1} días
-                              </div>
-                            </div>
-                            
-                            {isSelected && (
-                              <div className="absolute -top-2 -right-2">
-                                <CheckCircle2 className="h-6 w-6 bg-white text-green-600 rounded-full" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                    {months.map((month) => (
+                      <Button
+                        key={month.label}
+                        variant={selectedRange?.from?.getTime() === month.start.getTime() ? "default" : "outline"}
+                        className="h-auto p-3 flex flex-col items-center text-xs"
+                        onClick={() => handleQuickSelection(month.start, month.end)}
+                      >
+                        <span className="font-medium">{month.label}</span>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          {format(month.start, 'dd MMM', { locale: es })} - {format(month.end, 'dd MMM', { locale: es })}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {Math.ceil((month.end.getTime() - month.start.getTime()) / (1000 * 60 * 60 * 24)) + 1} días
+                        </span>
+                      </Button>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -359,85 +330,41 @@ const fetchPeriodStats = async () => {
                   <CardTitle>Seleccionar Trimestre</CardTitle>
                 </CardHeader>
                 <CardContent>
-                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                     {quarters.map((quarter, index) => {
+                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                     {quarters.map((quarter) => {
                        const isSelected = selectedRange?.from?.getTime() === quarter.start.getTime();
                        const isCurrent = quarter.isCurrent;
                        
-                       // Diferentes colores para cada trimestre
-                       const colorClasses = [
-                         'from-blue-400 to-blue-600 border-blue-500',
-                         'from-green-400 to-green-600 border-green-500', 
-                         'from-orange-400 to-orange-600 border-orange-500',
-                         'from-purple-400 to-purple-600 border-purple-500'
-                       ];
-                       const colorClass = colorClasses[index % 4];
-                       
                        return (
-                         <div
+                         <Button
                            key={quarter.label}
+                           variant={isSelected ? "default" : "outline"}
                            className={cn(
-                             "relative group cursor-pointer transition-all duration-300 hover:scale-105",
-                             isSelected && "ring-4 ring-primary ring-offset-2"
+                             "h-auto p-4 flex flex-col items-center relative",
+                             isCurrent && "ring-2 ring-primary ring-offset-2"
                            )}
                            onClick={() => handleQuickSelection(quarter.start, quarter.end)}
                          >
-                           {/* Decorative background pattern */}
-                           <div className="absolute inset-0 bg-gradient-to-br opacity-10 rounded-lg" style={{
-                             backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)`
-                           }}></div>
-                           
-                           <div className={cn(
-                             "relative bg-gradient-to-br p-6 rounded-lg border-2 shadow-lg text-white overflow-hidden",
-                             colorClass,
-                             isCurrent && "ring-4 ring-yellow-400 ring-offset-2",
-                             isSelected && "ring-4 ring-white ring-offset-2"
+                           {isCurrent && (
+                             <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-bold">
+                               ACTUAL
+                             </div>
+                           )}
+                           <span className={cn(
+                             "font-bold text-lg",
+                             isCurrent && "text-primary"
                            )}>
-                             {/* Current indicator */}
-                             {isCurrent && (
-                               <div className="absolute -top-1 -right-1">
-                                 <div className="bg-yellow-400 text-black text-xs px-3 py-1 rounded-full font-bold shadow-lg animate-pulse">
-                                   ACTUAL
-                                 </div>
-                               </div>
-                             )}
-                             
-                             {/* Quarter icon */}
-                             <div className="flex items-center justify-between mb-3">
-                               <div className="text-2xl font-bold bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">
-                                 Q{((index % 4) + 1)}
-                               </div>
-                               <div className="text-right">
-                                 <div className="text-sm opacity-90">
-                                   {quarter.label.split(' ')[1]}
-                                 </div>
-                               </div>
-                             </div>
-                             
-                             <div className="space-y-2">
-                               <h3 className="text-xl font-bold">{quarter.label}</h3>
-                               <div className="text-sm bg-white/20 rounded p-2">
-                                 <div className="flex items-center text-xs">
-                                   <CalendarIcon className="h-3 w-3 mr-1" />
-                                   {format(quarter.start, 'dd MMM', { locale: es })} - {format(quarter.end, 'dd MMM', { locale: es })}
-                                 </div>
-                                 <div className="flex items-center text-xs mt-1">
-                                   <Clock className="h-3 w-3 mr-1" />
-                                   {Math.ceil((quarter.end.getTime() - quarter.start.getTime()) / (1000 * 60 * 60 * 24)) + 1} días
-                                 </div>
-                               </div>
-                             </div>
-                             
-                             {/* Selection indicator */}
-                             {isSelected && (
-                               <div className="absolute bottom-2 right-2">
-                                 <CheckCircle2 className="h-6 w-6 bg-white text-green-600 rounded-full" />
-                               </div>
-                             )}
-                           </div>
-                         </div>
+                             {quarter.label}
+                           </span>
+                           <span className="text-sm text-muted-foreground mt-2">
+                             {format(quarter.start, 'dd MMM', { locale: es })} - {format(quarter.end, 'dd MMM', { locale: es })}
+                           </span>
+                           <span className="text-xs text-muted-foreground mt-1">
+                             {Math.ceil((quarter.end.getTime() - quarter.start.getTime()) / (1000 * 60 * 60 * 24)) + 1} días
+                           </span>
+                         </Button>
                        );
-                     })}
+                      })}
                    </div>
                 </CardContent>
               </Card>
@@ -449,52 +376,23 @@ const fetchPeriodStats = async () => {
                   <CardTitle>Seleccionar Año</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-6">
-                    {years.map((year, index) => {
-                      const isSelected = selectedRange?.from?.getTime() === year.start.getTime();
-                      // Colores para años
-                      const yearColors = [
-                        'from-violet-500 to-violet-700 border-violet-600',
-                        'from-emerald-500 to-emerald-700 border-emerald-600'
-                      ];
-                      const colorClass = yearColors[index % 2];
-                      
-                      return (
-                        <div
-                          key={year.label}
-                          className={cn(
-                            "relative cursor-pointer transition-all duration-300 hover:scale-105",
-                            isSelected && "ring-4 ring-primary ring-offset-2"
-                          )}
-                          onClick={() => handleQuickSelection(year.start, year.end)}
-                        >
-                          <div className={cn(
-                            "bg-gradient-to-br p-8 rounded-xl border-2 shadow-xl text-white text-center",
-                            colorClass
-                          )}>
-                            <div className="space-y-4">
-                              <div className="text-4xl font-bold">{year.label}</div>
-                              <div className="text-sm bg-white/20 rounded-lg p-3">
-                                <div className="flex items-center justify-center mb-2">
-                                  <CalendarIcon className="h-4 w-4 mr-2" />
-                                  <span className="font-medium">Año Completo</span>
-                                </div>
-                                <div className="flex items-center justify-center">
-                                  <Clock className="h-4 w-4 mr-2" />
-                                  {Math.ceil((year.end.getTime() - year.start.getTime()) / (1000 * 60 * 60 * 24)) + 1} días
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {isSelected && (
-                              <div className="absolute -top-3 -right-3">
-                                <CheckCircle2 className="h-8 w-8 bg-white text-green-600 rounded-full shadow-lg" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="grid grid-cols-2 gap-4">
+                    {years.map((year) => (
+                      <Button
+                        key={year.label}
+                        variant={selectedRange?.from?.getTime() === year.start.getTime() ? "default" : "outline"}
+                        className="h-auto p-8 flex flex-col items-center"
+                        onClick={() => handleQuickSelection(year.start, year.end)}
+                      >
+                        <span className="font-bold text-2xl">{year.label}</span>
+                        <span className="text-sm text-muted-foreground mt-2">
+                          {format(year.start, 'dd MMM', { locale: es })} - {format(year.end, 'dd MMM', { locale: es })}
+                        </span>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          {Math.ceil((year.end.getTime() - year.start.getTime()) / (1000 * 60 * 60 * 24)) + 1} días
+                        </span>
+                      </Button>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
