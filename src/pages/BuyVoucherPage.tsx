@@ -215,19 +215,19 @@ export default function BuyVoucherPage() {
                         {isGift && (
                           <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
                             <div>
-                              <Label htmlFor="recipient_name" className="text-sm">Para (nombre del destinatario) *</Label>
+                              <Label htmlFor="recipient_name" className="text-sm">Para (nombre del beneficiario) *</Label>
                               <Input
                                 id="recipient_name"
                                 value={recipientName}
                                 onChange={(e) => setRecipientName(e.target.value)}
-                                placeholder="Nombre del destinatario"
+                                placeholder="Nombre del beneficiario"
                                 className="mt-1"
                                 required={isGift}
                               />
                             </div>
                             
                             <div>
-                              <Label htmlFor="recipient_email" className="text-sm">Email del destinatario</Label>
+                              <Label htmlFor="recipient_email" className="text-sm">Email del beneficiario</Label>
                               <Input
                                 id="recipient_email"
                                 type="email"
@@ -261,7 +261,7 @@ export default function BuyVoucherPage() {
                         <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
                           if (items.length === 0) return;
                           if (isGift && !recipientName.trim()) {
-                            toast.error("Por favor, indica el nombre del destinatario");
+                            toast.error("Por favor, indica el nombre del beneficiario");
                             return;
                           }
                           try {
