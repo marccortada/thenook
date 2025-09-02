@@ -14,7 +14,7 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Plus,
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
   MapPin,
   User,
@@ -26,9 +26,12 @@ import {
   Ban,
   Trash2
 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+
 import { useBookings, useCenters, useLanes, useServices } from '@/hooks/useDatabase';
 import { useClients } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
@@ -1097,6 +1100,36 @@ const AdvancedCalendarView = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div className="space-y-2 md:col-span-1">
+                    <Label>Fecha</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-11",
+                            !bookingForm.date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {bookingForm.date ? format(bookingForm.date, "d 'de' MMMM", { locale: es }) : "Seleccionar fecha"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={bookingForm.date}
+                          onSelect={(date) => {
+                            if (date) {
+                              setBookingForm({ ...bookingForm, date });
+                            }
+                          }}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-2 md:col-span-1">
                     <Label>Hora</Label>
                     <Select value={format(bookingForm.timeSlot, 'HH:mm')} onValueChange={(val) => {
                       const [h, m] = val.split(':').map(Number);
@@ -1122,14 +1155,14 @@ const AdvancedCalendarView = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2 md:col-span-1">
                     <Label htmlFor="notes">Notas (opcional)</Label>
                     <Textarea
                       id="notes"
                       value={bookingForm.notes}
                       onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
                       placeholder="Notas adicionales..."
-                      rows={6}
+                      rows={3}
                       className="resize-none"
                     />
                   </div>
