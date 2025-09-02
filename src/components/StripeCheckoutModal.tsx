@@ -46,16 +46,6 @@ export const StripeCheckoutModal = ({ clientSecret, onClose }: StripeCheckoutMod
           <EmbeddedCheckout />
         </EmbeddedCheckoutProvider>
       )}
-      
-      <div className="mt-4 pt-4 border-t">
-        <Button 
-          variant="outline" 
-          onClick={onClose}
-          className="w-full"
-        >
-          Cancelar y cerrar
-        </Button>
-      </div>
     </div>
   );
 };
