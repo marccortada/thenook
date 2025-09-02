@@ -38,13 +38,13 @@ const ItemRow: React.FC<{
 }> = ({ title, subtitle, right, active, priceElement }) => (
   <div
     className={cn(
-      "flex items-center justify-between gap-3 px-3 py-2 rounded-md border flex-wrap sm:flex-nowrap",
+      "flex items-center justify-between gap-3 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md border flex-wrap sm:flex-nowrap",
       "bg-card text-card-foreground",
       active ? "border-primary/60 ring-1 ring-primary/30" : "border-border"
     )}
   >
     <div className="min-w-0 flex-1">
-      <p className={cn("text-sm font-medium truncate", active && "text-primary")}>{title}</p>
+      <p className={cn("text-xs sm:text-sm font-medium truncate", active && "text-primary")}>{title}</p>
       {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
       {priceElement && <div className="mt-1">{priceElement}</div>}
     </div>

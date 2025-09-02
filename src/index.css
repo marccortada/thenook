@@ -212,6 +212,35 @@ All colors MUST be HSL.
     transform-origin: left top !important;
   }
 
+  /* Mobile service selector optimization */
+  @media (max-width: 768px) {
+    /* Limit service selector height to preserve space for date/time */
+    .service-selector-container {
+      max-height: 40vh !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Compact accordion items on mobile */
+    [data-radix-accordion-content] {
+      max-height: 30vh !important;
+      overflow-y: auto !important;
+    }
+
+    /* Compact service items */
+    .service-item {
+      padding: 8px 12px !important;
+      margin-bottom: 4px !important;
+    }
+
+    /* Reduce accordion trigger size */
+    [data-radix-accordion-trigger] {
+      padding: 8px 12px !important;
+      font-size: 14px !important;
+      min-height: 36px !important;
+    }
+  }
+
   /* Mobile touch optimization */
   @media (max-width: 768px) {
     /* Ensure touch targets are large enough */
