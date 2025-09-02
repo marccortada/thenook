@@ -147,29 +147,33 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2 truncate">
                 Panel de Administración
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm sm:text-base truncate">
                 Bienvenido, {user?.name || 'Usuario'} - {isAdmin ? 'Administrador' : 'Empleado'}
               </p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => navigate('/')}
+                className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 h-7 sm:h-8"
               >
-                Ver página pública
+                <span className="hidden sm:inline">Ver página pública</span>
+                <span className="sm:hidden">Ver web</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleSignOut}
+                className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 h-7 sm:h-8"
               >
-                Cerrar sesión
+                <span className="hidden sm:inline">Cerrar sesión</span>
+                <span className="sm:hidden">Salir</span>
               </Button>
             </div>
           </div>
