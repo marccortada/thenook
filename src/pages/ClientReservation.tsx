@@ -38,7 +38,7 @@ const ClientReservation = () => {
     notes: "",
   });
 
-  const [selection, setSelection] = useState<{ id: string; kind: "service" } | null>(null);
+  const [selection, setSelection] = useState<{ id: string; kind: "service" | "package" } | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
 
@@ -514,9 +514,10 @@ const ClientReservation = () => {
                     <span>{t('service_selection')}</span>
                   </h3>
                   <ServiceSelectorGrouped
-                    center_id={formData.center}
-                    onSelectionChange={setSelection}
-                    selectedSelection={selection}
+                    services={services}
+                    packages={[]}
+                    selectedId={selection?.id}
+                    onSelect={(id, kind) => setSelection({ id, kind })}
                   />
                 </div>
               )}
@@ -526,13 +527,13 @@ const ClientReservation = () => {
                 <div className="space-y-3 sm:space-y-4">
                   <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
                     <Clock className="h-4 w-4" />
-                    <span>{t('datetime_selection')}</span>
+                    <span>Fecha y Hora</span>
                   </h3>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {/* Date picker */}
                     <div>
-                      <Label className="text-sm">{t('date_label')} *</Label>
+                      <Label className="text-sm">Fecha *</Label>
                       <Popover open={showCalendar} onOpenChange={setShowCalendar}>
                         <PopoverTrigger asChild>
                           <Button
@@ -571,7 +572,7 @@ const ClientReservation = () => {
 
                     {/* Time picker */}
                     <div>
-                      <Label className="text-sm">{t('time_label')} *</Label>
+                      <Label className="text-sm">Hora *</Label>
                         <Popover open={showTimeDropdown} onOpenChange={setShowTimeDropdown}>
                           <PopoverTrigger asChild>
                             <Button
