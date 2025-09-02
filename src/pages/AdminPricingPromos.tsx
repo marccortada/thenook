@@ -767,7 +767,7 @@ export default function AdminPricingPromos() {
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent position="popper">
+                            <SelectContent position="item-aligned" className="z-50 bg-background">
                               <SelectItem value="true">Activo</SelectItem>
                               <SelectItem value="false">Inactivo</SelectItem>
                             </SelectContent>
