@@ -238,6 +238,7 @@ const AdvancedCalendarView = () => {
       const slotRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
       
       // Calcular el centro del slot
       const slotCenterX = slotRect.left + (slotRect.width / 2);
@@ -245,8 +246,17 @@ const AdvancedCalendarView = () => {
       // Ancho del modal (responsive)
       const modalWidth = windowWidth < 768 ? windowWidth - 40 : Math.min(500, windowWidth - 40);
       
+      // Altura estimada del modal
+      const estimatedModalHeight = 600;
+      
+      // Calcular posición Y: si el modal se saldría por abajo, posicionarlo arriba del slot
+      let topPosition = slotRect.top + scrollTop - 20;
+      if (topPosition + estimatedModalHeight > scrollTop + windowHeight) {
+        topPosition = Math.max(20, slotRect.top + scrollTop - estimatedModalHeight - 20);
+      }
+      
       setModalPosition({
-        top: slotRect.top + scrollTop - 20, // 20px arriba del slot
+        top: Math.max(20, topPosition),
         left: Math.max(20, Math.min(slotCenterX - (modalWidth / 2), windowWidth - modalWidth - 20))
       });
     }
