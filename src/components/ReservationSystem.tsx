@@ -593,10 +593,10 @@ const ReservationSystem = () => {
                        className="w-auto p-0 z-[70] bg-background border shadow-lg" 
                        align="start"
                        side="bottom"
-                       sideOffset={8}
+                       sideOffset={4}
                        alignOffset={0}
                        avoidCollisions={true}
-                       collisionPadding={16}
+                       collisionPadding={8}
                      >
                        <Calendar
                          mode="single"

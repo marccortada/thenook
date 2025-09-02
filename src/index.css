@@ -280,9 +280,19 @@ All colors MUST be HSL.
     }
 
     /* Popover and select content positioning fixes */
-    [data-radix-popover-content][data-side="bottom"] {
+    [data-radix-popover-content] {
+      position: fixed !important;
+      transform: none !important;
+      top: auto !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
       margin-top: 8px !important;
       max-width: calc(100vw - 32px) !important;
+    }
+
+    [data-radix-popover-content][data-side="bottom"] {
+      top: var(--radix-popover-trigger-height, 44px) !important;
+      margin-top: 8px !important;
     }
 
     [data-radix-select-content][data-side="bottom"] {
