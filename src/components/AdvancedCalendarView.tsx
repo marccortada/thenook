@@ -1115,16 +1115,12 @@ const AdvancedCalendarView = () => {
                       </PopoverTrigger>
                        <PopoverContent 
                         className="w-auto p-0 z-[9999] bg-background shadow-2xl border-2"
-                        align="start"
+                        align="center"
                         side="bottom"
-                        sideOffset={8}
-                        avoidCollisions={false}
-                        collisionPadding={16}
-                        style={{ 
-                          position: 'absolute',
-                          transform: 'translateZ(0)',
-                          backfaceVisibility: 'hidden'
-                        }}
+                        sideOffset={4}
+                        avoidCollisions={true}
+                        collisionPadding={20}
+                        sticky="always"
                       >
                         <Calendar
                           mode="single"
@@ -1155,15 +1151,10 @@ const AdvancedCalendarView = () => {
                         className="z-[9999] bg-background border-2 shadow-2xl max-h-[300px] overflow-y-auto"
                         position="popper"
                         side="bottom"
-                        align="start"
-                        sideOffset={8}
-                        avoidCollisions={false}
-                        collisionPadding={16}
-                        style={{ 
-                          position: 'absolute',
-                          transform: 'translateZ(0)',
-                          backfaceVisibility: 'hidden'
-                        }}
+                        align="center"
+                        sideOffset={4}
+                        avoidCollisions={true}
+                        collisionPadding={20}
                       >
                         {timeOptions5m.map((t) => (
                           <SelectItem key={t} value={t}>{t}</SelectItem>
