@@ -119,6 +119,29 @@ const AdvancedCalendarView = () => {
   const { updateClient } = useClients();
   const { laneBlocks, createLaneBlock, deleteLaneBlock, isLaneBlocked } = useLaneBlocks();
 
+  // Real-time subscription for bookings
+  useEffect(() => {
+    const channel = supabase
+      .channel('calendar-bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        (payload) => {
+          console.log('Calendar: Booking change detected:', payload);
+          refetchBookings(); // Refetch bookings when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetchBookings]);
+
   // Set initial center when centers load
   useEffect(() => {
     if (centers.length > 0 && !selectedCenter) {

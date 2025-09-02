@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { useAdvancedAnalytics } from "@/hooks/useAdvancedAnalytics";
 import { PeriodComparisonChart } from "@/components/PeriodComparisonChart";
 import PeriodCalendarModal from "@/components/PeriodCalendarModal";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year';
 
@@ -39,6 +40,29 @@ const AdvancedDashboard = () => {
     loading,
     loadAnalytics
   } = useAdvancedAnalytics();
+
+  // Real-time subscription for bookings to update dashboard
+  useEffect(() => {
+    const channel = supabase
+      .channel('dashboard-bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        (payload) => {
+          console.log('Dashboard: Booking change detected:', payload);
+          loadAnalytics(selectedPeriod); // Reload analytics when bookings change
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadAnalytics, selectedPeriod]);
 
   const handlePeriodChange = (period: PeriodType) => {
     setSelectedPeriod(period);

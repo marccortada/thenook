@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,34 @@ const ReservationSystem = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
+
+  // Real-time subscription to show global booking notifications
+  useEffect(() => {
+    const channel = supabase
+      .channel('global-bookings-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'bookings'
+        },
+        (payload) => {
+          console.log('🆕 Nueva reserva detectada en tiempo real:', payload);
+          // Show a brief notification that a new booking was created somewhere
+          toast({
+            title: "🔄 Sistema Conectado",
+            description: "Nueva reserva detectada - Todas las vistas se actualizan automáticamente",
+            duration: 3000,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
   
   const [formData, setFormData] = useState({
     clientName: "",
