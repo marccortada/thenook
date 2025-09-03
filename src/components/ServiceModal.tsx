@@ -315,7 +315,7 @@ const ServiceModal: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[95vw] mx-auto max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-br from-background to-accent/5">
+      <DialogContent className="max-w-2xl w-[95vw] mx-auto max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-br from-background to-accent/5 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
         <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 -mx-6 px-6 -mt-6 pt-6">
           <DialogTitle className="text-xl font-bold text-foreground">
             Seleccionar Servicio
