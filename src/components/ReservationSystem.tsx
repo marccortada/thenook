@@ -572,10 +572,10 @@ const ReservationSystem = () => {
                             className="z-[1000] bg-background border shadow-md max-h-60"
                             position="popper"
                             side="bottom"
-                            align="start"
-                            sideOffset={8}
-                            avoidCollisions={true}
-                            collisionPadding={8}
+                            align="center"
+                            sideOffset={4}
+                            avoidCollisions={false}
+                            collisionPadding={0}
                           >
                             {centers.map((center) => {
                               // Debug center data
