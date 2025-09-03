@@ -39,12 +39,7 @@ const euro = (cents: number) =>
     cents / 100
   );
 
-const custom: GiftCardItem = {
-  id: "custom",
-  name: "TARJETA REGALO por VALOR personalizado",
-  type: "custom",
-  description: "Elige un importe fijo o escribe otro importe.",
-};
+// Custom gift card - will be translated dynamically in component
 
 const PREDEFINED_GIFTS: GiftCardItem[] = [
   { id: 'gift-1', name: 'Piernas Cansadas', type: 'fixed', priceCents: 4000 },
@@ -248,7 +243,7 @@ const GiftCardsPage = () => {
       toast.error(t('valid_amount'));
       return;
     }
-    add({ name: translatePackageName(custom.name), priceCents: Math.round(amount * 100) });
+    add({ name: t('custom_gift_card'), priceCents: Math.round(amount * 100) });
   };
 
   return (
@@ -402,11 +397,11 @@ const GiftCardsPage = () => {
                         
                         {/* Opciones de personalización */}
                         <div className="border-t pt-4 space-y-4">
-                          <h4 className="text-sm font-semibold">Configuración de la Tarjeta</h4>
+                          <h4 className="text-sm font-semibold">{t('gift_card_config')}</h4>
                           
                           <div className="grid gap-4">
                             <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                              <Label htmlFor="show_price" className="text-sm">¿Mostrar precio en la tarjeta?</Label>
+                              <Label htmlFor="show_price" className="text-sm">{t('show_price_on_card')}</Label>
                               <Checkbox 
                                 id="show_price" 
                                 checked={showPrice}
@@ -415,7 +410,7 @@ const GiftCardsPage = () => {
                             </div>
                             
                             <div className="p-3 bg-muted/50 rounded-lg">
-                              <Label className="text-sm font-medium mb-3 block">¿A quién enviar la tarjeta?</Label>
+                              <Label className="text-sm font-medium mb-3 block">{t('who_to_send_card')}</Label>
                               <div className="grid gap-2">
                                 <div className="flex items-center space-x-2">
                                   <input
@@ -426,7 +421,7 @@ const GiftCardsPage = () => {
                                     onChange={() => setSendToBuyer(true)}
                                     className="h-4 w-4"
                                   />
-                                  <Label htmlFor="send_to_buyer" className="text-sm">Enviar al comprador</Label>
+                                  <Label htmlFor="send_to_buyer" className="text-sm">{t('send_to_buyer')}</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <input
@@ -437,13 +432,13 @@ const GiftCardsPage = () => {
                                     onChange={() => setSendToBuyer(false)}
                                     className="h-4 w-4"
                                   />
-                                  <Label htmlFor="send_to_recipient" className="text-sm">Enviar directamente al beneficiario</Label>
+                                  <Label htmlFor="send_to_recipient" className="text-sm">{t('send_to_recipient')}</Label>
                                 </div>
                               </div>
                             </div>
                             
                             <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                              <Label htmlFor="show_buyer_data" className="text-sm">¿Mostrar datos del comprador?</Label>
+                              <Label htmlFor="show_buyer_data" className="text-sm">{t('show_buyer_data')}</Label>
                               <Checkbox 
                                 id="show_buyer_data" 
                                 checked={showBuyerData}
@@ -564,7 +559,7 @@ const GiftCardsPage = () => {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
-                  Completar Pago
+                  {t('complete_payment')}
                 </DialogTitle>
               </DialogHeader>
               {stripeClientSecret && (
@@ -608,9 +603,9 @@ const GiftCardsPage = () => {
                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
                                     setIsCartOpen(true);
                                   }}
-                                >
-                                  Comprar
-                                </Button>
+                                 >
+                                   {t('buy_button')}
+                                 </Button>
                               </div>
                             </CardContent>
                          </Card>
@@ -722,9 +717,9 @@ const GiftCardsPage = () => {
                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
                                     setIsCartOpen(true);
                                   }}
-                                >
-                                   Comprar
-                                 </Button>
+                                 >
+                                    {t('buy_button')}
+                                  </Button>
                                </div>
                              </CardContent>
                           </Card>
@@ -734,7 +729,7 @@ const GiftCardsPage = () => {
                 </AccordionItem>
               )}
 
-              {/* Importe Personalizado */}
+              {/* Custom Amount */}
               <AccordionItem value="importe-personalizado" className="border rounded-lg p-0">
                 <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                    <h2 className="text-lg font-semibold">{t('custom_amount')}</h2>
