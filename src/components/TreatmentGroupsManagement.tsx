@@ -245,10 +245,11 @@ const TreatmentGroupsManagement: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleEditGroup(group)}
-                    className="gap-2"
+                    className="gap-2 text-xs sm:text-sm"
                   >
-                    <Edit className="w-4 h-4" />
-                    Editar Grupo
+                    <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Editar Grupo</span>
+                    <span className="sm:hidden">Editar</span>
                   </Button>
                 </div>
               </CardHeader>
@@ -319,12 +320,12 @@ const TreatmentGroupsManagement: React.FC = () => {
 
       {/* Dialog para editar grupo */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle>Editar Grupo de Tratamiento</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Editar Grupo de Tratamiento</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto">
             <div className="space-y-2">
               <Label htmlFor="name">Nombre del Grupo</Label>
               <Input
@@ -337,13 +338,13 @@ const TreatmentGroupsManagement: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="color">Color</Label>
-              <div className="flex flex-wrap gap-2">
+              <Label htmlFor="color" className="text-sm font-medium">Color</Label>
+              <div className="grid grid-cols-5 sm:flex sm:flex-wrap gap-2">
                 {PRESET_COLORS.map((color) => (
                   <button
                     key={color}
                     type="button"
-                    className={`w-8 h-8 rounded-full border-2 ${
+                    className={`w-8 h-8 sm:w-8 sm:h-8 rounded-full border-2 ${
                       formData.color === color ? 'border-foreground' : 'border-border'
                     }`}
                     style={{ backgroundColor: color }}
@@ -393,12 +394,12 @@ const TreatmentGroupsManagement: React.FC = () => {
               </Select>
             </div>
 
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={closeDialog} className="flex-1">
+            <div className="flex flex-col sm:flex-row gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={closeDialog} className="flex-1 order-2 sm:order-1">
                 <X className="w-4 h-4 mr-2" />
                 Cancelar
               </Button>
-              <Button onClick={handleSaveGroup} className="flex-1">
+              <Button onClick={handleSaveGroup} className="flex-1 order-1 sm:order-2">
                 <Save className="w-4 h-4 mr-2" />
                 Guardar
               </Button>
