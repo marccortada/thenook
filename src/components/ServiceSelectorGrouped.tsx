@@ -150,10 +150,6 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
               "w-full justify-between text-left h-10 sm:h-11",
               !selectedItem && "text-muted-foreground"
             )}
-            onClick={() => {
-              console.log('Button clicked, current state:', isDropdownOpen);
-              setIsDropdownOpen(!isDropdownOpen);
-            }}
           >
             <span className="truncate">{buttonText}</span>
             <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-50" />
