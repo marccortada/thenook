@@ -132,16 +132,78 @@ const GiftCardsPage = () => {
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '');
     
-    // Buscar en las traducciones con manejo de errores
+    // Mapeo directo de traducciones como fallback
+    const translationMap: Record<string, Record<string, string>> = {
+      'piernas_cansadas': {
+        'en': 'Tired Legs Massage',
+        'fr': 'Jambes Fatiguées',
+        'de': 'Müde Beine',
+        'it': 'Gambe Stanche',
+        'pt': 'Pernas Cansadas'
+      },
+      'masaje_para_embarazada_50_minutos': {
+        'en': '50-Minute Pregnancy Massage',
+        'fr': 'Massage Prénatal 50 minutes',
+        'de': 'Schwangerschaftsmassage 50 Minuten',
+        'it': 'Massaggio Prenatale 50 minuti',
+        'pt': 'Massagem Pré-natal 50 minutos'
+      },
+      'masaje_deportivo_50_minutos': {
+        'en': '50-Minute Sports Massage',
+        'fr': 'Massage Sportif 50 minutes',
+        'de': 'Sportmassage 50 Minuten',
+        'it': 'Massaggio Sportivo 50 minuti',
+        'pt': 'Massagem Desportiva 50 minutos'
+      },
+      'shiatsu': {
+        'en': 'Shiatsu',
+        'fr': 'Shiatsu',
+        'de': 'Shiatsu',
+        'it': 'Shiatsu',
+        'pt': 'Shiatsu'
+      },
+      'masaje_descontracturante_55_minutos': {
+        'en': '55-Minute Therapeutic Massage',
+        'fr': 'Massage Thérapeutique 55 minutes',
+        'de': 'Therapeutische Massage 55 Minuten',
+        'it': 'Massaggio Terapeutico 55 minuti',
+        'pt': 'Massagem Terapêutica 55 minutos'
+      },
+      'masaje_relajante_55_minutos': {
+        'en': '55-Minute Relaxing Massage',
+        'fr': 'Massage Relaxant 55 minutes',
+        'de': 'Entspannungsmassage 55 Minuten',
+        'it': 'Massaggio Rilassante 55 minuti',
+        'pt': 'Massagem Relaxante 55 minutos'
+      },
+      'reflexologia_podal': {
+        'en': 'Foot Reflexology',
+        'fr': 'Réflexologie Plantaire',
+        'de': 'Fußreflexzonenmassage',
+        'it': 'Riflessologia Plantare',
+        'pt': 'Reflexologia Plantar'
+      }
+    };
+
+    // Intentar usar el sistema de traducciones primero, con fallback al mapeo directo
     try {
       const translation = t(normalizedKey as any);
-      
-      // Si hay traducción específica, usarla. Si no, devolver el nombre limpio
-      return translation !== normalizedKey ? translation : cleanName;
+      if (translation !== normalizedKey) {
+        return translation;
+      }
     } catch (error) {
-      console.warn('Translation error for key:', normalizedKey, error);
-      return cleanName;
+      console.warn('Translation system error, using fallback');
     }
+    
+    // Fallback: usar mapeo directo
+    const { language } = useTranslation();
+    const mapping = translationMap[normalizedKey];
+    if (mapping && mapping[language]) {
+      return mapping[language];
+    }
+    
+    // Si no hay traducción, devolver nombre limpio
+    return cleanName;
   };
 
   // Hook para manejo del carrito local
