@@ -255,12 +255,12 @@ const ServiceModal: React.FC<Props> = ({
       
       if (name.includes('cuatro manos')) {
         groups['masajes-cuatro-manos'].services.push(service);
-      } else if (name.includes('dos personas') || name.includes('pareja') || name.includes('para dos')) {
+      } else if (name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas')) {
         groups['masajes-pareja'].services.push(service);
-      } else if (name.includes('ritual')) {
+      } else if (service.type === 'package' || name.includes('ritual')) {
         groups['rituales'].services.push(service);
       } else {
-        // Default to individual massages
+        // Individual massages and treatments
         groups['masajes-individuales'].services.push(service);
       }
     });
