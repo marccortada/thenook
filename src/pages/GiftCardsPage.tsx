@@ -633,7 +633,6 @@ const GiftCardsPage = () => {
                             </CardHeader>
                             <CardContent className="pb-2 p-3 pt-0">
                               <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground">{item.description || item.name}</p>
                                 <p className="text-base font-bold text-primary">{euro(item.priceCents!)}</p>
                               </div>
                             </CardContent>
@@ -667,7 +666,6 @@ const GiftCardsPage = () => {
                             </CardHeader>
                             <CardContent className="pb-2 p-3 pt-0">
                               <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground">{item.description || item.name}</p>
                                 <p className="text-base font-bold text-primary">{euro(item.priceCents!)}</p>
                               </div>
                             </CardContent>
