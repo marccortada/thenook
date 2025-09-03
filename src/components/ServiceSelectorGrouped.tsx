@@ -151,7 +151,7 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[--radix-popover-trigger-width] p-0" 
+          className="w-[--radix-popover-trigger-width] p-0 bg-popover border shadow-lg z-50" 
           align="start"
           side="bottom"
           sideOffset={4}
