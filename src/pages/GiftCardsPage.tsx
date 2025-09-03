@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -629,9 +629,8 @@ const GiftCardsPage = () => {
           <Dialog open={showStripeModal} onOpenChange={setShowStripeModal}>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>
-                  {t('complete_payment')}
-                </DialogTitle>
+                <DialogTitle>{t('complete_payment')}</DialogTitle>
+                <DialogDescription>{t('secure_payment_info')}</DialogDescription>
               </DialogHeader>
               {stripeClientSecret && (
                 <StripeCheckoutModal 
