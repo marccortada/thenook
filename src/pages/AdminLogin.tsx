@@ -15,6 +15,9 @@ const AdminLogin = () => {
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showMagicLink, setShowMagicLink] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [magicLinkLoading, setMagicLinkLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -126,6 +129,92 @@ const AdminLogin = () => {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!formData.email) {
+      toast({
+        title: "Email requerido",
+        description: "Introduce tu email para restablecer la contraseña",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/admin-login`,
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Email enviado",
+        description: "Revisa tu correo para restablecer la contraseña",
+      });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      toast({
+        title: "Error del sistema",
+        description: "No se pudo enviar el email. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleMagicLink = async () => {
+    if (!formData.email) {
+      toast({
+        title: "Email requerido",
+        description: "Introduce tu email para acceso directo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setMagicLinkLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: formData.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/panel-gestion-nook-madrid-2024`,
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Magic Link enviado",
+        description: "Revisa tu correo y haz clic en el enlace para acceder",
+      });
+      setShowMagicLink(true);
+    } catch (error) {
+      console.error("Error sending magic link:", error);
+      toast({
+        title: "Error del sistema",
+        description: "No se pudo enviar el enlace. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setMagicLinkLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <Card className="w-full max-w-md">
@@ -182,6 +271,41 @@ const AdminLogin = () => {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Verificando..." : "Iniciar Sesión"}
             </Button>
+
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  disabled={resetLoading}
+                  onClick={handlePasswordReset}
+                >
+                  {resetLoading ? "Enviando..." : "Olvidé mi contraseña"}
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  disabled={magicLinkLoading}
+                  onClick={handleMagicLink}
+                >
+                  {magicLinkLoading ? "Enviando..." : "Acceso directo"}
+                </Button>
+              </div>
+
+              {showMagicLink && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    📧 Te hemos enviado un enlace de acceso directo a <strong>{formData.email}</strong>
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Revisa tu bandeja de entrada y spam. El enlace te dará acceso directo al panel.
+                  </p>
+                </div>
+              )}
+            </div>
           </form>
           
           <div className="mt-6 text-center">
