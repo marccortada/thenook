@@ -32,12 +32,15 @@ import { useGiftCards, type GiftCard } from '@/hooks/useGiftCards';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ClientSelector from '@/components/ClientSelector';
+import { ImageUploadCropper } from '@/components/ImageUploadCropper';
 
 const GiftCardManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingCard, setEditingCard] = useState<GiftCard | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [giftCardImage, setGiftCardImage] = useState<File | null>(null);
+  const [giftCardImageCrop, setGiftCardImageCrop] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   
   const { giftCards, loading, error, refetch, createGiftCard, updateGiftCard, deactivateGiftCard } = useGiftCards(searchTerm);
   const [createClientId, setCreateClientId] = useState<string>('');
@@ -88,14 +91,23 @@ const GiftCardManagement = () => {
     }
 
     try {
+      // TODO: Handle image upload to Supabase storage if giftCardImage exists
+      // The image and crop data are available in giftCardImage and giftCardImageCrop
       await createGiftCard(giftCardData);
       setShowCreateDialog(false);
       setCreateClientId('');
       setSelectedDate(undefined);
+      setGiftCardImage(null);
+      setGiftCardImageCrop(null);
       refetch();
     } catch (error) {
       console.error('Error creating gift card:', error);
     }
+  };
+
+  const handleImageSelect = (file: File, cropData?: { x: number; y: number; width: number; height: number }) => {
+    setGiftCardImage(file);
+    setGiftCardImageCrop(cropData || null);
   };
 
   const handleUpdateGiftCard = async (id: string, updates: Partial<GiftCard>) => {
@@ -228,6 +240,13 @@ const GiftCardManagement = () => {
                     type="email"
                     placeholder="email@ejemplo.com"
                   />
+                </div>
+                <div>
+                  <ImageUploadCropper
+                    label="Imagen de la tarjeta regalo (opcional)"
+                    onImageSelect={handleImageSelect}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Sube una imagen personalizada para la tarjeta regalo</p>
                 </div>
                 <div className="flex flex-col sm:flex-row justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)} className="w-full sm:w-auto">
