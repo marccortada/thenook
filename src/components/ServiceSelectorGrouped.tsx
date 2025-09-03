@@ -37,6 +37,9 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
     ? selectedItem.name 
     : "Seleccionar servicio";
 
+  // Debug log to check if services are being loaded
+  console.log('ServiceSelectorGrouped - services:', services.length, 'packages:', packages.length);
+
   // Group services by category for dropdown
   const groupedServices = React.useMemo(() => {
     const groups = {
