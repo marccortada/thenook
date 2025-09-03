@@ -569,13 +569,13 @@ const ReservationSystem = () => {
                             <SelectValue placeholder="Selecciona un centro" />
                           </SelectTrigger>
                           <SelectContent 
-                            className="z-50 bg-popover border shadow-md"
+                            className="z-[1000] bg-background border shadow-md max-h-60"
                             position="popper"
                             side="bottom"
                             align="start"
                             sideOffset={8}
-                            avoidCollisions={false}
-                            collisionPadding={0}
+                            avoidCollisions={true}
+                            collisionPadding={8}
                           >
                             {centers.map((center) => {
                               // Debug center data
