@@ -132,16 +132,16 @@ const GiftCardsPage = () => {
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '');
     
-    // Debug logging
-    console.log(`Translating: "${name}" -> cleaned: "${cleanName}" -> normalized: "${normalizedKey}"`);
-    
-    // Buscar en las traducciones
-    const translation = t(normalizedKey as any);
-    
-    console.log(`Translation result: "${translation}"`);
-    
-    // Si hay traducción específica, usarla. Si no, devolver el nombre limpio
-    return translation !== normalizedKey ? translation : cleanName;
+    // Buscar en las traducciones con manejo de errores
+    try {
+      const translation = t(normalizedKey as any);
+      
+      // Si hay traducción específica, usarla. Si no, devolver el nombre limpio
+      return translation !== normalizedKey ? translation : cleanName;
+    } catch (error) {
+      console.warn('Translation error for key:', normalizedKey, error);
+      return cleanName;
+    }
   };
 
   // Hook para manejo del carrito local
