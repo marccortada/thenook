@@ -234,8 +234,9 @@ const translations = {
       "status": "Estado",
       "active": "Activo",
       "inactive": "Inactivo",
-     
-     // Admin and management
+      
+      
+      // Admin and management
      "administration": "Administración",
      "management": "Gestión",
      "configuration": "Configuración",
