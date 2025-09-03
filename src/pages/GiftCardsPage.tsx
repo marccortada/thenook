@@ -280,14 +280,11 @@ const GiftCardsPage = () => {
   }, [giftItems]);
 
   const { items, add, remove, clear, totalCents } = useLocalCart();
-  const [customAmount, setCustomAmount] = useState<number | "">("");
-  const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
-  const presets = [25, 50, 100, 200];
 
   useEffect(() => {
     document.title = "Tarjetas Regalo | The Nook Madrid";
  
-     const desc = "Tarjetas Regalo elegantes para todos los tratamientos en The Nook Madrid.";
+    const desc = "Tarjetas Regalo elegantes para todos los tratamientos en The Nook Madrid.";
     const ensureMeta = (name: string, content: string) => {
       let m = document.querySelector(`meta[name="${name}"]`);
       if (!m) {
@@ -307,15 +304,6 @@ const GiftCardsPage = () => {
     }
     link.setAttribute("href", window.location.href);
   }, []);
-
-  const addCustomToCart = () => {
-    const amount = selectedPreset ?? (typeof customAmount === "number" ? customAmount : NaN);
-    if (!amount || amount <= 0) {
-      toast.error(t('valid_amount'));
-      return;
-    }
-    add({ name: t('custom_gift_card'), priceCents: Math.round(amount * 100) });
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -835,70 +823,6 @@ const GiftCardsPage = () => {
                 </AccordionItem>
               )}
 
-              {/* Custom Amount */}
-              <AccordionItem value="importe-personalizado" className="border rounded-lg p-0">
-                <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                   <h2 className="text-lg font-semibold">{t('custom_amount')}</h2>
-                 </AccordionTrigger>
-                 <AccordionContent className="px-4 pb-4">
-                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                     <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                       <CardHeader className="pb-2">
-                         <CardTitle className="text-base leading-tight">{t('custom_gift_card')}</CardTitle>
-                       </CardHeader>
-                       <CardContent className="pb-2">
-                         <div className="space-y-3">
-                           <p className="text-sm text-muted-foreground">{t('custom_description')}</p>
-                           <div className="flex flex-wrap gap-2">
-                             {presets.map((p) => (
-                               <Button
-                                 key={p}
-                                 variant={selectedPreset === p ? "default" : "outline"}
-                                 size="sm"
-                                 onClick={() => setSelectedPreset((prev) => (prev === p ? null : p))}
-                               >
-                                 {euro(p * 100)}
-                               </Button>
-                             ))}
-                           </div>
-                           <div className="flex items-center gap-2">
-                             <Input
-                               type="number"
-                               inputMode="numeric"
-                               min={1}
-                               step={1}
-                               value={customAmount === "" ? "" : customAmount}
-                               onChange={(e) => {
-                                 const v = e.target.value;
-                                 if (v === "") {
-                                   setCustomAmount("");
-                                   return;
-                                 }
-                                 const n = Number(v);
-                                 if (!Number.isNaN(n)) setCustomAmount(n);
-                               }}
-                               placeholder={t('custom_placeholder')}
-                               className="h-9"
-                             />
-                             <Button size="sm" onClick={addCustomToCart}>
-                               {t('add_to_cart')}
-                             </Button>
-                           </div>
-                         </div>
-                       </CardContent>
-                       <CardFooter className="pt-2">
-                         <Button
-                           size="sm"
-                           className="w-full"
-                           onClick={addCustomToCart}
-                         >
-                           {t('add_to_cart')}
-                         </Button>
-                      </CardFooter>
-                    </Card>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
             </Accordion>
           </section>
         </article>
