@@ -591,90 +591,79 @@ export default function AdminPricingPromos() {
           </TabsContent>
 
           <TabsContent value="manage-services" className="mt-6 space-y-4">
-            {/* Servicios agrupados por tipo con acordeón */}
-            <Accordion type="multiple" className="space-y-4">
-              {serviceTypes.map(type => {
-                const servicesOfType = services.filter((service: any) => service.type === type.value);
-                if (servicesOfType.length === 0) return null;
-                
-                return (
-                  <AccordionItem key={type.value} value={type.value} className="border rounded-lg">
-                    <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-lg font-semibold">{type.label}</span>
-                        <span className="text-sm text-muted-foreground mr-4">{servicesOfType.length} servicios</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-6 pb-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {servicesOfType.map((service: any) => (
-                          <div key={service.id} className="border rounded-lg p-4">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg">{service.name}</h3>
-                                <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
-                                  <span>{service.duration_minutes} min</span>
-                                  <span>•</span>
-                                   <PriceDisplay 
-                                     originalPrice={service.price_cents} 
-                                     serviceId={service.id}
-                                     centerId={service.center_id}
-                                     serviceDiscount={{
-                                       has_discount: !!service.has_discount,
-                                       discount_price_cents: service.discount_price_cents || 0
-                                     }}
-                                     className="text-sm"
-                                   />
-                                </div>
-                                {service.description && (
-                                  <p className="text-xs text-muted-foreground mb-2">{service.description}</p>
-                                )}
-                                <div className="flex items-center gap-2 text-xs">
-                                  <span className={`px-2 py-1 rounded ${service.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                    {service.active ? 'Activo' : 'Inactivo'}
-                                  </span>
-                                  <span className="text-muted-foreground">
-                                    {centers.find(c => c.id === service.center_id)?.name || 'Todos los centros'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log('Editing service:', service);
-                                  console.log('Setting editingService state');
-                                  setEditingService({ ...service });
-                                }}
-                                className="flex-1"
-                              >
-                                <Edit className="h-3 w-3 mr-1" />
-                                Editar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  deleteService(service.id);
-                                }}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
+            {/* Todos los servicios en una sola vista */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Todos los Servicios</CardTitle>
+                <div className="text-sm text-muted-foreground">{services.length} servicios</div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {services.map((service: any) => (
+                    <div key={service.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{service.name}</h3>
+                          <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
+                            <span>{service.duration_minutes} min</span>
+                            <span>•</span>
+                             <PriceDisplay 
+                               originalPrice={service.price_cents} 
+                               serviceId={service.id}
+                               centerId={service.center_id}
+                               serviceDiscount={{
+                                 has_discount: !!service.has_discount,
+                                 discount_price_cents: service.discount_price_cents || 0
+                               }}
+                               className="text-sm"
+                             />
                           </div>
-                        ))}
+                          {service.description && (
+                            <p className="text-xs text-muted-foreground mb-2">{service.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className={`px-2 py-1 rounded ${service.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                              {service.active ? 'Activo' : 'Inactivo'}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {centers.find(c => c.id === service.center_id)?.name || 'Todos los centros'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Editing service:', service);
+                            console.log('Setting editingService state');
+                            setEditingService({ ...service });
+                          }}
+                          className="flex-1"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            deleteService(service.id);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Formulario para crear nuevo servicio */}
             <Card>
