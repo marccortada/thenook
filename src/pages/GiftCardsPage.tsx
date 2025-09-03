@@ -199,7 +199,8 @@ const GiftCardsPage = () => {
       name: option.name,
       type: 'fixed' as GiftType,
       priceCents: option.amount_cents,
-      description: option.description
+      description: option.description,
+      imageUrl: option.image_url || '/lovable-uploads/a67f856f-f685-4134-9b22-730c400d6266.png'
     }));
   }, [giftOptions]);
 

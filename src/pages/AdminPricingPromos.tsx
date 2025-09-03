@@ -1236,6 +1236,11 @@ export default function AdminPricingPromos() {
                             <div className="font-medium">{opt.name}</div>
                             <div className="text-sm font-semibold">{currency(edit.amount_euros)}</div>
                           </div>
+                          {opt.image_url && (
+                            <div className="mb-2">
+                              <img src={opt.image_url} alt={opt.name} className="w-full h-20 object-cover rounded" />
+                            </div>
+                          )}
                           <div className="grid grid-cols-2 gap-2 items-end">
                             <div>
                               <Label>Importe (€)</Label>
@@ -1250,6 +1255,50 @@ export default function AdminPricingPromos() {
                                   <SelectItem value="false">Inactivo</SelectItem>
                                 </SelectContent>
                               </Select>
+                            </div>
+                            <div className="col-span-2 mb-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={async () => {
+                                  const fileInput = document.createElement('input');
+                                  fileInput.type = 'file';
+                                  fileInput.accept = 'image/*';
+                                  fileInput.onchange = async (e) => {
+                                    const file = (e.target as HTMLInputElement).files?.[0];
+                                    if (file) {
+                                      try {
+                                        const fileExt = file.name.split('.').pop();
+                                        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+                                        
+                                        const { data: uploadData, error: uploadError } = await supabase.storage
+                                          .from('gift-cards')
+                                          .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+                                        if (uploadError) throw uploadError;
+
+                                        const { data: { publicUrl } } = supabase.storage
+                                          .from('gift-cards')
+                                          .getPublicUrl(uploadData.path);
+                                        
+                                        await supabase.from('gift_card_options')
+                                          .update({ image_url: publicUrl })
+                                          .eq('id', opt.id);
+
+                                        toast({ title: 'Imagen actualizada', description: 'La imagen se ha subido correctamente' });
+                                        fetchGiftOptions();
+                                      } catch (error) {
+                                        console.error('Error uploading image:', error);
+                                        toast({ title: 'Error', description: 'No se pudo subir la imagen', variant: 'destructive' });
+                                      }
+                                    }
+                                  };
+                                  fileInput.click();
+                                }}
+                                className="w-full"
+                              >
+                                {opt.image_url ? 'Cambiar imagen' : 'Subir imagen'}
+                              </Button>
                             </div>
                             <div className="flex justify-end">
                               <Button size="sm" onClick={() => saveGiftOption(opt.id)}>Guardar</Button>
