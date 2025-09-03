@@ -118,8 +118,13 @@ const GiftCardsPage = () => {
 
   // Función para traducir nombres de paquetes/tarjetas
   const translatePackageName = (name: string) => {
+    // Limpiar el nombre quitando "TARJETA REGALO" y texto extra
+    const cleanName = name
+      .replace(/\s*TARJETA\s*REGALO\s*$/i, '')
+      .trim();
+    
     // Normalizar el nombre para usar como clave de traducción
-    const normalizedKey = name
+    const normalizedKey = cleanName
       .toLowerCase()
       .replace(/\s+/g, '_')
       .replace(/'/g, '')
@@ -128,15 +133,15 @@ const GiftCardsPage = () => {
       .replace(/^_|_$/g, '');
     
     // Debug logging
-    console.log(`Translating: "${name}" -> "${normalizedKey}"`);
+    console.log(`Translating: "${name}" -> cleaned: "${cleanName}" -> normalized: "${normalizedKey}"`);
     
     // Buscar en las traducciones
     const translation = t(normalizedKey as any);
     
     console.log(`Translation result: "${translation}"`);
     
-    // Si hay traducción específica, usarla. Si no, devolver el nombre original
-    return translation !== normalizedKey ? translation : name;
+    // Si hay traducción específica, usarla. Si no, devolver el nombre limpio
+    return translation !== normalizedKey ? translation : cleanName;
   };
 
   // Hook para manejo del carrito local
