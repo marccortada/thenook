@@ -1188,7 +1188,16 @@ export default function AdminPricingPromos() {
                 <AccordionTrigger className="px-6 py-4 hover:no-underline">
                   <div className="flex items-center justify-between w-full">
                     <span className="text-lg font-semibold">Gestionar Tarjetas Regalo Existentes</span>
-                    <span className="text-sm text-muted-foreground mr-4">{giftOptions.length} opciones</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground">{giftOptions.length} opciones</span>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteAllGiftOptions(); }}
+                      >
+                        Eliminar todas
+                      </Button>
+                    </div>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-4">
