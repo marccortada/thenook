@@ -1605,6 +1605,8 @@ export type Database = {
           created_at: string
           description: string | null
           discount_percentage: number | null
+          discount_price_cents: number | null
+          has_discount: boolean | null
           id: string
           name: string
           price_cents: number
@@ -1618,6 +1620,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount_percentage?: number | null
+          discount_price_cents?: number | null
+          has_discount?: boolean | null
           id?: string
           name: string
           price_cents: number
@@ -1631,6 +1635,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount_percentage?: number | null
+          discount_price_cents?: number | null
+          has_discount?: boolean | null
           id?: string
           name?: string
           price_cents?: number
