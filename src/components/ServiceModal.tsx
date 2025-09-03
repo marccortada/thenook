@@ -1,5 +1,5 @@
 import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import type { Service, Package } from "@/hooks/useDatabase";
 import { usePromotions } from "@/hooks/usePromotions";
@@ -275,7 +275,7 @@ const ServiceModal: React.FC<Props> = ({
             <DialogTitle className="text-xl font-bold text-foreground">
               Seleccionar Servicio
             </DialogTitle>
-            <p className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</p>
+            <DialogDescription className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</DialogDescription>
           </div>
         </DialogHeader>
         
