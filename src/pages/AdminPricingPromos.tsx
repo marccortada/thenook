@@ -384,12 +384,38 @@ export default function AdminPricingPromos() {
     }
 
     try {
-      // TODO: Handle image upload to Supabase storage if newGiftCard.image exists
-      // The image and crop data are available in newGiftCard.image and newGiftCard.imageCrop
+      let imageUrl = null;
+
+      // Upload image to Supabase storage if provided
+      if (newGiftCard.image) {
+        const fileExt = newGiftCard.image.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('gift-cards')
+          .upload(fileName, newGiftCard.image, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          toast({ title: 'Error', description: 'No se pudo subir la imagen', variant: 'destructive' });
+          return;
+        }
+
+        // Get the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('gift-cards')
+          .getPublicUrl(uploadData.path);
+        
+        imageUrl = publicUrl;
+      }
       
       const { error } = await supabase.from('gift_card_options').insert({
         name: newGiftCard.name,
         description: newGiftCard.description || null,
+        image_url: imageUrl,
         amount_cents: Math.round(newGiftCard.amount_euros * 100),
         is_active: newGiftCard.active
       });
