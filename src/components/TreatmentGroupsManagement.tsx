@@ -320,31 +320,32 @@ const TreatmentGroupsManagement: React.FC = () => {
 
       {/* Dialog para editar grupo */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md mx-4 sm:mx-auto">
+        <DialogContent className="w-full h-[95vh] max-w-[100vw] sm:max-w-2xl sm:h-auto mx-0 sm:mx-auto rounded-none sm:rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl">Editar Grupo de Tratamiento</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nombre del Grupo</Label>
+          <div className="space-y-6 overflow-y-auto flex-1 p-2 sm:p-4">
+            <div className="space-y-3">
+              <Label htmlFor="name" className="text-base font-semibold">Nombre del Grupo</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Ej: Masajes Relajantes"
+                className="h-12 text-base"
                 required
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="color" className="text-sm font-medium">Color</Label>
-              <div className="grid grid-cols-5 sm:flex sm:flex-wrap gap-2">
+            <div className="space-y-3">
+              <Label htmlFor="color" className="text-base font-semibold">Color</Label>
+              <div className="grid grid-cols-5 sm:flex sm:flex-wrap gap-3">
                 {PRESET_COLORS.map((color) => (
                   <button
                     key={color}
                     type="button"
-                    className={`w-8 h-8 sm:w-8 sm:h-8 rounded-full border-2 ${
+                    className={`w-10 h-10 sm:w-8 sm:h-8 rounded-full border-2 ${
                       formData.color === color ? 'border-foreground' : 'border-border'
                     }`}
                     style={{ backgroundColor: color }}
@@ -354,13 +355,13 @@ const TreatmentGroupsManagement: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="center">Centro (Opcional)</Label>
+            <div className="space-y-3">
+              <Label htmlFor="center" className="text-base font-semibold">Centro (Opcional)</Label>
               <Select
                 value={formData.center_id}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, center_id: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-12 text-base">
                   <SelectValue placeholder="Seleccionar centro" />
                 </SelectTrigger>
                 <SelectContent>
@@ -374,13 +375,13 @@ const TreatmentGroupsManagement: React.FC = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="lane">Carril Asignado (Opcional)</Label>
+            <div className="space-y-3">
+              <Label htmlFor="lane" className="text-base font-semibold">Carril Asignado (Opcional)</Label>
               <Select
                 value={formData.lane_id}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, lane_id: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-12 text-base">
                   <SelectValue placeholder="Seleccionar carril" />
                 </SelectTrigger>
                 <SelectContent>
@@ -394,13 +395,13 @@ const TreatmentGroupsManagement: React.FC = () => {
               </Select>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={closeDialog} className="flex-1 order-2 sm:order-1">
-                <X className="w-4 h-4 mr-2" />
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t mt-6">
+              <Button type="button" variant="outline" onClick={closeDialog} className="flex-1 order-2 sm:order-1 h-12 text-base">
+                <X className="w-5 h-5 mr-2" />
                 Cancelar
               </Button>
-              <Button onClick={handleSaveGroup} className="flex-1 order-1 sm:order-2">
-                <Save className="w-4 h-4 mr-2" />
+              <Button onClick={handleSaveGroup} className="flex-1 order-1 sm:order-2 h-12 text-base">
+                <Save className="w-5 h-5 mr-2" />
                 Guardar
               </Button>
             </div>
