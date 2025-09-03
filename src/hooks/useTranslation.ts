@@ -849,6 +849,11 @@ const translations = {
      "gift_message": "Geschenknachricht (optional)",
      "gift_message_placeholder": "Ihre persönliche Nachricht...",
      "empty_cart_button": "Leeren",
+     "individual_massages_packages": "Individuelle Massage-Pakete",
+     "couples_packages": "Paar-Massage-Pakete", 
+     "four_hands_packages": "Vier-Hände-Massage-Pakete",
+     "rituals_packages": "Ritual-Pakete",
+     "custom_amount": "Benutzerdefinierter Betrag",
   },
   
   it: {
@@ -1002,6 +1007,11 @@ const translations = {
      "gift_message": "Messaggio regalo (opzionale)",
      "gift_message_placeholder": "Il tuo messaggio personalizzato...",
      "empty_cart_button": "Svuota",
+     "individual_massages_packages": "Pacchetti Massaggi Individuali",
+     "couples_packages": "Pacchetti Massaggi di Coppia",
+     "four_hands_packages": "Pacchetti Massaggi a Quattro Mani", 
+     "rituals_packages": "Pacchetti Rituali",
+     "custom_amount": "Importo Personalizzato",
   },
   
   pt: {
@@ -1155,6 +1165,11 @@ const translations = {
      "gift_message": "Mensagem do presente (opcional)",
      "gift_message_placeholder": "Sua mensagem personalizada...",
      "empty_cart_button": "Esvaziar",
+     "individual_massages_packages": "Pacotes de Massagens Individuais",
+     "couples_packages": "Pacotes de Massagens para Casais",
+     "four_hands_packages": "Pacotes de Massagens a Quatro Mãos",
+     "rituals_packages": "Pacotes de Rituais", 
+     "custom_amount": "Valor Personalizado",
   }
 } as const;
 
