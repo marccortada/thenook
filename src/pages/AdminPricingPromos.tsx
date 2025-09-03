@@ -11,7 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useServices, usePackages, useCenters } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Plus, Edit, X } from "lucide-react";
+import { Trash2, Plus, Edit, X, ChevronDown, ChevronUp } from "lucide-react";
 
 import HappyHourManagement from "@/components/HappyHourManagement";
 import PromotionsManagement from "@/components/PromotionsManagement";
@@ -29,6 +29,9 @@ export default function AdminPricingPromos() {
   useEffect(() => {
     document.title = "Precios y Promos | The Nook Madrid";
   }, []);
+
+  // Estado para colapsar/expandir secciones
+  const [isServicesCollapsed, setIsServicesCollapsed] = useState(false);
 
   // Servicios - edición rápida de precio/estado/descuento
   const [serviceEdits, setServiceEdits] = useState<Record<string, { price_euros: number; active: boolean; has_discount: boolean; discount_price_euros: number }>>({});
@@ -594,9 +597,22 @@ export default function AdminPricingPromos() {
             {/* Todos los servicios en una sola vista */}
             <Card>
               <CardHeader>
-                <CardTitle>Todos los Servicios</CardTitle>
-                <div className="text-sm text-muted-foreground">{services.length} servicios</div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Todos los Servicios</CardTitle>
+                    <div className="text-sm text-muted-foreground">{services.length} servicios</div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsServicesCollapsed(!isServicesCollapsed)}
+                    className="h-8 w-8 p-0"
+                  >
+                    {isServicesCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                  </Button>
+                </div>
               </CardHeader>
+              {!isServicesCollapsed && (
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {services.map((service: any) => (
@@ -663,6 +679,7 @@ export default function AdminPricingPromos() {
                   ))}
                 </div>
               </CardContent>
+              )}
             </Card>
 
             {/* Formulario para crear nuevo servicio */}
