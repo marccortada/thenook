@@ -589,8 +589,13 @@ const translations = {
     "gift_cards_page": "Cartes Cadeaux",
     "gift_cards_subtitle": "Choisissez votre carte cadeau. Design élégant et 100% responsive.",
     "cart": "Panier",
-    "add_to_cart": "Ajouter au Panier",
-    "added_to_cart": "Ajouté au panier",
+     "add_to_cart": "Ajouter au Panier",
+     "added_to_cart": "Ajouté au panier",
+     "individual_massages_packages": "Forfaits Massages Individuels",
+     "couples_packages": "Forfaits Massages en Couple",
+     "four_hands_packages": "Forfaits Massages à Quatre Mains",
+     "rituals_packages": "Forfaits Rituels",
+     "custom_amount": "Montant Personnalisé",
     
     // Landing page widgets
     "book_description": "Réservez votre rendez-vous de massage relaxant",
