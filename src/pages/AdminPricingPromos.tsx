@@ -16,6 +16,7 @@ import { Trash2, Plus, Edit, X } from "lucide-react";
 import HappyHourManagement from "@/components/HappyHourManagement";
 import PromotionsManagement from "@/components/PromotionsManagement";
 import PriceDisplay from "@/components/PriceDisplay";
+import { ImageUploadCropper } from "@/components/ImageUploadCropper";
 
 const currency = (euros?: number) => typeof euros === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(euros) : "-";
 
@@ -311,6 +312,14 @@ export default function AdminPricingPromos() {
   // Tarjetas regalo - opciones de importes (sin duplicados)
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
   const [giftEdits, setGiftEdits] = useState<Record<string, { amount_euros: number; active: boolean }>>({});
+  const [newGiftCard, setNewGiftCard] = useState({
+    name: '',
+    description: '',
+    amount_euros: 0,
+    active: true,
+    image: null as File | null,
+    imageCrop: null as { x: number; y: number; width: number; height: number } | null
+  });
   const giftDenoms = [5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 200, 250, 300];
 
   const fetchGiftOptions = async () => {
@@ -366,6 +375,51 @@ export default function AdminPricingPromos() {
       toast({ title: 'Importadas', description: `Se crearon ${toInsert.length} opciones` });
       fetchGiftOptions();
     }
+  };
+
+  const createGiftCardOption = async () => {
+    if (!newGiftCard.name || !newGiftCard.amount_euros) {
+      toast({ title: 'Campos requeridos', description: 'Nombre e importe son obligatorios', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      // TODO: Handle image upload to Supabase storage if newGiftCard.image exists
+      // The image and crop data are available in newGiftCard.image and newGiftCard.imageCrop
+      
+      const { error } = await supabase.from('gift_card_options').insert({
+        name: newGiftCard.name,
+        description: newGiftCard.description || null,
+        amount_cents: Math.round(newGiftCard.amount_euros * 100),
+        is_active: newGiftCard.active
+      });
+
+      if (error) {
+        toast({ title: 'Error', description: `No se pudo crear la opción: ${error.message}`, variant: 'destructive' });
+      } else {
+        toast({ title: 'Creada', description: 'Opción de tarjeta regalo creada exitosamente' });
+        setNewGiftCard({
+          name: '',
+          description: '',
+          amount_euros: 0,
+          active: true,
+          image: null,
+          imageCrop: null
+        });
+        fetchGiftOptions();
+      }
+    } catch (error) {
+      console.error('Error creating gift card option:', error);
+      toast({ title: 'Error', description: 'Error inesperado al crear la opción', variant: 'destructive' });
+    }
+  };
+
+  const handleGiftCardImageSelect = (file: File, cropData?: { x: number; y: number; width: number; height: number }) => {
+    setNewGiftCard(prev => ({
+      ...prev,
+      image: file,
+      imageCrop: cropData || null
+    }));
   };
 
   return (
@@ -1049,6 +1103,8 @@ export default function AdminPricingPromos() {
                       <Input
                         id="giftcard-name"
                         placeholder="Ej: Tarjeta 50€"
+                        value={newGiftCard.name}
+                        onChange={(e) => setNewGiftCard(prev => ({ ...prev, name: e.target.value }))}
                       />
                     </div>
                     <div>
@@ -1059,11 +1115,13 @@ export default function AdminPricingPromos() {
                         step="0.01"
                         min="0"
                         placeholder="50.00"
+                        value={newGiftCard.amount_euros || ''}
+                        onChange={(e) => setNewGiftCard(prev => ({ ...prev, amount_euros: parseFloat(e.target.value) || 0 }))}
                       />
                     </div>
                     <div>
                       <Label htmlFor="giftcard-status">Estado</Label>
-                      <Select defaultValue="true">
+                      <Select value={String(newGiftCard.active)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, active: v === 'true' }))}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -1074,11 +1132,26 @@ export default function AdminPricingPromos() {
                       </Select>
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 gap-4 mt-4">
+                    <div>
+                      <Label htmlFor="giftcard-description">Descripción</Label>
+                      <Textarea
+                        id="giftcard-description"
+                        placeholder="Descripción de la tarjeta regalo..."
+                        value={newGiftCard.description}
+                        onChange={(e) => setNewGiftCard(prev => ({ ...prev, description: e.target.value }))}
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <ImageUploadCropper
+                        label="Imagen de la tarjeta regalo (opcional)"
+                        onImageSelect={handleGiftCardImageSelect}
+                      />
+                    </div>
+                  </div>
                   <div className="flex justify-end mt-4">
-                    <Button onClick={() => {
-                      // Aquí iría la lógica para crear la tarjeta regalo
-                      toast({ title: 'Funcionalidad pendiente', description: 'Crear tarjeta regalo estará disponible próximamente' });
-                    }} className="flex items-center gap-2">
+                    <Button onClick={createGiftCardOption} className="flex items-center gap-2">
                       <Plus className="h-4 w-4" />
                       Crear Opción
                     </Button>
