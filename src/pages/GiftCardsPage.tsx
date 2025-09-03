@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { ArrowLeft, X } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import OptimizedImage from "@/components/OptimizedImage";
 import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -640,13 +641,14 @@ const GiftCardsPage = () => {
                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {groups.individuales.map((item) => (
                           <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                            <div className="aspect-[4/3] overflow-hidden">
-                              <img 
-                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'} 
-                                alt={translatePackageName(item.name)}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
+                             <OptimizedImage
+                               src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                               alt={translatePackageName(item.name)}
+                               className="aspect-[4/3]"
+                               width={400}
+                               height={300}
+                               quality={80}
+                             />
                             <CardHeader className="pb-2">
                               <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                               <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
@@ -682,13 +684,14 @@ const GiftCardsPage = () => {
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
                          {groups.paraDos.map((item) => (
                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                             <div className="aspect-[4/3] overflow-hidden">
-                               <img 
-                                 src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'} 
-                                 alt={translatePackageName(item.name)}
-                                 className="w-full h-full object-cover"
-                               />
-                             </div>
+                              <OptimizedImage
+                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                                alt={translatePackageName(item.name)}
+                                className="aspect-[4/3]"
+                                width={400}
+                                height={300}
+                                quality={80}
+                              />
                              <CardHeader className="pb-2">
                                <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                                <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
@@ -736,13 +739,14 @@ const GiftCardsPage = () => {
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
                          {groups.cuatro.map((item) => (
                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                             <div className="aspect-[4/3] overflow-hidden">
-                               <img 
-                                 src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'} 
-                                 alt={translatePackageName(item.name)}
-                                 className="w-full h-full object-cover"
-                               />
-                             </div>
+                              <OptimizedImage
+                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                                alt={translatePackageName(item.name)}
+                                className="aspect-[4/3]"
+                                width={400}
+                                height={300}
+                                quality={80}
+                              />
                              <CardHeader className="pb-2">
                                <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                                <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
@@ -790,13 +794,14 @@ const GiftCardsPage = () => {
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
                          {groups.rituales.map((item) => (
                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
-                             <div className="aspect-[4/3] overflow-hidden">
-                               <img 
-                                 src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'} 
-                                 alt={translatePackageName(item.name)}
-                                 className="w-full h-full object-cover"
-                               />
-                             </div>
+                              <OptimizedImage
+                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                                alt={translatePackageName(item.name)}
+                                className="aspect-[4/3]"
+                                width={400}
+                                height={300}
+                                quality={80}
+                              />
                              <CardHeader className="pb-2 p-3">
                                <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
                                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
