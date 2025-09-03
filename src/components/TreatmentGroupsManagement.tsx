@@ -236,18 +236,20 @@ const TreatmentGroupsManagement: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="ml-auto">
-                      {groupServices.length} servicio{groupServices.length !== 1 ? 's' : ''}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditGroup(group)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <Badge variant="outline" className="ml-auto">
+                    {groupServices.length} servicio{groupServices.length !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+                <div className="flex justify-end pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditGroup(group)}
+                    className="gap-2"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Editar Grupo
+                  </Button>
                 </div>
               </CardHeader>
               
