@@ -1214,19 +1214,19 @@ export default function AdminPricingPromos() {
                 <AccordionTrigger className="px-6 py-4 hover:no-underline">
                   <div className="flex items-center justify-between w-full">
                     <span className="text-lg font-semibold">Gestionar Tarjetas Regalo Existentes</span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">{giftOptions.length} opciones</span>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteAllGiftOptions(); }}
-                      >
-                        Eliminar todas
-                      </Button>
-                    </div>
+                    <span className="text-sm text-muted-foreground">{giftOptions.length} opciones</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-4">
+                  <div className="flex justify-end mb-4">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteAllGiftOptions}
+                    >
+                      Eliminar todas
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {giftOptions.map((opt) => {
                       const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active };
@@ -1257,43 +1257,59 @@ export default function AdminPricingPromos() {
                               </Select>
                             </div>
                             <div className="col-span-2 mb-2">
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                style={{ display: 'none' }} 
+                                id={`image-upload-${opt.id}`}
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    try {
+                                      console.log('Uploading image for gift card:', opt.id);
+                                      const fileExt = file.name.split('.').pop();
+                                      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+                                      
+                                      const { data: uploadData, error: uploadError } = await supabase.storage
+                                        .from('gift-cards')
+                                        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+                                      if (uploadError) {
+                                        console.error('Upload error:', uploadError);
+                                        throw uploadError;
+                                      }
+
+                                      console.log('Upload successful:', uploadData);
+                                      const { data: { publicUrl } } = supabase.storage
+                                        .from('gift-cards')
+                                        .getPublicUrl(uploadData.path);
+                                      
+                                      console.log('Public URL:', publicUrl);
+                                      const { error: updateError } = await supabase.from('gift_card_options')
+                                        .update({ image_url: publicUrl })
+                                        .eq('id', opt.id);
+
+                                      if (updateError) {
+                                        console.error('Update error:', updateError);
+                                        throw updateError;
+                                      }
+
+                                      console.log('Image URL updated successfully');
+                                      toast({ title: 'Imagen actualizada', description: 'La imagen se ha subido correctamente' });
+                                      fetchGiftOptions();
+                                    } catch (error) {
+                                      console.error('Error uploading image:', error);
+                                      toast({ title: 'Error', description: 'No se pudo subir la imagen', variant: 'destructive' });
+                                    }
+                                  }
+                                }}
+                              />
                               <Button 
                                 size="sm" 
                                 variant="outline" 
-                                onClick={async () => {
-                                  const fileInput = document.createElement('input');
-                                  fileInput.type = 'file';
-                                  fileInput.accept = 'image/*';
-                                  fileInput.onchange = async (e) => {
-                                    const file = (e.target as HTMLInputElement).files?.[0];
-                                    if (file) {
-                                      try {
-                                        const fileExt = file.name.split('.').pop();
-                                        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-                                        
-                                        const { data: uploadData, error: uploadError } = await supabase.storage
-                                          .from('gift-cards')
-                                          .upload(fileName, file, { cacheControl: '3600', upsert: false });
-
-                                        if (uploadError) throw uploadError;
-
-                                        const { data: { publicUrl } } = supabase.storage
-                                          .from('gift-cards')
-                                          .getPublicUrl(uploadData.path);
-                                        
-                                        await supabase.from('gift_card_options')
-                                          .update({ image_url: publicUrl })
-                                          .eq('id', opt.id);
-
-                                        toast({ title: 'Imagen actualizada', description: 'La imagen se ha subido correctamente' });
-                                        fetchGiftOptions();
-                                      } catch (error) {
-                                        console.error('Error uploading image:', error);
-                                        toast({ title: 'Error', description: 'No se pudo subir la imagen', variant: 'destructive' });
-                                      }
-                                    }
-                                  };
-                                  fileInput.click();
+                                onClick={() => {
+                                  const input = document.getElementById(`image-upload-${opt.id}`) as HTMLInputElement;
+                                  input?.click();
                                 }}
                                 className="w-full"
                               >
