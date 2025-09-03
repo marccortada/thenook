@@ -604,7 +604,10 @@ const GiftCardsPage = () => {
                                 <Button
                                   size="sm"
                                   className="bg-blue-500 hover:bg-blue-600 text-white px-6"
-                                  onClick={() => add({ name: translatePackageName(item.name), priceCents: item.priceCents! })}
+                                  onClick={() => {
+                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                    setIsCartOpen(true);
+                                  }}
                                 >
                                   Comprar
                                 </Button>
