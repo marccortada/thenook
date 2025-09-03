@@ -688,28 +688,33 @@ const GiftCardsPage = () => {
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                       {groups.rituales.map((item) => (
-                         <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                           <CardHeader className="pb-2">
-                             <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
-                           </CardHeader>
-                           <CardContent className="pb-2">
-                             <div className="space-y-1">
-                               <p className="text-sm text-muted-foreground">{item.description || item.name}</p>
-                               <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
-                             </div>
-                           </CardContent>
-                           <CardFooter className="pt-2">
-                             <Button
-                               size="sm"
-                               className="w-full"
-                               onClick={() => add({ name: translatePackageName(item.name), priceCents: item.priceCents! })}
-                             >
-                               {t('add_to_cart')}
-                             </Button>
-                          </CardFooter>
-                        </Card>
-                      ))}
+                        {groups.rituales.map((item) => (
+                          <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                            <div className="aspect-[4/3] overflow-hidden">
+                              <img 
+                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'} 
+                                alt={translatePackageName(item.name)}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
+                              <p className="text-sm text-muted-foreground uppercase tracking-wide">TARJETA REGALO</p>
+                            </CardHeader>
+                            <CardContent className="pb-2">
+                              <div className="flex items-center justify-between">
+                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                                <Button
+                                  size="sm"
+                                  className="bg-blue-500 hover:bg-blue-600 text-white px-6"
+                                  onClick={() => add({ name: translatePackageName(item.name), priceCents: item.priceCents! })}
+                                >
+                                  Comprar
+                                </Button>
+                              </div>
+                            </CardContent>
+                         </Card>
+                       ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
