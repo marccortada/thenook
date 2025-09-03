@@ -112,7 +112,7 @@ const AdminDashboard = () => {
       label: "Precios y Promos",
       icon: Percent,
       component: AdminPricingPromos,
-      roles: ["admin"]
+      roles: ["admin", "employee"]
     },
     {
       id: "gestion-citas",
