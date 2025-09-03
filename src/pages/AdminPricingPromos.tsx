@@ -378,6 +378,8 @@ export default function AdminPricingPromos() {
   };
 
   const createGiftCardOption = async () => {
+    console.log('Creating gift card option with data:', newGiftCard);
+    
     if (!newGiftCard.name || !newGiftCard.amount_euros) {
       toast({ title: 'Campos requeridos', description: 'Nombre e importe son obligatorios', variant: 'destructive' });
       return;
@@ -388,6 +390,7 @@ export default function AdminPricingPromos() {
 
       // Upload image to Supabase storage if provided
       if (newGiftCard.image) {
+        console.log('Uploading image:', newGiftCard.image);
         const fileExt = newGiftCard.image.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         
@@ -400,7 +403,7 @@ export default function AdminPricingPromos() {
 
         if (uploadError) {
           console.error('Error uploading image:', uploadError);
-          toast({ title: 'Error', description: 'No se pudo subir la imagen', variant: 'destructive' });
+          toast({ title: 'Error', description: `No se pudo subir la imagen: ${uploadError.message}`, variant: 'destructive' });
           return;
         }
 
@@ -410,19 +413,26 @@ export default function AdminPricingPromos() {
           .getPublicUrl(uploadData.path);
         
         imageUrl = publicUrl;
+        console.log('Image uploaded successfully, URL:', imageUrl);
       }
       
-      const { error } = await supabase.from('gift_card_options').insert({
+      const insertData = {
         name: newGiftCard.name,
         description: newGiftCard.description || null,
         image_url: imageUrl,
         amount_cents: Math.round(newGiftCard.amount_euros * 100),
         is_active: newGiftCard.active
-      });
+      };
+      
+      console.log('Inserting gift card option:', insertData);
+      
+      const { data, error } = await supabase.from('gift_card_options').insert(insertData).select();
 
       if (error) {
+        console.error('Database error:', error);
         toast({ title: 'Error', description: `No se pudo crear la opción: ${error.message}`, variant: 'destructive' });
       } else {
+        console.log('Gift card option created successfully:', data);
         toast({ title: 'Creada', description: 'Opción de tarjeta regalo creada exitosamente' });
         setNewGiftCard({
           name: '',
@@ -436,7 +446,7 @@ export default function AdminPricingPromos() {
       }
     } catch (error) {
       console.error('Error creating gift card option:', error);
-      toast({ title: 'Error', description: 'Error inesperado al crear la opción', variant: 'destructive' });
+      toast({ title: 'Error', description: `Error inesperado al crear la opción: ${error}`, variant: 'destructive' });
     }
   };
 
