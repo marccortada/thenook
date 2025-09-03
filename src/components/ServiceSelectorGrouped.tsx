@@ -154,12 +154,13 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[--radix-popover-trigger-width] p-0 bg-popover border shadow-lg z-50" 
+          className="w-[400px] max-w-[90vw] p-0 bg-background border shadow-lg z-[1000]" 
           align="start"
           side="bottom"
           sideOffset={4}
           avoidCollisions={true}
           collisionPadding={8}
+          onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <ScrollArea className="h-[400px]">
             <div className="p-4 space-y-4">
