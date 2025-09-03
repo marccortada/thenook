@@ -194,18 +194,13 @@ const GiftCardsPage = () => {
 
   const normalize = (s: string) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
   const giftItems: GiftCardItem[] = useMemo(() => {
-    const byName = new Map((giftOptions || []).map((o: any) => [normalize(o.name || ''), o]));
-    return PREDEFINED_GIFTS.map((ci) => {
-      const match = byName.get(normalize(ci.name));
-      return {
-        id: match?.id ?? ci.id,
-        name: ci.name,
-        type: 'fixed' as const,
-        priceCents: match?.amount_cents ?? ci.priceCents,
-        description: (ci as any).description,
-        imageUrl: (ci as any).imageUrl,
-      };
-    });
+    return (giftOptions || []).map((option: any) => ({
+      id: option.id,
+      name: option.name,
+      type: 'fixed' as GiftType,
+      priceCents: option.amount_cents,
+      description: option.description
+    }));
   }, [giftOptions]);
 
   const groups = useMemo(() => {
