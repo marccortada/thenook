@@ -422,6 +422,30 @@ export default function AdminPricingPromos() {
     }));
   };
 
+  const deleteAllGiftOptions = async () => {
+    try {
+      const { data, error } = await supabase.from('gift_card_options').select('id');
+      if (error) throw error;
+      const ids = (data || []).map((d: any) => d.id);
+      if (!ids.length) {
+        toast({ title: 'Sin opciones', description: 'No hay opciones para eliminar' });
+        return;
+      }
+      const { error: delError } = await supabase.from('gift_card_options').delete().in('id', ids);
+      if (delError) throw delError;
+      toast({ title: 'Eliminadas', description: 'Se eliminaron todas las opciones de tarjetas regalo' });
+      fetchGiftOptions();
+    } catch (err: any) {
+      console.error('Error deleting all gift options:', err);
+      toast({ title: 'Error', description: err?.message || 'No se pudieron eliminar las opciones', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteAllGiftOptions = async () => {
+    if (!confirm('¿Seguro que deseas eliminar TODAS las opciones de tarjetas regalo?')) return;
+    await deleteAllGiftOptions();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
