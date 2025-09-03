@@ -218,17 +218,8 @@ const ServiceModal: React.FC<Props> = ({
     onOpenChange(false);
   };
 
-  // Grouping logic
-  const duoServices = services.filter(s => isDuo(s.name));
-  const cuatroManosServices = services.filter(s => isCuatroManos(s.name));
-  const ritualServices = services.filter(s => isRitual(s.name, s.description));
-  const tresPersonasServices = services.filter(s => isTresPersonas(s.name));
-  const otherServices = services.filter(s => 
-    !isDuo(s.name) && 
-    !isCuatroManos(s.name) && 
-    !isRitual(s.name, s.description) && 
-    !isTresPersonas(s.name)
-  );
+  // No grouping - show all services in one group
+  const allServices = services;
 
   const ServiceGroup: React.FC<{ 
     title: string; 
@@ -281,49 +272,12 @@ const ServiceModal: React.FC<Props> = ({
         
         <div className="flex-1 overflow-y-auto -mx-6 px-6 service-modal-scroll">
           <div className="space-y-6 py-4">
-            {mode === "combined" && packages.length > 0 && (
-              <ServiceGroup 
-                title="Paquetes Especiales" 
-                services={[]} 
-                packages={packages}
-                icon={<Tag className="w-5 h-5 text-violet-500" />}
-              />
-            )}
-            
             <ServiceGroup 
-              title="Servicios en Pareja" 
-              services={duoServices}
-              icon={<Users className="w-5 h-5 text-pink-500" />}
+              title="Servicios" 
+              services={allServices}
+              packages={mode === "combined" || mode === "voucher" ? packages : []}
+              icon={<Star className="w-5 h-5 text-primary" />}
             />
-            <ServiceGroup 
-              title="Tratamientos Cuatro Manos" 
-              services={cuatroManosServices}
-              icon={<Star className="w-5 h-5 text-amber-500" />}
-            />
-            <ServiceGroup 
-              title="Rituales Especiales" 
-              services={ritualServices}
-              icon={<Sparkles className="w-5 h-5 text-purple-500" />}
-            />
-            <ServiceGroup 
-              title="Tratamientos Grupales" 
-              services={tresPersonasServices}
-              icon={<Users className="w-5 h-5 text-blue-500" />}
-            />
-            <ServiceGroup 
-              title="Tratamientos Individuales" 
-              services={otherServices}
-              icon={<Star className="w-5 h-5 text-emerald-500" />}
-            />
-            
-            {mode === "voucher" && packages.length > 0 && (
-              <ServiceGroup 
-                title="Paquetes Disponibles" 
-                services={[]} 
-                packages={packages}
-                icon={<Tag className="w-5 h-5 text-violet-500" />}
-              />
-            )}
           </div>
         </div>
       </DialogContent>
