@@ -496,11 +496,29 @@ const ClientReservation = () => {
                       <SelectValue placeholder={t('select_center')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {centers.map((center) => (
-                        <SelectItem key={center.id} value={center.id}>
-                          {center.name}
-                        </SelectItem>
-                      ))}
+                      {centers.map((center) => {
+                        // Add comprehensive debugging
+                        console.log('Processing center:', {
+                          id: center.id,
+                          name: center.name,
+                          idType: typeof center.id,
+                          isEmpty: center.id === '',
+                          isNull: center.id === null,
+                          isUndefined: center.id === undefined
+                        });
+                        
+                        // Skip invalid centers
+                        if (!center.id || center.id === '' || center.id === null || center.id === undefined) {
+                          console.warn('Skipping invalid center:', center);
+                          return null;
+                        }
+                        
+                        return (
+                          <SelectItem key={center.id} value={center.id}>
+                            {center.name}
+                          </SelectItem>
+                        );
+                      }).filter(Boolean)}
                     </SelectContent>
                   </Select>
                 </div>

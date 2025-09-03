@@ -565,14 +565,21 @@ const ReservationSystem = () => {
                      avoidCollisions={false}
                      collisionPadding={0}
                    >
-                     {centers.map((center) => (
-                       <SelectItem key={center.id} value={center.id}>
-                         <div className="flex items-center space-x-2">
-                           <MapPin className="h-3 w-3" />
-                           <span>{center.name}</span>
-                         </div>
-                       </SelectItem>
-                     ))}
+                      {centers.map((center) => {
+                        // Debug center data
+                        if (!center.id || center.id === '') {
+                          console.error('ReservationSystem: Invalid center found:', center);
+                          return null;
+                        }
+                        return (
+                          <SelectItem key={center.id} value={center.id}>
+                            <div className="flex items-center space-x-2">
+                              <MapPin className="h-3 w-3" />
+                              <span>{center.name}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      }).filter(Boolean)}
                    </SelectContent>
                 </Select>
               </div>
