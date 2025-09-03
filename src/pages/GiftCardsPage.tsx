@@ -101,6 +101,7 @@ const isCuatroManos = (name?: string) => !!name?.toLowerCase().includes("cuatro 
 const isRitual = (name?: string) => !!name?.toLowerCase().includes("ritual");
 
 const GiftCardsPage = () => {
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
   const [purchasedByName, setPurchasedByName] = useState("");
   const [purchasedByEmail, setPurchasedByEmail] = useState("");
@@ -284,7 +285,7 @@ const GiftCardsPage = () => {
             <div>
               <h1 className="text-2xl font-bold">{t('gift_cards_page')}</h1>
             </div>
-            <Sheet>
+            <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline">{t('cart')} ({items.length})</Button>
               </SheetTrigger>
@@ -637,7 +638,10 @@ const GiftCardsPage = () => {
                               <Button
                                 size="sm"
                                 className="w-full text-xs"
-                                onClick={() => add({ name: translatePackageName(item.name), priceCents: item.priceCents! })}
+                                onClick={() => {
+                                  add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                  setIsCartOpen(true);
+                                }}
                               >
                                 {t('add_to_cart')}
                               </Button>
@@ -670,7 +674,10 @@ const GiftCardsPage = () => {
                               <Button
                                 size="sm"
                                 className="w-full text-xs"
-                                onClick={() => add({ name: translatePackageName(item.name), priceCents: item.priceCents! })}
+                                onClick={() => {
+                                  add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                  setIsCartOpen(true);
+                                }}
                               >
                                 {t('add_to_cart')}
                               </Button>
@@ -705,11 +712,14 @@ const GiftCardsPage = () => {
                              <CardContent className="pb-2 p-3 pt-0">
                                <div className="flex items-center justify-between">
                                  <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
-                                 <Button
-                                   size="sm"
-                                   className="bg-blue-500 hover:bg-blue-600 text-white px-4 text-xs"
-                                   onClick={() => add({ name: translatePackageName(item.name), priceCents: item.priceCents! })}
-                                 >
+                                <Button
+                                  size="sm"
+                                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 text-xs"
+                                  onClick={() => {
+                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                    setIsCartOpen(true);
+                                  }}
+                                >
                                    Comprar
                                  </Button>
                                </div>
