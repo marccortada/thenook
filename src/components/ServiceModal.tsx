@@ -215,59 +215,66 @@ const ServiceModal: React.FC<Props> = ({
   selectedId,
   onSelect,
 }) => {
-  const { treatmentGroups } = useTreatmentGroups();
-  
   const handleSelect = (id: string, kind: "service" | "package") => {
     onSelect(id, kind);
     onOpenChange(false);
   };
 
-  // Group services by treatment groups
+  // Group services by specific treatment categories
   const groupedServices = React.useMemo(() => {
-    const groups: { [key: string]: { group: any; services: Service[]; packages: Package[] } } = {};
-    
-    // Add a default group for services without group_id
-    groups['no-group'] = {
-      group: { id: 'no-group', name: 'Otros Servicios', color: '#6B7280' },
-      services: [],
-      packages: []
+    const groups = {
+      'masajes-individuales': {
+        name: 'Masajes Individuales',
+        color: '#3B82F6',
+        services: [] as Service[],
+        packages: [] as Package[]
+      },
+      'masajes-pareja': {
+        name: 'Masajes en Pareja',
+        color: '#10B981',
+        services: [] as Service[],
+        packages: [] as Package[]
+      },
+      'masajes-cuatro-manos': {
+        name: 'Masajes a Cuatro Manos',
+        color: '#F59E0B',
+        services: [] as Service[],
+        packages: [] as Package[]
+      },
+      'rituales': {
+        name: 'Rituales',
+        color: '#8B5CF6',
+        services: [] as Service[],
+        packages: [] as Package[]
+      }
     };
-    
-    // Initialize groups from treatment groups
-    treatmentGroups.forEach(group => {
-      groups[group.id] = {
-        group,
-        services: [],
-        packages: []
-      };
-    });
-    
-    // Group services
+
+    // Classify services based on their names
     services.forEach(service => {
-      const groupId = service.group_id || 'no-group';
-      if (groups[groupId]) {
-        groups[groupId].services.push(service);
+      const name = service.name.toLowerCase();
+      
+      if (name.includes('cuatro manos')) {
+        groups['masajes-cuatro-manos'].services.push(service);
+      } else if (name.includes('dos personas') || name.includes('pareja') || name.includes('para dos')) {
+        groups['masajes-pareja'].services.push(service);
+      } else if (name.includes('ritual')) {
+        groups['rituales'].services.push(service);
+      } else {
+        // Default to individual massages
+        groups['masajes-individuales'].services.push(service);
       }
     });
-    
-    // Add packages to the appropriate group (rituales)
+
+    // Add packages to rituales
     if (mode === "combined" || mode === "voucher") {
-      packages.forEach(pkg => {
-        // Find the group that contains "ritual" or assign to first available
-        const ritualGroup = Object.values(groups).find(g => 
-          g.group.name.toLowerCase().includes('ritual')
-        );
-        if (ritualGroup) {
-          ritualGroup.packages.push(pkg);
-        } else if (groups['no-group']) {
-          groups['no-group'].packages.push(pkg);
-        }
-      });
+      groups['rituales'].packages.push(...packages);
     }
-    
-    // Filter out empty groups
-    return Object.values(groups).filter(g => g.services.length > 0 || g.packages.length > 0);
-  }, [services, packages, treatmentGroups, mode]);
+
+    // Return only groups with content
+    return Object.values(groups).filter(group => 
+      group.services.length > 0 || group.packages.length > 0
+    );
+  }, [services, packages, mode]);
 
   const ServiceGroup: React.FC<{ 
     title: string; 
@@ -330,13 +337,13 @@ const ServiceModal: React.FC<Props> = ({
         
         <div className="flex-1 overflow-y-auto -mx-6 px-6 service-modal-scroll">
           <div className="space-y-6 py-4">
-            {groupedServices.map((groupData) => (
+            {groupedServices.map((group, index) => (
               <ServiceGroup 
-                key={groupData.group.id}
-                title={groupData.group.name} 
-                services={groupData.services}
-                packages={groupData.packages}
-                icon={<div className="w-4 h-4 rounded-full" style={{ backgroundColor: groupData.group.color }} />}
+                key={index}
+                title={group.name} 
+                services={group.services}
+                packages={group.packages}
+                icon={<div className="w-4 h-4 rounded-full" style={{ backgroundColor: group.color }} />}
               />
             ))}
           </div>
