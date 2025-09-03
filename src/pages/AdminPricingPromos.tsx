@@ -258,21 +258,23 @@ export default function AdminPricingPromos() {
   };
 
   // Bonos (paquetes) - edición de precio/sesiones/estado + alta (agrupados sin duplicados entre centros)
-  const [packageEdits, setPackageEdits] = useState<Record<string, { price_euros: number; sessions_count: number; active: boolean }>>({});
-  const handlePackageChange = (id: string, field: 'price_euros'|'sessions_count'|'active', value: any) => {
+  const [packageEdits, setPackageEdits] = useState<Record<string, { price_euros: number; sessions_count: number; active: boolean; has_discount: boolean; discount_price_euros: number }>>({});
+  const handlePackageChange = (id: string, field: 'price_euros'|'sessions_count'|'active'|'has_discount'|'discount_price_euros', value: any) => {
     setPackageEdits((prev) => ({
       ...prev,
       [id]: { 
         price_euros: prev[id]?.price_euros ?? 0, 
         sessions_count: prev[id]?.sessions_count ?? 1, 
         active: prev[id]?.active ?? true, 
+        has_discount: prev[id]?.has_discount ?? false,
+        discount_price_euros: prev[id]?.discount_price_euros ?? 0,
         [field]: value 
       }
     }));
   };
 
   const uniquePackages = useMemo(() => {
-    const map = new Map<string, { key: string; ids: string[]; name: string; service_name?: string; sessions_count: number; price_euros: number; allActive: boolean }>();
+    const map = new Map<string, { key: string; ids: string[]; name: string; service_name?: string; sessions_count: number; price_euros: number; allActive: boolean; hasDiscount: boolean; discountPriceEuros: number }>();
     packages.forEach((p: any) => {
       const key = `${(p.name || '').trim().toLowerCase()}|${p.sessions_count}`;
       const existing = map.get(key);
@@ -285,10 +287,14 @@ export default function AdminPricingPromos() {
           sessions_count: p.sessions_count,
           price_euros: p.price_cents / 100,
           allActive: !!p.active,
+          hasDiscount: !!p.has_discount,
+          discountPriceEuros: (p.discount_price_cents || 0) / 100,
         });
       } else {
         existing.ids.push(p.id);
         existing.allActive = existing.allActive && !!p.active;
+        existing.hasDiscount = existing.hasDiscount && !!p.has_discount;
+        existing.discountPriceEuros = (p.discount_price_cents || 0) / 100;
       }
     });
     return Array.from(map.values());
@@ -299,11 +305,14 @@ export default function AdminPricingPromos() {
     if (!edit) return;
 
     const priceCents = Math.round(edit.price_euros * 100);
+    const discountPriceCents = Math.round(edit.discount_price_euros * 100);
     for (const id of ids) {
       await supabase.from('packages').update({ 
         price_cents: priceCents, 
         sessions_count: edit.sessions_count,
-        active: edit.active 
+        active: edit.active,
+        has_discount: edit.has_discount,
+        discount_price_cents: discountPriceCents
       }).eq('id', id);
     }
     toast({ title: 'Guardado', description: 'Bono actualizado en todos los centros' });
@@ -1100,7 +1109,14 @@ export default function AdminPricingPromos() {
                 <AccordionContent className="px-6 pb-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {uniquePackages.map((g) => {
-                      const edit = packageEdits[g.key] || { price_euros: g.price_euros, sessions_count: g.sessions_count, active: g.allActive };
+                      const edit = packageEdits[g.key] || { 
+                        price_euros: g.price_euros, 
+                        sessions_count: g.sessions_count, 
+                        active: g.allActive,
+                        has_discount: g.hasDiscount,
+                        discount_price_euros: g.discountPriceEuros
+                      };
+                      const finalPrice = edit.has_discount ? edit.discount_price_euros : edit.price_euros;
                       return (
                         <div key={g.key} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
@@ -1108,7 +1124,16 @@ export default function AdminPricingPromos() {
                               <div className="font-medium">{g.name}</div>
                               <div className="text-xs text-muted-foreground">{g.service_name ? `Servicio: ${g.service_name} · ` : ''}{edit.sessions_count} sesiones</div>
                             </div>
-                            <div className="text-sm font-semibold">{currency(edit.price_euros)}</div>
+                            <div className="text-right">
+                              {edit.has_discount ? (
+                                <div>
+                                  <div className="text-xs text-muted-foreground line-through">{currency(edit.price_euros)}</div>
+                                  <div className="text-sm font-semibold text-primary">{currency(finalPrice)}</div>
+                                </div>
+                              ) : (
+                                <div className="text-sm font-semibold">{currency(finalPrice)}</div>
+                              )}
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 gap-2 items-end">
                             <div>
@@ -1129,7 +1154,30 @@ export default function AdminPricingPromos() {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div className="flex justify-end">
+                            <div className="flex items-center space-x-2">
+                              <input 
+                                type="checkbox" 
+                                id={`discount-${g.key}`}
+                                checked={edit.has_discount}
+                                onChange={(e) => handlePackageChange(g.key, 'has_discount', e.target.checked)}
+                                className="rounded"
+                              />
+                              <Label htmlFor={`discount-${g.key}`} className="text-sm">Descuento</Label>
+                            </div>
+                            {edit.has_discount && (
+                              <div className="col-span-2">
+                                <Label className="text-sm">Precio con descuento (€)</Label>
+                                <Input 
+                                  type="number" 
+                                  step="0.01"
+                                  value={edit.discount_price_euros}
+                                  onChange={(e) => handlePackageChange(g.key, 'discount_price_euros', parseFloat(e.target.value || '0'))}
+                                  min="0"
+                                  className="text-sm"
+                                />
+                              </div>
+                            )}
+                            <div className="col-span-2 flex justify-end">
                               <Button size="sm" onClick={() => savePackage(g.key, g.ids)}>Guardar</Button>
                             </div>
                           </div>
