@@ -317,22 +317,10 @@ const ServiceModal: React.FC<Props> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl w-[95vw] mx-auto max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-br from-background to-accent/5">
         <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 -mx-6 px-6 -mt-6 pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-xl font-bold text-foreground">
-                Seleccionar Servicio
-              </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</DialogDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="h-8 w-8 p-0 hover:bg-accent"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-bold text-foreground">
+            Seleccionar Servicio
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</DialogDescription>
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto -mx-6 px-6 service-modal-scroll">
