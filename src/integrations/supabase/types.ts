@@ -2117,6 +2117,7 @@ export type Database = {
           description: string | null
           discount_price_cents: number | null
           duration_minutes: number
+          group_id: string | null
           has_discount: boolean | null
           id: string
           name: string
@@ -2131,6 +2132,7 @@ export type Database = {
           description?: string | null
           discount_price_cents?: number | null
           duration_minutes: number
+          group_id?: string | null
           has_discount?: boolean | null
           id?: string
           name: string
@@ -2145,6 +2147,7 @@ export type Database = {
           description?: string | null
           discount_price_cents?: number | null
           duration_minutes?: number
+          group_id?: string | null
           has_discount?: boolean | null
           id?: string
           name?: string
@@ -2158,6 +2161,13 @@ export type Database = {
             columns: ["center_id"]
             isOneToOne: false
             referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -2203,6 +2213,54 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      treatment_groups: {
+        Row: {
+          active: boolean
+          center_id: string | null
+          color: string
+          created_at: string
+          id: string
+          lane_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          center_id?: string | null
+          color?: string
+          created_at?: string
+          id?: string
+          lane_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          center_id?: string | null
+          color?: string
+          created_at?: string
+          id?: string
+          lane_id?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_groups_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_groups_lane_id_fkey"
+            columns: ["lane_id"]
+            isOneToOne: false
+            referencedRelation: "lanes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

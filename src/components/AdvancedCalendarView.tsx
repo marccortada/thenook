@@ -32,6 +32,7 @@ import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO, 
 import { es } from 'date-fns/locale';
 
 import { useBookings, useCenters, useLanes, useServices } from '@/hooks/useDatabase';
+import { useTreatmentGroups } from '@/hooks/useTreatmentGroups';
 import { useClients } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';

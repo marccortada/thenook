@@ -13,6 +13,7 @@ import {
   Percent, 
   Settings,
   Calendar,
+  Palette,
   
 } from "lucide-react";
 
@@ -23,7 +24,7 @@ import ClientManagement from "@/components/ClientManagement";
 import PackageManagement from "@/components/PackageManagement";
 import GiftCardManagement from "@/components/GiftCardManagement";
 import AdvancedDashboard from "@/components/AdvancedDashboard";
-
+import TreatmentGroupsManagement from "@/components/TreatmentGroupsManagement";
 
 import NotificationCenter from "@/components/NotificationCenter";
 import ReportsCenter from "@/components/ReportsCenter";
@@ -101,17 +102,17 @@ const AdminDashboard = () => {
       roles: ["admin"]
     },
     {
-      id: "reports",
-      label: "Reports",
-      icon: FileText,
-      component: ReportsCenter,
-      roles: ["admin"]
-    },
-    {
       id: "precios-promos",
       label: "Precios y Promos",
       icon: Percent,
       component: AdminPricingPromos,
+      roles: ["admin", "employee"]
+    },
+    {
+      id: "grupos-tratamientos",
+      label: "Grupos de Tratamientos",
+      icon: Palette,
+      component: TreatmentGroupsManagement,
       roles: ["admin", "employee"]
     },
     {

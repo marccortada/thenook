@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CalendarDays, Clock, MapPin, User, CalendarIcon, Users, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
+import { useTreatmentGroups } from "@/hooks/useTreatmentGroups";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -28,6 +29,7 @@ const ReservationSystem = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
+  const { treatmentGroups, getTreatmentGroupByService } = useTreatmentGroups();
 
   // Real-time subscription to show global booking notifications
   useEffect(() => {
@@ -257,11 +259,47 @@ const ReservationSystem = () => {
         }
       }
 
+      // Determine lane based on treatment group
+      let assignedLaneId = null;
+      if (formData.serviceType === 'individual') {
+        const treatmentGroup = getTreatmentGroupByService(formData.service, services);
+        if (treatmentGroup?.lane_id) {
+          // Check if the assigned lane is available
+          const assignedLane = availableLanes.find(lane => lane.id === treatmentGroup.lane_id);
+          if (assignedLane) {
+            // Check lane capacity for the time slot
+            const { data: existingBookings } = await supabase
+              .from('bookings')
+              .select('*')
+              .eq('lane_id', treatmentGroup.lane_id)
+              .eq('booking_datetime', bookingDate.toISOString())
+              .neq('status', 'cancelled');
+
+            const laneCapacity = assignedLane.capacity || 1;
+            if (!existingBookings || existingBookings.length < laneCapacity) {
+              assignedLaneId = treatmentGroup.lane_id;
+              console.log(`🎯 Servicio asignado al carril del grupo: ${treatmentGroup.name} -> ${assignedLane.name}`);
+            } else {
+              toast({
+                title: "Carril completo",
+                description: `El carril asignado al grupo "${treatmentGroup.name}" está completo para esta hora. La reserva se asignará al primer carril disponible.`,
+                variant: "destructive",
+              });
+            }
+          }
+        }
+      }
+
+      // Fallback to first available lane if no group-specific lane is available
+      if (!assignedLaneId) {
+        assignedLaneId = formData.lane && formData.lane !== "any" ? formData.lane : availableLanes[0]?.id;
+      }
+
       const bookingData = {
         client_id: profileToUse?.id,
         service_id: formData.service,
         center_id: formData.center,
-        lane_id: formData.lane && formData.lane !== "any" ? formData.lane : availableLanes[0]?.id,
+        lane_id: assignedLaneId,
         employee_id: formData.employee && formData.employee !== "any" ? formData.employee : availableEmployees[0]?.id,
         booking_datetime: bookingDate.toISOString(),
         duration_minutes,
