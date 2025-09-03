@@ -1060,13 +1060,13 @@ export default function AdminPricingPromos() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="package-discount">Descuento (%)</Label>
+                      <Label htmlFor="package-discount">Descuento (€)</Label>
                       <Input
                         id="package-discount"
                         type="number"
+                        step="0.01"
                         min="0"
-                        max="100"
-                        placeholder="10"
+                        placeholder="15.00"
                       />
                     </div>
                     <div className="md:col-span-2">
