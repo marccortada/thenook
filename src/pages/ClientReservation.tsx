@@ -681,6 +681,9 @@ const ClientReservation = () => {
                 <span>WhatsApp</span>
               </a>
             </div>
+            <p className="text-sm text-muted-foreground mt-3">
+              © GnerAI 2025 · Todos los derechos reservados
+            </p>
           </div>
         </div>
       </footer>

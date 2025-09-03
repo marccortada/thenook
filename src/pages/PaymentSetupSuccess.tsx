@@ -201,6 +201,9 @@ export default function PaymentSetupSuccess() {
                 📧 reservas@thenookmadrid.com<br />
                 📞 +34 XXX XXX XXX
               </p>
+              <p className="text-xs border-t pt-2 mt-3">
+                © GnerAI 2025 · Todos los derechos reservados
+              </p>
             </div>
           </CardContent>
         </Card>

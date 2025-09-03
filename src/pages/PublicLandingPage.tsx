@@ -217,7 +217,7 @@ export default function PublicLandingPage() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
-            © 2024 The Nook Madrid. {t('rights_reserved')}.
+            © GnerAI 2025 · Todos los derechos reservados
           </p>
         </div>
       </footer>
