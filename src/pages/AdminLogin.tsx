@@ -23,11 +23,14 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
+      console.log('Intentando login con:', formData.email);
       // Intentar login primero
       let { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
+      
+      console.log('Resultado del login:', { data, error });
 
       // Si el usuario no existe y es work@thenookmadrid.com, crearlo usando edge function
       if (error && formData.email === 'work@thenookmadrid.com') {
