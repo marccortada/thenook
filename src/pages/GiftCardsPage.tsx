@@ -283,9 +283,6 @@ const GiftCardsPage = () => {
           <header className="mb-5 flex items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold">{t('gift_cards_page')}</h1>
-              <p className="text-sm text-muted-foreground">
-                {t('gift_cards_subtitle')}
-              </p>
             </div>
             <Sheet>
               <SheetTrigger asChild>
