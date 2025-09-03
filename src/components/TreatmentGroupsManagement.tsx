@@ -148,12 +148,19 @@ const TreatmentGroupsManagement: React.FC = () => {
       const group = combinedGroups.find(g => g.id === editingGroup);
       if (!group) return;
 
+      // Convert special values back to empty strings for database
+      const dataToSave = {
+        ...formData,
+        center_id: formData.center_id === 'all' ? '' : formData.center_id,
+        lane_id: formData.lane_id === 'none' ? '' : formData.lane_id,
+      };
+
       if (group.dbGroup) {
         // Actualizar grupo existente
-        await updateTreatmentGroup(group.dbGroup.id, formData);
+        await updateTreatmentGroup(group.dbGroup.id, dataToSave);
       } else {
         // Crear nuevo grupo
-        await createTreatmentGroup(formData);
+        await createTreatmentGroup(dataToSave);
       }
 
       toast({
@@ -354,7 +361,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                   <SelectValue placeholder="Seleccionar centro" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los centros</SelectItem>
+                  <SelectItem value="all">Todos los centros</SelectItem>
                   {centers.map((center) => (
                     <SelectItem key={center.id} value={center.id}>
                       {center.name}
@@ -374,7 +381,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                   <SelectValue placeholder="Seleccionar carril" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin carril específico</SelectItem>
+                  <SelectItem value="none">Sin carril específico</SelectItem>
                   {lanes.map((lane) => (
                     <SelectItem key={lane.id} value={lane.id}>
                       {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
