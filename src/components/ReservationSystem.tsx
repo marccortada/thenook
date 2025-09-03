@@ -747,6 +747,7 @@ const ReservationSystem = () => {
                               packages={[]}
                               selectedId={formData.service}
                               onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: 'individual' })}
+                              useDropdown={true}
                             />
                           )}
                         </div>
