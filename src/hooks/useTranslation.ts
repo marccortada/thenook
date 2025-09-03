@@ -228,14 +228,12 @@ const translations = {
      "select": "Seleccionar",
      "confirm": "Confirmar",
      
-     // Form fields (new ones not duplicated)
-     "description": "Descripción",
-     "date": "Fecha",
-     "time": "Hora",
-     "price": "Precio",
-     "status": "Estado",
-     "active": "Activo",
-     "inactive": "Inactivo",
+      // Form fields (new ones not duplicated)
+      "description": "Descripción",
+      "price": "Precio",
+      "status": "Estado",
+      "active": "Activo",
+      "inactive": "Inactivo",
      
      // Admin and management
      "administration": "Administración",
@@ -509,14 +507,12 @@ const translations = {
      "select": "Select",
      "confirm": "Confirm",
      
-     // Form fields
-     "description": "Description",
-     "date": "Date",
-     "time": "Time",
-     "price": "Price",
-     "status": "Status",
-     "active": "Active",
-     "inactive": "Inactive",
+      // Form fields
+      "description": "Description",
+      "price": "Price",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
      
      // Admin and management
      "administration": "Administration",
