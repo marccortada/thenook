@@ -23,6 +23,7 @@ export interface Service {
   active: boolean;
   has_discount?: boolean;
   discount_price_cents?: number;
+  group_id?: string;
   created_at: string;
   updated_at: string;
 }

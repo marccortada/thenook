@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Service, Package } from "@/hooks/useDatabase";
 import { usePromotions } from "@/hooks/usePromotions";
+import { useTreatmentGroups } from "@/hooks/useTreatmentGroups";
 import { cn } from "@/lib/utils";
 import { Star, Clock, Users, Sparkles, Percent, Tag, X } from "lucide-react";
 
@@ -214,13 +215,59 @@ const ServiceModal: React.FC<Props> = ({
   selectedId,
   onSelect,
 }) => {
+  const { treatmentGroups } = useTreatmentGroups();
+  
   const handleSelect = (id: string, kind: "service" | "package") => {
     onSelect(id, kind);
     onOpenChange(false);
   };
 
-  // No grouping - show all services in one group
-  const allServices = services;
+  // Group services by treatment groups
+  const groupedServices = React.useMemo(() => {
+    const groups: { [key: string]: { group: any; services: Service[]; packages: Package[] } } = {};
+    
+    // Add a default group for services without group_id
+    groups['no-group'] = {
+      group: { id: 'no-group', name: 'Otros Servicios', color: '#6B7280' },
+      services: [],
+      packages: []
+    };
+    
+    // Initialize groups from treatment groups
+    treatmentGroups.forEach(group => {
+      groups[group.id] = {
+        group,
+        services: [],
+        packages: []
+      };
+    });
+    
+    // Group services
+    services.forEach(service => {
+      const groupId = service.group_id || 'no-group';
+      if (groups[groupId]) {
+        groups[groupId].services.push(service);
+      }
+    });
+    
+    // Add packages to the appropriate group (rituales)
+    if (mode === "combined" || mode === "voucher") {
+      packages.forEach(pkg => {
+        // Find the group that contains "ritual" or assign to first available
+        const ritualGroup = Object.values(groups).find(g => 
+          g.group.name.toLowerCase().includes('ritual')
+        );
+        if (ritualGroup) {
+          ritualGroup.packages.push(pkg);
+        } else if (groups['no-group']) {
+          groups['no-group'].packages.push(pkg);
+        }
+      });
+    }
+    
+    // Filter out empty groups
+    return Object.values(groups).filter(g => g.services.length > 0 || g.packages.length > 0);
+  }, [services, packages, treatmentGroups, mode]);
 
   const ServiceGroup: React.FC<{ 
     title: string; 
@@ -283,12 +330,15 @@ const ServiceModal: React.FC<Props> = ({
         
         <div className="flex-1 overflow-y-auto -mx-6 px-6 service-modal-scroll">
           <div className="space-y-6 py-4">
-            <ServiceGroup 
-              title="Servicios" 
-              services={allServices}
-              packages={mode === "combined" || mode === "voucher" ? packages : []}
-              icon={<Star className="w-5 h-5 text-primary" />}
-            />
+            {groupedServices.map((groupData) => (
+              <ServiceGroup 
+                key={groupData.group.id}
+                title={groupData.group.name} 
+                services={groupData.services}
+                packages={groupData.packages}
+                icon={<div className="w-4 h-4 rounded-full" style={{ backgroundColor: groupData.group.color }} />}
+              />
+            ))}
           </div>
         </div>
       </DialogContent>
