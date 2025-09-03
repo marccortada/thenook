@@ -127,12 +127,16 @@ const GiftCardsPage = () => {
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '');
     
-    // Buscar en las traducciones
-    const translationKey = normalizedKey as any;
-    const translation = t(translationKey);
+    // Debug logging
+    console.log(`Translating: "${name}" -> "${normalizedKey}"`);
     
-    // Si no hay traducción específica, devolver el nombre original
-    return translation !== translationKey ? translation : name;
+    // Buscar en las traducciones
+    const translation = t(normalizedKey as any);
+    
+    console.log(`Translation result: "${translation}"`);
+    
+    // Si hay traducción específica, usarla. Si no, devolver el nombre original
+    return translation !== normalizedKey ? translation : name;
   };
 
   // Hook para manejo del carrito local
@@ -591,7 +595,7 @@ const GiftCardsPage = () => {
                             </div>
                             <CardHeader className="pb-2">
                               <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
-                              <p className="text-sm text-muted-foreground uppercase tracking-wide">TARJETA REGALO</p>
+                              <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                             </CardHeader>
                             <CardContent className="pb-2">
                               <div className="flex items-center justify-between">
@@ -705,7 +709,7 @@ const GiftCardsPage = () => {
                              </div>
                              <CardHeader className="pb-2 p-3">
                                <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
-                               <p className="text-xs text-muted-foreground uppercase tracking-wide">TARJETA REGALO</p>
+                               <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                              </CardHeader>
                              <CardContent className="pb-2 p-3 pt-0">
                                <div className="flex items-center justify-between">
