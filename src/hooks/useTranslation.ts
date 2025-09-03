@@ -218,6 +218,44 @@ const translations = {
      "send_to_recipient": "Enviar directamente al beneficiario",
      "show_buyer_data": "¿Mostrar datos del comprador?",
      "complete_payment": "Completar Pago",
+     
+     // Common actions (new ones not duplicated)
+     "cancel": "Cancelar",
+     "save": "Guardar", 
+     "search": "Buscar",
+     "loading": "Cargando",
+     "no_results": "No hay resultados",
+     "select": "Seleccionar",
+     "confirm": "Confirmar",
+     
+     // Form fields (new ones not duplicated)
+     "description": "Descripción",
+     "date": "Fecha",
+     "time": "Hora",
+     "price": "Precio",
+     "status": "Estado",
+     "active": "Activo",
+     "inactive": "Inactivo",
+     
+     // Admin and management
+     "administration": "Administración",
+     "management": "Gestión",
+     "configuration": "Configuración",
+     "dashboard": "Panel de Control",
+     "appointments": "Citas",
+     
+     // Page specific texts
+     "voucher_page_title": "Bonos",
+     "voucher_page_description": "Elige tu bono de sesiones. Perfecto para regalos o uso personal.",
+     "create_new_package": "Crear Nuevo Paquete",
+     "package_name": "Nombre del paquete",
+     "package_description": "Descripción del paquete",
+     "select_service": "Seleccionar servicio",
+     "create_package": "Crear Paquete",
+     "total_packages": "Total Paquetes",
+     "active_packages": "Paquetes Activos",
+     "all_packages": "Todos los Paquetes",
+     "inactive_packages": "Paquetes Inactivos",
   },
   
   en: {
@@ -461,6 +499,44 @@ const translations = {
      "send_to_recipient": "Send directly to recipient",
      "show_buyer_data": "Show buyer data?",
      "complete_payment": "Complete Payment",
+     
+     // Common actions
+     "cancel": "Cancel",
+     "save": "Save", 
+     "search": "Search",
+     "loading": "Loading",
+     "no_results": "No results",
+     "select": "Select",
+     "confirm": "Confirm",
+     
+     // Form fields
+     "description": "Description",
+     "date": "Date",
+     "time": "Time",
+     "price": "Price",
+     "status": "Status",
+     "active": "Active",
+     "inactive": "Inactive",
+     
+     // Admin and management
+     "administration": "Administration",
+     "management": "Management",
+     "configuration": "Configuration",
+     "dashboard": "Dashboard",
+     "appointments": "Appointments",
+     
+     // Page specific texts
+     "voucher_page_title": "Vouchers",
+     "voucher_page_description": "Choose your session voucher. Perfect for gifts or personal use.",
+     "create_new_package": "Create New Package",
+     "package_name": "Package name",
+     "package_description": "Package description",
+     "select_service": "Select service",
+     "create_package": "Create Package",
+     "total_packages": "Total Packages",
+     "active_packages": "Active Packages",
+     "all_packages": "All Packages",
+     "inactive_packages": "Inactive Packages",
   },
   
   fr: {

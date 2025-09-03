@@ -22,6 +22,7 @@ import {
 import { usePackages, useCenters, useServices } from '@/hooks/useDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface PackageForm {
   name: string;
@@ -38,6 +39,7 @@ const AdminPackageManagement = () => {
   const { centers } = useCenters();
   const { services } = useServices();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingPackage, setEditingPackage] = useState<string | null>(null);
@@ -181,11 +183,11 @@ const AdminPackageManagement = () => {
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Crear Nuevo Paquete</DialogTitle>
+              <DialogTitle>{t('create_new_package')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreatePackage} className="space-y-4">
               <div>
-                <Label htmlFor="name">Nombre del paquete</Label>
+                <Label htmlFor="name">{t('package_name')}</Label>
                 <Input
                   id="name"
                   value={packageForm.name}
@@ -196,12 +198,12 @@ const AdminPackageManagement = () => {
               </div>
 
               <div>
-                <Label htmlFor="description">Descripción</Label>
+                <Label htmlFor="description">{t('description')}</Label>
                 <Textarea
                   id="description"
                   value={packageForm.description}
                   onChange={(e) => setPackageForm({ ...packageForm, description: e.target.value })}
-                  placeholder="Descripción del paquete..."
+                  placeholder={t('package_description')}
                   rows={2}
                 />
               </div>
@@ -226,13 +228,13 @@ const AdminPackageManagement = () => {
               </div>
 
               <div>
-                <Label htmlFor="service">Servicio</Label>
+                <Label htmlFor="service">{t('service')}</Label>
                 <Select 
                   value={packageForm.service_id} 
                   onValueChange={(value) => setPackageForm({ ...packageForm, service_id: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar servicio" />
+                    <SelectValue placeholder={t('select_service')} />
                   </SelectTrigger>
                   <SelectContent>
                     {services.map((service) => (
@@ -289,10 +291,10 @@ const AdminPackageManagement = () => {
 
               <div className="flex gap-2">
                 <Button type="submit" className="flex-1">
-                  Crear Paquete
+                  {t('create_package')}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
-                  Cancelar
+                  {t('cancel')}
                 </Button>
               </div>
             </form>

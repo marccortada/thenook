@@ -29,12 +29,12 @@ interface CartItem {
 }
 
 // Simple local cart
-const useLocalCart = () => {
+const useLocalCart = (t: (key: string) => string) => {
   const [items, setItems] = useState<CartItem[]>([]);
 
   const add = (item: Omit<CartItem, "id">) => {
     setItems(prev => [...prev, { id: crypto.randomUUID(), ...item }]);
-    toast.success("Añadido al carrito");
+    toast.success(t('added_to_cart'));
   };
 
   const remove = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
@@ -47,7 +47,7 @@ const useLocalCart = () => {
 export default function BuyVoucherPage() {
   const { packages } = usePackages();
   const { t } = useTranslation();
-  const { items, add, remove, clear, totalCents } = useLocalCart();
+  const { items, add, remove, clear, totalCents } = useLocalCart(t);
   
   // Campos del formulario
   const [purchasedByName, setPurchasedByName] = useState("");
@@ -124,7 +124,7 @@ export default function BuyVoucherPage() {
                 to="/" 
                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted"
               >
-                ← Volver
+                ← {t('back')}
               </Link>
             </div>
             <div className="flex items-center space-x-2">
@@ -139,22 +139,22 @@ export default function BuyVoucherPage() {
         <article>
           <header className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold">Bonos</h1>
+              <h1 className="text-2xl font-bold">{t('voucher_page_title')}</h1>
               <p className="text-sm text-muted-foreground">
-                Elige tu bono de sesiones. Perfecto para regalos o uso personal.
+                {t('voucher_page_description')}
               </p>
             </div>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline">Carrito ({items.length})</Button>
+                <Button variant="outline">{t('cart')} ({items.length})</Button>
               </SheetTrigger>
               <SheetContent className="w-[90vw] sm:w-[480px]">
                 <SheetHeader>
-                  <SheetTitle>Tu carrito</SheetTitle>
+                  <SheetTitle>{t('your_cart')}</SheetTitle>
                 </SheetHeader>
                 <div className="mt-4 space-y-4">
                   {items.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Tu carrito está vacío.</p>
+                    <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
                   ) : (
                     <div className="space-y-3">
                       {items.map((item) => (
@@ -166,36 +166,36 @@ export default function BuyVoucherPage() {
                             </p>
                           </div>
                           <Button size="sm" variant="ghost" onClick={() => remove(item.id)}>
-                            Quitar
+                            {t('remove')}
                           </Button>
                         </div>
                       ))}
                       <div className="flex items-center justify-between border-t pt-3">
-                        <span className="text-sm text-muted-foreground">Total</span>
+                        <span className="text-sm text-muted-foreground">{t('total')}</span>
                         <span className="font-semibold">{currency(totalCents)}</span>
                       </div>
                       
                       {/* Campos de comprado por */}
                       <div className="space-y-3 border-t pt-3">
                         <div>
-                          <Label htmlFor="purchased_by_name" className="text-sm">Comprado por (nombre)</Label>
+                          <Label htmlFor="purchased_by_name" className="text-sm">{t('purchased_by_name')}</Label>
                           <Input
                             id="purchased_by_name"
                             value={purchasedByName}
                             onChange={(e) => setPurchasedByName(e.target.value)}
-                            placeholder="Nombre del comprador"
+                            placeholder={t('buyer_name_placeholder')}
                             className="mt-1"
                           />
                         </div>
                         
                         <div>
-                          <Label htmlFor="purchased_by_email" className="text-sm">Email del comprador</Label>
+                          <Label htmlFor="purchased_by_email" className="text-sm">{t('buyer_email')}</Label>
                           <Input
                             id="purchased_by_email"
                             type="email"
                             value={purchasedByEmail}
                             onChange={(e) => setPurchasedByEmail(e.target.value)}
-                            placeholder="email@ejemplo.com"
+                            placeholder={t('buyer_email_placeholder')}
                             className="mt-1"
                           />
                         </div>
@@ -209,25 +209,25 @@ export default function BuyVoucherPage() {
                             checked={isGift}
                             onCheckedChange={(checked) => setIsGift(!!checked)}
                           />
-                          <Label htmlFor="is_gift" className="text-sm">¿Es un regalo?</Label>
+                          <Label htmlFor="is_gift" className="text-sm">{t('is_gift')}</Label>
                         </div>
                         
                         {isGift && (
                           <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
                             <div>
-                              <Label htmlFor="recipient_name" className="text-sm">Para (nombre del beneficiario) *</Label>
+                              <Label htmlFor="recipient_name" className="text-sm">{t('recipient_name_required')}</Label>
                               <Input
                                 id="recipient_name"
                                 value={recipientName}
                                 onChange={(e) => setRecipientName(e.target.value)}
-                                placeholder="Nombre del beneficiario"
+                                placeholder={t('recipient_name_placeholder')}
                                 className="mt-1"
                                 required={isGift}
                               />
                             </div>
                             
                             <div>
-                              <Label htmlFor="recipient_email" className="text-sm">Email del beneficiario</Label>
+                              <Label htmlFor="recipient_email" className="text-sm">{t('recipient_email')}</Label>
                               <Input
                                 id="recipient_email"
                                 type="email"
@@ -239,12 +239,12 @@ export default function BuyVoucherPage() {
                             </div>
                             
                             <div>
-                              <Label htmlFor="gift_message" className="text-sm">Mensaje de regalo (opcional)</Label>
+                              <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
                               <Textarea
                                 id="gift_message"
                                 value={giftMessage}
                                 onChange={(e) => setGiftMessage(e.target.value)}
-                                placeholder="Tu mensaje personalizado..."
+                                placeholder={t('gift_message_placeholder')}
                                 className="mt-1"
                                 rows={3}
                               />
@@ -256,7 +256,7 @@ export default function BuyVoucherPage() {
                       <PaymentMethodsInfo />
                       <div className="flex gap-2 pt-1">
                         <Button variant="secondary" onClick={clear} className="flex-1">
-                          Vaciar
+                          {t('empty_cart_button')}
                         </Button>
                         <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
                           if (items.length === 0) return;
@@ -289,7 +289,7 @@ export default function BuyVoucherPage() {
                             toast.error(e.message || "No se pudo iniciar el pago");
                           }
                         }}>
-                          Proceder al Pago
+                          {t('proceed_to_payment')}
                         </Button>
                       </div>
                     </div>
@@ -338,7 +338,7 @@ export default function BuyVoucherPage() {
                                   sessionsCount: item.sessions_count
                                 })}
                               >
-                                Añadir al Carrito
+                                {t('add_to_cart')}
                               </Button>
                             </CardFooter>
                           </Card>
