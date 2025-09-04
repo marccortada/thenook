@@ -1174,7 +1174,11 @@ const AdvancedCalendarView = () => {
 
   // Mobile view redirect - after all hooks are called
   if (isMobile) {
-    return <MobileCalendarView selectedDate={selectedDate} selectedCenter={selectedCenter} />;
+    return <MobileCalendarView 
+      selectedDate={selectedDate} 
+      selectedCenter={selectedCenter} 
+      onCenterChange={setSelectedCenter}
+    />;
   }
 
   return (

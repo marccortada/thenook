@@ -23,11 +23,13 @@ import { cn } from '@/lib/utils';
 interface MobileCalendarViewProps {
   selectedDate: Date;
   selectedCenter?: string;
+  onCenterChange?: (centerId: string) => void;
 }
 
 const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({ 
   selectedDate, 
-  selectedCenter 
+  selectedCenter,
+  onCenterChange 
 }) => {
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(selectedDate);
@@ -365,6 +367,11 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                 onClick={() => {
                   setActiveCenter(center.id);
                   setShowCenterSelect(false);
+                  onCenterChange?.(center.id);
+                  toast({
+                    title: "Centro cambiado",
+                    description: `Mostrando calendario de ${center.name}`,
+                  });
                 }}
               >
                 <MapPin className="h-4 w-4 mr-2" />
