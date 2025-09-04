@@ -63,6 +63,7 @@ const TreatmentGroupsManagement: React.FC = () => {
 
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [formData, setFormData] = useState<CreateTreatmentGroupData>({
     name: '',
     color: PRESET_COLORS[0],
@@ -214,7 +215,7 @@ const TreatmentGroupsManagement: React.FC = () => {
           const assignedCenter = centers.find(c => c.id === group.center_id);
           
           return (
-            <AccordionItem key={group.id} value={group.id} className="border rounded-lg overflow-hidden">
+            <AccordionItem key={group.id} value={group.id} className="border rounded-lg overflow-hidden treatment-group-item">
               <Card className="border-0 shadow-none">
                 <AccordionTrigger className="hover:no-underline px-6 py-4">
                   <div className="flex items-center gap-3 w-full">
@@ -247,6 +248,41 @@ const TreatmentGroupsManagement: React.FC = () => {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
+                          
+                          // Obtener el item del grupo de tratamiento (parent del botón)
+                          const groupItem = e.currentTarget.closest('.treatment-group-item') as HTMLElement;
+                          if (!groupItem) return;
+                          
+                          const itemRect = groupItem.getBoundingClientRect();
+                          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                          const windowHeight = window.innerHeight;
+                          const windowWidth = window.innerWidth;
+                          
+                          // Dimensiones del modal
+                          const modalWidth = Math.min(600, windowWidth - 40);
+                          const modalHeight = Math.min(500, windowHeight - 80);
+                          
+                          // Calcular posición
+                          let top = itemRect.top + scrollTop - 50; // Un poco arriba del item
+                          let left = (windowWidth - modalWidth) / 2; // Centrado horizontalmente
+                          
+                          // Ajustar verticalmente para que esté siempre visible
+                          const viewportTop = scrollTop + 20;
+                          const viewportBottom = scrollTop + windowHeight - 20;
+                          
+                          if (top < viewportTop) {
+                            top = viewportTop;
+                          } else if (top + modalHeight > viewportBottom) {
+                            top = viewportBottom - modalHeight;
+                          }
+                          
+                          // Asegurar que no se salga horizontalmente
+                          if (left < 20) left = 20;
+                          if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
+                          
+                          console.log('Treatment group edit modal position:', { top, left, itemTop: itemRect.top, scrollTop });
+                          
+                          setModalPosition({ top, left });
                           handleEditGroup(group);
                         }}
                         className="gap-2 text-xs sm:text-sm"
@@ -323,96 +359,134 @@ const TreatmentGroupsManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog para editar grupo */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-full h-[95vh] max-w-[100vw] sm:max-w-2xl sm:h-auto mx-0 sm:mx-auto rounded-none sm:rounded-lg">
-          <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Editar Grupo de Tratamiento</DialogTitle>
-          </DialogHeader>
+      {/* Modal para editar grupo */}
+      {isDialogOpen && (
+        <>
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={closeDialog}
+          />
           
-          <div className="space-y-6 overflow-y-auto flex-1 p-2 sm:p-4">
-            <div className="space-y-3">
-              <Label htmlFor="name" className="text-base font-semibold">Nombre del Grupo</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Ej: Masajes Relajantes"
-                className="h-12 text-base"
-                required
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="color" className="text-base font-semibold">Color</Label>
-              <div className="grid grid-cols-5 sm:flex sm:flex-wrap gap-3">
-                {PRESET_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`w-10 h-10 sm:w-8 sm:h-8 rounded-full border-2 ${
-                      formData.color === color ? 'border-foreground' : 'border-border'
-                    }`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setFormData(prev => ({ ...prev, color }))}
+          {/* Modal */}
+          <div 
+            className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+            style={{
+              top: `${modalPosition.top}px`,
+              left: `${modalPosition.left}px`,
+              width: `${Math.min(600, window.innerWidth - 40)}px`,
+              maxHeight: `${Math.min(500, window.innerHeight - 80)}px`,
+              overflowY: 'auto'
+            }}
+          >
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold">Editar Grupo de Tratamiento</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={closeDialog}
+                  className="h-8 w-8 p-0"
+                >
+                  ✕
+                </Button>
+              </div>
+              
+              {/* Content */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name" className="text-sm font-medium">Nombre del Grupo</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Ej: Masajes Relajantes"
+                    className="mt-1"
+                    required
                   />
-                ))}
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Color</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {PRESET_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`w-8 h-8 rounded-full border-2 ${
+                          formData.color === color ? 'border-foreground' : 'border-border'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setFormData(prev => ({ ...prev, color }))}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Centro (Opcional)</Label>
+                  <Select
+                    value={formData.center_id}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, center_id: value }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleccionar centro" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los centros</SelectItem>
+                      {centers.map((center) => (
+                        <SelectItem key={center.id} value={center.id}>
+                          {center.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Carril Asignado (Opcional)</Label>
+                  <Select
+                    value={formData.lane_id}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, lane_id: value }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleccionar carril" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin carril específico</SelectItem>
+                      {lanes.map((lane) => (
+                        <SelectItem key={lane.id} value={lane.id}>
+                          {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Botones */}
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={closeDialog}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleSaveGroup}
+                    className="flex-1"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Guardar
+                  </Button>
+                </div>
               </div>
             </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="center" className="text-base font-semibold">Centro (Opcional)</Label>
-              <Select
-                value={formData.center_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, center_id: value }))}
-              >
-                <SelectTrigger className="h-12 text-base">
-                  <SelectValue placeholder="Seleccionar centro" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los centros</SelectItem>
-                  {centers.map((center) => (
-                    <SelectItem key={center.id} value={center.id}>
-                      {center.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="lane" className="text-base font-semibold">Carril Asignado (Opcional)</Label>
-              <Select
-                value={formData.lane_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, lane_id: value }))}
-              >
-                <SelectTrigger className="h-12 text-base">
-                  <SelectValue placeholder="Seleccionar carril" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin carril específico</SelectItem>
-                  {lanes.map((lane) => (
-                    <SelectItem key={lane.id} value={lane.id}>
-                      {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t mt-6">
-              <Button type="button" variant="outline" onClick={closeDialog} className="flex-1 order-2 sm:order-1 h-12 text-base">
-                <X className="w-5 h-5 mr-2" />
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveGroup} className="flex-1 order-1 sm:order-2 h-12 text-base">
-                <Save className="w-5 h-5 mr-2" />
-                Guardar
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </>
+      )}
     </div>
   );
 };
