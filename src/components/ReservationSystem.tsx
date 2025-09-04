@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CalendarDays, Clock, MapPin, User, CalendarIcon, Users, ChevronDown } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
 import { useTreatmentGroups } from "@/hooks/useTreatmentGroups";
@@ -31,6 +33,7 @@ const ReservationSystem = () => {
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
   const { treatmentGroups, getTreatmentGroupByService } = useTreatmentGroups();
+  const isMobile = useIsMobile();
 
   // Real-time subscription to show global booking notifications
   useEffect(() => {
@@ -658,103 +661,184 @@ const ReservationSystem = () => {
                   <AccordionContent>
                     <div className="space-y-4 pt-2">
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
-                        <div className="space-y-2">
-                          <Label htmlFor="date" className="text-sm font-medium">Fecha *</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className={cn(
-                                  "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
-                                  !formData.date && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                                <span className="flex-1 truncate">
-                                  {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
-                                </span>
-                                <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent 
-                              className="w-auto p-0 z-50 bg-popover border shadow-md" 
-                              align="start"
-                              side="bottom"
-                              sideOffset={8}
-                              avoidCollisions={false}
-                              collisionPadding={0}
-                              sticky="always"
-                            >
-                              <Calendar
-                                mode="single"
-                                selected={formData.date}
-                                onSelect={(date) => {
-                                  console.log('Fecha seleccionada:', date);
-                                  setFormData({ ...formData, date });
-                                }}
-                                disabled={(date) => date < new Date()}
-                                initialFocus
-                                className="p-2 sm:p-3 touch-manipulation pointer-events-auto"
-                                classNames={{
-                                  months: "flex flex-col space-y-4",
-                                  month: "space-y-4",
-                                  caption: "flex justify-center pt-1 relative items-center px-8",
-                                  caption_label: "text-sm font-medium",
-                                  nav: "space-x-1 flex items-center",
-                                  nav_button: "h-8 w-8 bg-transparent p-0 opacity-70 hover:opacity-100 touch-manipulation border border-input hover:bg-accent hover:text-accent-foreground",
-                                  nav_button_previous: "absolute left-0",
-                                  nav_button_next: "absolute right-0",
-                                  table: "w-full border-collapse space-y-1",
-                                  head_row: "flex w-full",
-                                  head_cell: "text-muted-foreground rounded-md w-8 sm:w-9 font-normal text-xs sm:text-sm flex items-center justify-center",
-                                  row: "flex w-full mt-2",
-                                  cell: "text-center text-sm p-0 relative touch-manipulation",
-                                  day: "h-8 w-8 sm:h-9 sm:w-9 p-0 font-normal text-xs sm:text-sm touch-manipulation cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors",
-                                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                                  day_today: "bg-accent text-accent-foreground font-semibold",
-                                  day_outside: "text-muted-foreground opacity-50",
-                                  day_disabled: "text-muted-foreground opacity-30 cursor-not-allowed",
-                                  day_hidden: "invisible",
-                                }}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
+                         <div className="space-y-2">
+                           <Label htmlFor="date" className="text-sm font-medium">Fecha *</Label>
+                           {isMobile ? (
+                             <Drawer>
+                               <DrawerTrigger asChild>
+                                 <Button
+                                   type="button"
+                                   variant="outline"
+                                   className={cn(
+                                     "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
+                                     !formData.date && "text-muted-foreground"
+                                   )}
+                                 >
+                                   <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                                   <span className="flex-1 truncate">
+                                     {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
+                                   </span>
+                                 </Button>
+                               </DrawerTrigger>
+                               <DrawerContent>
+                                 <DrawerHeader>
+                                   <DrawerTitle>Seleccionar Fecha</DrawerTitle>
+                                 </DrawerHeader>
+                                 <div className="px-4 pb-4">
+                                   <Calendar
+                                     mode="single"
+                                     selected={formData.date}
+                                     onSelect={(date) => {
+                                       console.log('Fecha seleccionada:', date);
+                                       setFormData({ ...formData, date });
+                                     }}
+                                     disabled={(date) => date < new Date()}
+                                     locale={es}
+                                     className="w-full"
+                                   />
+                                 </div>
+                               </DrawerContent>
+                             </Drawer>
+                           ) : (
+                             <Popover>
+                               <PopoverTrigger asChild>
+                                 <Button
+                                   type="button"
+                                   variant="outline"
+                                   className={cn(
+                                     "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
+                                     !formData.date && "text-muted-foreground"
+                                   )}
+                                 >
+                                   <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                                   <span className="flex-1 truncate">
+                                     {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
+                                   </span>
+                                   <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-50" />
+                                 </Button>
+                               </PopoverTrigger>
+                               <PopoverContent 
+                                 className="w-auto p-0 z-50 bg-popover border shadow-md" 
+                                 align="start"
+                                 side="bottom"
+                                 sideOffset={8}
+                                 avoidCollisions={false}
+                                 collisionPadding={0}
+                                 sticky="always"
+                               >
+                                 <Calendar
+                                   mode="single"
+                                   selected={formData.date}
+                                   onSelect={(date) => {
+                                     console.log('Fecha seleccionada:', date);
+                                     setFormData({ ...formData, date });
+                                   }}
+                                   disabled={(date) => date < new Date()}
+                                   initialFocus
+                                   className="p-2 sm:p-3 touch-manipulation pointer-events-auto"
+                                   classNames={{
+                                     months: "flex flex-col space-y-4",
+                                     month: "space-y-4",
+                                     caption: "flex justify-center pt-1 relative items-center px-8",
+                                     caption_label: "text-sm font-medium",
+                                     nav: "space-x-1 flex items-center",
+                                     nav_button: "h-8 w-8 bg-transparent p-0 opacity-70 hover:opacity-100 touch-manipulation border border-input hover:bg-accent hover:text-accent-foreground",
+                                     nav_button_previous: "absolute left-0",
+                                     nav_button_next: "absolute right-0",
+                                     table: "w-full border-collapse space-y-1",
+                                     head_row: "flex w-full",
+                                     head_cell: "text-muted-foreground rounded-md w-8 sm:w-9 font-normal text-xs sm:text-sm flex items-center justify-center",
+                                     row: "flex w-full mt-2",
+                                     cell: "text-center text-sm p-0 relative touch-manipulation",
+                                     day: "h-8 w-8 sm:h-9 sm:w-9 p-0 font-normal text-xs sm:text-sm touch-manipulation cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors",
+                                     day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                                     day_today: "bg-accent text-accent-foreground font-semibold",
+                                     day_outside: "text-muted-foreground opacity-50",
+                                     day_disabled: "text-muted-foreground opacity-30 cursor-not-allowed",
+                                     day_hidden: "invisible",
+                                   }}
+                                 />
+                               </PopoverContent>
+                             </Popover>
+                           )}
+                         </div>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="time" className="text-sm font-medium">Hora *</Label>
-                          <Select 
-                            value={formData.time} 
-                            onValueChange={(value) => {
-                              console.log('Hora seleccionada:', value);
-                              setFormData({ ...formData, time: value });
-                            }}
-                          >
-                            <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
-                              <SelectValue placeholder="Selecciona una hora" />
-                            </SelectTrigger>
-                            <SelectContent 
-                              className="max-h-48 sm:max-h-60 overflow-y-auto z-50 bg-popover border shadow-md"
-                              position="popper"
-                              side="bottom"
-                              align="start"
-                              sideOffset={8}
-                              avoidCollisions={false}
-                              collisionPadding={0}
-                            >
-                              {timeSlots.map((time) => (
-                                <SelectItem 
-                                  key={time} 
-                                  value={time} 
-                                  className="touch-manipulation cursor-pointer h-10 sm:h-auto text-sm sm:text-base"
-                                >
-                                  {time}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                         <div className="space-y-2">
+                           <Label htmlFor="time" className="text-sm font-medium">Hora *</Label>
+                           {isMobile ? (
+                             <Drawer>
+                               <DrawerTrigger asChild>
+                                 <Button
+                                   type="button"
+                                   variant="outline"
+                                   className={cn(
+                                     "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
+                                     !formData.time && "text-muted-foreground"
+                                   )}
+                                 >
+                                   <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                                   <span className="flex-1 truncate">
+                                     {formData.time || "Selecciona una hora"}
+                                   </span>
+                                 </Button>
+                               </DrawerTrigger>
+                               <DrawerContent>
+                                 <DrawerHeader>
+                                   <DrawerTitle>Seleccionar Hora</DrawerTitle>
+                                 </DrawerHeader>
+                                 <div className="px-4 pb-4 max-h-60 overflow-y-auto">
+                                   <div className="grid grid-cols-4 gap-2">
+                                     {timeSlots.map((time) => (
+                                       <Button
+                                         key={time}
+                                         variant={formData.time === time ? "default" : "outline"}
+                                         size="sm"
+                                         onClick={() => {
+                                           console.log('Hora seleccionada:', time);
+                                           setFormData({ ...formData, time });
+                                         }}
+                                         className="h-12 text-xs"
+                                       >
+                                         {time}
+                                       </Button>
+                                     ))}
+                                   </div>
+                                 </div>
+                               </DrawerContent>
+                             </Drawer>
+                           ) : (
+                             <Select 
+                               value={formData.time} 
+                               onValueChange={(value) => {
+                                 console.log('Hora seleccionada:', value);
+                                 setFormData({ ...formData, time: value });
+                               }}
+                             >
+                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                                 <SelectValue placeholder="Selecciona una hora" />
+                               </SelectTrigger>
+                               <SelectContent 
+                                 className="max-h-48 sm:max-h-60 overflow-y-auto z-50 bg-popover border shadow-md"
+                                 position="popper"
+                                 side="bottom"
+                                 align="start"
+                                 sideOffset={8}
+                                 avoidCollisions={false}
+                                 collisionPadding={0}
+                               >
+                                 {timeSlots.map((time) => (
+                                   <SelectItem 
+                                     key={time} 
+                                     value={time} 
+                                     className="touch-manipulation cursor-pointer h-10 sm:h-auto text-sm sm:text-base"
+                                   >
+                                     {time}
+                                   </SelectItem>
+                                 ))}
+                               </SelectContent>
+                             </Select>
+                           )}
+                         </div>
                       </div>
                     </div>
                   </AccordionContent>
@@ -875,82 +959,163 @@ const ReservationSystem = () => {
                   <AccordionContent>
                     <div className="space-y-4 pt-2">
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
-                        <div className="space-y-2">
-                          <Label htmlFor="date" className="text-sm font-medium">Fecha *</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className={cn(
-                                  "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
-                                  !formData.date && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                                <span className="flex-1 truncate">
-                                  {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
-                                </span>
-                                <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                             <PopoverContent 
-                               className="w-auto p-0 z-50 bg-popover border shadow-md" 
-                               align="start"
-                               side="bottom"
-                               sideOffset={8}
-                               avoidCollisions={false}
-                               collisionPadding={0}
-                               sticky="always"
-                             >
-                               <Calendar
-                                 mode="single"
-                                 selected={formData.date}
-                                 onSelect={(date) => {
-                                   console.log('Fecha seleccionada:', date);
-                                   setFormData({ ...formData, date });
-                                 }}
-                                 disabled={(date) => date < new Date()}
-                                 initialFocus
-                                 className="p-2 sm:p-3 touch-manipulation pointer-events-auto"
-                               />
-                             </PopoverContent>
-                          </Popover>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="time" className="text-sm font-medium">Hora *</Label>
-                          <Select 
-                            value={formData.time} 
-                            onValueChange={(value) => {
-                              console.log('Hora seleccionada:', value);
-                              setFormData({ ...formData, time: value });
-                            }}
-                          >
-                            <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
-                              <SelectValue placeholder="Selecciona una hora" />
-                            </SelectTrigger>
-                             <SelectContent 
-                               className="max-h-48 sm:max-h-60 overflow-y-auto z-50 bg-popover border shadow-md"
-                               position="popper"
-                               side="bottom"
-                               align="start"
-                               sideOffset={8}
-                               avoidCollisions={false}
-                               collisionPadding={0}
-                             >
-                               {timeSlots.map((time) => (
-                                 <SelectItem 
-                                   key={time} 
-                                   value={time} 
-                                   className="touch-manipulation cursor-pointer h-10 sm:h-auto text-sm sm:text-base"
+                         <div className="space-y-2">
+                           <Label htmlFor="date" className="text-sm font-medium">Fecha *</Label>
+                           {isMobile ? (
+                             <Drawer>
+                               <DrawerTrigger asChild>
+                                 <Button
+                                   type="button"
+                                   variant="outline"
+                                   className={cn(
+                                     "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
+                                     !formData.date && "text-muted-foreground"
+                                   )}
                                  >
-                                   {time}
-                                 </SelectItem>
-                               ))}
-                             </SelectContent>
-                          </Select>
-                        </div>
+                                   <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                                   <span className="flex-1 truncate">
+                                     {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
+                                   </span>
+                                 </Button>
+                               </DrawerTrigger>
+                               <DrawerContent>
+                                 <DrawerHeader>
+                                   <DrawerTitle>Seleccionar Fecha</DrawerTitle>
+                                 </DrawerHeader>
+                                 <div className="px-4 pb-4">
+                                   <Calendar
+                                     mode="single"
+                                     selected={formData.date}
+                                     onSelect={(date) => {
+                                       console.log('Fecha seleccionada:', date);
+                                       setFormData({ ...formData, date });
+                                     }}
+                                     disabled={(date) => date < new Date()}
+                                     locale={es}
+                                     className="w-full"
+                                   />
+                                 </div>
+                               </DrawerContent>
+                             </Drawer>
+                           ) : (
+                             <Popover>
+                               <PopoverTrigger asChild>
+                                 <Button
+                                   type="button"
+                                   variant="outline"
+                                   className={cn(
+                                     "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
+                                     !formData.date && "text-muted-foreground"
+                                   )}
+                                 >
+                                   <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                                   <span className="flex-1 truncate">
+                                     {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
+                                   </span>
+                                   <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-50" />
+                                 </Button>
+                               </PopoverTrigger>
+                               <PopoverContent 
+                                 className="w-auto p-0 z-50 bg-popover border shadow-md" 
+                                 align="start"
+                                 side="bottom"
+                                 sideOffset={8}
+                                 avoidCollisions={false}
+                                 collisionPadding={0}
+                                 sticky="always"
+                               >
+                                 <Calendar
+                                   mode="single"
+                                   selected={formData.date}
+                                   onSelect={(date) => {
+                                     console.log('Fecha seleccionada:', date);
+                                     setFormData({ ...formData, date });
+                                   }}
+                                   disabled={(date) => date < new Date()}
+                                   initialFocus
+                                   className="p-2 sm:p-3 touch-manipulation pointer-events-auto"
+                                 />
+                               </PopoverContent>
+                             </Popover>
+                           )}
+                         </div>
+                        
+                         <div className="space-y-2">
+                           <Label htmlFor="time" className="text-sm font-medium">Hora *</Label>
+                           {isMobile ? (
+                             <Drawer>
+                               <DrawerTrigger asChild>
+                                 <Button
+                                   type="button"
+                                   variant="outline"
+                                   className={cn(
+                                     "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
+                                     !formData.time && "text-muted-foreground"
+                                   )}
+                                 >
+                                   <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                                   <span className="flex-1 truncate">
+                                     {formData.time || "Selecciona una hora"}
+                                   </span>
+                                 </Button>
+                               </DrawerTrigger>
+                               <DrawerContent>
+                                 <DrawerHeader>
+                                   <DrawerTitle>Seleccionar Hora</DrawerTitle>
+                                 </DrawerHeader>
+                                 <div className="px-4 pb-4 max-h-60 overflow-y-auto">
+                                   <div className="grid grid-cols-4 gap-2">
+                                     {timeSlots.map((time) => (
+                                       <Button
+                                         key={time}
+                                         variant={formData.time === time ? "default" : "outline"}
+                                         size="sm"
+                                         onClick={() => {
+                                           console.log('Hora seleccionada:', time);
+                                           setFormData({ ...formData, time });
+                                         }}
+                                         className="h-12 text-xs"
+                                       >
+                                         {time}
+                                       </Button>
+                                     ))}
+                                   </div>
+                                 </div>
+                               </DrawerContent>
+                             </Drawer>
+                           ) : (
+                             <Select 
+                               value={formData.time} 
+                               onValueChange={(value) => {
+                                 console.log('Hora seleccionada:', value);
+                                 setFormData({ ...formData, time: value });
+                               }}
+                             >
+                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                                 <SelectValue placeholder="Selecciona una hora" />
+                               </SelectTrigger>
+                               <SelectContent 
+                                 className="max-h-48 sm:max-h-60 overflow-y-auto z-50 bg-popover border shadow-md"
+                                 position="popper"
+                                 side="bottom"
+                                 align="start"
+                                 sideOffset={8}
+                                 avoidCollisions={false}
+                                 collisionPadding={0}
+                               >
+                                 {timeSlots.map((time) => (
+                                   <SelectItem 
+                                     key={time} 
+                                     value={time} 
+                                     className="touch-manipulation cursor-pointer h-10 sm:h-auto text-sm sm:text-base"
+                                   >
+                                     {time}
+                                   </SelectItem>
+                                 ))}
+                               </SelectContent>
+                             </Select>
+                           )}
+                         </div>
                       </div>
                     </div>
                   </AccordionContent>
