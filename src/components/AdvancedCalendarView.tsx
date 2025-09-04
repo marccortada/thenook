@@ -280,7 +280,7 @@ const AdvancedCalendarView = () => {
     console.log('Available bookings:', bookings.length);
     
     const booking = bookings.find(booking => {
-      if (!booking.booking_datetime || booking.center_id !== centerId || booking.lane_id !== laneId) {
+      if (!booking.booking_datetime || booking.center_id !== centerId) {
         return false;
       }
       
@@ -295,7 +295,34 @@ const AdvancedCalendarView = () => {
       const bookingStart = bookingDateTime;
       const bookingEnd = addMinutes(bookingStart, booking.duration_minutes || 60);
       
-      return timeSlot >= bookingStart && timeSlot < bookingEnd;
+      // Check time overlap first
+      const isTimeMatch = timeSlot >= bookingStart && timeSlot < bookingEnd;
+      if (!isTimeMatch) return false;
+      
+      // Now check if this booking should be in this lane based on treatment group
+      const service = services.find(s => s.id === booking.service_id);
+      const serviceGroup = service?.group_id ? treatmentGroups.find(tg => tg.id === service.group_id) : null;
+      
+      // Get the expected lane index for this service's group
+      let expectedLaneIndex = 0;
+      if (serviceGroup?.name) {
+        if (serviceGroup.name.includes('Masajes') && !serviceGroup.name.includes('Cuatro Manos')) {
+          expectedLaneIndex = 0; // Carril 1 - Masajes (Azul)
+        } else if (serviceGroup.name.includes('Tratamientos')) {
+          expectedLaneIndex = 1; // Carril 2 - Tratamientos (Verde)
+        } else if (serviceGroup.name.includes('Rituales')) {
+          expectedLaneIndex = 2; // Carril 3 - Rituales (Lila)
+        } else if (serviceGroup.name.includes('Cuatro Manos')) {
+          expectedLaneIndex = 3; // Carril 4 - Masajes a Cuatro Manos (Amarillo)
+        }
+      }
+      
+      // Get the current lane index
+      const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
+      const currentLaneIndex = centerLanes.findIndex(l => l.id === laneId);
+      
+      // Only show booking if it matches the expected lane for its service group
+      return currentLaneIndex === expectedLaneIndex;
     });
 
     console.log('Found booking:', booking ? booking.id : 'none');
