@@ -682,9 +682,13 @@ const TreatmentGroupsManagement: React.FC = () => {
                       <SelectValue placeholder="Seleccionar centro" />
                     </SelectTrigger>
                     <SelectContent 
-                      className="z-[60] bg-background border shadow-lg" 
+                      className="z-[70] bg-background border shadow-lg" 
                       position="popper"
+                      side="bottom"
+                      align="start"
                       sideOffset={4}
+                      avoidCollisions={true}
+                      collisionPadding={20}
                     >
                       <SelectItem value="all">Todos los centros</SelectItem>
                       {centers.map((center) => (
@@ -742,9 +746,13 @@ const TreatmentGroupsManagement: React.FC = () => {
                         <SelectValue placeholder="Añadir carril" />
                       </SelectTrigger>
                       <SelectContent 
-                        className="z-[60] bg-background border shadow-lg" 
+                        className="z-[70] bg-background border shadow-lg" 
                         position="popper"
+                        side="bottom"
+                        align="start"
                         sideOffset={4}
+                        avoidCollisions={true}
+                        collisionPadding={20}
                       >
                         <SelectItem value="none">Limpiar todos los carriles</SelectItem>
                         {lanes.filter(lane => !serviceFormData.lane_ids.includes(lane.id)).map((lane) => (
@@ -767,9 +775,13 @@ const TreatmentGroupsManagement: React.FC = () => {
                       <SelectValue placeholder="Seleccionar grupo" />
                     </SelectTrigger>
                     <SelectContent 
-                      className="z-[60] bg-background border shadow-lg" 
+                      className="z-[70] bg-background border shadow-lg" 
                       position="popper"
+                      side="bottom"
+                      align="start"
                       sideOffset={4}
+                      avoidCollisions={true}
+                      collisionPadding={20}
                     >
                       <SelectItem value="none">Sin grupo específico</SelectItem>
                       {combinedGroups.map((group) => (
