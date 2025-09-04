@@ -909,7 +909,7 @@ const SimpleCenterCalendar = () => {
 
       {/* Payment Modal */}
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="w-[320px] max-h-[400px] overflow-y-auto p-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0">
+        <DialogContent className="w-[90vw] max-w-md max-h-[85vh] overflow-y-auto mx-auto">
           <DialogHeader>
             <DialogTitle>Cobrar Cita</DialogTitle>
             <DialogDescription>
