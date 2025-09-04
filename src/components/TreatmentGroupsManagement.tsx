@@ -186,20 +186,26 @@ const TreatmentGroupsManagement: React.FC = () => {
       const group = combinedGroups.find(g => g.id === editingGroup);
       if (!group) return;
 
+      console.log('Guardando grupo con formData:', formData);
+
       // Convert special values back to empty strings for database
       const dataToSave = {
         name: formData.name,
         color: formData.color,
-        center_id: formData.center_id === 'all' ? null : formData.center_id,
+        center_id: formData.center_id || null,
         lane_ids: formData.lane_ids || [],
         active: formData.active,
       };
 
+      console.log('Data to save:', dataToSave);
+
       if (group.dbGroup) {
         // Actualizar grupo existente
+        console.log('Updating existing group:', group.dbGroup.id);
         await updateTreatmentGroup(group.dbGroup.id, dataToSave);
       } else {
         // Crear nuevo grupo
+        console.log('Creating new group');
         await createTreatmentGroup(dataToSave);
       }
 
@@ -215,6 +221,7 @@ const TreatmentGroupsManagement: React.FC = () => {
       setEditingGroup(null);
       resetForm();
     } catch (error) {
+      console.error('Error guardando grupo:', error);
       toast({
         title: 'Error',
         description: 'No se pudo guardar el grupo',
