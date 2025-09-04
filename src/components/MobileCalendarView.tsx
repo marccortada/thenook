@@ -56,14 +56,17 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     setCurrentDate(selectedDate);
   }, [selectedDate]);
 
-  // Set default center
+  // Set center from props or default
   useEffect(() => {
-    if (centers.length > 0 && !activeCenter) {
+    if (selectedCenter) {
+      setActiveCenter(selectedCenter);
+      console.log('📱 Mobile: Using selected center from props:', selectedCenter);
+    } else if (centers.length > 0 && !activeCenter) {
       const firstCenter = centers[0].id;
       setActiveCenter(firstCenter);
       console.log('📱 Mobile: Setting initial center:', firstCenter, centers[0].name);
     }
-  }, [centers, activeCenter]);
+  }, [centers, selectedCenter, activeCenter]);
 
   // Generate time slots from 10:00 to 22:00 in 5-minute intervals
   const generateTimeSlots = () => {
@@ -102,6 +105,14 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
       return false;
     }
   }) || [];
+
+  console.log('📱 Mobile Calendar Debug:', {
+    activeCenter,
+    currentDate: format(currentDate, 'yyyy-MM-dd'),
+    totalBookings: bookings?.length || 0,
+    filteredBookings: filteredBookings.length,
+    centerLanes: centerLanes.length
+  });
 
   // Get booking for specific lane and time - improved to handle duration
   const getBookingForSlot = (laneId: string, timeStr: string) => {
