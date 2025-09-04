@@ -126,7 +126,11 @@ const TreatmentGroupsManagement: React.FC = () => {
   // Combinar grupos predefinidos con los de la base de datos
   const combinedGroups = React.useMemo(() => {
     const combined = PREDEFINED_GROUPS.map(predefined => {
-      const dbGroup = treatmentGroups.find(g => g.name === predefined.name);
+      // Encontrar el registro más reciente por nombre (para evitar duplicados)
+      const dbGroup = treatmentGroups
+        .filter(g => g.name === predefined.name)
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
+      
       const result = {
         ...predefined,
         dbGroup,
@@ -137,7 +141,7 @@ const TreatmentGroupsManagement: React.FC = () => {
       
       console.log(`=== combinedGroups for ${predefined.name} ===`);
       console.log('Predefined:', predefined);
-      console.log('dbGroup found:', dbGroup);
+      console.log('dbGroup found (most recent):', dbGroup);
       console.log('Result:', result);
       
       return result;
