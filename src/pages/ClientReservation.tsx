@@ -597,22 +597,45 @@ const ClientReservation = () => {
                                {formData.date ? format(formData.date, "PPP", { locale: es }) : t('select_date')}
                              </Button>
                            </DrawerTrigger>
-                           <DrawerContent>
-                             <DrawerHeader>
-                               <DrawerTitle>Seleccionar Fecha</DrawerTitle>
+                           <DrawerContent className="max-h-[85vh]">
+                             <DrawerHeader className="text-center">
+                               <DrawerTitle className="text-lg font-semibold">Seleccionar Fecha</DrawerTitle>
                              </DrawerHeader>
-                             <div className="px-4 pb-4">
-                               <Calendar
+                             <div className="px-4 pb-6 overflow-y-auto flex-1">
+                               <div className="flex justify-center">
+                                 <Calendar
                                  mode="single"
                                  selected={formData.date}
                                  onSelect={(date) => {
                                    setFormData({ ...formData, date });
                                    setShowCalendar(false);
                                  }}
-                                 disabled={(date) => date < new Date()}
-                                 locale={es}
-                                 className="w-full"
-                               />
+                                   disabled={(date) => date < new Date()}
+                                   locale={es}
+                                   className="w-full max-w-sm mx-auto"
+                                   classNames={{
+                                     months: "flex flex-col space-y-4 w-full",
+                                     month: "space-y-4 w-full",
+                                     caption: "flex justify-center pt-1 relative items-center w-full",
+                                     caption_label: "text-base font-semibold text-foreground",
+                                     nav: "space-x-1 flex items-center",
+                                     nav_button: "h-9 w-9 bg-transparent p-0 opacity-70 hover:opacity-100 border border-input hover:bg-accent hover:text-accent-foreground rounded-md",
+                                     nav_button_previous: "absolute left-4",
+                                     nav_button_next: "absolute right-4",
+                                     table: "w-full border-collapse space-y-1",
+                                     head_row: "flex w-full",
+                                     head_cell: "text-muted-foreground rounded-md w-10 font-normal text-sm flex items-center justify-center py-2",
+                                     row: "flex w-full mt-2",
+                                     cell: "text-center text-sm p-0 relative w-10 h-10 flex items-center justify-center",
+                                     day: "h-9 w-9 p-0 font-normal text-sm cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors flex items-center justify-center",
+                                     day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                                     day_today: "bg-accent text-accent-foreground font-semibold",
+                                     day_outside: "text-muted-foreground opacity-50",
+                                     day_disabled: "text-muted-foreground opacity-30 cursor-not-allowed",
+                                     day_hidden: "invisible",
+                                   }}
+                                 />
+                               </div>
                              </div>
                            </DrawerContent>
                          </Drawer>
@@ -672,12 +695,12 @@ const ClientReservation = () => {
                                {formData.time || t('select_time')}
                              </Button>
                            </DrawerTrigger>
-                           <DrawerContent>
-                             <DrawerHeader>
-                               <DrawerTitle>Seleccionar Hora</DrawerTitle>
+                           <DrawerContent className="max-h-[85vh]">
+                             <DrawerHeader className="text-center">
+                               <DrawerTitle className="text-lg font-semibold">Seleccionar Hora</DrawerTitle>
                              </DrawerHeader>
-                             <div className="px-4 pb-4 max-h-60 overflow-y-auto">
-                               <div className="grid grid-cols-4 gap-2">
+                             <div className="px-4 pb-6 overflow-y-auto flex-1">
+                               <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
                                  {timeSlots.map((time) => (
                                    <Button
                                      key={time}
@@ -687,7 +710,7 @@ const ClientReservation = () => {
                                        setFormData({ ...formData, time });
                                        setShowTimeDropdown(false);
                                      }}
-                                     className="h-12 text-xs"
+                                     className="h-14 text-sm font-medium min-w-0 flex items-center justify-center"
                                    >
                                      {time}
                                    </Button>
