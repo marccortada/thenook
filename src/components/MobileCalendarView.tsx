@@ -59,7 +59,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   // Set default center
   useEffect(() => {
     if (centers.length > 0 && !activeCenter) {
-      setActiveCenter(centers[0].id);
+      const firstCenter = centers[0].id;
+      setActiveCenter(firstCenter);
+      console.log('📱 Mobile: Setting initial center:', firstCenter, centers[0].name);
     }
   }, [centers, activeCenter]);
 

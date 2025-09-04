@@ -225,7 +225,9 @@ const AdvancedCalendarView = () => {
   // Set initial center when centers load
   useEffect(() => {
     if (centers.length > 0 && !selectedCenter) {
-      setSelectedCenter(centers[0].id);
+      const firstCenter = centers[0].id;
+      setSelectedCenter(firstCenter);
+      console.log('🏢 Setting initial center:', firstCenter, centers[0].name);
     }
   }, [centers, selectedCenter]);
 
@@ -1166,6 +1168,9 @@ const AdvancedCalendarView = () => {
       </div>
     );
   }
+
+  // Debug info
+  console.log('📅 Calendar render - Mobile:', isMobile, 'Selected center:', selectedCenter, 'Centers:', centers.length);
 
   // Mobile view redirect - after all hooks are called
   if (isMobile) {
