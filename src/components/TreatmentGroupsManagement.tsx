@@ -249,11 +249,12 @@ const TreatmentGroupsManagement: React.FC = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           
-                          // Obtener el item del grupo de tratamiento (parent del botón)
-                          const groupItem = e.currentTarget.closest('.treatment-group-item') as HTMLElement;
-                          if (!groupItem) return;
+                          // Obtener el elemento del grupo
+                          const button = e.currentTarget;
+                          const groupCard = button.closest('.treatment-group-item');
+                          if (!groupCard) return;
                           
-                          const itemRect = groupItem.getBoundingClientRect();
+                          const cardRect = groupCard.getBoundingClientRect();
                           const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                           const windowHeight = window.innerHeight;
                           const windowWidth = window.innerWidth;
@@ -262,25 +263,19 @@ const TreatmentGroupsManagement: React.FC = () => {
                           const modalWidth = Math.min(600, windowWidth - 40);
                           const modalHeight = Math.min(500, windowHeight - 80);
                           
-                          // Calcular posición
-                          let top = itemRect.top + scrollTop - 50; // Un poco arriba del item
-                          let left = (windowWidth - modalWidth) / 2; // Centrado horizontalmente
+                          // Posicionar cerca del elemento clickeado
+                          let top = cardRect.top + scrollTop;
+                          let left = Math.max(20, Math.min(cardRect.left, windowWidth - modalWidth - 20));
                           
-                          // Ajustar verticalmente para que esté siempre visible
-                          const viewportTop = scrollTop + 20;
-                          const viewportBottom = scrollTop + windowHeight - 20;
+                          // Ajustar si se sale de la pantalla verticalmente
+                          const minTop = scrollTop + 20;
+                          const maxTop = scrollTop + windowHeight - modalHeight - 20;
                           
-                          if (top < viewportTop) {
-                            top = viewportTop;
-                          } else if (top + modalHeight > viewportBottom) {
-                            top = viewportBottom - modalHeight;
+                          if (top < minTop) {
+                            top = minTop;
+                          } else if (top > maxTop) {
+                            top = maxTop;
                           }
-                          
-                          // Asegurar que no se salga horizontalmente
-                          if (left < 20) left = 20;
-                          if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-                          
-                          console.log('Treatment group edit modal position:', { top, left, itemTop: itemRect.top, scrollTop });
                           
                           setModalPosition({ top, left });
                           handleEditGroup(group);
