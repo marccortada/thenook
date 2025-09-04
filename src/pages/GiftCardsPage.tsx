@@ -334,17 +334,15 @@ const GiftCardsPage = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
-        <article>
-          <header className="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold">{t('gift_cards_page')}</h1>
-            </div>
-            <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline">{t('cart')} ({items.length})</Button>
-              </SheetTrigger>
-              <SheetContent className="w-[90vw] sm:w-[480px] flex flex-col max-h-[100vh]">
+      {/* Fixed cart button at top */}
+      <div className="fixed top-20 right-4 z-50">
+        <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" className="shadow-lg">
+              {t('cart')} ({items.length})
+            </Button>
+          </SheetTrigger>
+          <SheetContent className="w-[90vw] sm:w-[480px] flex flex-col max-h-[100vh]">
                 <SheetHeader className="flex-shrink-0 pb-4">
                   <SheetTitle>{t('your_cart')}</SheetTitle>
                 </SheetHeader>
@@ -612,6 +610,14 @@ const GiftCardsPage = () => {
                 </div>
               </SheetContent>
             </Sheet>
+          </div>
+
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <article>
+          <header className="mb-5">
+            <div>
+              <h1 className="text-2xl font-bold">{t('gift_cards_page')}</h1>
+            </div>
           </header>
 
           {/* Modal de Stripe Checkout */}
@@ -653,33 +659,21 @@ const GiftCardsPage = () => {
                               <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                               <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                             </CardHeader>
-                            <CardContent className="pb-2">
-                              <div className="flex items-center justify-between">
+                              <CardContent className="pb-2">
                                 <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                              <CardFooter className="pt-2">
                                 <Button
                                   size="sm"
-                                  className="bg-blue-500 hover:bg-blue-600 text-white px-6"
+                                  className="w-full"
                                   onClick={() => {
                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
                                     setIsCartOpen(true);
                                   }}
-                                 >
-                                   {t('buy_button')}
-                                 </Button>
-                              </div>
-                            </CardContent>
-                            <CardFooter className="pt-2">
-                              <Button
-                                size="sm"
-                                className="w-full"
-                                onClick={() => {
-                                  add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                  setIsCartOpen(true);
-                                }}
-                              >
-                                {t('add_to_cart')}
-                              </Button>
-                            </CardFooter>
+                                >
+                                  {t('add_to_cart')}
+                                </Button>
+                              </CardFooter>
                          </Card>
                        ))}
                     </div>
@@ -708,33 +702,21 @@ const GiftCardsPage = () => {
                                <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                                <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                              </CardHeader>
-                             <CardContent className="pb-2">
-                               <div className="flex items-center justify-between">
-                                 <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
-                                 <Button
-                                   size="sm"
-                                   className="bg-blue-500 hover:bg-blue-600 text-white px-6"
-                                   onClick={() => {
-                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                     setIsCartOpen(true);
-                                   }}
-                                 >
-                                   {t('buy_button')}
-                                 </Button>
-                               </div>
-                             </CardContent>
-                             <CardFooter className="pt-2">
-                               <Button
-                                 size="sm"
-                                 className="w-full"
-                                 onClick={() => {
-                                   add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                   setIsCartOpen(true);
-                                 }}
-                               >
-                                 {t('add_to_cart')}
-                               </Button>
-                            </CardFooter>
+                              <CardContent className="pb-2">
+                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                              <CardFooter className="pt-2">
+                                <Button
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={() => {
+                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                    setIsCartOpen(true);
+                                  }}
+                                >
+                                  {t('add_to_cart')}
+                                </Button>
+                             </CardFooter>
                          </Card>
                       ))}
                     </div>
@@ -763,33 +745,21 @@ const GiftCardsPage = () => {
                                <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                                <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                              </CardHeader>
-                             <CardContent className="pb-2">
-                               <div className="flex items-center justify-between">
-                                 <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
-                                 <Button
-                                   size="sm"
-                                   className="bg-blue-500 hover:bg-blue-600 text-white px-6"
-                                   onClick={() => {
-                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                     setIsCartOpen(true);
-                                   }}
-                                 >
-                                   {t('buy_button')}
-                                 </Button>
-                               </div>
-                             </CardContent>
-                             <CardFooter className="pt-2">
-                               <Button
-                                 size="sm"
-                                 className="w-full"
-                                 onClick={() => {
-                                   add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                   setIsCartOpen(true);
-                                 }}
-                               >
-                                 {t('add_to_cart')}
-                               </Button>
-                            </CardFooter>
+                              <CardContent className="pb-2">
+                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                              <CardFooter className="pt-2">
+                                <Button
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={() => {
+                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                    setIsCartOpen(true);
+                                  }}
+                                >
+                                  {t('add_to_cart')}
+                                </Button>
+                             </CardFooter>
                          </Card>
                       ))}
                     </div>
@@ -818,33 +788,21 @@ const GiftCardsPage = () => {
                                <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
                                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                              </CardHeader>
-                             <CardContent className="pb-2 p-3 pt-0">
-                               <div className="flex items-center justify-between">
-                                 <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                              <CardContent className="pb-2 p-3 pt-0">
+                                <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                              <CardFooter className="pt-2 p-3">
                                 <Button
                                   size="sm"
-                                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 text-xs"
+                                  className="w-full text-xs"
                                   onClick={() => {
                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
                                     setIsCartOpen(true);
                                   }}
-                                 >
-                                    {t('buy_button')}
-                                  </Button>
-                               </div>
-                             </CardContent>
-                             <CardFooter className="pt-2 p-3">
-                               <Button
-                                 size="sm"
-                                 className="w-full text-xs"
-                                 onClick={() => {
-                                   add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                   setIsCartOpen(true);
-                                 }}
-                               >
-                                 {t('add_to_cart')}
-                               </Button>
-                             </CardFooter>
+                                >
+                                  {t('add_to_cart')}
+                                </Button>
+                              </CardFooter>
                           </Card>
                        ))}
                     </div>
