@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -132,7 +132,7 @@ const GiftCardsPage = () => {
   }, [isCartOpen, isMobile]);
 
   // Función para traducir nombres de paquetes/tarjetas
-  const translatePackageName = (name: string) => {
+  const translatePackageName = useCallback((name: string) => {
     // Limpiar el nombre quitando "TARJETA REGALO" y texto extra
     const cleanName = name
       .replace(/\s*TARJETA\s*REGALO\s*$/i, '')
@@ -211,15 +211,14 @@ const GiftCardsPage = () => {
     }
     
     // Fallback: usar mapeo directo
-    const { language } = useTranslation();
     const mapping = translationMap[normalizedKey];
-    if (mapping && mapping[language]) {
-      return mapping[language];
+    if (mapping && mapping['es']) {
+      return mapping['es'];
     }
     
     // Si no hay traducción, devolver nombre limpio
     return cleanName;
-  };
+  }, [t]);
 
   // Hook para manejo del carrito local
   const useLocalCart = () => {
