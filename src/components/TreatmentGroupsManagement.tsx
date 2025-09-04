@@ -729,10 +729,12 @@ const TreatmentGroupsManagement: React.FC = () => {
                     >
                       <SelectItem value="none">Sin grupo específico</SelectItem>
                       {combinedGroups.map((group) => (
-                        <SelectItem key={group.id} value={group.dbGroup?.id || ''}>
-                          {group.name}
-                        </SelectItem>
-                      ))}
+                        group.dbGroup?.id ? (
+                          <SelectItem key={group.id} value={group.dbGroup.id}>
+                            {group.name}
+                          </SelectItem>
+                        ) : null
+                      )).filter(Boolean)}
                     </SelectContent>
                   </Select>
                 </div>
