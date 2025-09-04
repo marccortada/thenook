@@ -117,6 +117,36 @@ const GiftCardsPage = () => {
   
   console.log("🔄 Estado del carrito:", { isCartOpen, itemsCount: items.length });
 
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await (supabase as any)
+        .from('gift_card_options')
+        .select('*')
+        .eq('is_active', true)
+        .order('amount_cents', { ascending: true });
+      if (!error) setGiftOptions(data || []);
+    })();
+  }, []);
+
+  const giftItems: GiftCardItem[] = useMemo(() => {
+    return (giftOptions || []).map((option: any) => ({
+      id: option.id,
+      name: option.name,
+      type: 'fixed' as GiftType,
+      priceCents: option.amount_cents,
+      description: option.description,
+      imageUrl: option.image_url || '/lovable-uploads/a67f856f-f685-4134-9b22-730c400d6266.png'
+    }));
+  }, [giftOptions]);
+
+  const groups = useMemo(() => {
+    const individuales = giftItems.filter((i) => i.type === "fixed" && !isCuatroManos(i.name) && !isRitual(i.name) && !isDuo(i.name));
+    const cuatro = giftItems.filter((i) => i.type === "fixed" && isCuatroManos(i.name));
+    const rituales = giftItems.filter((i) => i.type === "fixed" && isRitual(i.name));
+    const paraDos = giftItems.filter((i) => i.type === "fixed" && isDuo(i.name));
+    return { individuales, cuatro, rituales, paraDos };
+  }, [giftItems]);
+
   // Función para traducir nombres de paquetes/tarjetas
   const translatePackageName = useCallback((name: string) => {
     // Limpiar el nombre quitando "TARJETA REGALO" y texto extra
@@ -205,36 +235,6 @@ const GiftCardsPage = () => {
     // Si no hay traducción, devolver nombre limpio
     return cleanName;
   }, [t]);
-
-  useEffect(() => {
-    (async () => {
-      const { data, error } = await (supabase as any)
-        .from('gift_card_options')
-        .select('*')
-        .eq('is_active', true)
-        .order('amount_cents', { ascending: true });
-      if (!error) setGiftOptions(data || []);
-    })();
-  }, []);
-
-  const giftItems: GiftCardItem[] = useMemo(() => {
-    return (giftOptions || []).map((option: any) => ({
-      id: option.id,
-      name: option.name,
-      type: 'fixed' as GiftType,
-      priceCents: option.amount_cents,
-      description: option.description,
-      imageUrl: option.image_url || '/lovable-uploads/a67f856f-f685-4134-9b22-730c400d6266.png'
-    }));
-  }, [giftOptions]);
-
-  const groups = useMemo(() => {
-    const individuales = giftItems.filter((i) => i.type === "fixed" && !isCuatroManos(i.name) && !isRitual(i.name) && !isDuo(i.name));
-    const cuatro = giftItems.filter((i) => i.type === "fixed" && isCuatroManos(i.name));
-    const rituales = giftItems.filter((i) => i.type === "fixed" && isRitual(i.name));
-    const paraDos = giftItems.filter((i) => i.type === "fixed" && isDuo(i.name));
-    return { individuales, cuatro, rituales, paraDos };
-  }, [giftItems]);
 
   useEffect(() => {
     document.title = "Tarjetas Regalo | The Nook Madrid";
