@@ -126,6 +126,35 @@ const AdvancedCalendarView = () => {
   const { services } = useServices();
   const { updateClient } = useClients();
   const { laneBlocks, createLaneBlock, deleteLaneBlock, isLaneBlocked } = useLaneBlocks();
+  const { treatmentGroups } = useTreatmentGroups();
+
+  // Function to get lane assignment for services based on treatment group
+  const getLaneForService = (serviceId: string, centerId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    if (!service || !service.group_id) return null;
+
+    const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
+    const centerGroups = treatmentGroups.filter(tg => tg.center_id === centerId || !tg.center_id);
+    
+    // Find the group for this service
+    const serviceGroup = centerGroups.find(tg => tg.id === service.group_id);
+    if (!serviceGroup) return null;
+
+    // Assign lanes based on group order: first group gets first lane, etc.
+    const groupIndex = centerGroups.findIndex(tg => tg.id === serviceGroup.id);
+    return centerLanes[groupIndex] || centerLanes[0];
+  };
+
+  // Function to get color for a lane based on its assigned treatment group
+  const getLaneColor = (laneId: string, centerId: string) => {
+    const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
+    const centerGroups = treatmentGroups.filter(tg => tg.center_id === centerId || !tg.center_id);
+    
+    const laneIndex = centerLanes.findIndex(l => l.id === laneId);
+    const assignedGroup = centerGroups[laneIndex];
+    
+    return assignedGroup?.color || '#3B82F6';
+  };
 
   // Real-time subscription for bookings
   useEffect(() => {
@@ -469,6 +498,14 @@ const AdvancedCalendarView = () => {
       const selectedService = services.find(s => s.id === bookingForm.serviceId);
       if (!selectedService) throw new Error('Servicio no encontrado');
 
+      // Auto-assign lane based on service treatment group
+      let assignedLaneId = bookingForm.laneId;
+      const recommendedLane = getLaneForService(bookingForm.serviceId, bookingForm.centerId);
+      if (recommendedLane) {
+        assignedLaneId = recommendedLane.id;
+        console.log('Auto-assigned lane for service:', { serviceId: bookingForm.serviceId, laneId: assignedLaneId, laneName: recommendedLane.name });
+      }
+
       // Create booking datetime
       const bookingDateTime = new Date(bookingForm.date);
       const timeSlotHours = bookingForm.timeSlot.getHours();
@@ -481,7 +518,7 @@ const AdvancedCalendarView = () => {
           client_id: clientIdToUse,
           service_id: bookingForm.serviceId,
           center_id: bookingForm.centerId,
-          lane_id: bookingForm.laneId,
+          lane_id: assignedLaneId,
           booking_datetime: bookingDateTime.toISOString(),
           duration_minutes: selectedService.duration_minutes,
           total_price_cents: selectedService.price_cents,
@@ -730,7 +767,10 @@ const AdvancedCalendarView = () => {
               </div>
               {centerLanes.slice(0, 4).map((lane) => (
                 <div key={lane.id} className="sticky top-0 z-10 bg-background border-b">
-                  <div className="p-2 text-center font-medium border-r bg-muted/50">
+                  <div 
+                    className="p-2 text-center font-medium border-r"
+                    style={{ backgroundColor: `${getLaneColor(lane.id, selectedCenter)}20`, borderLeft: `4px solid ${getLaneColor(lane.id, selectedCenter)}` }}
+                  >
                     <div className="font-semibold text-sm">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
                     <div className="text-xs text-muted-foreground">Cap: {lane.capacity}</div>
                   </div>
@@ -780,16 +820,16 @@ const AdvancedCalendarView = () => {
                              }
                            }}
                          >
-                         {booking && isFirstSlotOfBooking && (
-                           <div
-                              className={cn(
-                                "absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md cursor-move",
-                                getStatusColor(booking.status)
-                              )}
-                              style={{
-                                height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 4}px`,
-                                zIndex: 2
-                              }}
+                          {booking && isFirstSlotOfBooking && (
+                            <div
+                               className="absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md cursor-move"
+                               style={{ 
+                                 backgroundColor: `${getLaneColor(lane.id, selectedCenter)}20`,
+                                 borderLeftColor: getLaneColor(lane.id, selectedCenter),
+                                 color: getLaneColor(lane.id, selectedCenter),
+                                 height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 4}px`,
+                                 zIndex: 2
+                               }}
                               draggable={true}
                               onDragStart={(e) => {
                                 e.dataTransfer.setData('booking', JSON.stringify(booking));
@@ -914,7 +954,10 @@ const AdvancedCalendarView = () => {
               {weekDates.map((date) => 
                 centerLanes.map((lane) => (
                   <div key={`${date.toISOString()}-${lane.id}`} className="sticky top-0 z-10 bg-background border-b">
-                    <div className="p-1 text-center font-medium border-r bg-muted/50">
+                    <div 
+                      className="p-1 text-center font-medium border-r"
+                      style={{ backgroundColor: `${getLaneColor(lane.id, selectedCenter)}20`, borderLeft: `3px solid ${getLaneColor(lane.id, selectedCenter)}` }}
+                    >
                       <div className="font-semibold text-[9px]">
                         {format(date, "EEE", { locale: es })} - {(lane.name || '').replace(/ra[ií]l/gi, 'C')}
                       </div>
@@ -961,15 +1004,15 @@ const AdvancedCalendarView = () => {
                            }}
                          >
                            {booking && isFirstSlotOfBooking && (
-                             <div
-                               className={cn(
-                                 "absolute inset-0 rounded-sm text-[8px] p-0.5 border-l-2 truncate z-10 cursor-move",
-                                 getStatusColor(booking.status)
-                               )}
-                               style={{ 
-                                 height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
-                                 minHeight: '24px'
-                               }}
+                              <div
+                                className="absolute inset-0 rounded-sm text-[8px] p-0.5 border-l-2 truncate z-10 cursor-move"
+                                style={{ 
+                                  backgroundColor: `${getLaneColor(lane.id, selectedCenter)}40`,
+                                  borderLeftColor: getLaneColor(lane.id, selectedCenter),
+                                  color: getLaneColor(lane.id, selectedCenter),
+                                  height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
+                                  minHeight: '24px'
+                                }}
                                draggable={true}
                                onDragStart={(e) => {
                                  e.dataTransfer.setData('booking', JSON.stringify(booking));
