@@ -159,9 +159,11 @@ const TreatmentGroupsManagement: React.FC = () => {
 
       // Convert special values back to empty strings for database
       const dataToSave = {
-        ...formData,
-        center_id: formData.center_id === 'all' ? '' : formData.center_id,
-        lane_id: formData.lane_id === 'none' ? '' : formData.lane_id,
+        name: formData.name,
+        color: formData.color,
+        center_id: formData.center_id === 'all' ? null : formData.center_id,
+        lane_ids: formData.lane_ids || [],
+        active: formData.active,
       };
 
       if (group.dbGroup) {
