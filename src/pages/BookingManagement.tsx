@@ -297,7 +297,48 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const { toast } = useToast();
+
+  const handleOpenModal = (event: React.MouseEvent) => {
+    // Obtener la posición del botón clickeado
+    const buttonRect = event.currentTarget.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    
+    // Dimensiones del modal
+    const modalWidth = Math.min(500, windowWidth - 40); // máximo 500px, mínimo deja 40px de margen
+    const modalHeight = Math.min(600, windowHeight - 40); // máximo 600px, mínimo deja 40px de margen
+    
+    // Calcular posición inicial (cerca del botón)
+    let top = buttonRect.top + scrollTop - 20; // 20px arriba del botón
+    let left = buttonRect.left + scrollLeft + (buttonRect.width / 2) - (modalWidth / 2); // centrado horizontalmente respecto al botón
+    
+    // Ajustar si se sale por la izquierda
+    if (left < 20) {
+      left = 20;
+    }
+    
+    // Ajustar si se sale por la derecha
+    if (left + modalWidth > windowWidth - 20) {
+      left = windowWidth - modalWidth - 20;
+    }
+    
+    // Ajustar si se sale por arriba
+    if (top < scrollTop + 20) {
+      top = scrollTop + 20;
+    }
+    
+    // Ajustar si se sale por abajo
+    if (top + modalHeight > scrollTop + windowHeight - 20) {
+      top = scrollTop + windowHeight - modalHeight - 20;
+    }
+    
+    setModalPosition({ top, left });
+    setIsOpen(true);
+  };
 
   const processPayment = async () => {
     if (!paymentMethod) {
@@ -369,97 +410,108 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button
-          className="flex items-center gap-2"
-          variant="outline"
-        >
-          <CreditCard className="h-4 w-4" />
-          Cobrar Cita
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="w-full max-w-md max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-6">
-            <DollarSign className="h-6 w-6" />
-            <DialogTitle className="text-2xl font-semibold">Cobrar Cita</DialogTitle>
-          </div>
-        </DialogHeader>
-        
-        <div className="space-y-6">
-          <div className="p-6 bg-gray-50 rounded-lg">
-            <h4 className="text-lg font-semibold mb-4">Detalles de la cita</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Cliente</p>
-                <p className="font-medium text-lg">
-                  {booking.profiles?.first_name} {booking.profiles?.last_name}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Servicio</p>
-                <p className="font-medium">{booking.services?.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Centro</p>
-                <p className="font-medium">{booking.centers?.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Importe</p>
-                <p className="font-bold text-2xl text-blue-600">
-                  {(booking.total_price_cents / 100).toFixed(2)}€
-                </p>
-              </div>
-            </div>
-          </div>
+    <>
+      <Button
+        onClick={handleOpenModal}
+        className="flex items-center gap-2"
+        variant="outline"
+      >
+        <CreditCard className="h-4 w-4" />
+        Cobrar Cita
+      </Button>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor={`payment-method-${booking.id}`}>Forma de Pago</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar forma de pago..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_METHODS.map((method) => (
-                    <SelectItem key={method.value} value={method.value}>
-                      {method.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50">
+          <div 
+            className="absolute bg-white rounded-lg shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto"
+            style={{
+              top: `${modalPosition.top}px`,
+              left: `${modalPosition.left}px`,
+              maxWidth: 'calc(100vw - 40px)'
+            }}
+          >
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <DollarSign className="h-6 w-6" />
+                <h3 className="text-2xl font-semibold">Cobrar Cita</h3>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="p-6 bg-gray-50 rounded-lg">
+                  <h4 className="text-lg font-semibold mb-4">Detalles de la cita</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Cliente</p>
+                      <p className="font-medium text-lg">
+                        {booking.profiles?.first_name} {booking.profiles?.last_name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Servicio</p>
+                      <p className="font-medium">{booking.services?.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Centro</p>
+                      <p className="font-medium">{booking.centers?.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Importe</p>
+                      <p className="font-bold text-2xl text-blue-600">
+                        {(booking.total_price_cents / 100).toFixed(2)}€
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-            <div>
-              <Label htmlFor={`payment-notes-${booking.id}`}>Notas del pago (opcional)</Label>
-              <Input
-                id={`payment-notes-${booking.id}`}
-                value={paymentNotes}
-                onChange={(e) => setPaymentNotes(e.target.value)}
-                placeholder="Notas adicionales sobre el pago..."
-              />
-            </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor={`payment-method-${booking.id}`}>Forma de Pago</Label>
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar forma de pago..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_METHODS.map((method) => (
+                          <SelectItem key={method.value} value={method.value}>
+                            {method.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            <div className="flex gap-3 pt-4">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => setIsOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={processPayment}
-                className="flex-1"
-              >
-                <DollarSign className="h-4 w-4 mr-2" />
-                Confirmar Pago - {(booking.total_price_cents / 100).toFixed(2)}€
-              </Button>
+                  <div>
+                    <Label htmlFor={`payment-notes-${booking.id}`}>Notas del pago (opcional)</Label>
+                    <Input
+                      id={`payment-notes-${booking.id}`}
+                      value={paymentNotes}
+                      onChange={(e) => setPaymentNotes(e.target.value)}
+                      placeholder="Notas adicionales sobre el pago..."
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={processPayment}
+                      className="flex-1"
+                    >
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      Confirmar Pago - {(booking.total_price_cents / 100).toFixed(2)}€
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </>
   );
 }
