@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import type { Service, Package } from "@/hooks/useDatabase";
 import { usePromotions } from "@/hooks/usePromotions";
 import { useTreatmentGroups } from "@/hooks/useTreatmentGroups";
 import { cn } from "@/lib/utils";
-import { Star, Clock, Users, Sparkles, Percent, Tag, X } from "lucide-react";
+import { Star, Clock, Users, Sparkles, Percent, Tag, X, ChevronDown, ChevronUp } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -276,33 +276,48 @@ const ServiceModal: React.FC<Props> = ({
     packages?: Package[];
     icon?: React.ReactNode;
   }> = ({ title, services, packages = [], icon }) => {
-    if (services.length === 0 && packages.length === 0) return null;
+    const [isExpanded, setIsExpanded] = useState(true);
+    const totalItems = services.length + packages.length;
+    
+    if (totalItems === 0) return null;
 
     return (
       <div className="space-y-3">
-        <div className="flex items-center gap-2 px-1">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center gap-2 px-1 hover:bg-accent/50 rounded-md py-2 transition-colors group"
+        >
           {icon}
           <h4 className="font-semibold text-base text-foreground">{title}</h4>
+          <span className="text-xs text-muted-foreground ml-2">({totalItems})</span>
           <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
-        </div>
-        <div className="grid gap-3">
-          {services.map((service) => (
-            <ServiceCard
-              key={service.id}
-              service={service}
-              active={selectedId === service.id}
-              onClick={() => handleSelect(service.id, "service")}
-            />
-          ))}
-          {packages.map((pkg) => (
-            <PackageCard
-              key={pkg.id}
-              package={pkg}
-              active={selectedId === pkg.id}
-              onClick={() => handleSelect(pkg.id, "package")}
-            />
-          ))}
-        </div>
+          {isExpanded ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+          )}
+        </button>
+        
+        {isExpanded && (
+          <div className="grid gap-3 animate-in slide-in-from-top-2 duration-200">
+            {services.map((service) => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                active={selectedId === service.id}
+                onClick={() => handleSelect(service.id, "service")}
+              />
+            ))}
+            {packages.map((pkg) => (
+              <PackageCard
+                key={pkg.id}
+                package={pkg}
+                active={selectedId === pkg.id}
+                onClick={() => handleSelect(pkg.id, "package")}
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   };

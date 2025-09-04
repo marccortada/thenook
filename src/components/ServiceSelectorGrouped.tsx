@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import type { Service, Package } from "@/hooks/useDatabase";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Clock, Users, Tag, Percent, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Clock, Users, Tag, Percent, Sparkles } from "lucide-react";
 import ServiceModal from "./ServiceModal";
 
 interface Props {
@@ -160,20 +160,39 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
         >
           <ScrollArea className="h-[400px]">
             <div className="p-4 space-y-4">
-              {groupedServices.map((group, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex items-center gap-2 px-1">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: group.color }} />
-                    <h4 className="font-medium text-sm text-foreground">{group.name}</h4>
-                    <div className="flex-1 h-px bg-border" />
-                  </div>
-                  <div className="space-y-2">
-                    {group.services.map((service) => (
-                      <ServiceCard key={service.id} service={service} />
-                    ))}
-                  </div>
-                </div>
-              ))}
+              {groupedServices.map((group, index) => {
+                const GroupCollapsible = () => {
+                  const [isExpanded, setIsExpanded] = useState(true);
+                  
+                  return (
+                    <div key={index} className="space-y-2">
+                      <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="w-full flex items-center gap-2 px-1 hover:bg-accent/50 rounded-md py-1 transition-colors group"
+                      >
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: group.color }} />
+                        <h4 className="font-medium text-sm text-foreground">{group.name}</h4>
+                        <span className="text-xs text-muted-foreground ml-1">({group.services.length})</span>
+                        <div className="flex-1 h-px bg-border" />
+                        {isExpanded ? (
+                          <ChevronUp className="w-3 h-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+                        ) : (
+                          <ChevronDown className="w-3 h-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+                        )}
+                      </button>
+                      {isExpanded && (
+                        <div className="space-y-2 animate-in slide-in-from-top-1 duration-150">
+                          {group.services.map((service) => (
+                            <ServiceCard key={service.id} service={service} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                };
+                
+                return <GroupCollapsible key={index} />;
+              })}
             </div>
           </ScrollArea>
         </PopoverContent>
