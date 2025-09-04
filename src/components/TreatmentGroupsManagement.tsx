@@ -13,18 +13,12 @@ import { useTreatmentGroups, CreateTreatmentGroupData } from '@/hooks/useTreatme
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-// Colores predefinidos
+// Colores específicos solicitados: azul, verde, naranja, lila
 const PRESET_COLORS = [
-  '#3B82F6', // Blue
-  '#10B981', // Green
-  '#F59E0B', // Yellow/Orange
-  '#8B5CF6', // Purple
-  '#EF4444', // Red
-  '#F97316', // Orange
-  '#06B6D4', // Cyan
-  '#EC4899', // Pink
-  '#84CC16', // Lime
-  '#6366F1', // Indigo
+  '#3B82F6', // Azul
+  '#10B981', // Verde 
+  '#F97316', // Naranja
+  '#8B5CF6', // Lila
 ];
 
 // Grupos predefinidos que coinciden con el modal de reservas
@@ -77,7 +71,7 @@ const TreatmentGroupsManagement: React.FC = () => {
   });
   const [serviceFormData, setServiceFormData] = useState({
     color: PRESET_COLORS[0],
-    lane_id: '',
+    lane_ids: [] as string[], // Cambiar a array para múltiples carriles
     center_id: '',
     group_id: ''
   });
@@ -211,7 +205,7 @@ const TreatmentGroupsManagement: React.FC = () => {
   const handleEditService = (service: any) => {
     setServiceFormData({
       color: service.color || PRESET_COLORS[0],
-      lane_id: service.lane_id || '',
+      lane_ids: service.lane_ids || [],
       center_id: service.center_id || '',
       group_id: service.group_id || ''
     });
@@ -223,17 +217,24 @@ const TreatmentGroupsManagement: React.FC = () => {
     try {
       if (!editingService) return;
 
-      // Primero necesitamos comprobar si el servicio ya tiene columnas color y lane_id
-      // Si no las tiene, tendremos que añadirlas a la tabla services
       const updateData: any = {};
       
-      // Solo actualizar campos que existen en la tabla services
+      // Actualizar color si ha cambiado
+      if (serviceFormData.color !== editingService.color) {
+        updateData.color = serviceFormData.color;
+      }
+      
+      // Actualizar lane_ids si ha cambiado
+      if (JSON.stringify(serviceFormData.lane_ids) !== JSON.stringify(editingService.lane_ids || [])) {
+        updateData.lane_ids = serviceFormData.lane_ids;
+      }
+      
+      // Actualizar center_id si ha cambiado
       if (serviceFormData.center_id !== editingService.center_id) {
         updateData.center_id = serviceFormData.center_id || null;
       }
       
-      // Para color y lane_id, necesitaríamos añadir estas columnas a la tabla services
-      // Por ahora, vamos a usar el group_id para asociar con treatment_groups
+      // Actualizar group_id si ha cambiado
       if (serviceFormData.group_id && serviceFormData.group_id !== editingService.group_id) {
         updateData.group_id = serviceFormData.group_id;
       }
@@ -249,11 +250,17 @@ const TreatmentGroupsManagement: React.FC = () => {
         }
       }
 
-      toast({ title: 'Actualizado', description: 'Configuración de visualización actualizada exitosamente' });
+      toast({ 
+        title: 'Servicio actualizado', 
+        description: `Color y carriles asignados correctamente. Los cambios se reflejarán en el calendario automáticamente.` 
+      });
       setIsServiceDialogOpen(false);
       setEditingService(null);
+      
       // Refresh services data
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err) {
       toast({ title: 'Error', description: 'Error inesperado al actualizar el servicio', variant: 'destructive' });
     }
@@ -690,27 +697,64 @@ const TreatmentGroupsManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium">Carril Asignado</Label>
-                  <Select
-                    value={serviceFormData.lane_id || 'none'}
-                    onValueChange={(value) => setServiceFormData(prev => ({ ...prev, lane_id: value === 'none' ? '' : value }))}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Seleccionar carril" />
-                    </SelectTrigger>
-                    <SelectContent 
-                      className="z-[60] bg-background border shadow-lg" 
-                      position="popper"
-                      sideOffset={4}
+                  <Label className="text-sm font-medium">Carriles Asignados (Múltiple selección)</Label>
+                  <div className="mt-1 space-y-2">
+                    <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[40px]">
+                      {serviceFormData.lane_ids.length === 0 ? (
+                        <span className="text-muted-foreground text-sm">Sin carriles específicos</span>
+                      ) : (
+                        serviceFormData.lane_ids.map(laneId => {
+                          const lane = lanes.find(l => l.id === laneId);
+                          const center = centers.find(c => c.id === lane?.center_id);
+                          return lane ? (
+                            <Badge key={laneId} variant="secondary" className="text-xs">
+                              {lane.name} - {center?.name}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-0 ml-1 hover:bg-transparent"
+                                onClick={() => setServiceFormData(prev => ({
+                                  ...prev,
+                                  lane_ids: prev.lane_ids.filter(id => id !== laneId)
+                                }))}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </Badge>
+                          ) : null;
+                        })
+                      )}
+                    </div>
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        if (value === 'none') {
+                          setServiceFormData(prev => ({ ...prev, lane_ids: [] }));
+                        } else if (value && !serviceFormData.lane_ids.includes(value)) {
+                          setServiceFormData(prev => ({
+                            ...prev,
+                            lane_ids: [...prev.lane_ids, value]
+                          }));
+                        }
+                      }}
                     >
-                      <SelectItem value="none">Sin carril específico</SelectItem>
-                      {lanes.map((lane) => (
-                        <SelectItem key={lane.id} value={lane.id}>
-                          {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Añadir carril" />
+                      </SelectTrigger>
+                      <SelectContent 
+                        className="z-[60] bg-background border shadow-lg" 
+                        position="popper"
+                        sideOffset={4}
+                      >
+                        <SelectItem value="none">Limpiar todos los carriles</SelectItem>
+                        {lanes.filter(lane => !serviceFormData.lane_ids.includes(lane.id)).map((lane) => (
+                          <SelectItem key={lane.id} value={lane.id}>
+                            {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div>

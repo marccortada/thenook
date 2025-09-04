@@ -2113,6 +2113,7 @@ export type Database = {
         Row: {
           active: boolean | null
           center_id: string | null
+          color: string | null
           created_at: string
           description: string | null
           discount_price_cents: number | null
@@ -2120,6 +2121,7 @@ export type Database = {
           group_id: string | null
           has_discount: boolean | null
           id: string
+          lane_ids: string[] | null
           name: string
           price_cents: number
           type: Database["public"]["Enums"]["service_type"]
@@ -2128,6 +2130,7 @@ export type Database = {
         Insert: {
           active?: boolean | null
           center_id?: string | null
+          color?: string | null
           created_at?: string
           description?: string | null
           discount_price_cents?: number | null
@@ -2135,6 +2138,7 @@ export type Database = {
           group_id?: string | null
           has_discount?: boolean | null
           id?: string
+          lane_ids?: string[] | null
           name: string
           price_cents: number
           type: Database["public"]["Enums"]["service_type"]
@@ -2143,6 +2147,7 @@ export type Database = {
         Update: {
           active?: boolean | null
           center_id?: string | null
+          color?: string | null
           created_at?: string
           description?: string | null
           discount_price_cents?: number | null
@@ -2150,6 +2155,7 @@ export type Database = {
           group_id?: string | null
           has_discount?: boolean | null
           id?: string
+          lane_ids?: string[] | null
           name?: string
           price_cents?: number
           type?: Database["public"]["Enums"]["service_type"]
