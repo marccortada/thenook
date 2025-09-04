@@ -62,6 +62,7 @@ export default function AdminPricingPromos() {
     discount_price_cents: 0
   });
   const [editingService, setEditingService] = useState<any>(null);
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
 
   const serviceTypes = [
     { value: 'massage' as const, label: 'Masaje' },
@@ -625,7 +626,7 @@ export default function AdminPricingPromos() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {services.map((service: any) => (
-                    <div key={service.id} className="border rounded-lg p-4">
+                    <div key={service.id} className="border rounded-lg p-4 service-card">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg">{service.name}</h3>
@@ -663,8 +664,41 @@ export default function AdminPricingPromos() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            console.log('Editing service:', service);
-                            console.log('Setting editingService state');
+                            
+                            // Obtener la tarjeta del servicio (parent del botón)
+                            const serviceCard = e.currentTarget.closest('.service-card') as HTMLElement;
+                            if (!serviceCard) return;
+                            
+                            const cardRect = serviceCard.getBoundingClientRect();
+                            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                            const windowHeight = window.innerHeight;
+                            const windowWidth = window.innerWidth;
+                            
+                            // Dimensiones del modal
+                            const modalWidth = Math.min(1000, windowWidth - 40);
+                            const modalHeight = Math.min(700, windowHeight - 80);
+                            
+                            // Calcular posición
+                            let top = cardRect.top + scrollTop - 50; // Un poco arriba de la tarjeta
+                            let left = (windowWidth - modalWidth) / 2; // Centrado horizontalmente
+                            
+                            // Ajustar verticalmente para que esté siempre visible
+                            const viewportTop = scrollTop + 20;
+                            const viewportBottom = scrollTop + windowHeight - 20;
+                            
+                            if (top < viewportTop) {
+                              top = viewportTop;
+                            } else if (top + modalHeight > viewportBottom) {
+                              top = viewportBottom - modalHeight;
+                            }
+                            
+                            // Asegurar que no se salga horizontalmente
+                            if (left < 20) left = 20;
+                            if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
+                            
+                            console.log('Service edit modal position:', { top, left, cardTop: cardRect.top, scrollTop });
+                            
+                            setModalPosition({ top, left });
                             setEditingService({ ...service });
                           }}
                           className="flex-1"
@@ -831,8 +865,25 @@ export default function AdminPricingPromos() {
 
             {/* Modal/Form para editar servicio */}
             {editingService && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <>
+                {/* Overlay */}
+                <div 
+                  className="fixed inset-0 bg-black/50 z-40"
+                  onClick={() => setEditingService(null)}
+                />
+                
+                {/* Modal */}
+                <div 
+                  className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+                  style={{
+                    top: `${modalPosition.top}px`,
+                    left: `${modalPosition.left}px`,
+                    width: `${Math.min(1000, window.innerWidth - 40)}px`,
+                    maxHeight: `${Math.min(700, window.innerHeight - 80)}px`,
+                    overflowY: 'auto'
+                  }}
+                >
+                  <div className="p-6">
                   <Card className="border-none shadow-none">
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
@@ -993,8 +1044,9 @@ export default function AdminPricingPromos() {
                       </div>
                     </CardContent>
                   </Card>
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </TabsContent>
 
