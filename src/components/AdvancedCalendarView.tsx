@@ -1054,19 +1054,23 @@ const AdvancedCalendarView = () => {
                     {timeSlot.hour}
                   </div>
 
-                  {/* Week day-lane slots */}
-                  {weekDates.map((date) => 
-                    centerLanes.map((lane) => {
-                      const booking = getBookingForSlot(selectedCenter, lane.id, date, timeSlot.time);
-                      const isBlocked = isLaneBlocked(lane.id, timeSlot.time);
-                      const isFirstSlotOfBooking = booking &&
-                        format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
+                   {/* Week day-lane slots */}
+                   {weekDates.map((date) => 
+                     centerLanes.map((lane) => {
+                       // Create the correct datetime for this specific day and time slot
+                       const slotDateTime = new Date(date);
+                       slotDateTime.setHours(timeSlot.time.getHours(), timeSlot.time.getMinutes(), 0, 0);
+                       
+                       const booking = getBookingForSlot(selectedCenter, lane.id, date, slotDateTime);
+                       const isBlocked = isLaneBlocked(lane.id, slotDateTime);
+                       const isFirstSlotOfBooking = booking &&
+                         format(slotDateTime, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
                       return (
                          <div
                            key={`${date.toISOString()}-${lane.id}`}
                            className="relative h-6 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
-                           onClick={(e) => handleSlotClick(selectedCenter, lane.id, date, timeSlot.time, e)}
+                           onClick={(e) => handleSlotClick(selectedCenter, lane.id, date, slotDateTime, e)}
                            onDragOver={(e) => {
                              e.preventDefault();
                              e.dataTransfer.dropEffect = 'move';
@@ -1076,7 +1080,7 @@ const AdvancedCalendarView = () => {
                              const bookingData = e.dataTransfer.getData('booking');
                              if (bookingData) {
                                const booking = JSON.parse(bookingData);
-                               moveBooking(booking.id, selectedCenter, lane.id, date, timeSlot.time);
+                               moveBooking(booking.id, selectedCenter, lane.id, date, slotDateTime);
                              }
                            }}
                          >
