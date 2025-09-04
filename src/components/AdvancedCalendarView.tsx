@@ -70,11 +70,6 @@ const AdvancedCalendarView = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [selectedCenter, setSelectedCenter] = useState<string>('');
-  
-  // Mobile view redirect
-  if (isMobile) {
-    return <MobileCalendarView selectedDate={selectedDate} selectedCenter={selectedCenter} />;
-  }
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
@@ -1170,6 +1165,11 @@ const AdvancedCalendarView = () => {
         <span className="ml-3">Cargando calendario...</span>
       </div>
     );
+  }
+
+  // Mobile view redirect - after all hooks are called
+  if (isMobile) {
+    return <MobileCalendarView selectedDate={selectedDate} selectedCenter={selectedCenter} />;
   }
 
   return (
