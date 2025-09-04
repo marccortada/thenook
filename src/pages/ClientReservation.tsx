@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings } from "@/hooks/useDatabase";
@@ -483,46 +484,73 @@ const ClientReservation = () => {
                 </div>
               )}
 
-              {/* Center Selection */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
-                  <MapPin className="h-4 w-4" />
-                  <span>{t('center_selection')}</span>
-                </h3>
-                <div>
-                  <Label htmlFor="center" className="text-sm">{t('center')} *</Label>
-                  <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value })}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder={t('select_center')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {centers.map((center) => {
-                        // Add comprehensive debugging
-                        console.log('Processing center:', {
-                          id: center.id,
-                          name: center.name,
-                          idType: typeof center.id,
-                          isEmpty: center.id === '',
-                          isNull: center.id === null,
-                          isUndefined: center.id === undefined
-                        });
-                        
-                        // Skip invalid centers
-                        if (!center.id || center.id === '' || center.id === null || center.id === undefined) {
-                          console.warn('Skipping invalid center:', center);
-                          return null;
-                        }
-                        
-                        return (
-                          <SelectItem key={center.id} value={center.id}>
-                            {center.name}
-                          </SelectItem>
-                        );
-                      }).filter(Boolean)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              {/* Center Selection - Accordion */}
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="center">
+                  <AccordionTrigger className="text-left">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>📍 {t('center_selection')}</span>
+                      {formData.center && (
+                        <span className="text-sm text-muted-foreground ml-2">
+                          ({centers.find(c => c.id === formData.center)?.name})
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4 pt-2">
+                      <div>
+                        <Label htmlFor="center" className="text-sm">{t('center')} *</Label>
+                        <div className="space-y-2 mt-2">
+                          {centers.map((center) => {
+                            // Add comprehensive debugging
+                            console.log('Processing center:', {
+                              id: center.id,
+                              name: center.name,
+                              idType: typeof center.id,
+                              isEmpty: center.id === '',
+                              isNull: center.id === null,
+                              isUndefined: center.id === undefined
+                            });
+                            
+                            // Skip invalid centers
+                            if (!center.id || center.id === '' || center.id === null || center.id === undefined) {
+                              console.warn('Skipping invalid center:', center);
+                              return null;
+                            }
+                            
+                            const isSelected = formData.center === center.id;
+                            
+                            return (
+                              <div
+                                key={center.id}
+                                onClick={() => setFormData({ ...formData, center: center.id })}
+                                className={cn(
+                                  "flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all duration-200",
+                                  isSelected 
+                                    ? "bg-primary/10 border-primary text-primary" 
+                                    : "bg-background border-border hover:bg-accent/50"
+                                )}
+                              >
+                                <MapPin className="h-4 w-4 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm">{center.name}</p>
+                                </div>
+                                {isSelected && (
+                                  <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                                    <div className="h-2 w-2 rounded-full bg-white"></div>
+                                   </div>
+                                 )}
+                               </div>
+                             );
+                          }).filter(Boolean)}
+                        </div>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
               {/* Service Selection */}
               {formData.center && (
