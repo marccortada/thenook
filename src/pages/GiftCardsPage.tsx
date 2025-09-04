@@ -120,7 +120,16 @@ const GiftCardsPage = () => {
   
   const { t } = useTranslation();
   const isMobile = useIsMobile();
-  const cartRef = useViewportPositioning(isCartOpen) as React.RefObject<HTMLDivElement>;
+  
+  // Cuando se abre el carrito en móvil, hacer scroll al top
+  useEffect(() => {
+    if (isCartOpen && isMobile) {
+      // Pequeño delay para asegurar que el drawer esté renderizado
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }
+  }, [isCartOpen, isMobile]);
 
   // Función para traducir nombres de paquetes/tarjetas
   const translatePackageName = (name: string) => {
@@ -350,7 +359,7 @@ const GiftCardsPage = () => {
                 <DrawerTrigger asChild>
                   <Button variant="outline">{t('cart')} ({items.length})</Button>
                 </DrawerTrigger>
-                <DrawerContent ref={cartRef} className="flex flex-col max-h-[95vh]">
+                <DrawerContent className="flex flex-col max-h-[95vh]">
                   <DrawerHeader className="flex-shrink-0 pb-4">
                     <DrawerTitle>{t('your_cart')}</DrawerTitle>
                   </DrawerHeader>
