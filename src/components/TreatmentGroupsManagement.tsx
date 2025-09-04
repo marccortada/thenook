@@ -103,25 +103,58 @@ const TreatmentGroupsManagement: React.FC = () => {
     return classification;
   }, [services]);
 
-  // Inicializar grupos predefinidos si no existen
+  // Inicializar grupos predefinidos y asignar servicios automáticamente
   React.useEffect(() => {
     const initializePredefinedGroups = async () => {
       for (const predefinedGroup of PREDEFINED_GROUPS) {
         const existingGroup = treatmentGroups.find(g => g.name === predefinedGroup.name);
         if (!existingGroup) {
-          await createTreatmentGroup({
+          const newGroup = await createTreatmentGroup({
             name: predefinedGroup.name,
             color: predefinedGroup.color,
             active: true,
           });
+          
+          if (newGroup) {
+            // Auto-assign services to this group
+            await assignServicesToGroup(predefinedGroup.id, newGroup.id);
+          }
         }
       }
     };
 
+    const assignServicesToGroup = async (groupType: string, groupId: string) => {
+      const servicesToAssign = classifyServices[groupType as keyof typeof classifyServices];
+      
+      for (const service of servicesToAssign) {
+        if (!service.group_id) {
+          try {
+            await supabase
+              .from('services')
+              .update({ group_id: groupId })
+              .eq('id', service.id);
+            console.log(`✅ Servicio "${service.name}" asignado al grupo "${groupType}"`);
+          } catch (error) {
+            console.error(`Error asignando servicio ${service.name}:`, error);
+          }
+        }
+      }
+    };
+
+    if (treatmentGroups.length >= PREDEFINED_GROUPS.length && services.length > 0) {
+      // Auto-assign any unassigned services to appropriate groups
+      PREDEFINED_GROUPS.forEach(async (predefinedGroup) => {
+        const existingGroup = treatmentGroups.find(g => g.name === predefinedGroup.name);
+        if (existingGroup) {
+          await assignServicesToGroup(predefinedGroup.id, existingGroup.id);
+        }
+      });
+    }
+
     if (treatmentGroups.length < PREDEFINED_GROUPS.length) {
       initializePredefinedGroups();
     }
-  }, [treatmentGroups, createTreatmentGroup]);
+  }, [treatmentGroups, createTreatmentGroup, services]);
 
   // Combinar grupos predefinidos con los de la base de datos
   const combinedGroups = React.useMemo(() => {

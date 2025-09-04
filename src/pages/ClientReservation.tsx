@@ -14,6 +14,7 @@ import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search } from
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings } from "@/hooks/useDatabase";
+import { useTreatmentGroups } from "@/hooks/useTreatmentGroups";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -30,6 +31,7 @@ const ClientReservation = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
+  const { treatmentGroups, getTreatmentGroupByService } = useTreatmentGroups();
   const isMobile = useIsMobile();
   
   const [formData, setFormData] = useState({
@@ -195,6 +197,7 @@ const ClientReservation = () => {
       if (service_id && selection?.kind === 'service') {
         // First priority: Check if the service itself has assigned lanes
         const selectedService = services.find(s => s.id === service_id);
+        
         if (selectedService?.lane_ids && selectedService.lane_ids.length > 0) {
           console.log(`🎯 Servicio "${selectedService.name}" tiene carriles asignados:`, selectedService.lane_ids);
           
@@ -215,6 +218,33 @@ const ClientReservation = () => {
                 assignedLaneId = laneId;
                 console.log(`✅ Servicio asignado al carril específico: ${lane.name}`);
                 break;
+              }
+            }
+          }
+        } else {
+          // Second priority: Check treatment group configuration
+          const serviceGroup = getTreatmentGroupByService(service_id, services);
+          if (serviceGroup?.lane_ids && serviceGroup.lane_ids.length > 0) {
+            console.log(`🎯 Grupo "${serviceGroup.name}" tiene carriles asignados:`, serviceGroup.lane_ids);
+            
+            // Find the first available lane from the group's assigned lanes
+            for (const laneId of serviceGroup.lane_ids) {
+              const lane = availableLanes.find(l => l.id === laneId);
+              if (lane) {
+                // Check lane capacity for the time slot
+                const { data: existingBookings } = await supabase
+                  .from('bookings')
+                  .select('*')
+                  .eq('lane_id', laneId)
+                  .eq('booking_datetime', bookingDate.toISOString())
+                  .neq('status', 'cancelled');
+
+                const laneCapacity = lane.capacity || 1;
+                if (!existingBookings || existingBookings.length < laneCapacity) {
+                  assignedLaneId = laneId;
+                  console.log(`✅ Servicio asignado al carril del grupo "${serviceGroup.name}": ${lane.name}`);
+                  break;
+                }
               }
             }
           }
