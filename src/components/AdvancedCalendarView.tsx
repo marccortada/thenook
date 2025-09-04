@@ -299,8 +299,12 @@ const AdvancedCalendarView = () => {
       const isTimeMatch = timeSlot >= bookingStart && timeSlot < bookingEnd;
       if (!isTimeMatch) return false;
       
-      // For existing bookings, show them in the correct lane based on treatment group
-      // regardless of which lane_id they were originally assigned to
+      // Check if booking is specifically assigned to this lane (if lane_id exists)
+      if (booking.lane_id) {
+        return booking.lane_id === laneId;
+      }
+      
+      // If no lane_id, show in the lane based on treatment group (legacy behavior)
       const service = services.find(s => s.id === booking.service_id);
       const serviceGroup = service?.group_id ? treatmentGroups.find(tg => tg.id === service.group_id) : null;
       
@@ -322,7 +326,7 @@ const AdvancedCalendarView = () => {
       const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
       const currentLaneIndex = centerLanes.findIndex(l => l.id === laneId);
       
-      // Show booking in the correct lane for its service group
+      // Show booking in the expected lane for its service group only if no specific lane assigned
       return currentLaneIndex === expectedLaneIndex;
     });
 
