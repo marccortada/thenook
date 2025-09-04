@@ -50,10 +50,6 @@ const PAYMENT_METHODS = [
 export default function BookingManagement() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState('');
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -137,69 +133,6 @@ export default function BookingManagement() {
     }
   };
 
-  const processPayment = async () => {
-    if (!selectedBooking || !paymentMethod) return;
-
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ 
-          payment_status: 'paid',
-          payment_method: paymentMethod,
-          payment_notes: `Cobrado por ${paymentMethod} el ${new Date().toLocaleString()}`
-        })
-        .eq('id', selectedBooking.id);
-
-      if (error) throw error;
-
-      // Analytics tracking - enviar datos del pago a analytics
-      try {
-        const analyticsData = {
-          event_type: 'payment_processed',
-          booking_id: selectedBooking.id,
-          payment_method: paymentMethod,
-          amount_cents: selectedBooking.total_price_cents,
-          client_id: selectedBooking.profiles?.email,
-          service_name: selectedBooking.services?.name,
-          center_name: selectedBooking.centers?.name,
-          processed_at: new Date().toISOString(),
-          processed_by: 'staff' // Aquí se podría poner el ID del staff que procesó el pago
-        };
-
-        // Insertar en tabla de analytics/métricas
-        await supabase.from('business_metrics').insert({
-          metric_name: 'payment_processed',
-          metric_type: 'revenue',
-          metric_value: selectedBooking.total_price_cents / 100,
-          period_start: new Date().toISOString().split('T')[0],
-          period_end: new Date().toISOString().split('T')[0],
-          metadata: analyticsData
-        });
-
-        console.log('Analytics data sent:', analyticsData);
-      } catch (analyticsError) {
-        console.error('Error sending analytics data:', analyticsError);
-        // No bloquear el proceso de pago si analytics falla
-      }
-
-      toast({
-        title: "💰 Pago procesado exitosamente",
-        description: `Cita cobrada por ${PAYMENT_METHODS.find(m => m.value === paymentMethod)?.label} - ${(selectedBooking.total_price_cents / 100).toFixed(2)}€`
-      });
-
-      setShowPaymentDialog(false);
-      setPaymentMethod('');
-      setSelectedBooking(null);
-      fetchBookings();
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo procesar el pago",
-        variant: "destructive"
-      });
-    }
-  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = BOOKING_STATUSES.find(s => s.value === status) || BOOKING_STATUSES[0];
@@ -340,39 +273,10 @@ export default function BookingManagement() {
                       </Select>
                     </div>
 
-                    <Button
-                      onClick={(e) => {
-                        console.log('Cobrar Cita clicked - booking:', booking);
-                        
-                        // Obtener la posición de toda la tarjeta de reserva (el Card parent)
-                        const cardElement = e.currentTarget.closest('.booking-card');
-                        if (cardElement) {
-                          const cardRect = cardElement.getBoundingClientRect();
-                          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                          const windowWidth = window.innerWidth;
-                          
-                          // Calcular el centro de la tarjeta
-                          const cardCenterX = cardRect.left + (cardRect.width / 2);
-                          
-                          // Ancho del modal (responsive)
-                          const modalWidth = windowWidth < 768 ? windowWidth - 40 : Math.min(600, windowWidth - 40);
-                          
-                          setModalPosition({
-                            top: cardRect.top + scrollTop - 20, // 20px arriba de la tarjeta
-                            left: Math.max(20, Math.min(cardCenterX - (modalWidth / 2), windowWidth - modalWidth - 20))
-                          });
-                        }
-                        
-                        setSelectedBooking(booking);
-                        setShowPaymentDialog(true);
-                        console.log('Payment dialog should be showing:', true);
-                      }}
-                      className="flex items-center gap-2"
-                      variant="outline"
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      Cobrar Cita
-                    </Button>
+                    <PaymentModal 
+                      booking={booking} 
+                      onPaymentProcessed={fetchBookings} 
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -381,88 +285,183 @@ export default function BookingManagement() {
         </div>
       </main>
 
-      {/* Payment Modal - Positioned above selected booking */}
-      {showPaymentDialog && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div 
-            className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto mx-auto"
-          >
-            <div className="p-6 lg:p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <DollarSign className="h-6 w-6" />
-                <h3 className="text-2xl font-semibold">Cobrar Cita</h3>
+    </div>
+  );
+}
+
+// Componente individual para cada modal de pago
+interface PaymentModalProps {
+  booking: Booking;
+  onPaymentProcessed: () => void;
+}
+
+function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
+
+  const processPayment = async () => {
+    if (!paymentMethod) {
+      toast({
+        title: "Error",
+        description: "Selecciona una forma de pago",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          payment_status: 'paid',
+          payment_method: paymentMethod,
+          payment_notes: paymentNotes || `Cobrado por ${paymentMethod} el ${new Date().toLocaleString()}`
+        })
+        .eq('id', booking.id);
+
+      if (error) throw error;
+
+      // Analytics tracking
+      try {
+        const analyticsData = {
+          event_type: 'payment_processed',
+          booking_id: booking.id,
+          payment_method: paymentMethod,
+          amount_cents: booking.total_price_cents,
+          client_id: booking.profiles?.email,
+          service_name: booking.services?.name,
+          center_name: booking.centers?.name,
+          processed_at: new Date().toISOString(),
+          processed_by: 'staff'
+        };
+
+        await supabase.from('business_metrics').insert({
+          metric_name: 'payment_processed',
+          metric_type: 'revenue',
+          metric_value: booking.total_price_cents / 100,
+          period_start: new Date().toISOString().split('T')[0],
+          period_end: new Date().toISOString().split('T')[0],
+          metadata: analyticsData
+        });
+
+        console.log('Analytics data sent:', analyticsData);
+      } catch (analyticsError) {
+        console.error('Error sending analytics data:', analyticsError);
+      }
+
+      toast({
+        title: "💰 Pago procesado exitosamente",
+        description: `Cita cobrada por ${PAYMENT_METHODS.find(m => m.value === paymentMethod)?.label} - ${(booking.total_price_cents / 100).toFixed(2)}€`
+      });
+
+      setIsOpen(false);
+      setPaymentMethod('');
+      setPaymentNotes('');
+      onPaymentProcessed();
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo procesar el pago",
+        variant: "destructive"
+      });
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button
+          className="flex items-center gap-2"
+          variant="outline"
+        >
+          <CreditCard className="h-4 w-4" />
+          Cobrar Cita
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-6">
+            <DollarSign className="h-6 w-6" />
+            <DialogTitle className="text-2xl font-semibold">Cobrar Cita</DialogTitle>
+          </div>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          <div className="p-6 bg-gray-50 rounded-lg">
+            <h4 className="text-lg font-semibold mb-4">Detalles de la cita</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Cliente</p>
+                <p className="font-medium text-lg">
+                  {booking.profiles?.first_name} {booking.profiles?.last_name}
+                </p>
               </div>
-              
-              {selectedBooking && (
-                <div className="space-y-6">
-                  <div className="p-6 bg-gray-50 rounded-lg">
-                    <h4 className="text-lg font-semibold mb-4">Detalles de la cita</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Cliente</p>
-                        <p className="font-medium text-lg">
-                          {selectedBooking.profiles?.first_name} {selectedBooking.profiles?.last_name}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Servicio</p>
-                        <p className="font-medium text-lg">{selectedBooking.services?.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Centro</p>
-                        <p className="font-medium">{selectedBooking.centers?.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Importe</p>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {(selectedBooking.total_price_cents / 100).toFixed(2)}€
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Servicio</p>
+                <p className="font-medium">{booking.services?.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Centro</p>
+                <p className="font-medium">{booking.centers?.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Importe</p>
+                <p className="font-bold text-2xl text-blue-600">
+                  {(booking.total_price_cents / 100).toFixed(2)}€
+                </p>
+              </div>
+            </div>
+          </div>
 
-                  <div className="space-y-3">
-                    <label className="text-lg font-medium block">Forma de Pago</label>
-                    <select 
-                      value={paymentMethod} 
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-full h-14 px-4 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                    >
-                      <option value="">Seleccionar forma de pago...</option>
-                      {PAYMENT_METHODS.map((method) => (
-                        <option key={method.value} value={method.value}>
-                          {method.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor={`payment-method-${booking.id}`}>Forma de Pago</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar forma de pago..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map((method) => (
+                    <SelectItem key={method.value} value={method.value}>
+                      {method.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                    <button
-                      onClick={processPayment}
-                      disabled={!paymentMethod}
-                      className="flex-1 h-14 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed text-lg flex items-center justify-center gap-2"
-                    >
-                      <CreditCard className="h-5 w-5" />
-                      Confirmar Pago - {(selectedBooking.total_price_cents / 100).toFixed(2)}€
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowPaymentDialog(false);
-                        setPaymentMethod('');
-                        setSelectedBooking(null);
-                      }}
-                      className="h-14 px-8 border-2 border-gray-300 rounded-lg hover:bg-gray-100 text-lg font-medium"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              )}
+            <div>
+              <Label htmlFor={`payment-notes-${booking.id}`}>Notas del pago (opcional)</Label>
+              <Input
+                id={`payment-notes-${booking.id}`}
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+                placeholder="Notas adicionales sobre el pago..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setIsOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={processPayment}
+                className="flex-1"
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Confirmar Pago - {(booking.total_price_cents / 100).toFixed(2)}€
+              </Button>
             </div>
           </div>
         </div>
-      )}
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
