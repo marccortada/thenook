@@ -599,6 +599,45 @@ const ReservationSystem = () => {
                   </AccordionContent>
                 </AccordionItem>
 
+                {/* Servicio */}
+                {formData.center && (
+                  <AccordionItem value="service">
+                    <AccordionTrigger className="text-left">
+                      <div className="flex items-center space-x-2">
+                        <CalendarDays className="h-4 w-4" />
+                        <span>Selección de Servicio</span>
+                        {formData.service && (
+                          <span className="text-sm text-muted-foreground ml-2">
+                            ({services.find(s => s.id === formData.service)?.name})
+                          </span>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-4 pt-2">
+                        <div>
+                          <Label htmlFor="service">Servicio *</Label>
+                          {servicesLoading ? (
+                            <div className="flex items-center justify-center p-4">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                              <span className="ml-2">Cargando servicios...</span>
+                            </div>
+                          ) : (
+                            <ServiceSelectorGrouped
+                              mode="individual"
+                              services={services}
+                              packages={[]}
+                              selectedId={formData.service}
+                              onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: 'individual' })}
+                              useDropdown={false}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
+
                 {/* Fecha y Hora */}
                 <AccordionItem value="datetime">
                   <AccordionTrigger className="text-left">
@@ -716,45 +755,6 @@ const ReservationSystem = () => {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-
-                {/* Servicio */}
-                {formData.center && (
-                  <AccordionItem value="service">
-                    <AccordionTrigger className="text-left">
-                      <div className="flex items-center space-x-2">
-                        <CalendarDays className="h-4 w-4" />
-                        <span>Selección de Servicio</span>
-                        {formData.service && (
-                          <span className="text-sm text-muted-foreground ml-2">
-                            ({services.find(s => s.id === formData.service)?.name})
-                          </span>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-4 pt-2">
-                        <div>
-                          <Label htmlFor="service">Servicio *</Label>
-                          {servicesLoading ? (
-                            <div className="flex items-center justify-center p-4">
-                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                              <span className="ml-2">Cargando servicios...</span>
-                            </div>
-                          ) : (
-                            <ServiceSelectorGrouped
-                              mode="individual"
-                              services={services}
-                              packages={[]}
-                              selectedId={formData.service}
-                              onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: 'individual' })}
-                              useDropdown={false}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
               </Accordion>
             )}
 
@@ -778,36 +778,40 @@ const ReservationSystem = () => {
                     <div className="space-y-4 pt-2">
                       <div>
                         <Label htmlFor="center">Centro *</Label>
-                        <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value, service: "", employee: "", lane: "" })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un centro" />
-                          </SelectTrigger>
-                           <SelectContent 
-                             className="z-50 bg-popover border shadow-md"
-                             position="popper"
-                             side="bottom"
-                             align="start"
-                              sideOffset={0}
-                             avoidCollisions={false}
-                             collisionPadding={0}
-                           >
-                              {centers.map((center) => {
-                                // Debug center data
-                                if (!center.id || center.id === '') {
-                                  console.error('ReservationSystem: Invalid center found:', center);
-                                  return null;
-                                }
-                                return (
-                                  <SelectItem key={center.id} value={center.id}>
-                                    <div className="flex items-center space-x-2">
-                                      <MapPin className="h-3 w-3" />
-                                      <span>{center.name}</span>
-                                    </div>
-                                  </SelectItem>
-                                );
-                              }).filter(Boolean)}
-                           </SelectContent>
-                        </Select>
+                        <div className="space-y-2 mt-2">
+                          {centers.map((center) => {
+                            // Skip invalid centers
+                            if (!center.id || center.id === '' || center.id === null || center.id === undefined) {
+                              console.warn('Skipping invalid center:', center);
+                              return null;
+                            }
+                            
+                            const isSelected = formData.center === center.id;
+                            
+                            return (
+                              <div
+                                key={center.id}
+                                onClick={() => setFormData({ ...formData, center: center.id })}
+                                className={cn(
+                                  "flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all duration-200",
+                                  isSelected 
+                                    ? "bg-primary/10 border-primary text-primary" 
+                                    : "bg-background border-border hover:bg-accent/50"
+                                )}
+                              >
+                                <MapPin className="h-4 w-4 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm">{center.name}</p>
+                                </div>
+                                {isSelected && (
+                                  <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                                    <div className="h-2 w-2 rounded-full bg-white"></div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }).filter(Boolean)}
+                        </div>
                       </div>
                     </div>
                   </AccordionContent>
