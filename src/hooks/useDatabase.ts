@@ -24,6 +24,8 @@ export interface Service {
   has_discount?: boolean;
   discount_price_cents?: number;
   group_id?: string;
+  color?: string;
+  lane_ids?: string[];
   created_at: string;
   updated_at: string;
 }

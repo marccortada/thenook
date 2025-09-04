@@ -50,7 +50,7 @@ const PREDEFINED_GROUPS = [
 ];
 
 const TreatmentGroupsManagement: React.FC = () => {
-  const { services } = useServices();
+  const { services, refetch: refetchServices } = useServices();
   const { lanes } = useLanes();
   const { centers } = useCenters();
   const { treatmentGroups, createTreatmentGroup, updateTreatmentGroup } = useTreatmentGroups();
@@ -252,15 +252,14 @@ const TreatmentGroupsManagement: React.FC = () => {
 
       toast({ 
         title: 'Servicio actualizado', 
-        description: `Color y carriles asignados correctamente. Los cambios se reflejarán en el calendario automáticamente.` 
+        description: `Color y carriles asignados correctamente. Los cambios se reflejarán inmediatamente.` 
       });
+      
+      // Actualizar los datos inmediatamente sin recargar la página
+      await refetchServices();
+      
       setIsServiceDialogOpen(false);
       setEditingService(null);
-      
-      // Refresh services data
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
     } catch (err) {
       toast({ title: 'Error', description: 'Error inesperado al actualizar el servicio', variant: 'destructive' });
     }
