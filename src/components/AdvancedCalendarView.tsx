@@ -224,6 +224,7 @@ const AdvancedCalendarView = () => {
       return statusFilters.includes(booking.status) ? booking : null;
     }
 
+    // Always show bookings when no filters are active
     return booking;
   };
 
