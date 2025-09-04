@@ -133,7 +133,6 @@ export default function BookingManagement() {
     }
   };
 
-
   const getStatusBadge = (status: string) => {
     const statusConfig = BOOKING_STATUSES.find(s => s.value === status) || BOOKING_STATUSES[0];
     return (
@@ -284,7 +283,6 @@ export default function BookingManagement() {
           </div>
         </div>
       </main>
-
     </div>
   );
 }
