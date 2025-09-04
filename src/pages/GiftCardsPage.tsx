@@ -17,6 +17,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
+
 interface CartItem {
   id: string;
   name: string;
@@ -40,54 +41,6 @@ const euro = (cents: number) =>
     cents / 100
   );
 
-// Custom gift card - will be translated dynamically in component
-
-const PREDEFINED_GIFTS: GiftCardItem[] = [
-  { id: 'gift-1', name: 'Piernas Cansadas', type: 'fixed', priceCents: 4000 },
-  { id: 'gift-3', name: 'Masaje Descontracturante 55 minutos', type: 'fixed', priceCents: 5500 },
-  { id: 'gift-4', name: 'Reflexología Podal', type: 'fixed', priceCents: 6000 },
-  { id: 'gift-5', name: 'Shiatsu', type: 'fixed', priceCents: 6500 },
-  { id: 'gift-6', name: 'Masaje para Embarazada 50 minutos', type: 'fixed', priceCents: 6000 },
-  { id: 'gift-7', name: 'Masaje Relajante 55 minutos', type: 'fixed', priceCents: 5500 },
-  { id: 'gift-8', name: 'Masaje Deportivo 50 minutos', type: 'fixed', priceCents: 6000 },
-  { id: 'gift-9', name: 'Masaje con Piedras Calientes', type: 'fixed', priceCents: 6500 },
-  { id: 'gift-10', name: 'Bambuterapia Masaje con Cañas de Bambú', type: 'fixed', priceCents: 6500 },
-  { id: 'gift-11', name: 'Ritual Romántico Individual', type: 'fixed', priceCents: 7000 },
-  { id: 'gift-12', name: 'Ritual Energizante Individual', type: 'fixed', priceCents: 7000 },
-  { id: 'gift-13', name: 'Drenaje Linfático 75 minutos', type: 'fixed', priceCents: 7500 },
-  { id: 'gift-14', name: 'Antiestrés The Nook', type: 'fixed', priceCents: 7500 },
-  { id: 'gift-15', name: 'Masaje para Embarazada 75 minutos', type: 'fixed', priceCents: 7500 },
-  { id: 'gift-16', name: 'Masaje Descontracturante 75 minutos', type: 'fixed', priceCents: 7500 },
-  { id: 'gift-17', name: 'Masaje dos Personas 45 minutos', type: 'fixed', priceCents: 9000 },
-  { id: 'gift-18', name: 'Ritual del Kobido Individual', type: 'fixed', priceCents: 8500 },
-  { id: 'gift-19', name: 'Masaje 90 minutos', type: 'fixed', priceCents: 9000 },
-  { id: 'gift-20', name: 'Ritual Sakura Individual', type: 'fixed', priceCents: 9000 },
-  { id: 'gift-21', name: 'Masaje dos Personas 55 minutos', type: 'fixed', priceCents: 9900 },
-  { id: 'gift-22', name: 'Masaje a Cuatro Manos 50 minutos', type: 'fixed', priceCents: 10500 },
-  { id: 'gift-23', name: 'Masaje Relajante Extra Largo 110 minutos', type: 'fixed', priceCents: 11500 },
-  { id: 'gift-24', name: 'Bambuterapia Masaje con Cañas de Bambú para dos Personas', type: 'fixed', priceCents: 12000 },
-  { id: 'gift-25', name: 'Masaje con Piedras Calientes para dos personas', type: 'fixed', priceCents: 11000 },
-  { id: 'gift-26', name: 'Ritual Beauty Individual', type: 'fixed', priceCents: 12000 },
-  { id: 'gift-27', name: 'Ritual Energizante para dos Personas', type: 'fixed', priceCents: 12000 },
-  { id: 'gift-28', name: 'Ritual Romántico para dos Personas', type: 'fixed', priceCents: 11500 },
-  { id: 'gift-29', name: 'Masaje dos Personas 75 minutos', type: 'fixed', priceCents: 13500 },
-  { id: 'gift-30', name: 'Masaje a Cuatro Manos 80 minutos', type: 'fixed', priceCents: 16000 },
-  { id: 'gift-31', name: 'Ritual del Kobido para dos Personas', type: 'fixed', priceCents: 15500 },
-  { id: 'gift-32', name: 'Masaje dos Personas 110 minutos', type: 'fixed', priceCents: 18000 },
-  { id: 'gift-33', name: 'Ritual Sakura para dos Personas', type: 'fixed', priceCents: 17500 },
-  { id: 'gift-34', name: 'Ritual Beauty para dos Personas', type: 'fixed', priceCents: 23000 },
-  { id: 'gift-35', name: 'BONO 5 masajes para Embarazada', type: 'fixed', priceCents: 26400 },
-  { id: 'gift-36', name: 'BONO 5 masajes Reductor Anticelulítico', type: 'fixed', priceCents: 26400 },
-  { id: 'gift-37', name: 'BONO 5 masajes 55 minutos', type: 'fixed', priceCents: 26400 },
-  { id: 'gift-38', name: 'BONO 5 masajes 75 minutos', type: 'fixed', priceCents: 35500 },
-  { id: 'gift-39', name: 'BONO 5 masajes dos Personas 45 minutos', type: 'fixed', priceCents: 39600 },
-  { id: 'gift-40', name: 'BONO 10 masajes 55 minutos', type: 'fixed', priceCents: 51000 },
-  { id: 'gift-41', name: 'BONO 10 masajes Reductor Anticelulítico', type: 'fixed', priceCents: 51000 },
-  { id: 'gift-42', name: 'BONO 10 masajes para Embarazada', type: 'fixed', priceCents: 51000 },
-  { id: 'gift-43', name: 'BONO 5 masajes dos Personas 75 minutos', type: 'fixed', priceCents: 61500 },
-];
-
-// Simple local cart (persisted to localStorage)
 // Heurísticas de categorías
 const isDuo = (name?: string) => {
   const txt = (name || "").toLowerCase();
@@ -97,7 +50,6 @@ const isCuatroManos = (name?: string) => !!name?.toLowerCase().includes("cuatro 
 const isRitual = (name?: string) => !!name?.toLowerCase().includes("ritual");
 
 const GiftCardsPage = () => {
-
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
   const [purchasedByName, setPurchasedByName] = useState("");
@@ -117,6 +69,53 @@ const GiftCardsPage = () => {
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
   
   const { t } = useTranslation();
+
+  // Hook para manejo del carrito local
+  const useLocalCart = () => {
+    const [items, setItems] = useState<CartItem[]>(() => {
+      try {
+        const raw = localStorage.getItem("cart:giftcards");
+        return raw ? (JSON.parse(raw) as CartItem[]) : [];
+      } catch {
+        return [];
+      }
+    });
+    
+    useEffect(() => {
+      localStorage.setItem("cart:giftcards", JSON.stringify(items));
+    }, [items]);
+
+    const add = (item: Omit<CartItem, "quantity" | "id"> & { quantity?: number }) => {
+      setItems((prev) => {
+        const idx = prev.findIndex(
+          (i) => i.name === item.name && i.priceCents === item.priceCents
+        );
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = { ...copy[idx], quantity: copy[idx].quantity + (item.quantity ?? 1) };
+          return copy;
+        }
+        return [
+          ...prev,
+          { id: crypto.randomUUID(), name: item.name, priceCents: item.priceCents, quantity: item.quantity ?? 1 },
+        ];
+      });
+      toast.success(t('added_to_cart'));
+    };
+
+    const remove = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+    const clear = () => setItems([]);
+    const totalCents = useMemo(
+      () => items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0),
+      [items]
+    );
+
+    return { items, add, remove, clear, totalCents };
+  };
+
+  const { items, add, remove, clear, totalCents } = useLocalCart();
+  
+  console.log("🔄 Estado del carrito:", { isCartOpen, itemsCount: items.length });
 
   // Función para traducir nombres de paquetes/tarjetas
   const translatePackageName = useCallback((name: string) => {
@@ -207,48 +206,6 @@ const GiftCardsPage = () => {
     return cleanName;
   }, [t]);
 
-  // Hook para manejo del carrito local
-  const useLocalCart = () => {
-    const [items, setItems] = useState<CartItem[]>(() => {
-      try {
-        const raw = localStorage.getItem("cart:giftcards");
-        return raw ? (JSON.parse(raw) as CartItem[]) : [];
-      } catch {
-        return [];
-      }
-    });
-    useEffect(() => {
-      localStorage.setItem("cart:giftcards", JSON.stringify(items));
-    }, [items]);
-
-    const add = (item: Omit<CartItem, "quantity" | "id"> & { quantity?: number }) => {
-      setItems((prev) => {
-        const idx = prev.findIndex(
-          (i) => i.name === item.name && i.priceCents === item.priceCents
-        );
-        if (idx >= 0) {
-          const copy = [...prev];
-          copy[idx] = { ...copy[idx], quantity: copy[idx].quantity + (item.quantity ?? 1) };
-          return copy;
-        }
-        return [
-          ...prev,
-          { id: crypto.randomUUID(), name: item.name, priceCents: item.priceCents, quantity: item.quantity ?? 1 },
-        ];
-      });
-      toast.success(t('added_to_cart'));
-    };
-
-    const remove = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
-    const clear = () => setItems([]);
-    const totalCents = useMemo(
-      () => items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0),
-      [items]
-    );
-
-    return { items, add, remove, clear, totalCents };
-  };
-
   useEffect(() => {
     (async () => {
       const { data, error } = await (supabase as any)
@@ -260,7 +217,6 @@ const GiftCardsPage = () => {
     })();
   }, []);
 
-  const normalize = (s: string) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
   const giftItems: GiftCardItem[] = useMemo(() => {
     return (giftOptions || []).map((option: any) => ({
       id: option.id,
@@ -279,8 +235,6 @@ const GiftCardsPage = () => {
     const paraDos = giftItems.filter((i) => i.type === "fixed" && isDuo(i.name));
     return { individuales, cuatro, rituales, paraDos };
   }, [giftItems]);
-
-  const { items, add, remove, clear, totalCents } = useLocalCart();
 
   useEffect(() => {
     document.title = "Tarjetas Regalo | The Nook Madrid";
@@ -343,7 +297,7 @@ const GiftCardsPage = () => {
             <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" onClick={() => {
-                  console.log('Botón carrito clickeado');
+                  console.log('🛒 Botón carrito clickeado');
                   setIsCartOpen(true);
                 }}>{t('cart')} ({items.length})</Button>
               </SheetTrigger>
@@ -675,11 +629,11 @@ const GiftCardsPage = () => {
                                     size="sm"
                                     className="bg-blue-500 hover:bg-blue-600 text-white px-6"
                                      onClick={() => {
-                                       console.log('Botón Buy clickeado');
+                                       console.log('🛒 Botón COMPRAR clickeado');
                                       add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                      console.log('Producto añadido, abriendo carrito...');
+                                      console.log('📦 Producto añadido, abriendo carrito...');
                                       setIsCartOpen(true);
-                                      console.log('setIsCartOpen(true) ejecutado');
+                                      console.log('✅ setIsCartOpen(true) ejecutado');
                                     }}
                                   >
                                    {t('buy_button')}
@@ -785,10 +739,14 @@ const GiftCardsPage = () => {
                                  <Button
                                    size="sm"
                                    className="bg-blue-500 hover:bg-blue-600 text-white px-6"
-                                   onClick={() => {
-                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                     setIsCartOpen(true);
-                                   }}
+                                    onClick={() => {
+                                      console.log("🛒 Botón COMPRAR clickeado");
+                                      console.log("📦 Añadiendo al carrito:", { name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                      add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                      console.log("📂 Abriendo carrito...");
+                                      setIsCartOpen(true);
+                                      console.log("✅ Carrito abierto:", true);
+                                    }}
                                  >
                                    {t('buy_button')}
                                  </Button>
@@ -839,10 +797,14 @@ const GiftCardsPage = () => {
                                 <Button
                                   size="sm"
                                   className="bg-blue-500 hover:bg-blue-600 text-white px-4 text-xs"
-                                  onClick={() => {
-                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                    setIsCartOpen(true);
-                                  }}
+                                   onClick={() => {
+                                     console.log("🛒 Botón COMPRAR (rituales) clickeado");
+                                     console.log("📦 Añadiendo al carrito:", { name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                     console.log("📂 Abriendo carrito...");
+                                     setIsCartOpen(true);
+                                     console.log("✅ Carrito abierto:", true);
+                                   }}
                                  >
                                     {t('buy_button')}
                                   </Button>
