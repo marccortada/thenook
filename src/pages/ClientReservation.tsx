@@ -631,12 +631,13 @@ const ClientReservation = () => {
                              </Button>
                            </PopoverTrigger>
                            <PopoverContent 
-                             className="w-auto p-0 z-50 bg-popover border border-border shadow-lg"
+                             className="w-auto p-0 z-[60] bg-popover border border-border shadow-lg max-h-[80vh] overflow-y-auto"
                              align="start"
                              side="bottom"
                              sideOffset={4}
                              alignOffset={0}
                              avoidCollisions={true}
+                             collisionPadding={16}
                            >
                              <Calendar
                                mode="single"
@@ -710,12 +711,13 @@ const ClientReservation = () => {
                              </Button>
                            </PopoverTrigger>
                            <PopoverContent 
-                             className="w-full p-0 z-50 bg-popover border border-border shadow-lg max-h-60 overflow-y-auto"
+                             className="w-full p-0 z-[60] bg-popover border border-border shadow-lg max-h-60 overflow-y-auto"
                              align="start"
                              side="bottom"
                              sideOffset={4}
                              alignOffset={0}
                              avoidCollisions={true}
+                             collisionPadding={16}
                              onInteractOutside={() => setShowTimeDropdown(false)}
                            >
                              <div className="p-1">

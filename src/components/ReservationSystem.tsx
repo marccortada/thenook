@@ -718,12 +718,12 @@ const ReservationSystem = () => {
                                  </Button>
                                </PopoverTrigger>
                                <PopoverContent 
-                                 className="w-auto p-0 z-50 bg-popover border shadow-md" 
+                                 className="w-auto p-0 z-[60] bg-popover border shadow-md max-h-[80vh] overflow-y-auto" 
                                  align="start"
                                  side="bottom"
                                  sideOffset={8}
-                                 avoidCollisions={false}
-                                 collisionPadding={0}
+                                 avoidCollisions={true}
+                                 collisionPadding={16}
                                  sticky="always"
                                >
                                  <Calendar
@@ -818,13 +818,13 @@ const ReservationSystem = () => {
                                  <SelectValue placeholder="Selecciona una hora" />
                                </SelectTrigger>
                                <SelectContent 
-                                 className="max-h-48 sm:max-h-60 overflow-y-auto z-50 bg-popover border shadow-md"
+                                 className="max-h-48 sm:max-h-60 overflow-y-auto z-[60] bg-popover border shadow-md"
                                  position="popper"
                                  side="bottom"
                                  align="start"
                                  sideOffset={8}
-                                 avoidCollisions={false}
-                                 collisionPadding={0}
+                                 avoidCollisions={true}
+                                 collisionPadding={16}
                                >
                                  {timeSlots.map((time) => (
                                    <SelectItem 
@@ -1016,12 +1016,12 @@ const ReservationSystem = () => {
                                  </Button>
                                </PopoverTrigger>
                                <PopoverContent 
-                                 className="w-auto p-0 z-50 bg-popover border shadow-md" 
+                                 className="w-auto p-0 z-[60] bg-popover border shadow-md max-h-[80vh] overflow-y-auto" 
                                  align="start"
                                  side="bottom"
                                  sideOffset={8}
-                                 avoidCollisions={false}
-                                 collisionPadding={0}
+                                 avoidCollisions={true}
+                                 collisionPadding={16}
                                  sticky="always"
                                >
                                  <Calendar
@@ -1095,13 +1095,13 @@ const ReservationSystem = () => {
                                  <SelectValue placeholder="Selecciona una hora" />
                                </SelectTrigger>
                                <SelectContent 
-                                 className="max-h-48 sm:max-h-60 overflow-y-auto z-50 bg-popover border shadow-md"
+                                 className="max-h-48 sm:max-h-60 overflow-y-auto z-[60] bg-popover border shadow-md"
                                  position="popper"
                                  side="bottom"
                                  align="start"
                                  sideOffset={8}
-                                 avoidCollisions={false}
-                                 collisionPadding={0}
+                                 avoidCollisions={true}
+                                 collisionPadding={16}
                                >
                                  {timeSlots.map((time) => (
                                    <SelectItem 
