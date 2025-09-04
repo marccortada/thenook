@@ -301,7 +301,7 @@ const GiftCardsPage = () => {
                   setIsCartOpen(true);
                 }}>{t('cart')} ({items.length})</Button>
               </SheetTrigger>
-              <SheetContent className="w-[95vw] sm:w-[480px] flex flex-col max-h-[100vh] z-[100]" side="right">
+              <SheetContent className="w-[95vw] sm:w-[480px] flex flex-col max-h-[100vh] z-[9999] fixed" side="right">
                 <SheetHeader className="flex-shrink-0 pb-4">
                   <SheetTitle>{t('your_cart')}</SheetTitle>
                 </SheetHeader>
