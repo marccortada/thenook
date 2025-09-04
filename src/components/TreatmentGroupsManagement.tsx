@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Palette, Edit, Save, X } from 'lucide-react';
 import { useServices, useLanes, useCenters } from '@/hooks/useDatabase';
 import { useTreatmentGroups, CreateTreatmentGroupData } from '@/hooks/useTreatmentGroups';
@@ -206,101 +207,105 @@ const TreatmentGroupsManagement: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-6">
+      <Accordion type="multiple" className="space-y-4">
         {combinedGroups.map((group) => {
           const groupServices = classifyServices[group.id as keyof typeof classifyServices];
           const assignedLane = lanes.find(l => l.id === group.lane_id);
           const assignedCenter = centers.find(c => c.id === group.center_id);
           
           return (
-            <Card key={group.id} className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
-                    style={{ backgroundColor: group.dbGroup?.color || group.color }}
-                  />
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{group.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{group.description}</p>
-                    {assignedLane && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          Carril: {assignedLane.name}
-                        </Badge>
-                        {assignedCenter && (
-                          <Badge variant="secondary" className="text-xs">
-                            {assignedCenter.name}
+            <AccordionItem key={group.id} value={group.id} className="border rounded-lg overflow-hidden">
+              <Card className="border-0 shadow-none">
+                <AccordionTrigger className="hover:no-underline px-6 py-4">
+                  <div className="flex items-center gap-3 w-full">
+                    <div 
+                      className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
+                      style={{ backgroundColor: group.dbGroup?.color || group.color }}
+                    />
+                    <div className="flex-1 text-left">
+                      <CardTitle className="text-lg">{group.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{group.description}</p>
+                      {assignedLane && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            Carril: {assignedLane.name}
                           </Badge>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <Badge variant="outline" className="ml-auto">
-                    {groupServices.length} servicio{groupServices.length !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-                <div className="flex justify-end pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditGroup(group)}
-                    className="gap-2 text-xs sm:text-sm"
-                  >
-                    <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">Editar Grupo</span>
-                    <span className="sm:hidden">Editar</span>
-                  </Button>
-                </div>
-              </CardHeader>
-              
-              {groupServices.length > 0 && (
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                      Servicios incluidos:
-                    </h4>
-                    <div className="grid gap-2">
-                      {groupServices.map((service) => (
-                        <div 
-                          key={service.id}
-                          className="flex items-center justify-between p-3 rounded-lg border bg-card/50"
-                        >
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{service.name}</p>
-                            <div className="flex items-center gap-4 mt-1">
-                              <span className="text-xs text-muted-foreground">
-                                {service.duration_minutes} min
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {(service.price_cents / 100).toLocaleString('es-ES', { 
-                                  style: 'currency', 
-                                  currency: 'EUR' 
-                                })}
-                              </span>
-                              <Badge variant="secondary" className="text-xs">
-                                {service.type}
-                              </Badge>
-                            </div>
-                          </div>
+                          {assignedCenter && (
+                            <Badge variant="secondary" className="text-xs">
+                              {assignedCenter.name}
+                            </Badge>
+                          )}
                         </div>
-                      ))}
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {groupServices.length} servicio{groupServices.length !== 1 ? 's' : ''}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditGroup(group);
+                        }}
+                        className="gap-2 text-xs sm:text-sm"
+                      >
+                        <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Editar</span>
+                      </Button>
                     </div>
                   </div>
-                </CardContent>
-              )}
-              
-              {groupServices.length === 0 && (
-                <CardContent className="pt-0">
-                  <div className="text-center py-6 text-muted-foreground">
-                    <p className="text-sm">No hay servicios en esta categoría</p>
-                  </div>
-                </CardContent>
-              )}
-            </Card>
+                </AccordionTrigger>
+                
+                <AccordionContent>
+                  {groupServices.length > 0 ? (
+                    <CardContent className="pt-0 pb-4">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                          Servicios incluidos:
+                        </h4>
+                        <div className="grid gap-2">
+                          {groupServices.map((service) => (
+                            <div 
+                              key={service.id}
+                              className="flex items-center justify-between p-3 rounded-lg border bg-card/50"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{service.name}</p>
+                                <div className="flex items-center gap-4 mt-1">
+                                  <span className="text-xs text-muted-foreground">
+                                    {service.duration_minutes} min
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {(service.price_cents / 100).toLocaleString('es-ES', { 
+                                      style: 'currency', 
+                                      currency: 'EUR' 
+                                    })}
+                                  </span>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {service.type}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  ) : (
+                    <CardContent className="pt-0 pb-4">
+                      <div className="text-center py-6 text-muted-foreground">
+                        <p className="text-sm">No hay servicios en esta categoría</p>
+                      </div>
+                    </CardContent>
+                  )}
+                </AccordionContent>
+              </Card>
+            </AccordionItem>
           );
         })}
-      </div>
+      </Accordion>
 
       <Card className="border-dashed border-2">
         <CardContent className="pt-6">
