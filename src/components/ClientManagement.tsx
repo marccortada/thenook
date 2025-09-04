@@ -407,9 +407,12 @@ const ClientManagement = () => {
                             variant="outline"
                             size="icon"
                             asChild
-                            onClick={(e) => e.stopPropagation()}
                           >
-                            <a href={`mailto:${editingClient.email}`} title="Enviar email">
+                            <a 
+                              href={`mailto:${editingClient.email}`} 
+                              title="Enviar email"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <Mail className="h-4 w-4" />
                             </a>
                           </Button>
@@ -431,9 +434,12 @@ const ClientManagement = () => {
                             variant="outline"
                             size="icon"
                             asChild
-                            onClick={(e) => e.stopPropagation()}
                           >
-                            <a href={`tel:${editingClient.phone}`} title="Llamar">
+                            <a 
+                              href={`tel:${editingClient.phone}`} 
+                              title="Llamar"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <Phone className="h-4 w-4" />
                             </a>
                           </Button>
