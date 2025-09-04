@@ -758,163 +758,196 @@ const ReservationSystem = () => {
               </Accordion>
             )}
 
-            {/* Non-Admin Interface (Keep existing structure) */}
+            {/* Non-Admin Interface with Accordion */}
             {(!isAuthenticated || (!isAdmin && !isEmployee)) && (
-              <div className="space-y-6">
-                {/* ✅ CENTER SELECTION FIRST */}
-                <div className="space-y-4">
-                  <h3 className="font-medium flex items-center space-x-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>📍 Selección de Centro</span>
-                  </h3>
-                  
-                  <div>
-                    <Label htmlFor="center">Centro *</Label>
-                    <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value, service: "", employee: "", lane: "" })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un centro" />
-                      </SelectTrigger>
-                       <SelectContent 
-                         className="z-50 bg-popover border shadow-md"
-                         position="popper"
-                         side="bottom"
-                         align="start"
-                         sideOffset={8}
-                         avoidCollisions={false}
-                         collisionPadding={0}
-                       >
-                          {centers.map((center) => {
-                            // Debug center data
-                            if (!center.id || center.id === '') {
-                              console.error('ReservationSystem: Invalid center found:', center);
-                              return null;
-                            }
-                            return (
-                              <SelectItem key={center.id} value={center.id}>
-                                <div className="flex items-center space-x-2">
-                                  <MapPin className="h-3 w-3" />
-                                  <span>{center.name}</span>
-                                </div>
-                              </SelectItem>
-                            );
-                          }).filter(Boolean)}
-                       </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+              <Accordion type="single" collapsible className="w-full">
+                {/* Centro */}
+                <AccordionItem value="center">
+                  <AccordionTrigger className="text-left">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>📍 Selección de Centro</span>
+                      {formData.center && (
+                        <span className="text-sm text-muted-foreground ml-2">
+                          ({centers.find(c => c.id === formData.center)?.name})
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4 pt-2">
+                      <div>
+                        <Label htmlFor="center">Centro *</Label>
+                        <Select value={formData.center} onValueChange={(value) => setFormData({ ...formData, center: value, service: "", employee: "", lane: "" })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona un centro" />
+                          </SelectTrigger>
+                           <SelectContent 
+                             className="z-50 bg-popover border shadow-md"
+                             position="popper"
+                             side="bottom"
+                             align="start"
+                             sideOffset={8}
+                             avoidCollisions={false}
+                             collisionPadding={0}
+                           >
+                              {centers.map((center) => {
+                                // Debug center data
+                                if (!center.id || center.id === '') {
+                                  console.error('ReservationSystem: Invalid center found:', center);
+                                  return null;
+                                }
+                                return (
+                                  <SelectItem key={center.id} value={center.id}>
+                                    <div className="flex items-center space-x-2">
+                                      <MapPin className="h-3 w-3" />
+                                      <span>{center.name}</span>
+                                    </div>
+                                  </SelectItem>
+                                );
+                              }).filter(Boolean)}
+                           </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
 
                 {/* Service Selection - ONLY after center is selected */}
                 {formData.center && (
-                  <div className="space-y-4">
-                    <h3 className="font-medium">Selección de Servicio</h3>
-                    
-                    <div>
-                      <Label htmlFor="service">Servicio *</Label>
-                      {servicesLoading ? (
-                        <div className="flex items-center justify-center p-4">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                          <span className="ml-2">Cargando servicios...</span>
+                  <AccordionItem value="service">
+                    <AccordionTrigger className="text-left">
+                      <div className="flex items-center space-x-2">
+                        <CalendarDays className="h-4 w-4" />
+                        <span>Selección de Servicio</span>
+                        {formData.service && (
+                          <span className="text-sm text-muted-foreground ml-2">
+                            ({services.find(s => s.id === formData.service)?.name})
+                          </span>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-4 pt-2">
+                        <div>
+                          <Label htmlFor="service">Servicio *</Label>
+                          {servicesLoading ? (
+                            <div className="flex items-center justify-center p-4">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                              <span className="ml-2">Cargando servicios...</span>
+                            </div>
+                          ) : (
+                             <ServiceSelectorGrouped
+                               mode="individual"
+                               services={services}
+                               packages={[]}
+                               selectedId={formData.service}
+                               onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: 'individual' })}
+                             />
+                          )}
                         </div>
-                      ) : (
-                         <ServiceSelectorGrouped
-                           mode="individual"
-                           services={services}
-                           packages={[]}
-                           selectedId={formData.service}
-                           onSelect={(id, kind) => setFormData({ ...formData, service: id, serviceType: 'individual' })}
-                         />
-                      )}
-                    </div>
-                  </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
                 )}
 
                 {/* Date & Time */}
-                <div className="space-y-4">
-                  <h3 className="font-medium flex items-center space-x-2">
-                    <Clock className="h-4 w-4" />
-                    <span>Fecha y Hora</span>
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="date" className="text-sm font-medium">Fecha *</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
-                              !formData.date && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                            <span className="flex-1 truncate">
-                              {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
-                            </span>
-                            <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                         <PopoverContent 
-                           className="w-auto p-0 z-50 bg-popover border shadow-md" 
-                           align="start"
-                           side="bottom"
-                           sideOffset={8}
-                           avoidCollisions={false}
-                           collisionPadding={0}
-                           sticky="always"
-                         >
-                           <Calendar
-                             mode="single"
-                             selected={formData.date}
-                             onSelect={(date) => {
-                               console.log('Fecha seleccionada:', date);
-                               setFormData({ ...formData, date });
-                             }}
-                             disabled={(date) => date < new Date()}
-                             initialFocus
-                             className="p-2 sm:p-3 touch-manipulation pointer-events-auto"
-                           />
-                         </PopoverContent>
-                      </Popover>
+                <AccordionItem value="datetime">
+                  <AccordionTrigger className="text-left">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4" />
+                      <span>Fecha y Hora</span>
+                      {formData.date && formData.time && (
+                        <span className="text-sm text-muted-foreground ml-2">
+                          ({format(formData.date, "dd/MM/yyyy", { locale: es })} - {formData.time})
+                        </span>
+                      )}
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="time" className="text-sm font-medium">Hora *</Label>
-                      <Select 
-                        value={formData.time} 
-                        onValueChange={(value) => {
-                          console.log('Hora seleccionada:', value);
-                          setFormData({ ...formData, time: value });
-                        }}
-                      >
-                        <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
-                          <SelectValue placeholder="Selecciona una hora" />
-                        </SelectTrigger>
-                         <SelectContent 
-                           className="max-h-48 sm:max-h-60 overflow-y-auto z-50 bg-popover border shadow-md"
-                           position="popper"
-                           side="bottom"
-                           align="start"
-                           sideOffset={8}
-                           avoidCollisions={false}
-                           collisionPadding={0}
-                         >
-                           {timeSlots.map((time) => (
-                             <SelectItem 
-                               key={time} 
-                               value={time} 
-                               className="touch-manipulation cursor-pointer h-10 sm:h-auto text-sm sm:text-base"
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4 pt-2">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="date" className="text-sm font-medium">Fecha *</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal h-10 sm:h-11 text-sm sm:text-base",
+                                  !formData.date && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                                <span className="flex-1 truncate">
+                                  {formData.date ? format(formData.date, "PPP", { locale: es }) : "Selecciona una fecha"}
+                                </span>
+                                <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                             <PopoverContent 
+                               className="w-auto p-0 z-50 bg-popover border shadow-md" 
+                               align="start"
+                               side="bottom"
+                               sideOffset={8}
+                               avoidCollisions={false}
+                               collisionPadding={0}
+                               sticky="always"
                              >
-                               {time}
-                             </SelectItem>
-                           ))}
-                         </SelectContent>
-                      </Select>
+                               <Calendar
+                                 mode="single"
+                                 selected={formData.date}
+                                 onSelect={(date) => {
+                                   console.log('Fecha seleccionada:', date);
+                                   setFormData({ ...formData, date });
+                                 }}
+                                 disabled={(date) => date < new Date()}
+                                 initialFocus
+                                 className="p-2 sm:p-3 touch-manipulation pointer-events-auto"
+                               />
+                             </PopoverContent>
+                          </Popover>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="time" className="text-sm font-medium">Hora *</Label>
+                          <Select 
+                            value={formData.time} 
+                            onValueChange={(value) => {
+                              console.log('Hora seleccionada:', value);
+                              setFormData({ ...formData, time: value });
+                            }}
+                          >
+                            <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                              <SelectValue placeholder="Selecciona una hora" />
+                            </SelectTrigger>
+                             <SelectContent 
+                               className="max-h-48 sm:max-h-60 overflow-y-auto z-50 bg-popover border shadow-md"
+                               position="popper"
+                               side="bottom"
+                               align="start"
+                               sideOffset={8}
+                               avoidCollisions={false}
+                               collisionPadding={0}
+                             >
+                               {timeSlots.map((time) => (
+                                 <SelectItem 
+                                   key={time} 
+                                   value={time} 
+                                   className="touch-manipulation cursor-pointer h-10 sm:h-auto text-sm sm:text-base"
+                                 >
+                                   {time}
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
 
             {/* Notes */}
