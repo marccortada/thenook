@@ -192,7 +192,7 @@ const TreatmentGroupsManagement: React.FC = () => {
       const dataToSave = {
         name: formData.name,
         color: formData.color,
-        center_id: formData.center_id || null,
+        center_id: formData.center_id === 'all' ? null : (formData.center_id || null),
         lane_ids: formData.lane_ids || [],
         active: formData.active,
       };

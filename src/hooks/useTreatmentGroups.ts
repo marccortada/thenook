@@ -123,6 +123,7 @@ export const useTreatmentGroups = () => {
         center_id: updates.center_id || null,
         lane_ids: updates.lane_ids || [],
         active: updates.active !== undefined ? updates.active : true,
+        updated_at: new Date().toISOString(),
       };
 
       const { data, error } = await supabase
