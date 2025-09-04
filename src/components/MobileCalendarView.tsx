@@ -91,47 +91,69 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     }
   }) || [];
 
-  // Get booking for specific lane and time
+  // Get booking for specific lane and time - improved to handle duration
   const getBookingForSlot = (laneId: string, timeStr: string) => {
     return filteredBookings.find(booking => {
-      if (!booking.booking_datetime) return false;
+      if (!booking.booking_datetime || booking.lane_id !== laneId) return false;
       
       try {
         const bookingTime = parseISO(booking.booking_datetime);
         const bookingTimeStr = format(bookingTime, 'HH:mm');
-        const duration = booking.duration_minutes || 60;
         
-        // Check if the booking overlaps with this time slot
-        const slotTime = new Date();
-        const [hours, minutes] = timeStr.split(':');
-        slotTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        
-        const bookingStart = new Date();
-        bookingStart.setHours(bookingTime.getHours(), bookingTime.getMinutes(), 0, 0);
-        
-        const bookingEnd = new Date(bookingStart.getTime() + duration * 60000);
-        
-        return (
-          booking.lane_id === laneId &&
-          slotTime >= bookingStart &&
-          slotTime < bookingEnd
-        );
+        // Check if this is the start time of the booking
+        return bookingTimeStr === timeStr;
       } catch (error) {
         return false;
       }
     });
   };
 
-  // Get status colors
+  // Check if a slot is occupied by a booking (for duration spanning)
+  const isSlotOccupied = (laneId: string, timeStr: string) => {
+    return filteredBookings.some(booking => {
+      if (!booking.booking_datetime || booking.lane_id !== laneId) return false;
+      
+      try {
+        const bookingTime = parseISO(booking.booking_datetime);
+        const duration = booking.duration_minutes || 60;
+        
+        const slotTime = new Date();
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        slotTime.setHours(hours, minutes, 0, 0);
+        
+        const bookingStart = new Date();
+        bookingStart.setHours(bookingTime.getHours(), bookingTime.getMinutes(), 0, 0);
+        
+        const bookingEnd = new Date(bookingStart.getTime() + duration * 60000);
+        
+        return slotTime >= bookingStart && slotTime < bookingEnd;
+      } catch (error) {
+        return false;
+      }
+    });
+  };
+
+  // Get status colors - improved colors
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmed': return 'bg-blue-500/20 border-blue-500 text-blue-700';
-      case 'pending': return 'bg-yellow-500/20 border-yellow-500 text-yellow-700';
-      case 'cancelled': return 'bg-red-500/20 border-red-500 text-red-700';
-      case 'completed': return 'bg-green-500/20 border-green-500 text-green-700';
-      case 'no_show': return 'bg-gray-500/20 border-gray-500 text-gray-700';
-      default: return 'bg-gray-500/20 border-gray-500 text-gray-700';
+      case 'confirmed': return 'bg-blue-100 border-l-4 border-l-blue-500 text-blue-800';
+      case 'pending': return 'bg-yellow-100 border-l-4 border-l-yellow-500 text-yellow-800';
+      case 'cancelled': return 'bg-red-100 border-l-4 border-l-red-500 text-red-800';
+      case 'completed': return 'bg-green-100 border-l-4 border-l-green-500 text-green-800';
+      case 'no_show': return 'bg-gray-100 border-l-4 border-l-gray-500 text-gray-800';
+      default: return 'bg-blue-100 border-l-4 border-l-blue-500 text-blue-800';
     }
+  };
+
+  // Get lane colors for headers
+  const getLaneColor = (index: number) => {
+    const colors = [
+      'border-l-4 border-l-blue-500 bg-blue-50',      // Carril 1 - Azul
+      'border-l-4 border-l-green-500 bg-green-50',    // Carril 2 - Verde  
+      'border-l-4 border-l-purple-500 bg-purple-50',  // Carril 3 - Morado
+      'border-l-4 border-l-orange-500 bg-orange-50'   // Carril 4 - Naranja
+    ];
+    return colors[index] || colors[0];
   };
 
   const handleBookingClick = (booking: any) => {
@@ -145,130 +167,147 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const currentCenter = centers.find(c => c.id === activeCenter);
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4 safe-area-top">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
+    <div className="h-screen flex flex-col bg-white">
+      {/* Header mejorado */}
+      <div className="bg-white p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Calendar className="h-4 w-4 text-gray-600" />
+            </div>
             <div>
-              <h1 className="text-lg font-semibold">The Nook Madrid</h1>
-              <p className="text-sm opacity-90">{currentCenter?.name || 'Centro'}</p>
+              <h1 className="text-lg font-semibold text-gray-900">The Nook Madrid</h1>
+              <p className="text-sm text-gray-500">{currentCenter?.name || 'Zurbarán'}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold">
+            <p className="text-2xl font-bold text-gray-900">
               {format(currentDate, 'd')}
             </p>
-            <p className="text-sm opacity-90">
+            <p className="text-sm text-gray-500">
               {format(currentDate, 'MMM', { locale: es })}
             </p>
           </div>
-        </div>
-
-        {/* Date Navigation */}
-        <div className="flex items-center justify-between">
           <Button
             variant="outline"
             size="sm"
-            onClick={goToPreviousDay}
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            className="bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200"
           >
-            <ChevronLeft className="h-4 w-4" />
+            Bloquear
+          </Button>
+        </div>
+
+        {/* Tabs de navegación Día/Semana */}
+        <div className="flex bg-blue-100 rounded-lg p-1 mb-3">
+          <button className="flex-1 py-2 px-4 bg-blue-500 text-white rounded-md text-sm font-medium">
+            Día
+          </button>
+          <button className="flex-1 py-2 px-4 text-blue-600 text-sm font-medium">
+            Semana
+          </button>
+        </div>
+
+        {/* Date Navigation mejorado */}
+        <div className="flex items-center justify-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={goToPreviousDay}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <ChevronLeft className="h-5 w-5" />
           </Button>
           
-          <div className="text-center">
-            <p className="text-lg font-medium">
+          <div className="text-center min-w-[200px]">
+            <p className="text-base font-medium text-gray-900">
               {format(currentDate, "EEEE, d 'de' MMMM", { locale: es })}
             </p>
           </div>
           
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={goToNextDay}
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            className="text-gray-600 hover:text-gray-900"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
-
-        {/* Center Selection */}
-        {centers.length > 1 && (
-          <div className="mt-3">
-            <Select value={activeCenter} onValueChange={setActiveCenter}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Seleccionar centro" />
-              </SelectTrigger>
-              <SelectContent>
-                {centers.map((center) => (
-                  <SelectItem key={center.id} value={center.id}>
-                    {center.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
       </div>
 
-      {/* Lane Headers */}
-      <div className="grid grid-cols-5 border-b bg-muted/30">
-        <div className="p-2 text-xs font-medium text-center border-r">
-          Hora
+      {/* Lane Headers mejorados */}
+      <div className="grid grid-cols-5 bg-gray-50 border-b border-gray-200">
+        <div className="p-3 text-center border-r border-gray-200">
+          <div className="text-sm font-medium text-gray-700">Hora</div>
         </div>
         {centerLanes.slice(0, 4).map((lane, index) => (
-          <div key={lane.id} className="p-2 text-center border-r last:border-r-0">
-            <div className="text-xs font-medium">Carril {index + 1}</div>
-            <div className="text-[10px] text-muted-foreground">Cap: 1</div>
+          <div key={lane.id} className={`p-3 text-center border-r border-gray-200 last:border-r-0 ${getLaneColor(index)}`}>
+            <div className="text-sm font-semibold text-gray-800">Carril {index + 1}</div>
+            <div className="text-xs text-gray-600">Cap: 1</div>
           </div>
         ))}
       </div>
 
-      {/* Calendar Grid */}
-      <ScrollArea className="flex-1">
+      {/* Calendar Grid mejorado */}
+      <ScrollArea className="flex-1 bg-white">
         <div className="min-h-full">
-          {timeSlots.map((timeStr) => {
-            // Only show times from 10:10 onwards for display
+          {timeSlots.map((timeStr, timeIndex) => {
+            // Solo mostrar desde 10:10 en adelante
             const [hour, minute] = timeStr.split(':').map(Number);
             if (hour < 10 || (hour === 10 && minute < 10)) return null;
 
             return (
-              <div key={timeStr} className="grid grid-cols-5 border-b min-h-[60px]">
-                {/* Time column */}
-                <div className="p-2 text-xs font-medium border-r bg-muted/20 flex items-center justify-center">
-                  {timeStr}
+              <div key={timeStr} className="grid grid-cols-5 border-b border-gray-100 min-h-[48px]">
+                {/* Columna de tiempo */}
+                <div className="p-2 text-center border-r border-gray-200 bg-gray-50 flex items-center justify-center">
+                  <span className="text-sm font-medium text-gray-700">{timeStr}</span>
                 </div>
 
-                {/* Lane columns */}
-                {centerLanes.slice(0, 4).map((lane) => {
+                {/* Columnas de carriles */}
+                {centerLanes.slice(0, 4).map((lane, laneIndex) => {
                   const booking = getBookingForSlot(lane.id, timeStr);
+                  const isOccupied = isSlotOccupied(lane.id, timeStr);
+                  const isStartOfBooking = !!booking;
                   
                   return (
                     <div 
                       key={`${lane.id}-${timeStr}`} 
-                      className="border-r last:border-r-0 p-1 min-h-[60px] relative"
+                      className="border-r border-gray-200 last:border-r-0 p-1 min-h-[48px] relative bg-white"
                     >
-                      {booking && (
+                      {isStartOfBooking && booking && (
                         <div
                           onClick={() => handleBookingClick(booking)}
                           className={cn(
-                            "w-full h-full rounded-md border cursor-pointer transition-all hover:shadow-md",
+                            "w-full rounded-md cursor-pointer transition-all hover:shadow-md p-2 text-left",
                             getStatusColor(booking.status)
                           )}
+                          style={{
+                            height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 8}px`,
+                            zIndex: 10
+                          }}
                         >
-                          <div className="p-2 text-xs">
-                            <div className="font-medium truncate">
-                              {booking.profiles?.first_name || 'Cliente'}
-                            </div>
-                            <div className="text-[10px] opacity-75 truncate">
-                              {booking.services?.name || 'Servicio'}
-                            </div>
-                            <div className="text-[10px] opacity-75">
-                              €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
-                            </div>
+                          <div className="text-sm font-semibold truncate">
+                            {booking.profiles?.first_name || 'sanju'}
                           </div>
+                          <div className="text-xs text-gray-600 truncate">
+                            {booking.services?.name || 'Anticelulítico / Reductor'}
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
+                          </div>
+                          <button 
+                            className="absolute top-1 right-1 w-5 h-5 text-gray-400 hover:text-gray-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Handle close/cancel
+                            }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </div>
+                      )}
+                      {isOccupied && !isStartOfBooking && (
+                        <div className="w-full h-full bg-blue-50 opacity-50 pointer-events-none"></div>
                       )}
                     </div>
                   );
