@@ -217,37 +217,51 @@ const TreatmentGroupsManagement: React.FC = () => {
     try {
       if (!editingService) return;
 
+      console.log('Saving service with data:', serviceFormData);
+      console.log('Original service:', editingService);
+
       const updateData: any = {};
       
       // Actualizar color si ha cambiado
       if (serviceFormData.color !== editingService.color) {
         updateData.color = serviceFormData.color;
+        console.log('Color changed from', editingService.color, 'to', serviceFormData.color);
       }
       
       // Actualizar lane_ids si ha cambiado
       if (JSON.stringify(serviceFormData.lane_ids) !== JSON.stringify(editingService.lane_ids || [])) {
         updateData.lane_ids = serviceFormData.lane_ids;
+        console.log('Lane IDs changed from', editingService.lane_ids, 'to', serviceFormData.lane_ids);
       }
       
       // Actualizar center_id si ha cambiado
       if (serviceFormData.center_id !== editingService.center_id) {
         updateData.center_id = serviceFormData.center_id || null;
+        console.log('Center ID changed from', editingService.center_id, 'to', serviceFormData.center_id);
       }
       
       // Actualizar group_id si ha cambiado
       if (serviceFormData.group_id && serviceFormData.group_id !== editingService.group_id) {
         updateData.group_id = serviceFormData.group_id;
+        console.log('Group ID changed from', editingService.group_id, 'to', serviceFormData.group_id);
       }
 
+      console.log('Update data to send:', updateData);
+
       if (Object.keys(updateData).length > 0) {
-        const { error } = await supabase.from('services')
+        const { data, error } = await supabase.from('services')
           .update(updateData)
-          .eq('id', editingService.id);
+          .eq('id', editingService.id)
+          .select('*')
+          .single();
 
         if (error) {
+          console.error('Database update error:', error);
           toast({ title: 'Error', description: `No se pudo actualizar el servicio: ${error.message}`, variant: 'destructive' });
           return;
         }
+
+        console.log('Service updated successfully:', data);
       }
 
       toast({ 
@@ -256,11 +270,14 @@ const TreatmentGroupsManagement: React.FC = () => {
       });
       
       // Actualizar los datos inmediatamente sin recargar la página
+      console.log('Refetching services...');
       await refetchServices();
+      console.log('Services refetched successfully');
       
       setIsServiceDialogOpen(false);
       setEditingService(null);
     } catch (err) {
+      console.error('Error in handleSaveService:', err);
       toast({ title: 'Error', description: 'Error inesperado al actualizar el servicio', variant: 'destructive' });
     }
   };
@@ -380,24 +397,36 @@ const TreatmentGroupsManagement: React.FC = () => {
                              <div 
                                key={service.id}
                                className="service-item flex items-center justify-between p-3 rounded-lg border bg-card/50"
-                             >
-                               <div className="flex-1">
-                                 <p className="font-medium text-sm">{service.name}</p>
-                                 <div className="flex items-center gap-4 mt-1">
-                                   <span className="text-xs text-muted-foreground">
-                                     {service.duration_minutes} min
-                                   </span>
-                                   <span className="text-xs text-muted-foreground">
-                                     {(service.price_cents / 100).toLocaleString('es-ES', { 
-                                       style: 'currency', 
-                                       currency: 'EUR' 
-                                     })}
-                                   </span>
-                                   <Badge variant="secondary" className="text-xs">
-                                     {service.type}
-                                   </Badge>
-                                 </div>
-                               </div>
+                              >
+                                <div className="flex items-center gap-3 flex-1">
+                                  <div 
+                                    className="w-4 h-4 rounded-full border border-border flex-shrink-0"
+                                    style={{ backgroundColor: service.color || '#3B82F6' }}
+                                    title={`Color: ${service.color || '#3B82F6'}`}
+                                  />
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">{service.name}</p>
+                                    <div className="flex items-center gap-4 mt-1">
+                                      <span className="text-xs text-muted-foreground">
+                                        {service.duration_minutes} min
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {(service.price_cents / 100).toLocaleString('es-ES', { 
+                                          style: 'currency', 
+                                          currency: 'EUR' 
+                                        })}
+                                      </span>
+                                      <Badge variant="secondary" className="text-xs">
+                                        {service.type}
+                                      </Badge>
+                                      {service.lane_ids && service.lane_ids.length > 0 && (
+                                        <Badge variant="outline" className="text-xs">
+                                          {service.lane_ids.length} carril{service.lane_ids.length !== 1 ? 'es' : ''}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
                                <Button
                                  size="sm"
                                  variant="outline"

@@ -147,7 +147,7 @@ export const useServices = (centerId?: string) => {
       setLoading(true);
       let query = (supabase as any)
         .from('services')
-        .select('*')
+        .select('*, color, lane_ids') // Específicamente incluir las nuevas columnas
         .eq('active', true);
 
       if (centerId) {
@@ -158,8 +158,11 @@ export const useServices = (centerId?: string) => {
       const { data, error } = await query.order('name');
 
       if (error) throw error;
+      
+      console.log('Services fetched:', data); // Debug log
       setServices(data || []);
     } catch (err) {
+      console.error('Error fetching services:', err); // Debug log
       setError(err instanceof Error ? err.message : 'Error fetching services');
     } finally {
       setLoading(false);
