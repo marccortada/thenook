@@ -53,7 +53,7 @@ const TreatmentGroupsManagement: React.FC = () => {
   const { services, refetch: refetchServices } = useServices();
   const { lanes } = useLanes();
   const { centers } = useCenters();
-  const { treatmentGroups, createTreatmentGroup, updateTreatmentGroup } = useTreatmentGroups();
+  const { treatmentGroups, createTreatmentGroup, updateTreatmentGroup, fetchTreatmentGroups } = useTreatmentGroups();
   const { toast } = useToast();
 
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
@@ -174,6 +174,9 @@ const TreatmentGroupsManagement: React.FC = () => {
         await createTreatmentGroup(dataToSave);
       }
 
+      // Refrescar datos para asegurar que se ven los cambios
+      await fetchTreatmentGroups();
+
       toast({
         title: 'Éxito',
         description: 'Grupo actualizado correctamente',
@@ -181,6 +184,7 @@ const TreatmentGroupsManagement: React.FC = () => {
 
       setIsDialogOpen(false);
       setEditingGroup(null);
+      resetForm();
     } catch (error) {
       toast({
         title: 'Error',

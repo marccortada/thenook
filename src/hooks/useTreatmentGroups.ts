@@ -115,9 +115,17 @@ export const useTreatmentGroups = () => {
 
   const updateTreatmentGroup = async (id: string, updates: Partial<CreateTreatmentGroupData>) => {
     try {
+      const updateData = {
+        name: updates.name,
+        color: updates.color,
+        center_id: updates.center_id || null,
+        lane_ids: updates.lane_ids || [],
+        active: updates.active !== undefined ? updates.active : true,
+      };
+
       const { data, error } = await supabase
         .from('treatment_groups')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
