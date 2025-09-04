@@ -81,7 +81,7 @@ const SelectContent = React.forwardRef<
       position="popper"
       side="bottom"
       align="start"
-      sideOffset={12}
+      sideOffset={24}
       avoidCollisions={true}
       collisionPadding={20}
       {...props}
