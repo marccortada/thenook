@@ -919,7 +919,11 @@ export default function AdminPricingPromos() {
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent 
+                              className="z-[60] bg-background border shadow-lg" 
+                              position="popper"
+                              sideOffset={4}
+                            >
                               {serviceTypes.map((type) => (
                                 <SelectItem key={type.value} value={type.value}>
                                   {type.label}
