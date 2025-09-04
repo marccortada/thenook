@@ -383,14 +383,9 @@ export default function BookingManagement() {
 
       {/* Payment Modal - Positioned above selected booking */}
       {showPaymentDialog && (
-        <div className="fixed inset-0 bg-black/50 z-50">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div 
-            className="absolute bg-white rounded-lg shadow-xl w-full max-w-2xl lg:max-w-3xl max-h-[80vh] overflow-y-auto"
-            style={{
-              top: `${modalPosition.top}px`,
-              left: `${modalPosition.left}px`,
-              maxWidth: 'calc(100vw - 40px)' // Ensure it doesn't go off screen
-            }}
+            className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto mx-auto"
           >
             <div className="p-6 lg:p-8">
               <div className="flex items-center gap-3 mb-6">
