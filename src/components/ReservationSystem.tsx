@@ -1001,47 +1001,47 @@ const ReservationSystem = () => {
                                    </span>
                                  </Button>
                                </DrawerTrigger>
-                               <DrawerContent className="max-h-[85vh]">
-                                 <DrawerHeader className="text-center">
-                                   <DrawerTitle className="text-lg font-semibold">Seleccionar Fecha</DrawerTitle>
-                                 </DrawerHeader>
-                                 <div className="px-4 pb-6 overflow-y-auto flex-1">
-                                   <div className="flex justify-center">
-                                     <Calendar
-                                       mode="single"
-                                       selected={formData.date}
-                                       onSelect={(date) => {
-                                         console.log('Fecha seleccionada:', date);
-                                         setFormData({ ...formData, date });
-                                       }}
-                                       disabled={(date) => date < new Date()}
-                                       locale={es}
-                                       className="w-full max-w-sm mx-auto"
-                                       classNames={{
-                                         months: "flex flex-col space-y-4 w-full",
-                                         month: "space-y-4 w-full",
-                                         caption: "flex justify-center pt-1 relative items-center w-full",
-                                         caption_label: "text-base font-semibold text-foreground",
-                                         nav: "space-x-1 flex items-center",
-                                         nav_button: "h-9 w-9 bg-transparent p-0 opacity-70 hover:opacity-100 border border-input hover:bg-accent hover:text-accent-foreground rounded-md",
-                                         nav_button_previous: "absolute left-4",
-                                         nav_button_next: "absolute right-4",
-                                         table: "w-full border-collapse space-y-1",
-                                         head_row: "flex w-full",
-                                         head_cell: "text-muted-foreground rounded-md w-10 font-normal text-sm flex items-center justify-center py-2",
-                                         row: "flex w-full mt-2",
-                                         cell: "text-center text-sm p-0 relative w-10 h-10 flex items-center justify-center",
-                                         day: "h-9 w-9 p-0 font-normal text-sm cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors flex items-center justify-center",
-                                         day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                                         day_today: "bg-accent text-accent-foreground font-semibold",
-                                         day_outside: "text-muted-foreground opacity-50",
-                                         day_disabled: "text-muted-foreground opacity-30 cursor-not-allowed",
-                                         day_hidden: "invisible",
-                                       }}
-                                     />
-                                   </div>
-                                 </div>
-                               </DrawerContent>
+                                <DrawerContent className="max-h-[90vh]">
+                                  <DrawerHeader className="text-center pb-2">
+                                    <DrawerTitle className="text-xl font-semibold">Seleccionar Fecha</DrawerTitle>
+                                  </DrawerHeader>
+                                  <div className="px-6 pb-8 overflow-y-auto flex-1">
+                                    <div className="flex justify-center">
+                                      <Calendar
+                                        mode="single"
+                                        selected={formData.date}
+                                        onSelect={(date) => {
+                                          console.log('Fecha seleccionada:', date);
+                                          setFormData({ ...formData, date });
+                                        }}
+                                        disabled={(date) => date < new Date()}
+                                        locale={es}
+                                        className="w-full max-w-sm mx-auto p-3 pointer-events-auto"
+                                        classNames={{
+                                          months: "flex flex-col space-y-6 w-full",
+                                          month: "space-y-6 w-full",
+                                          caption: "flex justify-center pt-2 relative items-center w-full mb-4",
+                                          caption_label: "text-lg font-bold text-foreground",
+                                          nav: "space-x-1 flex items-center",
+                                          nav_button: "h-12 w-12 bg-transparent p-0 opacity-80 hover:opacity-100 border-2 border-input hover:bg-accent hover:text-accent-foreground rounded-lg transition-all",
+                                          nav_button_previous: "absolute left-2",
+                                          nav_button_next: "absolute right-2",
+                                          table: "w-full border-collapse space-y-2",
+                                          head_row: "flex w-full mb-2",
+                                          head_cell: "text-muted-foreground rounded-md w-12 font-semibold text-base flex items-center justify-center py-3",
+                                          row: "flex w-full mt-3",
+                                          cell: "text-center text-base p-1 relative w-12 h-12 flex items-center justify-center",
+                                          day: "h-11 w-11 p-0 font-medium text-base cursor-pointer rounded-lg hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-all duration-200 flex items-center justify-center border border-transparent hover:border-accent-foreground/20",
+                                          day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground border-primary",
+                                          day_today: "bg-accent text-accent-foreground font-bold border-accent-foreground/30",
+                                          day_outside: "text-muted-foreground opacity-40",
+                                          day_disabled: "text-muted-foreground opacity-20 cursor-not-allowed",
+                                          day_hidden: "invisible",
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </DrawerContent>
                              </Drawer>
                            ) : (
                              <Popover>
@@ -1105,29 +1105,29 @@ const ReservationSystem = () => {
                                    </span>
                                  </Button>
                                </DrawerTrigger>
-                               <DrawerContent className="max-h-[85vh]">
-                                 <DrawerHeader className="text-center">
-                                   <DrawerTitle className="text-lg font-semibold">Seleccionar Hora</DrawerTitle>
-                                 </DrawerHeader>
-                                 <div className="px-4 pb-6 overflow-y-auto flex-1">
-                                   <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
-                                     {timeSlots.map((time) => (
-                                       <Button
-                                         key={time}
-                                         variant={formData.time === time ? "default" : "outline"}
-                                         size="sm"
-                                         onClick={() => {
-                                           console.log('Hora seleccionada:', time);
-                                           setFormData({ ...formData, time });
-                                         }}
-                                         className="h-14 text-sm font-medium min-w-0 flex items-center justify-center"
-                                       >
-                                         {time}
-                                       </Button>
-                                     ))}
-                                   </div>
-                                 </div>
-                               </DrawerContent>
+                                <DrawerContent className="max-h-[90vh]">
+                                  <DrawerHeader className="text-center pb-2">
+                                    <DrawerTitle className="text-xl font-semibold">Seleccionar Hora</DrawerTitle>
+                                  </DrawerHeader>
+                                  <div className="px-6 pb-8 overflow-y-auto flex-1">
+                                    <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
+                                      {timeSlots.map((time) => (
+                                        <Button
+                                          key={time}
+                                          variant={formData.time === time ? "default" : "outline"}
+                                          size="lg"
+                                          onClick={() => {
+                                            console.log('Hora seleccionada:', time);
+                                            setFormData({ ...formData, time });
+                                          }}
+                                          className="h-16 text-base font-semibold min-w-0 flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+                                        >
+                                          {time}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </DrawerContent>
                              </Drawer>
                            ) : (
                              <Select 
