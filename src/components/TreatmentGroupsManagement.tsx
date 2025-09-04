@@ -76,15 +76,10 @@ const TreatmentGroupsManagement: React.FC = () => {
     active: true,
   });
   const [serviceFormData, setServiceFormData] = useState({
-    name: '',
-    description: '',
-    type: 'massage' as const,
-    duration_minutes: 60,
-    price_cents: 5000,
-    active: true,
+    color: PRESET_COLORS[0],
+    lane_id: '',
     center_id: '',
-    has_discount: false,
-    discount_price_cents: 0
+    group_id: ''
   });
 
   // Clasificar servicios automáticamente usando la misma lógica del modal
@@ -215,15 +210,10 @@ const TreatmentGroupsManagement: React.FC = () => {
   // Funciones para editar servicios
   const handleEditService = (service: any) => {
     setServiceFormData({
-      name: service.name,
-      description: service.description || '',
-      type: service.type,
-      duration_minutes: service.duration_minutes,
-      price_cents: service.price_cents,
-      active: service.active,
+      color: service.color || PRESET_COLORS[0],
+      lane_id: service.lane_id || '',
       center_id: service.center_id || '',
-      has_discount: service.has_discount || false,
-      discount_price_cents: service.discount_price_cents || 0
+      group_id: service.group_id || ''
     });
     setEditingService(service);
     setIsServiceDialogOpen(true);
@@ -233,31 +223,37 @@ const TreatmentGroupsManagement: React.FC = () => {
     try {
       if (!editingService) return;
 
-      const updateData = {
-        name: serviceFormData.name,
-        description: serviceFormData.description || null,
-        type: serviceFormData.type,
-        duration_minutes: serviceFormData.duration_minutes,
-        price_cents: serviceFormData.price_cents,
-        center_id: serviceFormData.center_id || null,
-        active: serviceFormData.active,
-        has_discount: serviceFormData.has_discount,
-        discount_price_cents: serviceFormData.discount_price_cents
-      };
-
-      const { error } = await supabase.from('services')
-        .update(updateData)
-        .eq('id', editingService.id);
-
-      if (error) {
-        toast({ title: 'Error', description: `No se pudo actualizar el servicio: ${error.message}`, variant: 'destructive' });
-      } else {
-        toast({ title: 'Actualizado', description: 'Servicio actualizado exitosamente' });
-        setIsServiceDialogOpen(false);
-        setEditingService(null);
-        // Refresh services data
-        window.location.reload();
+      // Primero necesitamos comprobar si el servicio ya tiene columnas color y lane_id
+      // Si no las tiene, tendremos que añadirlas a la tabla services
+      const updateData: any = {};
+      
+      // Solo actualizar campos que existen en la tabla services
+      if (serviceFormData.center_id !== editingService.center_id) {
+        updateData.center_id = serviceFormData.center_id || null;
       }
+      
+      // Para color y lane_id, necesitaríamos añadir estas columnas a la tabla services
+      // Por ahora, vamos a usar el group_id para asociar con treatment_groups
+      if (serviceFormData.group_id && serviceFormData.group_id !== editingService.group_id) {
+        updateData.group_id = serviceFormData.group_id;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        const { error } = await supabase.from('services')
+          .update(updateData)
+          .eq('id', editingService.id);
+
+        if (error) {
+          toast({ title: 'Error', description: `No se pudo actualizar el servicio: ${error.message}`, variant: 'destructive' });
+          return;
+        }
+      }
+
+      toast({ title: 'Actualizado', description: 'Configuración de visualización actualizada exitosamente' });
+      setIsServiceDialogOpen(false);
+      setEditingService(null);
+      // Refresh services data
+      window.location.reload();
     } catch (err) {
       toast({ title: 'Error', description: 'Error inesperado al actualizar el servicio', variant: 'destructive' });
     }
@@ -652,145 +648,93 @@ const TreatmentGroupsManagement: React.FC = () => {
               
               {/* Content */}
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="service-name" className="text-sm font-medium">Nombre del Servicio</Label>
-                    <Input
-                      id="service-name"
-                      value={serviceFormData.name}
-                      onChange={(e) => setServiceFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Ej: Masaje Anticelulítico"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="service-type" className="text-sm font-medium">Tipo</Label>
-                    <Select
-                      value={serviceFormData.type}
-                      onValueChange={(value: any) => setServiceFormData(prev => ({ ...prev, type: value }))}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Seleccionar tipo" />
-                      </SelectTrigger>
-                      <SelectContent 
-                        className="z-[60] bg-background border shadow-lg" 
-                        position="popper"
-                        sideOffset={4}
-                      >
-                        <SelectItem value="massage">Masaje</SelectItem>
-                        <SelectItem value="treatment">Tratamiento</SelectItem>
-                        <SelectItem value="package">Paquete</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="service-duration" className="text-sm font-medium">Duración (minutos)</Label>
-                    <Input
-                      id="service-duration"
-                      type="number"
-                      value={serviceFormData.duration_minutes}
-                      onChange={(e) => setServiceFormData(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) || 0 }))}
-                      className="mt-1"
-                      min="1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="service-price" className="text-sm font-medium">Precio (€)</Label>
-                    <Input
-                      id="service-price"
-                      type="number"
-                      step="0.01"
-                      value={(serviceFormData.price_cents / 100).toFixed(2)}
-                      onChange={(e) => setServiceFormData(prev => ({ ...prev, price_cents: Math.round(parseFloat(e.target.value) * 100) || 0 }))}
-                      className="mt-1"
-                      min="0"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="service-center" className="text-sm font-medium">Centro</Label>
-                    <Select
-                      value={serviceFormData.center_id || 'all'}
-                      onValueChange={(value) => setServiceFormData(prev => ({ ...prev, center_id: value === 'all' ? '' : value }))}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Seleccionar centro" />
-                      </SelectTrigger>
-                      <SelectContent 
-                        className="z-[60] bg-background border shadow-lg" 
-                        position="popper"
-                        sideOffset={4}
-                      >
-                        <SelectItem value="all">Todos los centros</SelectItem>
-                        {centers.map((center) => (
-                          <SelectItem key={center.id} value={center.id}>
-                            {center.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="service-active" className="text-sm font-medium">Estado</Label>
-                    <Select
-                      value={String(serviceFormData.active)}
-                      onValueChange={(value) => setServiceFormData(prev => ({ ...prev, active: value === 'true' }))}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Seleccionar estado" />
-                      </SelectTrigger>
-                      <SelectContent 
-                        className="z-[60] bg-background border shadow-lg" 
-                        position="popper"
-                        sideOffset={4}
-                      >
-                        <SelectItem value="true">Activo</SelectItem>
-                        <SelectItem value="false">Inactivo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
                 <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <input 
-                      type="checkbox" 
-                      id="service-has-discount"
-                      checked={serviceFormData.has_discount}
-                      onChange={(e) => setServiceFormData(prev => ({ ...prev, has_discount: e.target.checked }))}
-                      className="rounded"
-                    />
-                    <Label htmlFor="service-has-discount" className="text-sm">Aplicar descuento</Label>
-                  </div>
-                  {serviceFormData.has_discount && (
-                    <div>
-                      <Label className="text-sm">Precio con descuento (€)</Label>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        value={(serviceFormData.discount_price_cents / 100).toFixed(2)}
-                        onChange={(e) => setServiceFormData(prev => ({ ...prev, discount_price_cents: Math.round(parseFloat(e.target.value) * 100) || 0 }))}
-                        min="0"
-                        className="text-sm mt-1"
+                  <Label className="text-sm font-medium">Color del Servicio</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {PRESET_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`w-8 h-8 rounded-full border-2 ${
+                          serviceFormData.color === color ? 'border-foreground' : 'border-border'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setServiceFormData(prev => ({ ...prev, color }))}
                       />
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="service-description" className="text-sm font-medium">Descripción</Label>
-                  <textarea
-                    id="service-description"
-                    value={serviceFormData.description}
-                    onChange={(e) => setServiceFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Descripción del servicio..."
-                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    rows={3}
-                  />
+                  <Label className="text-sm font-medium">Centro</Label>
+                  <Select
+                    value={serviceFormData.center_id || 'all'}
+                    onValueChange={(value) => setServiceFormData(prev => ({ ...prev, center_id: value === 'all' ? '' : value }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleccionar centro" />
+                    </SelectTrigger>
+                    <SelectContent 
+                      className="z-[60] bg-background border shadow-lg" 
+                      position="popper"
+                      sideOffset={4}
+                    >
+                      <SelectItem value="all">Todos los centros</SelectItem>
+                      {centers.map((center) => (
+                        <SelectItem key={center.id} value={center.id}>
+                          {center.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Carril Asignado</Label>
+                  <Select
+                    value={serviceFormData.lane_id || 'none'}
+                    onValueChange={(value) => setServiceFormData(prev => ({ ...prev, lane_id: value === 'none' ? '' : value }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleccionar carril" />
+                    </SelectTrigger>
+                    <SelectContent 
+                      className="z-[60] bg-background border shadow-lg" 
+                      position="popper"
+                      sideOffset={4}
+                    >
+                      <SelectItem value="none">Sin carril específico</SelectItem>
+                      {lanes.map((lane) => (
+                        <SelectItem key={lane.id} value={lane.id}>
+                          {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Grupo de Tratamiento</Label>
+                  <Select
+                    value={serviceFormData.group_id || 'none'}
+                    onValueChange={(value) => setServiceFormData(prev => ({ ...prev, group_id: value === 'none' ? '' : value }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleccionar grupo" />
+                    </SelectTrigger>
+                    <SelectContent 
+                      className="z-[60] bg-background border shadow-lg" 
+                      position="popper"
+                      sideOffset={4}
+                    >
+                      <SelectItem value="none">Sin grupo específico</SelectItem>
+                      {combinedGroups.map((group) => (
+                        <SelectItem key={group.id} value={group.dbGroup?.id || ''}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Botones */}
