@@ -842,7 +842,13 @@ const SimpleCenterCalendar = () => {
 
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-2">
-                <Button onClick={() => setShowPaymentModal(true)} className="flex items-center">
+                <Button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowPaymentModal(true);
+                  }} 
+                  className="flex items-center"
+                >
                   <CreditCard className="h-4 w-4 mr-2" />
                   Cobrar Cita
                 </Button>
