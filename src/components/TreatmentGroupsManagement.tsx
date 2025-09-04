@@ -125,19 +125,34 @@ const TreatmentGroupsManagement: React.FC = () => {
 
   // Combinar grupos predefinidos con los de la base de datos
   const combinedGroups = React.useMemo(() => {
-    return PREDEFINED_GROUPS.map(predefined => {
+    const combined = PREDEFINED_GROUPS.map(predefined => {
       const dbGroup = treatmentGroups.find(g => g.name === predefined.name);
-      return {
+      const result = {
         ...predefined,
         dbGroup,
         lane_id: dbGroup?.lane_id || '',
         lane_ids: dbGroup?.lane_ids || [],
         center_id: dbGroup?.center_id || '',
       };
+      
+      console.log(`=== combinedGroups for ${predefined.name} ===`);
+      console.log('Predefined:', predefined);
+      console.log('dbGroup found:', dbGroup);
+      console.log('Result:', result);
+      
+      return result;
     });
+    
+    console.log('=== All combined groups ===', combined);
+    return combined;
   }, [treatmentGroups]);
 
   const handleEditGroup = (group: any) => {
+    console.log('=== handleEditGroup ===');
+    console.log('Group received:', group);
+    console.log('Group.dbGroup:', group.dbGroup);
+    console.log('Current treatmentGroups:', treatmentGroups);
+    
     setEditingGroup(group.id);
     setFormData({
       name: group.name,
@@ -147,6 +162,16 @@ const TreatmentGroupsManagement: React.FC = () => {
       center_id: group.center_id || '',
       active: true,
     });
+    
+    console.log('FormData set to:', {
+      name: group.name,
+      color: group.dbGroup?.color || group.color,
+      lane_id: group.lane_id || '',
+      lane_ids: group.lane_ids || [],
+      center_id: group.center_id || '',
+      active: true,
+    });
+    
     setIsDialogOpen(true);
   };
 

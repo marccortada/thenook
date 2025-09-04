@@ -57,6 +57,8 @@ export const useTreatmentGroups = () => {
         return;
       }
 
+      console.log('=== fetchTreatmentGroups ===');
+      console.log('Treatment groups fetched from DB:', data);
       setTreatmentGroups(data || []);
     } catch (error) {
       console.error('Error fetching treatment groups:', error);
