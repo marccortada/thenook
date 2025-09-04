@@ -38,6 +38,13 @@ const ClientManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Partial<Client>>({});
   const [newNote, setNewNote] = useState({ title: "", content: "", category: "general", priority: "normal" });
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailForm, setEmailForm] = useState({
+    to: "",
+    subject: "",
+    message: ""
+  });
+  const [sendingEmail, setSendingEmail] = useState(false);
   const { toast } = useToast();
 
   // Ordenación y creación
@@ -81,6 +88,61 @@ const ClientManagement = () => {
   const handleUpdateClient = async () => {
     if (!selectedClient) return;
     await updateClient(selectedClient.id, editingClient);
+  };
+
+  const handleOpenEmailModal = (client: any) => {
+    setEmailForm({
+      to: client.email || "",
+      subject: "",
+      message: ""
+    });
+    setShowEmailModal(true);
+  };
+
+  const handleSendEmail = async () => {
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailForm.to)) {
+      toast({ title: "Error", description: "Por favor, introduce una dirección de correo válida", variant: "destructive" });
+      return;
+    }
+
+    if (!emailForm.subject.trim()) {
+      toast({ title: "Error", description: "Por favor, introduce un asunto", variant: "destructive" });
+      return;
+    }
+
+    if (!emailForm.message.trim()) {
+      toast({ title: "Error", description: "Por favor, introduce un mensaje", variant: "destructive" });
+      return;
+    }
+
+    setSendingEmail(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: emailForm.to,
+          subject: emailForm.subject,
+          message: emailForm.message
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast({ title: "Éxito", description: "Correo enviado correctamente" });
+        setShowEmailModal(false);
+        setEmailForm({ to: "", subject: "", message: "" });
+      } else {
+        throw new Error(data?.error || "Error al enviar el correo");
+      }
+    } catch (error: any) {
+      console.error("Error sending email:", error);
+      toast({ title: "Error", description: error.message || "Error al enviar el correo", variant: "destructive" });
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   const handleCreateClient = async () => {
@@ -402,19 +464,17 @@ const ClientManagement = () => {
                           onChange={(e) => setEditingClient({ ...editingClient, email: e.target.value })}
                           className="flex-1"
                         />
-                        {editingClient.email && (
+                         {editingClient.email && (
                           <Button
                             variant="outline"
                             size="icon"
-                            asChild
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEmailModal(editingClient);
+                            }}
+                            title="Enviar email"
                           >
-                            <a 
-                              href={`mailto:${editingClient.email}`} 
-                              title="Enviar email"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Mail className="h-4 w-4" />
-                            </a>
+                            <Mail className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -651,6 +711,70 @@ const ClientManagement = () => {
               </TabsContent>
             </Tabs>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de envío de correo */}
+      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Enviar Correo Electrónico</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="email-to">Dirección de correo</Label>
+              <Input
+                id="email-to"
+                type="email"
+                value={emailForm.to}
+                onChange={(e) => setEmailForm({ ...emailForm, to: e.target.value })}
+                placeholder="correo@ejemplo.com"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="email-subject">Asunto</Label>
+              <Input
+                id="email-subject"
+                type="text"
+                value={emailForm.subject}
+                onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                placeholder="Asunto del correo"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="email-message">Mensaje</Label>
+              <Textarea
+                id="email-message"
+                value={emailForm.message}
+                onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
+                placeholder="Escribe tu mensaje aquí..."
+                rows={6}
+                className="mt-1"
+              />
+            </div>
+            
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowEmailModal(false)}
+                className="flex-1"
+                disabled={sendingEmail}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSendEmail}
+                className="flex-1"
+                disabled={sendingEmail}
+              >
+                {sendingEmail ? "Enviando..." : "Enviar Correo"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
