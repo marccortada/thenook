@@ -119,12 +119,6 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
               <Clock className="w-3 h-3" />
               <span>{service.duration_minutes} min</span>
             </div>
-            {service.type && (
-              <div className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                <span className="capitalize">{service.type.replace('_', ' ')}</span>
-              </div>
-            )}
           </div>
         </div>
         
