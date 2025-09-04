@@ -61,15 +61,15 @@ const DailyAgendaView = () => {
   const { employees } = useEmployees();
   const { lanes } = useLanes();
 
-  // Time slots (every 30 minutes from 9:00 to 21:00 for better compactness)
+  // Time slots (every 30 minutes from 10:00 to 22:00)
   const generateTimeSlots = () => {
     const slots = [];
-    const startHour = 9;
-    const endHour = 21;
+    const startHour = 10;  // Cambio: empezar a las 10 AM
+    const endHour = 22;    // Cambio: terminar a las 10 PM
     
     for (let hour = startHour; hour <= endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
-        if (hour === endHour && minute > 0) break;
+        if (hour === endHour && minute > 0) break;  // Termina a las 22:00
         const time = new Date();
         time.setHours(hour, minute, 0, 0);
         slots.push(time);
