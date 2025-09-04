@@ -434,7 +434,11 @@ const TreatmentGroupsManagement: React.FC = () => {
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Seleccionar centro" />
                     </SelectTrigger>
-                    <SelectContent className="z-[60]">
+                    <SelectContent 
+                      className="z-[60] bg-background border shadow-lg" 
+                      position="popper"
+                      sideOffset={4}
+                    >
                       <SelectItem value="all">Todos los centros</SelectItem>
                       {centers.map((center) => (
                         <SelectItem key={center.id} value={center.id}>
@@ -454,7 +458,11 @@ const TreatmentGroupsManagement: React.FC = () => {
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Seleccionar carril" />
                     </SelectTrigger>
-                    <SelectContent className="z-[60]">
+                    <SelectContent 
+                      className="z-[60] bg-background border shadow-lg" 
+                      position="popper"
+                      sideOffset={4}
+                    >
                       <SelectItem value="none">Sin carril específico</SelectItem>
                       {lanes.map((lane) => (
                         <SelectItem key={lane.id} value={lane.id}>
