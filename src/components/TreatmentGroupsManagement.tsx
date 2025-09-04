@@ -589,9 +589,13 @@ const TreatmentGroupsManagement: React.FC = () => {
                       <SelectValue placeholder="Seleccionar centro" />
                     </SelectTrigger>
                     <SelectContent 
-                      className="z-[60] bg-background border shadow-lg" 
+                      className="z-[70] bg-background border shadow-lg" 
                       position="popper"
+                      side="bottom"
+                      align="start"
                       sideOffset={4}
+                      avoidCollisions={true}
+                      collisionPadding={20}
                     >
                       <SelectItem value="all">Todos los centros</SelectItem>
                       {centers.map((center) => (
