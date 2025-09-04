@@ -128,35 +128,50 @@ const AdvancedCalendarView = () => {
   const { laneBlocks, createLaneBlock, deleteLaneBlock, isLaneBlocked } = useLaneBlocks();
   const { treatmentGroups } = useTreatmentGroups();
 
-  // Function to get lane assignment for services based on treatment group
-  const getLaneForService = (serviceId: string, centerId: string) => {
-    const service = services.find(s => s.id === serviceId);
-    if (!service || !service.group_id) return null;
-
-    const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
-    const centerGroups = treatmentGroups.filter(tg => tg.center_id === centerId || !tg.center_id);
-    
-    // Find the group for this service
-    const serviceGroup = centerGroups.find(tg => tg.id === service.group_id);
-    if (!serviceGroup) return null;
-
-    // Assign lanes based on group order: first group gets first lane, etc.
-    const groupIndex = centerGroups.findIndex(tg => tg.id === serviceGroup.id);
-    return centerLanes[groupIndex] || centerLanes[0];
-  };
 
   // Function to get color for a lane based on its assigned treatment group
   const getLaneColor = (laneId: string, centerId: string) => {
     const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
     const laneIndex = centerLanes.findIndex(l => l.id === laneId);
     
-    // Get treatment groups for this center
-    const centerGroups = treatmentGroups.filter(tg => tg.center_id === centerId || !tg.center_id);
+    // Fixed assignment based on main treatment groups:
+    // Carril 1: Masajes (Azul)
+    // Carril 2: Tratamientos (Verde) 
+    // Carril 3: Rituales (Lila)
+    // Carril 4: Masajes a Cuatro Manos (Amarillo)
+    const groupColors = [
+      '#3B82F6', // Azul - Masajes
+      '#10B981', // Verde - Tratamientos  
+      '#8B5CF6', // Lila - Rituales
+      '#F59E0B'  // Amarillo - Masajes a Cuatro Manos
+    ];
     
-    // Assign each lane to a treatment group in order
-    const assignedGroup = centerGroups[laneIndex];
+    return groupColors[laneIndex] || groupColors[0];
+  };
+
+  // Function to get lane assignment based on service treatment group
+  const getLaneForService = (serviceId: string, centerId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    if (!service || !service.group_id) return null;
+
+    const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
+    const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
     
-    return assignedGroup?.color || '#3B82F6';
+    if (!serviceGroup) return centerLanes[0] || null;
+
+    // Map service groups to lane positions
+    let laneIndex = 0;
+    if (serviceGroup.name?.includes('Masajes') && !serviceGroup.name?.includes('Cuatro Manos')) {
+      laneIndex = 0; // Carril 1 - Masajes (Azul)
+    } else if (serviceGroup.name?.includes('Tratamientos')) {
+      laneIndex = 1; // Carril 2 - Tratamientos (Verde)
+    } else if (serviceGroup.name?.includes('Rituales')) {
+      laneIndex = 2; // Carril 3 - Rituales (Lila)
+    } else if (serviceGroup.name?.includes('Cuatro Manos')) {
+      laneIndex = 3; // Carril 4 - Masajes a Cuatro Manos (Amarillo)
+    }
+    
+    return centerLanes[laneIndex] || centerLanes[0];
   };
 
   // Function to get lane color for a specific service (based on its treatment group)
@@ -165,7 +180,20 @@ const AdvancedCalendarView = () => {
     if (!service || !service.group_id) return '#3B82F6';
 
     const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
-    return serviceGroup?.color || '#3B82F6';
+    if (!serviceGroup) return '#3B82F6';
+
+    // Return color based on group mapping
+    if (serviceGroup.name?.includes('Masajes') && !serviceGroup.name?.includes('Cuatro Manos')) {
+      return '#3B82F6'; // Azul - Masajes
+    } else if (serviceGroup.name?.includes('Tratamientos')) {
+      return '#10B981'; // Verde - Tratamientos
+    } else if (serviceGroup.name?.includes('Rituales')) {
+      return '#8B5CF6'; // Lila - Rituales
+    } else if (serviceGroup.name?.includes('Cuatro Manos')) {
+      return '#F59E0B'; // Amarillo - Masajes a Cuatro Manos
+    }
+    
+    return serviceGroup.color || '#3B82F6';
   };
 
   // Real-time subscription for bookings
