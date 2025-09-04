@@ -8,11 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { ArrowLeft, X } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import OptimizedImage from "@/components/OptimizedImage";
 import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
@@ -115,8 +114,6 @@ const GiftCardsPage = () => {
   };
 
   const { items, add, remove, clear, totalCents } = useLocalCart();
-  
-  console.log("🔄 Estado del carrito:", { isCartOpen, itemsCount: items.length });
 
   // Función para traducir nombres de paquetes/tarjetas - DEBE estar antes de useMemo
   const translatePackageName = useCallback((name: string) => {
@@ -295,308 +292,29 @@ const GiftCardsPage = () => {
             <div>
               <h1 className="text-2xl font-bold">{t('gift_cards_page')}</h1>
             </div>
-            <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" onClick={() => {
-                  console.log('🛒 Botón carrito clickeado');
-                  setIsCartOpen(true);
-                }}>{t('cart')} ({items.length})</Button>
-              </SheetTrigger>
-              <SheetContent className="w-[95vw] sm:w-[480px] flex flex-col max-h-[100vh] z-[9999] fixed" side="right">
-                <SheetHeader className="flex-shrink-0 pb-4">
-                  <SheetTitle>{t('your_cart')}</SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col h-full min-h-0">
-                  <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4">
-                    {items.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
-                    ) : (
-                      <>
-                        {/* Lista de productos */}
-                        <div className="space-y-3">
-                          {items.map((it) => (
-                            <div key={it.id} className="flex items-center justify-between gap-3 border rounded-md p-3">
-                              <div>
-                                <p className="text-sm font-medium leading-tight">{it.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {euro(it.priceCents)} × {it.quantity}
-                                </p>
-                              </div>
-                              <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
-                                {t('remove')}
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Total */}
-                        <div className="flex items-center justify-between border-t pt-3">
-                          <span className="text-sm text-muted-foreground">{t('total')}</span>
-                          <span className="font-semibold">{euro(totalCents)}</span>
-                        </div>
-                        
-                        {/* Campos de comprador */}
-                        <div className="space-y-3 border-t pt-3">
-                          <div>
-                            <Label htmlFor="purchased_by_name" className="text-sm">{t('purchased_by_name')}</Label>
-                            <Input
-                              id="purchased_by_name"
-                              value={purchasedByName}
-                              onChange={(e) => setPurchasedByName(e.target.value)}
-                              placeholder={t('buyer_name_placeholder')}
-                              className="mt-1"
-                            />
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="purchased_by_email" className="text-sm">{t('buyer_email')}</Label>
-                            <Input
-                              id="purchased_by_email"
-                              type="email"
-                              value={purchasedByEmail}
-                              onChange={(e) => setPurchasedByEmail(e.target.value)}
-                              placeholder={t('buyer_email_placeholder')}
-                              className="mt-1"
-                            />
-                          </div>
-                        </div>
-                        
-                        {/* Checkbox ¿Es un regalo? */}
-                        <div className="border-t pt-3">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id="is_gift" 
-                              checked={isGift}
-                              onCheckedChange={(checked) => setIsGift(!!checked)}
-                            />
-                            <Label htmlFor="is_gift" className="text-sm">{t('is_gift')}</Label>
-                          </div>
-                          
-                          {isGift && (
-                            <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
-                              <div>
-                                <Label htmlFor="recipient_name" className="text-sm">{t('recipient_name_required')}</Label>
-                                <Input
-                                  id="recipient_name"
-                                  value={recipientName}
-                                  onChange={(e) => setRecipientName(e.target.value)}
-                                  placeholder={t('recipient_name_placeholder')}
-                                  className="mt-1"
-                                  required={isGift}
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label htmlFor="recipient_email" className="text-sm">{t('recipient_email')}</Label>
-                                <Input
-                                  id="recipient_email"
-                                  type="email"
-                                  value={recipientEmail}
-                                  onChange={(e) => setRecipientEmail(e.target.value)}
-                                  placeholder={t('buyer_email_placeholder')}
-                                  className="mt-1"
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
-                                <Textarea
-                                  id="gift_message"
-                                  value={giftMessage}
-                                  onChange={(e) => setGiftMessage(e.target.value)}
-                                  placeholder={t('gift_message_placeholder')}
-                                  className="mt-1"
-                                  rows={3}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Opciones de personalización */}
-                        <div className="border-t pt-4 space-y-4">
-                          <h4 className="text-sm font-semibold">{t('gift_card_config')}</h4>
-                          
-                          <div className="grid gap-4">
-                            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                              <Label htmlFor="show_price" className="text-sm">{t('show_price_on_card')}</Label>
-                              <Checkbox 
-                                id="show_price" 
-                                checked={showPrice}
-                                onCheckedChange={(checked) => setShowPrice(!!checked)}
-                              />
-                            </div>
-                            
-                            <div className="p-3 bg-muted/50 rounded-lg">
-                              <Label className="text-sm font-medium mb-3 block">{t('who_to_send_card')}</Label>
-                              <div className="grid gap-2">
-                                <div className="flex items-center space-x-2">
-                                  <input
-                                    type="radio"
-                                    id="send_to_buyer"
-                                    name="send_option"
-                                    checked={sendToBuyer}
-                                    onChange={() => setSendToBuyer(true)}
-                                    className="h-4 w-4"
-                                  />
-                                  <Label htmlFor="send_to_buyer" className="text-sm">{t('send_to_buyer')}</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <input
-                                    type="radio"
-                                    id="send_to_recipient"
-                                    name="send_option"
-                                    checked={!sendToBuyer}
-                                    onChange={() => setSendToBuyer(false)}
-                                    className="h-4 w-4"
-                                  />
-                                  <Label htmlFor="send_to_recipient" className="text-sm">{t('send_to_recipient')}</Label>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                              <Label htmlFor="show_buyer_data" className="text-sm">{t('show_buyer_data')}</Label>
-                              <Checkbox 
-                                id="show_buyer_data" 
-                                checked={showBuyerData}
-                                onCheckedChange={(checked) => setShowBuyerData(!!checked)}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <PaymentMethodsInfo />
-                      </>
-                    )}
-                  </div>
-                  
-                  {/* Botones fijos en la parte inferior */}
-                  {items.length > 0 && (
-                    <div className="flex-shrink-0 border-t pt-4 mt-4 bg-background">
-                      <div className="grid grid-cols-2 gap-3 mb-2">
-                        <Button variant="secondary" onClick={clear} className="h-14 text-sm">
-                          {t('empty_cart_button')}
-                        </Button>
-                        <Button 
-                          className="h-14 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-sm font-semibold"
-                          onClick={async () => {
-                            console.log("=== INICIANDO PROCESO DE PAGO ===");
-                            console.log("Items en carrito:", items.length);
-                            console.log("Es regalo:", isGift);
-                            console.log("Nombre comprador:", purchasedByName);
-                            console.log("Email comprador:", purchasedByEmail);
-                            
-                            if (items.length === 0) {
-                              console.log("❌ Carrito vacío");
-                              return;
-                            }
-                            
-                            if (isGift && !recipientName.trim()) {
-                              console.log("❌ Falta nombre del beneficiario");
-                              toast.error(t('recipient_name_error'));
-                              return;
-                            }
-                            
-                            try {
-                              if (!purchasedByName.trim()) {
-                                console.log("❌ Falta nombre del comprador");
-                                toast.error(t('buyer_name_error'));
-                                return;
-                              }
-                              if (!purchasedByEmail.trim()) {
-                                console.log("❌ Falta email del comprador");
-                                toast.error(t('buyer_email_error'));
-                                return;
-                              }
-                              
-                              console.log("✅ Validaciones pasadas, creando payload...");
-                              
-                              const payload = {
-                                intent: "gift_cards",
-                                gift_cards: {
-                                  items: items.map(i => ({ 
-                                    amount_cents: i.priceCents, 
-                                    quantity: i.quantity,
-                                    name: i.name,
-                                    purchased_by_name: purchasedByName,
-                                    purchased_by_email: purchasedByEmail,
-                                    is_gift: isGift,
-                                    recipient_name: isGift ? recipientName : undefined,
-                                    recipient_email: isGift ? recipientEmail : undefined,
-                                    gift_message: isGift ? giftMessage : undefined,
-                                    show_price: showPrice,
-                                    send_to_buyer: sendToBuyer,
-                                    show_buyer_data: showBuyerData
-                                  })),
-                                  total_cents: totalCents
-                                },
-                                currency: "eur"
-                              };
-                              
-                              console.log("📦 Payload creado:", payload);
-                              console.log("🚀 Llamando a create-checkout...");
-                              
-                              const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-                              
-                              console.log("📥 Respuesta recibida:");
-                              console.log("Data:", data);
-                              console.log("Error:", error);
-                              
-                              if (error) {
-                                console.log("❌ Error en la función:", error);
-                                throw error;
-                              }
-                              
-                              if (data?.client_secret) {
-                                console.log("✅ Client secret recibido, abriendo modal...");
-                                setStripeClientSecret(data.client_secret);
-                                setShowStripeModal(true);
-                              } else {
-                                console.log("❌ No se recibió client_secret");
-                                toast.error("No se recibió configuración de pago");
-                              }
-                            } catch (e: any) {
-                              console.log("💥 Error capturado:", e);
-                              toast.error(e.message || t('payment_init_error'));
-                            }
-                          }}
-                        >
-                          {t('buy_button')} - {euro(totalCents)}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCartOpen(true)}
+            >
+              {t('cart')} ({items.length})
+            </Button>
           </header>
 
-          {/* Modal de Stripe Checkout - Unificado para móvil y desktop */}
-          <Dialog open={showStripeModal} onOpenChange={(open) => {
-            console.log("🔄 Cambiando estado del modal:", open);
-            setShowStripeModal(open);
-          }}>
-            <DialogContent className="w-[95vw] h-[90vh] max-w-4xl p-0 gap-0 overflow-hidden">
-              <div className="flex flex-col h-full">
-                <div className="p-6 border-b shrink-0">
-                  <DialogHeader>
-                    <DialogTitle>{t('complete_payment')}</DialogTitle>
-                    <DialogDescription>{t('secure_payment_info')}</DialogDescription>
-                  </DialogHeader>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  {stripeClientSecret && (
-                    <StripeCheckoutModal 
-                      clientSecret={stripeClientSecret}
-                      onClose={() => {
-                        console.log("🔒 Cerrando modal de pago desde StripeCheckoutModal");
-                        setShowStripeModal(false);
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
+          {/* Modal de Stripe para el pago */}
+          <Dialog open={showStripeModal} onOpenChange={setShowStripeModal}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Completar compra</DialogTitle>
+                <DialogDescription>
+                  Complete el pago con Stripe de forma segura
+                </DialogDescription>
+              </DialogHeader>
+              {stripeClientSecret && (
+                <StripeCheckoutModal
+                  clientSecret={stripeClientSecret}
+                  onClose={() => setShowStripeModal(false)}
+                />
+              )}
             </DialogContent>
           </Dialog>
 
@@ -623,34 +341,34 @@ const GiftCardsPage = () => {
                               <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                               <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                             </CardHeader>
-                             <CardContent className="pb-2">
-                               <div className="flex items-center justify-between gap-2">
-                                 <p className="text-xl font-bold text-primary">{euro(item.priceCents!)}</p>
-                                 <Button
-                                   size="sm"
-                                   variant="default"
-                                   className="px-4"
-                                   onClick={() => {
-                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                     setIsCartOpen(true);
-                                   }}
-                                 >
-                                   {t('buy_button')}
-                                 </Button>
-                               </div>
-                             </CardContent>
-                             <CardFooter className="pt-2">
-                               <Button
-                                 size="sm"
-                                 variant="outline"
-                                 className="w-full"
-                                 onClick={() => {
-                                   add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                 }}
-                               >
-                                 {t('add_to_cart')}
-                               </Button>
-                             </CardFooter>
+                            <CardContent className="pb-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="px-4"
+                                  onClick={() => {
+                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                    setIsCartOpen(true);
+                                  }}
+                                >
+                                  {t('buy_button')}
+                                </Button>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="pt-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => {
+                                  add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                }}
+                              >
+                                {t('add_to_cart')}
+                              </Button>
+                            </CardFooter>
                          </Card>
                        ))}
                     </div>
@@ -679,79 +397,23 @@ const GiftCardsPage = () => {
                                <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                                <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                              </CardHeader>
-                              <CardContent className="pb-2">
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
-                                  <Button
-                                    size="sm"
-                                    variant="default"
-                                    className="px-3 text-xs"
-                                    onClick={() => {
-                                      add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                      setIsCartOpen(true);
-                                    }}
-                                  >
-                                    {t('buy_button')}
-                                  </Button>
-                                </div>
-                              </CardContent>
-                               <CardFooter className="pt-2">
+                             <CardContent className="pb-2">
+                               <div className="flex items-center justify-between gap-2">
+                                 <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
                                  <Button
                                    size="sm"
-                                   variant="outline"
-                                   className="w-full text-xs"
+                                   variant="default"
+                                   className="px-3 text-xs"
                                    onClick={() => {
                                      add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                     setIsCartOpen(true);
                                    }}
                                  >
-                                   {t('add_to_cart')}
+                                   {t('buy_button')}
                                  </Button>
-                               </CardFooter>
-                            </Card>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-
-              {groups.rituales.length > 0 && (
-                <AccordionItem value="tarjetas-rituales" className="border rounded-lg p-0">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">{t('rituals_packages')}</h2>
-                   </AccordionTrigger>
-                   <AccordionContent className="px-4 pb-4">
-                     <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                         {groups.rituales.map((item) => (
-                           <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
-                              <OptimizedImage
-                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
-                                alt={translatePackageName(item.name)}
-                                className="aspect-[4/3]"
-                                width={400}
-                                height={300}
-                                quality={80}
-                              />
-                             <CardHeader className="pb-2 p-3">
-                               <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
-                               <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
-                             </CardHeader>
-                              <CardContent className="pb-2 p-3 pt-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
-                                  <Button
-                                    size="sm"
-                                    variant="default"
-                                    className="px-3 text-xs"
-                                    onClick={() => {
-                                      add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                      setIsCartOpen(true);
-                                    }}
-                                  >
-                                    {t('buy_button')}
-                                  </Button>
-                                </div>
-                              </CardContent>
-                              <CardFooter className="pt-2 p-3">
+                               </div>
+                             </CardContent>
+                              <CardFooter className="pt-2">
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -763,12 +425,12 @@ const GiftCardsPage = () => {
                                   {t('add_to_cart')}
                                 </Button>
                               </CardFooter>
-                          </Card>
-                       ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                )}
+                           </Card>
+                        ))}
+                     </div>
+                   </AccordionContent>
+                 </AccordionItem>
+               )}
 
               {groups.cuatro.length > 0 && (
                 <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg p-0">
@@ -789,6 +451,62 @@ const GiftCardsPage = () => {
                           />
                           <CardHeader className="pb-2 p-3">
                             <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
+                          </CardHeader>
+                          <CardContent className="pb-2 p-3 pt-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="px-3 text-xs"
+                                onClick={() => {
+                                  add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                  setIsCartOpen(true);
+                                }}
+                              >
+                                {t('buy_button')}
+                              </Button>
+                            </div>
+                          </CardContent>
+                          <CardFooter className="pt-2 p-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-xs"
+                              onClick={() => {
+                                add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                              }}
+                            >
+                              {t('add_to_cart')}
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {groups.rituales.length > 0 && (
+                <AccordionItem value="tarjetas-rituales" className="border rounded-lg p-0">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                    <h2 className="text-lg font-semibold">{t('rituals_packages')}</h2>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="grid gap-2 md:grid-cols-4 lg:grid-cols-5">
+                      {groups.rituales.map((item) => (
+                        <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-xs">
+                          <OptimizedImage
+                            src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                            alt={translatePackageName(item.name)}
+                            className="aspect-[4/3]"
+                            width={300}
+                            height={225}
+                            quality={80}
+                          />
+                          <CardHeader className="pb-2 p-3">
+                            <CardTitle className="text-xs leading-tight">{translatePackageName(item.name)}</CardTitle>
                             <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                           </CardHeader>
                           <CardContent className="pb-2 p-3 pt-0">
@@ -831,254 +549,251 @@ const GiftCardsPage = () => {
         </article>
       </main>
 
-      {/* Carrito independiente - siempre se abre igual desde cualquier lugar */}
-      <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
-        <SheetContent className="w-[95vw] sm:w-[480px] flex flex-col max-h-[100vh] z-[9999] fixed" side="right">
-          <SheetHeader className="flex-shrink-0 pb-4">
-            <SheetTitle>{t('your_cart')}</SheetTitle>
-          </SheetHeader>
-          <div className="flex flex-col h-full min-h-0">
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4">
-              {items.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
-              ) : (
-                <>
-                  {/* Lista de productos */}
-                  <div className="space-y-3">
-                    {items.map((it) => (
-                      <div key={it.id} className="flex items-center justify-between gap-3 border rounded-md p-3">
-                        <div>
-                          <p className="text-sm font-medium leading-tight">{it.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {euro(it.priceCents)} × {it.quantity}
-                          </p>
-                        </div>
-                        <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
-                          {t('remove')}
-                        </Button>
+      {/* Drawer del carrito que se abre desde abajo */}
+      <Drawer open={isCartOpen} onOpenChange={setIsCartOpen}>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader className="text-center">
+            <DrawerTitle>{t('your_cart')}</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-8">
+            {items.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">{t('cart_empty')}</p>
+            ) : (
+              <div className="space-y-4">
+                {/* Lista de productos */}
+                <div className="space-y-3 max-h-40 overflow-y-auto">
+                  {items.map((it) => (
+                    <div key={it.id} className="flex items-center justify-between gap-3 border rounded-md p-3">
+                      <div>
+                        <p className="text-sm font-medium leading-tight">{it.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {euro(it.priceCents)} × {it.quantity}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Total */}
-                  <div className="flex items-center justify-between border-t pt-3">
-                    <span className="text-sm text-muted-foreground">{t('total')}</span>
-                    <span className="font-semibold">{euro(totalCents)}</span>
-                  </div>
-                  
-                  {/* Campos de comprador */}
-                  <div className="space-y-3 border-t pt-3">
-                    <div>
-                      <Label htmlFor="purchased_by_name" className="text-sm">{t('purchased_by_name')}</Label>
-                      <Input
-                        id="purchased_by_name"
-                        value={purchasedByName}
-                        onChange={(e) => setPurchasedByName(e.target.value)}
-                        placeholder={t('buyer_name_placeholder')}
-                        className="mt-1"
-                      />
+                      <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
+                        {t('remove')}
+                      </Button>
                     </div>
-                    
-                    <div>
-                      <Label htmlFor="purchased_by_email" className="text-sm">{t('buyer_email')}</Label>
-                      <Input
-                        id="purchased_by_email"
-                        type="email"
-                        value={purchasedByEmail}
-                        onChange={(e) => setPurchasedByEmail(e.target.value)}
-                        placeholder={t('buyer_email_placeholder')}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Checkbox ¿Es un regalo? */}
-                  <div className="border-t pt-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="is_gift" 
-                        checked={isGift}
-                        onCheckedChange={(checked) => setIsGift(!!checked)}
-                      />
-                      <Label htmlFor="is_gift" className="text-sm">{t('is_gift')}</Label>
-                    </div>
-                    
-                    {isGift && (
-                      <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
-                        <div>
-                          <Label htmlFor="recipient_name" className="text-sm">{t('recipient_name_required')}</Label>
-                          <Input
-                            id="recipient_name"
-                            value={recipientName}
-                            onChange={(e) => setRecipientName(e.target.value)}
-                            placeholder={t('recipient_name_placeholder')}
-                            className="mt-1"
-                            required={isGift}
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="recipient_email" className="text-sm">{t('recipient_email')}</Label>
-                          <Input
-                            id="recipient_email"
-                            type="email"
-                            value={recipientEmail}
-                            onChange={(e) => setRecipientEmail(e.target.value)}
-                            placeholder={t('buyer_email_placeholder')}
-                            className="mt-1"
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
-                          <Textarea
-                            id="gift_message"
-                            value={giftMessage}
-                            onChange={(e) => setGiftMessage(e.target.value)}
-                            placeholder={t('gift_message_placeholder')}
-                            className="mt-1"
-                            rows={3}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Opciones de personalización */}
-                  <div className="border-t pt-4 space-y-4">
-                    <h4 className="text-sm font-semibold">{t('gift_card_config')}</h4>
-                    
-                    <div className="grid gap-4">
-                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">Mostrar precio en la tarjeta</p>
-                          <p className="text-xs text-muted-foreground">El precio aparecerá visible en la tarjeta regalo</p>
-                        </div>
-                        <Switch 
-                          checked={showPrice} 
-                          onCheckedChange={setShowPrice}
-                        />
-                      </div>
-                      
-                      <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
-                        <p className="text-sm font-medium">Enviar tarjeta a:</p>
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              id="send_to_buyer"
-                              name="send_to"
-                              checked={sendToBuyer}
-                              onChange={() => setSendToBuyer(true)}
-                              className="w-4 h-4"
-                            />
-                            <Label htmlFor="send_to_buyer" className="text-sm">{t('send_to_buyer')}</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              id="send_to_recipient"
-                              name="send_to"
-                              checked={!sendToBuyer}
-                              onChange={() => setSendToBuyer(false)}
-                              className="w-4 h-4"
-                            />
-                            <Label htmlFor="send_to_recipient" className="text-sm">{t('send_to_recipient')}</Label>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">Mostrar datos del comprador</p>
-                          <p className="text-xs text-muted-foreground">Los datos del comprador aparecerán en la tarjeta</p>
-                        </div>
-                        <Switch 
-                          checked={showBuyerData} 
-                          onCheckedChange={setShowBuyerData}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-            
-            {items.length > 0 && (
-              <div className="flex-shrink-0 border-t pt-4 space-y-3">
-                <div className="grid gap-2">
-                  <Button 
-                    className="w-full" 
-                    size="lg"
-                    onClick={async () => {
-                      // Validación de campos requeridos
-                      if (!purchasedByName.trim() || !purchasedByEmail.trim()) {
-                        toast.error("Por favor, complete los datos del comprador");
-                        return;
-                      }
-                      
-                      if (isGift && !recipientName.trim()) {
-                        toast.error("Por favor, complete el nombre del destinatario");
-                        return;
-                      }
-
-                      // Mapeo de elementos del carrito a formato requerido
-                      const lineItems = items.map(item => ({
-                        name: item.name,
-                        price_cents: item.priceCents,
-                        quantity: item.quantity,
-                        type: 'gift_card'
-                      }));
-
-                      try {
-                        const { data, error } = await supabase.functions.invoke('create-checkout', {
-                          body: {
-                            line_items: lineItems,
-                            gift_card_options: {
-                              show_price: showPrice,
-                              send_to_buyer: sendToBuyer,
-                              show_buyer_data: showBuyerData,
-                              is_gift: isGift,
-                              recipient_name: isGift ? recipientName : '',
-                              recipient_email: isGift ? recipientEmail : '',
-                              gift_message: isGift ? giftMessage : '',
-                              purchased_by_name: purchasedByName,
-                              purchased_by_email: purchasedByEmail
-                            }
-                          }
-                        });
-
-                        if (error) throw error;
-
-                        if (data?.url) {
-                          window.location.href = data.url;
-                        } else if (data?.client_secret) {
-                          setStripeClientSecret(data.client_secret);
-                          setShowStripeModal(true);
-                          setIsCartOpen(false);
-                        }
-                      } catch (error) {
-                        console.error("Error creating checkout:", error);
-                        toast.error("Error en el pago. Intente nuevamente.");
-                      }
-                    }}
-                  >
-                    {t('proceed_to_payment')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={clear}
-                    size="sm"
-                  >
-                    Vaciar carrito
-                  </Button>
+                  ))}
                 </div>
-                <PaymentMethodsInfo />
+
+                {/* Total */}
+                <div className="flex items-center justify-between border-t pt-3">
+                  <span className="text-sm text-muted-foreground">{t('total')}</span>
+                  <span className="font-semibold">{euro(totalCents)}</span>
+                </div>
+                
+                {/* Campos de comprador */}
+                <div className="space-y-3 border-t pt-3">
+                  <div>
+                    <Label htmlFor="purchased_by_name" className="text-sm">{t('purchased_by_name')}</Label>
+                    <Input
+                      id="purchased_by_name"
+                      value={purchasedByName}
+                      onChange={(e) => setPurchasedByName(e.target.value)}
+                      placeholder={t('buyer_name_placeholder')}
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="purchased_by_email" className="text-sm">{t('buyer_email')}</Label>
+                    <Input
+                      id="purchased_by_email"
+                      type="email"
+                      value={purchasedByEmail}
+                      onChange={(e) => setPurchasedByEmail(e.target.value)}
+                      placeholder={t('buyer_email_placeholder')}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                
+                {/* Checkbox ¿Es un regalo? */}
+                <div className="border-t pt-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="is_gift" 
+                      checked={isGift}
+                      onCheckedChange={(checked) => setIsGift(!!checked)}
+                    />
+                    <Label htmlFor="is_gift" className="text-sm">{t('is_gift')}</Label>
+                  </div>
+                  
+                  {isGift && (
+                    <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
+                      <div>
+                        <Label htmlFor="recipient_name" className="text-sm">{t('recipient_name_required')}</Label>
+                        <Input
+                          id="recipient_name"
+                          value={recipientName}
+                          onChange={(e) => setRecipientName(e.target.value)}
+                          placeholder={t('recipient_name_placeholder')}
+                          className="mt-1"
+                          required={isGift}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="recipient_email" className="text-sm">{t('recipient_email')}</Label>
+                        <Input
+                          id="recipient_email"
+                          type="email"
+                          value={recipientEmail}
+                          onChange={(e) => setRecipientEmail(e.target.value)}
+                          placeholder={t('buyer_email_placeholder')}
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
+                        <Textarea
+                          id="gift_message"
+                          value={giftMessage}
+                          onChange={(e) => setGiftMessage(e.target.value)}
+                          placeholder={t('gift_message_placeholder')}
+                          className="mt-1"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Opciones de personalización */}
+                <div className="border-t pt-4 space-y-4">
+                  <h4 className="text-sm font-semibold">{t('gift_card_config')}</h4>
+                  
+                  <div className="grid gap-4">
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">Mostrar precio en la tarjeta</p>
+                        <p className="text-xs text-muted-foreground">El precio aparecerá visible en la tarjeta regalo</p>
+                      </div>
+                      <Switch 
+                        checked={showPrice} 
+                        onCheckedChange={setShowPrice}
+                      />
+                    </div>
+                    
+                    <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
+                      <p className="text-sm font-medium">Enviar tarjeta a:</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="send_to_buyer"
+                            name="send_to"
+                            checked={sendToBuyer}
+                            onChange={() => setSendToBuyer(true)}
+                            className="w-4 h-4"
+                          />
+                          <Label htmlFor="send_to_buyer" className="text-sm">{t('send_to_buyer')}</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="send_to_recipient"
+                            name="send_to"
+                            checked={!sendToBuyer}
+                            onChange={() => setSendToBuyer(false)}
+                            className="w-4 h-4"
+                          />
+                          <Label htmlFor="send_to_recipient" className="text-sm">{t('send_to_recipient')}</Label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">Mostrar datos del comprador</p>
+                        <p className="text-xs text-muted-foreground">Los datos del comprador aparecerán en la tarjeta</p>
+                      </div>
+                      <Switch 
+                        checked={showBuyerData} 
+                        onCheckedChange={setShowBuyerData}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Botones de acción */}
+                <div className="border-t pt-4 space-y-3">
+                  <div className="grid gap-2">
+                    <Button 
+                      className="w-full" 
+                      size="lg"
+                      onClick={async () => {
+                        // Validación de campos requeridos
+                        if (!purchasedByName.trim() || !purchasedByEmail.trim()) {
+                          toast.error("Por favor, complete los datos del comprador");
+                          return;
+                        }
+                        
+                        if (isGift && !recipientName.trim()) {
+                          toast.error("Por favor, complete el nombre del destinatario");
+                          return;
+                        }
+
+                        // Mapeo de elementos del carrito a formato requerido
+                        const lineItems = items.map(item => ({
+                          name: item.name,
+                          price_cents: item.priceCents,
+                          quantity: item.quantity,
+                          type: 'gift_card'
+                        }));
+
+                        try {
+                          const { data, error } = await supabase.functions.invoke('create-checkout', {
+                            body: {
+                              line_items: lineItems,
+                              gift_card_options: {
+                                show_price: showPrice,
+                                send_to_buyer: sendToBuyer,
+                                show_buyer_data: showBuyerData,
+                                is_gift: isGift,
+                                recipient_name: isGift ? recipientName : '',
+                                recipient_email: isGift ? recipientEmail : '',
+                                gift_message: isGift ? giftMessage : '',
+                                purchased_by_name: purchasedByName,
+                                purchased_by_email: purchasedByEmail
+                              }
+                            }
+                          });
+
+                          if (error) throw error;
+
+                          if (data?.url) {
+                            window.location.href = data.url;
+                          } else if (data?.client_secret) {
+                            setStripeClientSecret(data.client_secret);
+                            setShowStripeModal(true);
+                            setIsCartOpen(false);
+                          }
+                        } catch (error) {
+                          console.error("Error creating checkout:", error);
+                          toast.error("Error en el pago. Intente nuevamente.");
+                        }
+                      }}
+                    >
+                      {t('proceed_to_payment')}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={clear}
+                      size="sm"
+                    >
+                      Vaciar carrito
+                    </Button>
+                  </div>
+                  <PaymentMethodsInfo />
+                </div>
               </div>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
