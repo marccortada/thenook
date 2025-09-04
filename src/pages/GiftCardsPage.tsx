@@ -97,6 +97,19 @@ const isCuatroManos = (name?: string) => !!name?.toLowerCase().includes("cuatro 
 const isRitual = (name?: string) => !!name?.toLowerCase().includes("ritual");
 
 const GiftCardsPage = () => {
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
   const [purchasedByName, setPurchasedByName] = useState("");
@@ -616,28 +629,37 @@ const GiftCardsPage = () => {
             </Sheet>
           </header>
 
-          {/* Modal de Stripe Checkout */}
-          <Dialog open={showStripeModal} onOpenChange={(open) => {
-            console.log("=== MODAL DE PAGO ===");
-            console.log("Modal abierto:", open);
-            setShowStripeModal(open);
-          }}>
-            <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] z-[200] sm:w-full">
-              <DialogHeader>
-                <DialogTitle>{t('complete_payment')}</DialogTitle>
-                <DialogDescription>{t('secure_payment_info')}</DialogDescription>
-              </DialogHeader>
-              {stripeClientSecret && (
-                <StripeCheckoutModal 
-                  clientSecret={stripeClientSecret}
-                  onClose={() => {
-                    console.log("🔒 Cerrando modal de pago");
-                    setShowStripeModal(false);
-                  }}
-                />
-              )}
-            </DialogContent>
-          </Dialog>
+          {/* Modal de Stripe Checkout - Condicional según dispositivo */}
+          {isMobile ? (
+            <Sheet open={showStripeModal} onOpenChange={setShowStripeModal}>
+              <SheetContent side="bottom" className="h-[90vh] max-h-[90vh]">
+                <SheetHeader>
+                  <SheetTitle>{t('complete_payment')}</SheetTitle>
+                </SheetHeader>
+                {stripeClientSecret && (
+                  <StripeCheckoutModal 
+                    clientSecret={stripeClientSecret}
+                    onClose={() => setShowStripeModal(false)}
+                  />
+                )}
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <Dialog open={showStripeModal} onOpenChange={setShowStripeModal}>
+              <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] z-[200] sm:w-full">
+                <DialogHeader>
+                  <DialogTitle>{t('complete_payment')}</DialogTitle>
+                  <DialogDescription>{t('secure_payment_info')}</DialogDescription>
+                </DialogHeader>
+                {stripeClientSecret && (
+                  <StripeCheckoutModal 
+                    clientSecret={stripeClientSecret}
+                    onClose={() => setShowStripeModal(false)}
+                  />
+                )}
+              </DialogContent>
+            </Dialog>
+          )}
 
           <section className="grid gap-6">
             <Accordion type="multiple" defaultValue={[]} className="space-y-4">
