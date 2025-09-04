@@ -622,35 +622,20 @@ const GiftCardsPage = () => {
                               <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                               <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                             </CardHeader>
-                            <CardContent className="pb-2">
-                              <div className="flex items-center justify-between">
-                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
-                                  <Button
-                                    size="sm"
-                                    className="bg-blue-500 hover:bg-blue-600 text-white px-6"
-                                     onClick={() => {
-                                       console.log('🛒 Botón COMPRAR clickeado');
-                                      add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                      console.log('📦 Producto añadido, abriendo carrito...');
-                                      setIsCartOpen(true);
-                                      console.log('✅ setIsCartOpen(true) ejecutado');
-                                    }}
-                                  >
-                                   {t('buy_button')}
-                                 </Button>
-                              </div>
-                            </CardContent>
-                            <CardFooter className="pt-2">
-                              <Button
-                                size="sm"
-                                className="w-full"
-                                onClick={() => {
-                                  add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                }}
-                              >
-                                {t('add_to_cart')}
-                              </Button>
-                            </CardFooter>
+                             <CardContent className="pb-2">
+                               <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                             </CardContent>
+                             <CardFooter className="pt-2">
+                               <Button
+                                 size="sm"
+                                 className="w-full"
+                                 onClick={() => {
+                                   add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                 }}
+                               >
+                                 {t('add_to_cart')}
+                               </Button>
+                             </CardFooter>
                          </Card>
                        ))}
                     </div>
@@ -679,25 +664,13 @@ const GiftCardsPage = () => {
                                <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                                <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                              </CardHeader>
-                             <CardContent className="pb-2">
-                               <div className="flex items-center justify-between">
-                                 <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                              <CardContent className="pb-2">
+                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                               <CardFooter className="pt-2">
                                  <Button
                                    size="sm"
-                                   className="bg-blue-500 hover:bg-blue-600 text-white px-6"
-                                   onClick={() => {
-                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                     setIsCartOpen(true);
-                                   }}
-                                 >
-                                   {t('buy_button')}
-                                 </Button>
-                               </div>
-                             </CardContent>
-                              <CardFooter className="pt-2">
-                                <Button
-                                  size="sm"
-                                  className="w-full"
+                                   className="w-full"
                                   onClick={() => {
                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
                                   }}
@@ -733,36 +706,20 @@ const GiftCardsPage = () => {
                                <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
                                <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                              </CardHeader>
-                             <CardContent className="pb-2">
-                               <div className="flex items-center justify-between">
-                                 <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                              <CardContent className="pb-2">
+                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                               <CardFooter className="pt-2">
                                  <Button
                                    size="sm"
-                                   className="bg-blue-500 hover:bg-blue-600 text-white px-6"
-                                    onClick={() => {
-                                      console.log("🛒 Botón COMPRAR clickeado");
-                                      console.log("📦 Añadiendo al carrito:", { name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                      add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                      console.log("📂 Abriendo carrito...");
-                                      setIsCartOpen(true);
-                                      console.log("✅ Carrito abierto:", true);
-                                    }}
+                                   className="w-full"
+                                   onClick={() => {
+                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                   }}
                                  >
-                                   {t('buy_button')}
+                                   {t('add_to_cart')}
                                  </Button>
-                               </div>
-                             </CardContent>
-                              <CardFooter className="pt-2">
-                                <Button
-                                  size="sm"
-                                  className="w-full"
-                                  onClick={() => {
-                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                  }}
-                                >
-                                  {t('add_to_cart')}
-                                </Button>
-                             </CardFooter>
+                              </CardFooter>
                          </Card>
                       ))}
                     </div>
@@ -791,36 +748,20 @@ const GiftCardsPage = () => {
                                <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
                                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                              </CardHeader>
-                             <CardContent className="pb-2 p-3 pt-0">
-                               <div className="flex items-center justify-between">
-                                 <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                              <CardContent className="pb-2 p-3 pt-0">
+                                <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                              <CardFooter className="pt-2 p-3">
                                 <Button
                                   size="sm"
-                                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 text-xs"
-                                   onClick={() => {
-                                     console.log("🛒 Botón COMPRAR (rituales) clickeado");
-                                     console.log("📦 Añadiendo al carrito:", { name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                     console.log("📂 Abriendo carrito...");
-                                     setIsCartOpen(true);
-                                     console.log("✅ Carrito abierto:", true);
-                                   }}
-                                 >
-                                    {t('buy_button')}
-                                  </Button>
-                               </div>
-                             </CardContent>
-                             <CardFooter className="pt-2 p-3">
-                               <Button
-                                 size="sm"
-                                 className="w-full text-xs"
-                                 onClick={() => {
-                                   add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                 }}
-                               >
-                                 {t('add_to_cart')}
-                               </Button>
-                             </CardFooter>
+                                  className="w-full text-xs"
+                                  onClick={() => {
+                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                  }}
+                                >
+                                  {t('add_to_cart')}
+                                </Button>
+                              </CardFooter>
                           </Card>
                        ))}
                     </div>
