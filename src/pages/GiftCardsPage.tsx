@@ -617,8 +617,12 @@ const GiftCardsPage = () => {
           </header>
 
           {/* Modal de Stripe Checkout */}
-          <Dialog open={showStripeModal} onOpenChange={setShowStripeModal}>
-            <DialogContent className="max-w-2xl">
+          <Dialog open={showStripeModal} onOpenChange={(open) => {
+            console.log("=== MODAL DE PAGO ===");
+            console.log("Modal abierto:", open);
+            setShowStripeModal(open);
+          }}>
+            <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] z-[200] sm:w-full">
               <DialogHeader>
                 <DialogTitle>{t('complete_payment')}</DialogTitle>
                 <DialogDescription>{t('secure_payment_info')}</DialogDescription>
@@ -626,7 +630,10 @@ const GiftCardsPage = () => {
               {stripeClientSecret && (
                 <StripeCheckoutModal 
                   clientSecret={stripeClientSecret}
-                  onClose={() => setShowStripeModal(false)}
+                  onClose={() => {
+                    console.log("🔒 Cerrando modal de pago");
+                    setShowStripeModal(false);
+                  }}
                 />
               )}
             </DialogContent>
