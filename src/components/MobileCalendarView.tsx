@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -14,7 +16,11 @@ import {
   MapPin,
   User,
   Euro,
-  Calendar
+  Calendar,
+  Settings,
+  Lock,
+  Eye,
+  MoreVertical
 } from 'lucide-react';
 import { format, addDays, subDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -33,9 +39,13 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
 }) => {
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(selectedDate);
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [showBookingDetails, setShowBookingDetails] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [activeCenter, setActiveCenter] = useState(selectedCenter || '');
+  const [showCenterSelect, setShowCenterSelect] = useState(false);
+  const [blockingMode, setBlockingMode] = useState(false);
+  const [showDesktopView, setShowDesktopView] = useState(false);
 
   const { bookings, loading: bookingsLoading } = useBookings();
   const { lanes } = useLanes();
@@ -161,14 +171,101 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     setShowBookingDetails(true);
   };
 
+  const handleBlockSlot = (laneId: string, timeStr: string) => {
+    toast({
+      title: "Modo bloqueo",
+      description: `Bloqueando carril en ${timeStr}`,
+    });
+  };
+
   const goToPreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const goToNextDay = () => setCurrentDate(addDays(currentDate, 1));
+
+  // Función para renderizar vista día
+  const renderDayView = () => (
+    <ScrollArea className="flex-1 bg-white">
+      <div className="min-h-full">
+        {timeSlots.map((timeStr, timeIndex) => {
+          // Solo mostrar desde 10:10 en adelante
+          const [hour, minute] = timeStr.split(':').map(Number);
+          if (hour < 10 || (hour === 10 && minute < 10)) return null;
+
+          return (
+            <div key={timeStr} className="grid grid-cols-5 border-b border-gray-100 min-h-[48px]">
+              {/* Columna de tiempo */}
+              <div className="p-2 text-center border-r border-gray-200 bg-gray-50 flex items-center justify-center">
+                <span className="text-sm font-medium text-gray-700">{timeStr}</span>
+              </div>
+
+              {/* Columnas de carriles */}
+              {centerLanes.slice(0, 4).map((lane, laneIndex) => {
+                const booking = getBookingForSlot(lane.id, timeStr);
+                const isOccupied = isSlotOccupied(lane.id, timeStr);
+                const isStartOfBooking = !!booking;
+                
+                return (
+                  <div 
+                    key={`${lane.id}-${timeStr}`} 
+                    className={`border-r border-gray-200 last:border-r-0 p-1 min-h-[48px] relative ${
+                      blockingMode ? 'cursor-pointer hover:bg-red-100' : 'bg-white'
+                    }`}
+                    onClick={blockingMode ? () => handleBlockSlot(lane.id, timeStr) : undefined}
+                  >
+                    {blockingMode && (
+                      <div className="absolute top-1 right-1">
+                        <Lock className="h-3 w-3 text-red-500" />
+                      </div>
+                    )}
+                    {isStartOfBooking && booking && (
+                      <div
+                        onClick={() => !blockingMode && handleBookingClick(booking)}
+                        className={cn(
+                          "w-full rounded-md cursor-pointer transition-all hover:shadow-md p-2 text-left",
+                          getStatusColor(booking.status)
+                        )}
+                        style={{
+                          height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 8}px`,
+                          zIndex: 10
+                        }}
+                      >
+                        <div className="text-sm font-semibold truncate">
+                          {booking.profiles?.first_name || 'sanju'}
+                        </div>
+                        <div className="text-xs text-gray-600 truncate">
+                          {booking.services?.name || 'Anticelulítico / Reductor'}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
+                        </div>
+                        <button 
+                          className="absolute top-1 right-1 w-5 h-5 text-gray-400 hover:text-gray-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Handle close/cancel
+                          }}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                    {isOccupied && !isStartOfBooking && (
+                      <div className="w-full h-full bg-blue-50 opacity-50 pointer-events-none"></div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
 
   const currentCenter = centers.find(c => c.id === activeCenter);
 
   return (
     <div className="h-screen flex flex-col bg-white">
-      {/* Header mejorado */}
+      {/* Header mejorado con más controles */}
       <div className="bg-white p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -177,7 +274,12 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
             </div>
             <div>
               <h1 className="text-lg font-semibold text-gray-900">The Nook Madrid</h1>
-              <p className="text-sm text-gray-500">{currentCenter?.name || 'Zurbarán'}</p>
+              <button 
+                onClick={() => setShowCenterSelect(true)}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                {currentCenter?.name || 'Seleccionar centro'} ▼
+              </button>
             </div>
           </div>
           <div className="text-right">
@@ -188,24 +290,60 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
               {format(currentDate, 'MMM', { locale: es })}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200"
-          >
-            Bloquear
-          </Button>
+          {/* Menú de opciones */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Opciones</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Elige una acción:
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setBlockingMode(!blockingMode)}
+                >
+                  <Lock className="h-4 w-4 mr-2" />
+                  {blockingMode ? 'Salir del modo bloqueo' : 'Modo bloqueo'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setShowDesktopView(true)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Vista escritorio
+                </Button>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
-        {/* Tabs de navegación Día/Semana */}
-        <div className="flex bg-blue-100 rounded-lg p-1 mb-3">
-          <button className="flex-1 py-2 px-4 bg-blue-500 text-white rounded-md text-sm font-medium">
-            Día
-          </button>
-          <button className="flex-1 py-2 px-4 text-blue-600 text-sm font-medium">
-            Semana
-          </button>
-        </div>
+        {/* Tabs de navegación Día/Semana mejoradas */}
+        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'day' | 'week')} className="mb-3">
+          <TabsList className="grid w-full grid-cols-2 bg-blue-100">
+            <TabsTrigger value="day" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
+              Día
+            </TabsTrigger>
+            <TabsTrigger value="week" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
+              Semana
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Date Navigation mejorado */}
         <div className="flex items-center justify-center gap-4">
@@ -235,88 +373,33 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         </div>
       </div>
 
-      {/* Lane Headers mejorados */}
-      <div className="grid grid-cols-5 bg-gray-50 border-b border-gray-200">
-        <div className="p-3 text-center border-r border-gray-200">
-          <div className="text-sm font-medium text-gray-700">Hora</div>
-        </div>
-        {centerLanes.slice(0, 4).map((lane, index) => (
-          <div key={lane.id} className={`p-3 text-center border-r border-gray-200 last:border-r-0 ${getLaneColor(index)}`}>
-            <div className="text-sm font-semibold text-gray-800">Carril {index + 1}</div>
-            <div className="text-xs text-gray-600">Cap: 1</div>
+      {/* Calendar Content con Tabs */}
+      <TabsContent value="day" className="flex-1 m-0">
+        {/* Lane Headers para vista día */}
+        <div className="grid grid-cols-5 bg-gray-50 border-b border-gray-200">
+          <div className="p-3 text-center border-r border-gray-200">
+            <div className="text-sm font-medium text-gray-700">Hora</div>
           </div>
-        ))}
-      </div>
-
-      {/* Calendar Grid mejorado */}
-      <ScrollArea className="flex-1 bg-white">
-        <div className="min-h-full">
-          {timeSlots.map((timeStr, timeIndex) => {
-            // Solo mostrar desde 10:10 en adelante
-            const [hour, minute] = timeStr.split(':').map(Number);
-            if (hour < 10 || (hour === 10 && minute < 10)) return null;
-
-            return (
-              <div key={timeStr} className="grid grid-cols-5 border-b border-gray-100 min-h-[48px]">
-                {/* Columna de tiempo */}
-                <div className="p-2 text-center border-r border-gray-200 bg-gray-50 flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-700">{timeStr}</span>
-                </div>
-
-                {/* Columnas de carriles */}
-                {centerLanes.slice(0, 4).map((lane, laneIndex) => {
-                  const booking = getBookingForSlot(lane.id, timeStr);
-                  const isOccupied = isSlotOccupied(lane.id, timeStr);
-                  const isStartOfBooking = !!booking;
-                  
-                  return (
-                    <div 
-                      key={`${lane.id}-${timeStr}`} 
-                      className="border-r border-gray-200 last:border-r-0 p-1 min-h-[48px] relative bg-white"
-                    >
-                      {isStartOfBooking && booking && (
-                        <div
-                          onClick={() => handleBookingClick(booking)}
-                          className={cn(
-                            "w-full rounded-md cursor-pointer transition-all hover:shadow-md p-2 text-left",
-                            getStatusColor(booking.status)
-                          )}
-                          style={{
-                            height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 8}px`,
-                            zIndex: 10
-                          }}
-                        >
-                          <div className="text-sm font-semibold truncate">
-                            {booking.profiles?.first_name || 'sanju'}
-                          </div>
-                          <div className="text-xs text-gray-600 truncate">
-                            {booking.services?.name || 'Anticelulítico / Reductor'}
-                          </div>
-                          <div className="text-xs text-gray-600 mt-1">
-                            €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
-                          </div>
-                          <button 
-                            className="absolute top-1 right-1 w-5 h-5 text-gray-400 hover:text-gray-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle close/cancel
-                            }}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-                      {isOccupied && !isStartOfBooking && (
-                        <div className="w-full h-full bg-blue-50 opacity-50 pointer-events-none"></div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
+          {centerLanes.slice(0, 4).map((lane, index) => (
+            <div key={lane.id} className={`p-3 text-center border-r border-gray-200 last:border-r-0 ${getLaneColor(index)}`}>
+              <div className="text-sm font-semibold text-gray-800">Carril {index + 1}</div>
+              <div className="text-xs text-gray-600">Cap: 1</div>
+            </div>
+          ))}
         </div>
-      </ScrollArea>
+
+        {/* Calendar Grid para vista día */}
+        {renderDayView()}
+      </TabsContent>
+
+      <TabsContent value="week" className="flex-1 m-0">
+        {/* Vista semana simplificada para móvil */}
+        <div className="p-4 text-center text-gray-500">
+          <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">Vista de semana en desarrollo</p>
+          <p className="text-xs">Por ahora usa la vista de día</p>
+        </div>
+      </TabsContent>
 
       {/* Booking Details Modal */}
       <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
@@ -372,6 +455,49 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de selección de centro */}
+      <Dialog open={showCenterSelect} onOpenChange={setShowCenterSelect}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle>Seleccionar Centro</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {centers.map((center) => (
+              <Button
+                key={center.id}
+                variant={activeCenter === center.id ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => {
+                  setActiveCenter(center.id);
+                  setShowCenterSelect(false);
+                }}
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                {center.name}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para cambiar a vista escritorio */}
+      <AlertDialog open={showDesktopView} onOpenChange={setShowDesktopView}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Vista de Escritorio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Para acceder a todas las funcionalidades avanzadas, recarga la página en un navegador de escritorio o gira tu dispositivo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => window.location.reload()}>
+              Recargar página
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
