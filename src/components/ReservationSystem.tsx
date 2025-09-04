@@ -573,7 +573,7 @@ const ReservationSystem = () => {
                             position="popper"
                             side="bottom"
                             align="start"
-                            sideOffset={8}
+                            sideOffset={0}
                             avoidCollisions={false}
                             collisionPadding={0}
                           >
@@ -787,7 +787,7 @@ const ReservationSystem = () => {
                              position="popper"
                              side="bottom"
                              align="start"
-                             sideOffset={8}
+                              sideOffset={0}
                              avoidCollisions={false}
                              collisionPadding={0}
                            >
