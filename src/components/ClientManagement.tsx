@@ -301,12 +301,24 @@ const ClientManagement = () => {
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                         <div className="flex items-center gap-1 min-w-0">
                           <Mail className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">{client.email}</span>
+                          <a 
+                            href={`mailto:${client.email}`}
+                            className="truncate hover:text-primary hover:underline transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {client.email}
+                          </a>
                         </div>
                         {client.phone && (
                           <div className="flex items-center gap-1">
                             <Phone className="h-3 w-3 flex-shrink-0" />
-                            <span>{client.phone}</span>
+                            <a 
+                              href={`tel:${client.phone}`}
+                              className="hover:text-primary hover:underline transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {client.phone}
+                            </a>
                           </div>
                         )}
                       </div>
