@@ -263,9 +263,11 @@ const TreatmentGroupsManagement: React.FC = () => {
                           const modalWidth = Math.min(600, windowWidth - 40);
                           const modalHeight = Math.min(500, windowHeight - 80);
                           
-                          // Posicionar cerca del elemento clickeado
-                          let top = cardRect.top + scrollTop;
-                          let left = Math.max(20, Math.min(cardRect.left, windowWidth - modalWidth - 20));
+                          // Centrar horizontalmente
+                          let left = (windowWidth - modalWidth) / 2;
+                          
+                          // Posicionar verticalmente cerca del elemento clickeado pero visible
+                          let top = cardRect.top + scrollTop - 50;
                           
                           // Ajustar si se sale de la pantalla verticalmente
                           const minTop = scrollTop + 20;
@@ -276,6 +278,10 @@ const TreatmentGroupsManagement: React.FC = () => {
                           } else if (top > maxTop) {
                             top = maxTop;
                           }
+                          
+                          // Asegurar que no se salga horizontalmente
+                          if (left < 20) left = 20;
+                          if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
                           
                           setModalPosition({ top, left });
                           handleEditGroup(group);
@@ -428,7 +434,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Seleccionar centro" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60]">
                       <SelectItem value="all">Todos los centros</SelectItem>
                       {centers.map((center) => (
                         <SelectItem key={center.id} value={center.id}>
@@ -448,7 +454,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Seleccionar carril" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60]">
                       <SelectItem value="none">Sin carril específico</SelectItem>
                       {lanes.map((lane) => (
                         <SelectItem key={lane.id} value={lane.id}>
