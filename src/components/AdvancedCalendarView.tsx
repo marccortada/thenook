@@ -150,10 +150,22 @@ const AdvancedCalendarView = () => {
     const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
     const laneIndex = centerLanes.findIndex(l => l.id === laneId);
     
-    // Fixed colors: azul, verde, lila, amarillo
-    const colors = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B']; // azul, verde, lila, amarillo
+    // Get treatment groups for this center
+    const centerGroups = treatmentGroups.filter(tg => tg.center_id === centerId || !tg.center_id);
     
-    return colors[laneIndex] || colors[0];
+    // Assign each lane to a treatment group in order
+    const assignedGroup = centerGroups[laneIndex];
+    
+    return assignedGroup?.color || '#3B82F6';
+  };
+
+  // Function to get lane color for a specific service (based on its treatment group)
+  const getServiceLaneColor = (serviceId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    if (!service || !service.group_id) return '#3B82F6';
+
+    const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
+    return serviceGroup?.color || '#3B82F6';
   };
 
   // Real-time subscription for bookings
@@ -824,9 +836,9 @@ const AdvancedCalendarView = () => {
                             <div
                                className="absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md cursor-move"
                                style={{ 
-                                 backgroundColor: `${getLaneColor(lane.id, selectedCenter)}20`,
-                                 borderLeftColor: getLaneColor(lane.id, selectedCenter),
-                                 color: getLaneColor(lane.id, selectedCenter),
+                                 backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
+                                 borderLeftColor: getServiceLaneColor(booking.service_id),
+                                 color: getServiceLaneColor(booking.service_id),
                                  height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 4}px`,
                                  zIndex: 2
                                }}
@@ -1006,13 +1018,13 @@ const AdvancedCalendarView = () => {
                            {booking && isFirstSlotOfBooking && (
                               <div
                                 className="absolute inset-0 rounded-sm text-[8px] p-0.5 border-l-2 truncate z-10 cursor-move"
-                                style={{ 
-                                  backgroundColor: `${getLaneColor(lane.id, selectedCenter)}40`,
-                                  borderLeftColor: getLaneColor(lane.id, selectedCenter),
-                                  color: getLaneColor(lane.id, selectedCenter),
-                                  height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
-                                  minHeight: '24px'
-                                }}
+                                 style={{ 
+                                   backgroundColor: `${getServiceLaneColor(booking.service_id)}40`,
+                                   borderLeftColor: getServiceLaneColor(booking.service_id),
+                                   color: getServiceLaneColor(booking.service_id),
+                                   height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
+                                   minHeight: '24px'
+                                 }}
                                draggable={true}
                                onDragStart={(e) => {
                                  e.dataTransfer.setData('booking', JSON.stringify(booking));
