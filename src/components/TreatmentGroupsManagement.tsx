@@ -66,6 +66,7 @@ const TreatmentGroupsManagement: React.FC = () => {
     name: '',
     color: PRESET_COLORS[0],
     lane_id: '',
+    lane_ids: [] as string[], // Nuevo array para múltiples carriles
     center_id: '',
     active: true,
   });
@@ -130,6 +131,7 @@ const TreatmentGroupsManagement: React.FC = () => {
         ...predefined,
         dbGroup,
         lane_id: dbGroup?.lane_id || '',
+        lane_ids: dbGroup?.lane_ids || [],
         center_id: dbGroup?.center_id || '',
       };
     });
@@ -141,6 +143,7 @@ const TreatmentGroupsManagement: React.FC = () => {
       name: group.name,
       color: group.dbGroup?.color || group.color,
       lane_id: group.lane_id || '',
+      lane_ids: group.lane_ids || [],
       center_id: group.center_id || '',
       active: true,
     });
@@ -190,6 +193,7 @@ const TreatmentGroupsManagement: React.FC = () => {
       name: '',
       color: PRESET_COLORS[0],
       lane_id: '',
+      lane_ids: [],
       center_id: '',
       active: true,
     });
@@ -600,27 +604,68 @@ const TreatmentGroupsManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium">Carril Asignado (Opcional)</Label>
-                  <Select
-                    value={formData.lane_id}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, lane_id: value }))}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Seleccionar carril" />
-                    </SelectTrigger>
-                    <SelectContent 
-                      className="z-[60] bg-background border shadow-lg" 
-                      position="popper"
-                      sideOffset={4}
+                  <Label className="text-sm font-medium">Carriles Asignados (Múltiple selección)</Label>
+                  <div className="mt-1 space-y-2">
+                    <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[40px]">
+                      {(!formData.lane_ids || formData.lane_ids.length === 0) ? (
+                        <span className="text-muted-foreground text-sm">Sin carriles específicos</span>
+                      ) : (
+                        formData.lane_ids.map(laneId => {
+                          const lane = lanes.find(l => l.id === laneId);
+                          const center = centers.find(c => c.id === lane?.center_id);
+                          return lane ? (
+                            <Badge key={laneId} variant="secondary" className="text-xs">
+                              {lane.name} - {center?.name}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-0 ml-1 hover:bg-transparent"
+                                onClick={() => setFormData(prev => ({
+                                  ...prev,
+                                  lane_ids: prev.lane_ids?.filter(id => id !== laneId) || []
+                                }))}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </Badge>
+                          ) : null;
+                        })
+                      )}
+                    </div>
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        if (value === 'none') {
+                          setFormData(prev => ({ ...prev, lane_ids: [] }));
+                        } else if (value && (!formData.lane_ids || !formData.lane_ids.includes(value))) {
+                          setFormData(prev => ({
+                            ...prev,
+                            lane_ids: [...(prev.lane_ids || []), value]
+                          }));
+                        }
+                      }}
                     >
-                      <SelectItem value="none">Sin carril específico</SelectItem>
-                      {lanes.map((lane) => (
-                        <SelectItem key={lane.id} value={lane.id}>
-                          {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Añadir carril" />
+                      </SelectTrigger>
+                      <SelectContent 
+                        className="z-[70] bg-background border shadow-lg" 
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        sideOffset={4}
+                        avoidCollisions={true}
+                        collisionPadding={20}
+                      >
+                        <SelectItem value="none">Limpiar todos los carriles</SelectItem>
+                        {lanes.filter(lane => !formData.lane_ids?.includes(lane.id)).map((lane) => (
+                          <SelectItem key={lane.id} value={lane.id}>
+                            {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Botones */}

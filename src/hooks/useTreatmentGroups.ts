@@ -6,7 +6,8 @@ export interface TreatmentGroup {
   id: string;
   name: string;
   color: string;
-  lane_id?: string;
+  lane_id?: string; // Mantener para compatibilidad
+  lane_ids?: string[]; // Nueva propiedad para múltiples carriles
   center_id?: string;
   active: boolean;
   created_at: string;
@@ -20,7 +21,8 @@ export interface TreatmentGroup {
 export interface CreateTreatmentGroupData {
   name: string;
   color: string;
-  lane_id?: string;
+  lane_id?: string; // Mantener para compatibilidad
+  lane_ids?: string[]; // Nueva propiedad para múltiples carriles
   center_id?: string;
   active?: boolean;
 }
@@ -76,6 +78,7 @@ export const useTreatmentGroups = () => {
           name: groupData.name,
           color: groupData.color,
           lane_id: groupData.lane_id || null,
+          lane_ids: groupData.lane_ids || [],
           center_id: groupData.center_id || null,
           active: groupData.active ?? true,
         })

@@ -186,18 +186,55 @@ const ClientReservation = () => {
       const [hours, minutes] = formData.time.split(':');
       bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      // Asignar lane y employee aleatorio de los disponibles
+      // Asignación inteligente de carril basada en configuración del servicio o grupo
       const availableLanes = lanes.filter(l => l.center_id === formData.center && l.active);
       const availableEmployees = employees.filter(e => e.center_id === formData.center && e.active);
       
-      const randomLane = availableLanes.length > 0 ? availableLanes[Math.floor(Math.random() * availableLanes.length)] : null;
+      let assignedLaneId = null;
+      
+      if (service_id && selection?.kind === 'service') {
+        // First priority: Check if the service itself has assigned lanes
+        const selectedService = services.find(s => s.id === service_id);
+        if (selectedService?.lane_ids && selectedService.lane_ids.length > 0) {
+          console.log(`🎯 Servicio "${selectedService.name}" tiene carriles asignados:`, selectedService.lane_ids);
+          
+          // Find the first available lane from the service's assigned lanes
+          for (const laneId of selectedService.lane_ids) {
+            const lane = availableLanes.find(l => l.id === laneId);
+            if (lane) {
+              // Check lane capacity for the time slot
+              const { data: existingBookings } = await supabase
+                .from('bookings')
+                .select('*')
+                .eq('lane_id', laneId)
+                .eq('booking_datetime', bookingDate.toISOString())
+                .neq('status', 'cancelled');
+
+              const laneCapacity = lane.capacity || 1;
+              if (!existingBookings || existingBookings.length < laneCapacity) {
+                assignedLaneId = laneId;
+                console.log(`✅ Servicio asignado al carril específico: ${lane.name}`);
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Fallback to random assignment if no specific lanes configured or all are full
+      if (!assignedLaneId) {
+        const randomLane = availableLanes.length > 0 ? availableLanes[Math.floor(Math.random() * availableLanes.length)] : null;
+        assignedLaneId = randomLane?.id || null;
+        console.log('🎲 Asignación aleatoria de carril (no hay configuración específica)');
+      }
+      
       const randomEmployee = availableEmployees.length > 0 ? availableEmployees[Math.floor(Math.random() * availableEmployees.length)] : null;
 
       const bookingData = {
         client_id: profileToUse?.id,
         service_id,
         center_id: formData.center,
-        lane_id: randomLane?.id || null,
+        lane_id: assignedLaneId,
         employee_id: randomEmployee?.id || null,
         booking_datetime: bookingDate.toISOString(),
         duration_minutes,

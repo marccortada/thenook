@@ -2228,6 +2228,7 @@ export type Database = {
           created_at: string
           id: string
           lane_id: string | null
+          lane_ids: string[] | null
           name: string
           updated_at: string
         }
@@ -2238,6 +2239,7 @@ export type Database = {
           created_at?: string
           id?: string
           lane_id?: string | null
+          lane_ids?: string[] | null
           name: string
           updated_at?: string
         }
@@ -2248,6 +2250,7 @@ export type Database = {
           created_at?: string
           id?: string
           lane_id?: string | null
+          lane_ids?: string[] | null
           name?: string
           updated_at?: string
         }

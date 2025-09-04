@@ -263,31 +263,83 @@ const ReservationSystem = () => {
         }
       }
 
-      // Determine lane based on treatment group
+      // Determine lane based on service or treatment group configuration
       let assignedLaneId = null;
+      
       if (formData.serviceType === 'individual') {
-        const treatmentGroup = getTreatmentGroupByService(formData.service, services);
-        if (treatmentGroup?.lane_id) {
-          // Check if the assigned lane is available
-          const assignedLane = availableLanes.find(lane => lane.id === treatmentGroup.lane_id);
-          if (assignedLane) {
-            // Check lane capacity for the time slot
-            const { data: existingBookings } = await supabase
-              .from('bookings')
-              .select('*')
-              .eq('lane_id', treatmentGroup.lane_id)
-              .eq('booking_datetime', bookingDate.toISOString())
-              .neq('status', 'cancelled');
+        // First priority: Check if the service itself has assigned lanes
+        const selectedService = services.find(s => s.id === formData.service);
+        if (selectedService?.lane_ids && selectedService.lane_ids.length > 0) {
+          console.log(`🎯 Servicio "${selectedService.name}" tiene carriles asignados:`, selectedService.lane_ids);
+          
+          // Find the first available lane from the service's assigned lanes
+          for (const laneId of selectedService.lane_ids) {
+            const lane = availableLanes.find(l => l.id === laneId);
+            if (lane) {
+              // Check lane capacity for the time slot
+              const { data: existingBookings } = await supabase
+                .from('bookings')
+                .select('*')
+                .eq('lane_id', laneId)
+                .eq('booking_datetime', bookingDate.toISOString())
+                .neq('status', 'cancelled');
 
-            const laneCapacity = assignedLane.capacity || 1;
-            if (!existingBookings || existingBookings.length < laneCapacity) {
-              assignedLaneId = treatmentGroup.lane_id;
-              console.log(`🎯 Servicio asignado al carril del grupo: ${treatmentGroup.name} -> ${assignedLane.name}`);
-            } else {
+              const laneCapacity = lane.capacity || 1;
+              if (!existingBookings || existingBookings.length < laneCapacity) {
+                assignedLaneId = laneId;
+                console.log(`✅ Servicio asignado al carril específico: ${lane.name}`);
+                break;
+              }
+            }
+          }
+          
+          if (!assignedLaneId) {
+            const laneNames = selectedService.lane_ids
+              .map(id => availableLanes.find(l => l.id === id)?.name)
+              .filter(Boolean)
+              .join(', ');
+            toast({
+              title: "Carriles específicos completos",
+              description: `Los carriles asignados al servicio "${selectedService.name}" (${laneNames}) están completos. Se asignará al primer carril disponible.`,
+            });
+          }
+        }
+        
+        // Second priority: Check treatment group lanes if service doesn't have specific lanes
+        if (!assignedLaneId) {
+          const treatmentGroup = getTreatmentGroupByService(formData.service, services);
+          if (treatmentGroup?.lane_ids && treatmentGroup.lane_ids.length > 0) {
+            console.log(`🎯 Grupo "${treatmentGroup.name}" tiene carriles asignados:`, treatmentGroup.lane_ids);
+            
+            // Find the first available lane from the group's assigned lanes
+            for (const laneId of treatmentGroup.lane_ids) {
+              const lane = availableLanes.find(l => l.id === laneId);
+              if (lane) {
+                // Check lane capacity for the time slot
+                const { data: existingBookings } = await supabase
+                  .from('bookings')
+                  .select('*')
+                  .eq('lane_id', laneId)
+                  .eq('booking_datetime', bookingDate.toISOString())
+                  .neq('status', 'cancelled');
+
+                const laneCapacity = lane.capacity || 1;
+                if (!existingBookings || existingBookings.length < laneCapacity) {
+                  assignedLaneId = laneId;
+                  console.log(`✅ Servicio asignado al carril del grupo: ${treatmentGroup.name} -> ${lane.name}`);
+                  break;
+                }
+              }
+            }
+            
+            if (!assignedLaneId) {
+              const laneNames = treatmentGroup.lane_ids
+                .map(id => availableLanes.find(l => l.id === id)?.name)
+                .filter(Boolean)
+                .join(', ');
               toast({
-                title: "Carril completo",
-                description: `El carril asignado al grupo "${treatmentGroup.name}" está completo para esta hora. La reserva se asignará al primer carril disponible.`,
-                variant: "destructive",
+                title: "Carriles del grupo completos",
+                description: `Los carriles del grupo "${treatmentGroup.name}" (${laneNames}) están completos. Se asignará al primer carril disponible.`,
               });
             }
           }
