@@ -1001,7 +1001,7 @@ const ReservationSystem = () => {
                                    </span>
                                  </Button>
                                </DrawerTrigger>
-                                <DrawerContent className="max-h-[90vh]">
+                                <DrawerContent className="min-h-[70vh] max-h-[95vh]">
                                   <DrawerHeader className="text-center pb-2">
                                     <DrawerTitle className="text-xl font-semibold">Seleccionar Fecha</DrawerTitle>
                                   </DrawerHeader>
@@ -1105,7 +1105,7 @@ const ReservationSystem = () => {
                                    </span>
                                  </Button>
                                </DrawerTrigger>
-                                <DrawerContent className="max-h-[90vh]">
+                                <DrawerContent className="min-h-[60vh] max-h-[95vh]">
                                   <DrawerHeader className="text-center pb-2">
                                     <DrawerTitle className="text-xl font-semibold">Seleccionar Hora</DrawerTitle>
                                   </DrawerHeader>
