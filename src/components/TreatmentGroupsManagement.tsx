@@ -707,7 +707,7 @@ const TreatmentGroupsManagement: React.FC = () => {
           
           {/* Modal */}
           <div 
-            className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+            className="fixed z-[60] bg-white rounded-lg shadow-2xl border"
             style={{
               top: `${serviceModalPosition.top}px`,
               left: `${serviceModalPosition.left}px`,
@@ -759,7 +759,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                       <SelectValue placeholder="Seleccionar centro" />
                     </SelectTrigger>
                     <SelectContent 
-                      className="z-[70] bg-background border shadow-lg" 
+                      className="z-[80] bg-background border shadow-lg" 
                       position="popper"
                       side="bottom"
                       align="start"
@@ -823,7 +823,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                         <SelectValue placeholder="Añadir carril" />
                       </SelectTrigger>
                       <SelectContent 
-                        className="z-[70] bg-background border shadow-lg" 
+                        className="z-[80] bg-background border shadow-lg" 
                         position="popper"
                         side="bottom"
                         align="start"
@@ -852,7 +852,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                       <SelectValue placeholder="Seleccionar grupo" />
                     </SelectTrigger>
                     <SelectContent 
-                      className="z-[70] bg-background border shadow-lg" 
+                      className="z-[80] bg-background border shadow-lg" 
                       position="popper"
                       side="bottom"
                       align="start"
