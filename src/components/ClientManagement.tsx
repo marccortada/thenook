@@ -394,23 +394,51 @@ const ClientManagement = () => {
                     
                     <div>
                       <Label htmlFor="email" className="text-sm">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={editingClient.email || ""}
-                        onChange={(e) => setEditingClient({ ...editingClient, email: e.target.value })}
-                        className="mt-1"
-                      />
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          id="email"
+                          type="email"
+                          value={editingClient.email || ""}
+                          onChange={(e) => setEditingClient({ ...editingClient, email: e.target.value })}
+                          className="flex-1"
+                        />
+                        {editingClient.email && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <a href={`mailto:${editingClient.email}`} title="Enviar email">
+                              <Mail className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     
                     <div>
                       <Label htmlFor="phone" className="text-sm">Teléfono</Label>
-                      <Input
-                        id="phone"
-                        value={editingClient.phone || ""}
-                        onChange={(e) => setEditingClient({ ...editingClient, phone: e.target.value })}
-                        className="mt-1"
-                      />
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          id="phone"
+                          value={editingClient.phone || ""}
+                          onChange={(e) => setEditingClient({ ...editingClient, phone: e.target.value })}
+                          className="flex-1"
+                        />
+                        {editingClient.phone && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <a href={`tel:${editingClient.phone}`} title="Llamar">
+                              <Phone className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     <Button onClick={handleUpdateClient} className="w-full mt-4">
