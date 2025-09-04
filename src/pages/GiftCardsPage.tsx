@@ -623,11 +623,25 @@ const GiftCardsPage = () => {
                               <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                             </CardHeader>
                              <CardContent className="pb-2">
-                               <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                               <div className="flex items-center justify-between gap-2">
+                                 <p className="text-xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                                 <Button
+                                   size="sm"
+                                   variant="default"
+                                   className="px-4"
+                                   onClick={() => {
+                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                     setIsCartOpen(true);
+                                   }}
+                                 >
+                                   {t('buy_button')}
+                                 </Button>
+                               </div>
                              </CardContent>
                              <CardFooter className="pt-2">
                                <Button
                                  size="sm"
+                                 variant="outline"
                                  className="w-full"
                                  onClick={() => {
                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
@@ -665,67 +679,39 @@ const GiftCardsPage = () => {
                                <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                              </CardHeader>
                               <CardContent className="pb-2">
-                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="px-3 text-xs"
+                                    onClick={() => {
+                                      add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                      setIsCartOpen(true);
+                                    }}
+                                  >
+                                    {t('buy_button')}
+                                  </Button>
+                                </div>
                               </CardContent>
                                <CardFooter className="pt-2">
                                  <Button
                                    size="sm"
-                                   className="w-full"
-                                  onClick={() => {
-                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                  }}
-                                >
-                                  {t('add_to_cart')}
-                                </Button>
-                             </CardFooter>
-                         </Card>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-
-              {groups.cuatro.length > 0 && (
-                <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg p-0">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">{t('four_hands_packages')}</h2>
-                   </AccordionTrigger>
-                   <AccordionContent className="px-4 pb-4">
-                     <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                         {groups.cuatro.map((item) => (
-                           <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                              <OptimizedImage
-                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
-                                alt={translatePackageName(item.name)}
-                                className="aspect-[4/3]"
-                                width={400}
-                                height={300}
-                                quality={80}
-                              />
-                             <CardHeader className="pb-2">
-                               <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
-                               <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
-                             </CardHeader>
-                              <CardContent className="pb-2">
-                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
-                              </CardContent>
-                               <CardFooter className="pt-2">
-                                 <Button
-                                   size="sm"
-                                   className="w-full"
+                                   variant="outline"
+                                   className="w-full text-xs"
                                    onClick={() => {
                                      add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
                                    }}
                                  >
                                    {t('add_to_cart')}
                                  </Button>
-                              </CardFooter>
-                         </Card>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
+                               </CardFooter>
+                            </Card>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
 
               {groups.rituales.length > 0 && (
                 <AccordionItem value="tarjetas-rituales" className="border rounded-lg p-0">
@@ -749,11 +735,25 @@ const GiftCardsPage = () => {
                                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
                              </CardHeader>
                               <CardContent className="pb-2 p-3 pt-0">
-                                <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="px-3 text-xs"
+                                    onClick={() => {
+                                      add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                      setIsCartOpen(true);
+                                    }}
+                                  >
+                                    {t('buy_button')}
+                                  </Button>
+                                </div>
                               </CardContent>
                               <CardFooter className="pt-2 p-3">
                                 <Button
                                   size="sm"
+                                  variant="outline"
                                   className="w-full text-xs"
                                   onClick={() => {
                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
@@ -764,6 +764,62 @@ const GiftCardsPage = () => {
                               </CardFooter>
                           </Card>
                        ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                )}
+
+              {groups.cuatro.length > 0 && (
+                <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg p-0">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                    <h2 className="text-lg font-semibold">{t('four_hands_packages')}</h2>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                      {groups.cuatro.map((item) => (
+                        <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
+                          <OptimizedImage
+                            src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                            alt={translatePackageName(item.name)}
+                            className="aspect-[4/3]"
+                            width={400}
+                            height={300}
+                            quality={80}
+                          />
+                          <CardHeader className="pb-2 p-3">
+                            <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
+                          </CardHeader>
+                          <CardContent className="pb-2 p-3 pt-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <p className="text-sm font-bold text-primary">{euro(item.priceCents!)}</p>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="px-2 text-xs h-8"
+                                onClick={() => {
+                                  add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                  setIsCartOpen(true);
+                                }}
+                              >
+                                {t('buy_button')}
+                              </Button>
+                            </div>
+                          </CardContent>
+                          <CardFooter className="pt-2 p-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-xs h-8"
+                              onClick={() => {
+                                add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                              }}
+                            >
+                              {t('add_to_cart')}
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
