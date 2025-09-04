@@ -148,12 +148,12 @@ const AdvancedCalendarView = () => {
   // Function to get color for a lane based on its assigned treatment group
   const getLaneColor = (laneId: string, centerId: string) => {
     const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
-    const centerGroups = treatmentGroups.filter(tg => tg.center_id === centerId || !tg.center_id);
-    
     const laneIndex = centerLanes.findIndex(l => l.id === laneId);
-    const assignedGroup = centerGroups[laneIndex];
     
-    return assignedGroup?.color || '#3B82F6';
+    // Fixed colors: azul, verde, lila, amarillo
+    const colors = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B']; // azul, verde, lila, amarillo
+    
+    return colors[laneIndex] || colors[0];
   };
 
   // Real-time subscription for bookings
