@@ -301,40 +301,41 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
   const { toast } = useToast();
 
   const handleOpenModal = (event: React.MouseEvent) => {
-    // Obtener la posición del botón clickeado
-    const buttonRect = event.currentTarget.getBoundingClientRect();
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Obtener la tarjeta completa (parent del botón)
+    const cardElement = event.currentTarget.closest('.booking-card') as HTMLElement;
+    if (!cardElement) return;
+    
+    const cardRect = cardElement.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
     const windowHeight = window.innerHeight;
     const windowWidth = window.innerWidth;
     
     // Dimensiones del modal
-    const modalWidth = Math.min(500, windowWidth - 40); // máximo 500px, mínimo deja 40px de margen
-    const modalHeight = Math.min(600, windowHeight - 40); // máximo 600px, mínimo deja 40px de margen
+    const modalWidth = Math.min(450, windowWidth - 40);
+    const modalHeight = Math.min(550, windowHeight - 80);
     
-    // Calcular posición inicial (cerca del botón)
-    let top = buttonRect.top + scrollTop - 20; // 20px arriba del botón
-    let left = buttonRect.left + scrollLeft + (buttonRect.width / 2) - (modalWidth / 2); // centrado horizontalmente respecto al botón
+    // Calcular posición
+    let top = cardRect.top + scrollTop - 50; // Un poco arriba de la tarjeta
+    let left = (windowWidth - modalWidth) / 2; // Centrado horizontalmente
     
-    // Ajustar si se sale por la izquierda
-    if (left < 20) {
-      left = 20;
+    // Ajustar verticalmente para que esté siempre visible
+    const viewportTop = scrollTop + 20;
+    const viewportBottom = scrollTop + windowHeight - 20;
+    
+    if (top < viewportTop) {
+      top = viewportTop;
+    } else if (top + modalHeight > viewportBottom) {
+      top = viewportBottom - modalHeight;
     }
     
-    // Ajustar si se sale por la derecha
-    if (left + modalWidth > windowWidth - 20) {
-      left = windowWidth - modalWidth - 20;
-    }
+    // Asegurar que no se salga horizontalmente
+    if (left < 20) left = 20;
+    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
     
-    // Ajustar si se sale por arriba
-    if (top < scrollTop + 20) {
-      top = scrollTop + 20;
-    }
-    
-    // Ajustar si se sale por abajo
-    if (top + modalHeight > scrollTop + windowHeight - 20) {
-      top = scrollTop + windowHeight - modalHeight - 20;
-    }
+    console.log('Modal position:', { top, left, cardTop: cardRect.top, scrollTop });
     
     setModalPosition({ top, left });
     setIsOpen(true);
@@ -409,6 +410,12 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
     }
   };
 
+  const closeModal = () => {
+    setIsOpen(false);
+    setPaymentMethod('');
+    setPaymentNotes('');
+  };
+
   return (
     <>
       <Button
@@ -421,96 +428,120 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
       </Button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50">
+        <>
+          {/* Overlay */}
           <div 
-            className="absolute bg-white rounded-lg shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto"
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={closeModal}
+          />
+          
+          {/* Modal */}
+          <div 
+            className="fixed z-50 bg-white rounded-lg shadow-2xl border"
             style={{
               top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
-              maxWidth: 'calc(100vw - 40px)'
+              width: `${Math.min(450, window.innerWidth - 40)}px`,
+              maxHeight: `${Math.min(550, window.innerHeight - 80)}px`,
+              overflowY: 'auto'
             }}
           >
             <div className="p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <DollarSign className="h-6 w-6" />
-                <h3 className="text-2xl font-semibold">Cobrar Cita</h3>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="h-6 w-6 text-green-600" />
+                  <h3 className="text-xl font-semibold">Cobrar Cita</h3>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={closeModal}
+                  className="h-8 w-8 p-0"
+                >
+                  ✕
+                </Button>
               </div>
               
-              <div className="space-y-6">
-                <div className="p-6 bg-gray-50 rounded-lg">
-                  <h4 className="text-lg font-semibold mb-4">Detalles de la cita</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Content */}
+              <div className="space-y-4">
+                {/* Detalles */}
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold mb-3">Detalles de la cita</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Cliente</p>
-                      <p className="font-medium text-lg">
+                      <p className="text-gray-500">Cliente</p>
+                      <p className="font-medium">
                         {booking.profiles?.first_name} {booking.profiles?.last_name}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Servicio</p>
+                      <p className="text-gray-500">Servicio</p>
                       <p className="font-medium">{booking.services?.name}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Centro</p>
+                      <p className="text-gray-500">Centro</p>
                       <p className="font-medium">{booking.centers?.name}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Importe</p>
-                      <p className="font-bold text-2xl text-blue-600">
+                      <p className="text-gray-500">Importe</p>
+                      <p className="font-bold text-lg text-green-600">
                         {(booking.total_price_cents / 100).toFixed(2)}€
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor={`payment-method-${booking.id}`}>Forma de Pago</Label>
-                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar forma de pago..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PAYMENT_METHODS.map((method) => (
-                          <SelectItem key={method.value} value={method.value}>
-                            {method.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Forma de pago */}
+                <div>
+                  <Label className="text-sm font-medium">Forma de Pago</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleccionar forma de pago..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map((method) => (
+                        <SelectItem key={method.value} value={method.value}>
+                          {method.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div>
-                    <Label htmlFor={`payment-notes-${booking.id}`}>Notas del pago (opcional)</Label>
-                    <Input
-                      id={`payment-notes-${booking.id}`}
-                      value={paymentNotes}
-                      onChange={(e) => setPaymentNotes(e.target.value)}
-                      placeholder="Notas adicionales sobre el pago..."
-                    />
-                  </div>
+                {/* Notas */}
+                <div>
+                  <Label className="text-sm font-medium">Notas del pago (opcional)</Label>
+                  <Input
+                    value={paymentNotes}
+                    onChange={(e) => setPaymentNotes(e.target.value)}
+                    placeholder="Notas adicionales..."
+                    className="mt-1"
+                  />
+                </div>
 
-                  <div className="flex gap-3 pt-4">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={processPayment}
-                      className="flex-1"
-                    >
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      Confirmar Pago - {(booking.total_price_cents / 100).toFixed(2)}€
-                    </Button>
-                  </div>
+                {/* Botones */}
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={closeModal}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={processPayment}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    disabled={!paymentMethod}
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Confirmar - {(booking.total_price_cents / 100).toFixed(2)}€
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
