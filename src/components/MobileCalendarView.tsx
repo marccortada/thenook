@@ -195,84 +195,103 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const goToNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
   // Función para renderizar vista día
-  const renderDayView = () => (
-    <ScrollArea className="flex-1 bg-white">
-      <div className="min-h-full">
-        {timeSlots.map((timeStr, timeIndex) => {
-          // Solo mostrar desde 10:10 en adelante
-          const [hour, minute] = timeStr.split(':').map(Number);
-          if (hour < 10 || (hour === 10 && minute < 10)) return null;
-
-          return (
-            <div key={timeStr} className="grid grid-cols-5 border-b border-gray-100 min-h-[48px]">
-              {/* Columna de tiempo */}
-              <div className="p-2 text-center border-r border-gray-200 bg-gray-50 flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-700">{timeStr}</span>
-              </div>
-
-              {/* Columnas de carriles */}
-              {centerLanes.slice(0, 4).map((lane, laneIndex) => {
-                const booking = getBookingForSlot(lane.id, timeStr);
-                const isOccupied = isSlotOccupied(lane.id, timeStr);
-                const isStartOfBooking = !!booking;
-                
-                return (
-                  <div 
-                    key={`${lane.id}-${timeStr}`} 
-                    className={`border-r border-gray-200 last:border-r-0 p-1 min-h-[48px] relative ${
-                      blockingMode ? 'cursor-pointer hover:bg-red-100' : 'bg-white'
-                    }`}
-                    onClick={blockingMode ? () => handleBlockSlot(lane.id, timeStr) : undefined}
-                  >
-                    {blockingMode && (
-                      <div className="absolute top-1 right-1">
-                        <Lock className="h-3 w-3 text-red-500" />
-                      </div>
-                    )}
-                    {isStartOfBooking && booking && (
-                      <div
-                        onClick={() => !blockingMode && handleBookingClick(booking)}
-                        className={cn(
-                          "w-full rounded-md cursor-pointer transition-all hover:shadow-md p-2 text-left",
-                          getStatusColor(booking.status)
-                        )}
-                        style={{
-                          height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 8}px`,
-                          zIndex: 10
-                        }}
-                      >
-                        <div className="text-sm font-semibold truncate">
-                          {booking.profiles?.first_name || 'sanju'}
-                        </div>
-                        <div className="text-xs text-gray-600 truncate">
-                          {booking.services?.name || 'Anticelulítico / Reductor'}
-                        </div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
-                        </div>
-                        <button 
-                          className="absolute top-1 right-1 w-5 h-5 text-gray-400 hover:text-gray-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Handle close/cancel
-                          }}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    )}
-                    {isOccupied && !isStartOfBooking && (
-                      <div className="w-full h-full bg-blue-50 opacity-50 pointer-events-none"></div>
-                    )}
-                  </div>
-                );
-              })}
+  const renderDayView = () => {
+    // Siempre mostrar la cuadrícula, incluso sin reservas
+    return (
+      <ScrollArea className="flex-1 bg-white">
+        <div className="min-h-full">
+          {centerLanes.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-sm">No hay carriles configurados para este centro</p>
             </div>
-          );
-        })}
-      </div>
-    </ScrollArea>
-  );
+          ) : (
+            timeSlots.map((timeStr, timeIndex) => {
+              // Solo mostrar desde 10:10 en adelante
+              const [hour, minute] = timeStr.split(':').map(Number);
+              if (hour < 10 || (hour === 10 && minute < 10)) return null;
+
+              return (
+                <div key={timeStr} className="grid grid-cols-5 border-b border-gray-100 min-h-[48px]">
+                  {/* Columna de tiempo */}
+                  <div className="p-2 text-center border-r border-gray-200 bg-gray-50 flex items-center justify-center">
+                    <span className="text-sm font-medium text-gray-700">{timeStr}</span>
+                  </div>
+
+                  {/* Columnas de carriles */}
+                  {centerLanes.slice(0, 4).map((lane, laneIndex) => {
+                    const booking = getBookingForSlot(lane.id, timeStr);
+                    const isOccupied = isSlotOccupied(lane.id, timeStr);
+                    const isStartOfBooking = !!booking;
+                    
+                    return (
+                      <div 
+                        key={`${lane.id}-${timeStr}`} 
+                        className={`border-r border-gray-200 last:border-r-0 p-1 min-h-[48px] relative ${
+                          blockingMode ? 'cursor-pointer hover:bg-red-100' : 'bg-white hover:bg-gray-50'
+                        }`}
+                        onClick={blockingMode ? () => handleBlockSlot(lane.id, timeStr) : undefined}
+                      >
+                        {blockingMode && (
+                          <div className="absolute top-1 right-1">
+                            <Lock className="h-3 w-3 text-red-500" />
+                          </div>
+                        )}
+                        {isStartOfBooking && booking && (
+                          <div
+                            onClick={() => !blockingMode && handleBookingClick(booking)}
+                            className={cn(
+                              "w-full rounded-md cursor-pointer transition-all hover:shadow-md p-2 text-left",
+                              getStatusColor(booking.status)
+                            )}
+                            style={{
+                              height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 8}px`,
+                              zIndex: 10
+                            }}
+                          >
+                            <div className="text-sm font-semibold truncate">
+                              {booking.profiles?.first_name || 'Cliente'}
+                            </div>
+                            <div className="text-xs text-gray-600 truncate">
+                              {booking.services?.name || 'Servicio'}
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1">
+                              €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
+                            </div>
+                            <button 
+                              className="absolute top-1 right-1 w-5 h-5 text-gray-400 hover:text-gray-600"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Handle close/cancel
+                              }}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                        {isOccupied && !isStartOfBooking && (
+                          <div className="w-full h-full bg-blue-50 opacity-50 pointer-events-none"></div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })
+          )}
+          
+          {/* Mensaje informativo si no hay reservas para esta fecha */}
+          {centerLanes.length > 0 && filteredBookings.length === 0 && (
+            <div className="p-4 text-center text-gray-500 bg-gray-50 m-4 rounded-lg">
+              <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm font-medium">No hay reservas para {format(currentDate, "d 'de' MMMM", { locale: es })}</p>
+              <p className="text-xs text-gray-400 mt-1">Navega a otras fechas o crea una nueva reserva</p>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    );
+  };
 
   const currentCenter = centers.find(c => c.id === activeCenter);
 
