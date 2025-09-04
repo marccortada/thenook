@@ -170,7 +170,12 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
                     <div key={index} className="space-y-2">
                       <button
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="w-full flex items-center gap-2 px-1 hover:bg-accent/50 rounded-md py-1 transition-colors group"
+                        className={cn(
+                          "w-full flex items-center gap-2 px-1 rounded-md py-1 transition-colors group",
+                          (isAdmin || isEmployee) 
+                            ? "hover:bg-accent/50" 
+                            : "hover:bg-muted/30"
+                        )}
                       >
                         {(isAdmin || isEmployee) && <div className="w-3 h-3 rounded-full" style={{ backgroundColor: group.color }} />}
                         <h4 className="font-medium text-sm text-foreground">{group.name}</h4>

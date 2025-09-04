@@ -287,7 +287,12 @@ const ServiceModal: React.FC<Props> = ({
       <div className="space-y-3">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center gap-2 px-1 hover:bg-accent/50 rounded-md py-2 transition-colors group"
+          className={cn(
+            "w-full flex items-center gap-2 px-1 rounded-md py-2 transition-colors group",
+            (isAdmin || isEmployee) 
+              ? "hover:bg-accent/50" 
+              : "hover:bg-muted/30"
+          )}
         >
           {(isAdmin || isEmployee) && icon}
           <h4 className="font-semibold text-base text-foreground">{title}</h4>
