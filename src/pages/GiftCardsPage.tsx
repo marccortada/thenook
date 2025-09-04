@@ -119,11 +119,29 @@ const GiftCardsPage = () => {
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
   
   const { t } = useTranslation();
-  const isMobile = useIsMobile();
+  
+  // Detección más robusta de móvil
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Cuando se abre el carrito en móvil, hacer scroll al top
   useEffect(() => {
     if (isCartOpen && isMobile) {
+      console.log('Abriendo carrito en móvil, haciendo scroll al top');
       // Pequeño delay para asegurar que el drawer esté renderizado
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -358,7 +376,7 @@ const GiftCardsPage = () => {
                 <DrawerTrigger asChild>
                   <Button variant="outline">{t('cart')} ({items.length})</Button>
                 </DrawerTrigger>
-                <DrawerContent className="flex flex-col max-h-[95vh]">
+                <DrawerContent className="flex flex-col max-h-[95vh] z-[100]">
                   <DrawerHeader className="flex-shrink-0 pb-4">
                     <DrawerTitle>{t('your_cart')}</DrawerTitle>
                   </DrawerHeader>
@@ -944,14 +962,17 @@ const GiftCardsPage = () => {
                             <CardContent className="pb-2">
                               <div className="flex items-center justify-between">
                                 <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
-                                <Button
-                                  size="sm"
-                                  className="bg-blue-500 hover:bg-blue-600 text-white px-6"
-                                  onClick={() => {
-                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                    setIsCartOpen(true);
-                                  }}
-                                 >
+                                  <Button
+                                    size="sm"
+                                    className="bg-blue-500 hover:bg-blue-600 text-white px-6"
+                                    onClick={() => {
+                                      console.log('Botón Buy clickeado - móvil:', isMobile);
+                                      add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                      console.log('Producto añadido, abriendo carrito...');
+                                      setIsCartOpen(true);
+                                      console.log('setIsCartOpen(true) ejecutado');
+                                    }}
+                                  >
                                    {t('buy_button')}
                                  </Button>
                               </div>
