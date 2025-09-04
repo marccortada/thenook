@@ -284,7 +284,6 @@ const AdvancedDashboard = () => {
             defaultValue="trends"
           >
             <option value="trends">📊 Tendencias</option>
-            <option value="therapists">👨‍⚕️ Terapeutas</option>
             <option value="services">🎯 Servicios</option>
             <option value="centers">🏢 Centros</option>
             <option value="clients">👥 Clientes</option>
@@ -293,9 +292,8 @@ const AdvancedDashboard = () => {
         
         {/* Desktop Tabs */}
         <div className="hidden lg:block">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="trends">Tendencias</TabsTrigger>
-            <TabsTrigger value="therapists">Terapeutas</TabsTrigger>
             <TabsTrigger value="services">Servicios</TabsTrigger>
             <TabsTrigger value="centers">Centros</TabsTrigger>
             <TabsTrigger value="clients">Clientes</TabsTrigger>
@@ -450,14 +448,6 @@ const AdvancedDashboard = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="therapists" className="space-y-4">
-          <SimpleBarChart 
-            data={therapistMetrics} 
-            valueKey="totalRevenue" 
-            labelKey="therapistName" 
-            title="Ingresos por Terapeuta" 
-          />
-        </TabsContent>
 
         <TabsContent value="services" className="space-y-4">
           <div className="grid gap-4 xl:grid-cols-2">
