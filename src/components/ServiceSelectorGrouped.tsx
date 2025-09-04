@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Service, Package } from "@/hooks/useDatabase";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp, Clock, Users, Tag, Percent, Sparkles } from "lucide-react";
+import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import ServiceModal from "./ServiceModal";
 
 interface Props {
@@ -27,6 +28,7 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { isAdmin, isEmployee } = useSimpleAuth();
 
   // Encontrar el servicio/paquete seleccionado para mostrar en el botón
   const selectedService = services.find(s => s.id === selectedId);
@@ -170,7 +172,7 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
                         onClick={() => setIsExpanded(!isExpanded)}
                         className="w-full flex items-center gap-2 px-1 hover:bg-accent/50 rounded-md py-1 transition-colors group"
                       >
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: group.color }} />
+                        {(isAdmin || isEmployee) && <div className="w-3 h-3 rounded-full" style={{ backgroundColor: group.color }} />}
                         <h4 className="font-medium text-sm text-foreground">{group.name}</h4>
                         <span className="text-xs text-muted-foreground ml-1">({group.services.length})</span>
                         <div className="flex-1 h-px bg-border" />

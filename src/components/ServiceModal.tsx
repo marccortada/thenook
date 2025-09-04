@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Service, Package } from "@/hooks/useDatabase";
 import { usePromotions } from "@/hooks/usePromotions";
-import { useTreatmentGroups } from "@/hooks/useTreatmentGroups";
+import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { cn } from "@/lib/utils";
 import { Star, Clock, Users, Sparkles, Percent, Tag, X, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -208,7 +208,9 @@ const ServiceModal: React.FC<Props> = ({
   packages,
   selectedId,
   onSelect,
-}) => {
+ }) => {
+  const { isAdmin, isEmployee } = useSimpleAuth();
+  
   const handleSelect = (id: string, kind: "service" | "package") => {
     onSelect(id, kind);
     onOpenChange(false);
@@ -287,7 +289,7 @@ const ServiceModal: React.FC<Props> = ({
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full flex items-center gap-2 px-1 hover:bg-accent/50 rounded-md py-2 transition-colors group"
         >
-          {icon}
+          {(isAdmin || isEmployee) && icon}
           <h4 className="font-semibold text-base text-foreground">{title}</h4>
           <span className="text-xs text-muted-foreground ml-2">({totalItems})</span>
           <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
@@ -340,7 +342,7 @@ const ServiceModal: React.FC<Props> = ({
                 title={group.name} 
                 services={group.services}
                 packages={group.packages}
-                icon={<div className="w-4 h-4 rounded-full" style={{ backgroundColor: group.color }} />}
+                icon={(isAdmin || isEmployee) ? <div className="w-4 h-4 rounded-full" style={{ backgroundColor: group.color }} /> : null}
               />
             ))}
           </div>
