@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileCalendarView from '@/components/MobileCalendarView';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -64,9 +66,15 @@ interface BookingFormData {
 const AdvancedCalendarView = () => {
   const { toast } = useToast();
   const { isAdmin, isEmployee } = useSimpleAuth();
+  const isMobile = useIsMobile();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [selectedCenter, setSelectedCenter] = useState<string>('');
+  
+  // Mobile view redirect
+  if (isMobile) {
+    return <MobileCalendarView selectedDate={selectedDate} selectedCenter={selectedCenter} />;
+  }
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
