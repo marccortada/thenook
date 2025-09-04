@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -36,7 +37,6 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const [showBookingDetails, setShowBookingDetails] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [activeCenter, setActiveCenter] = useState(selectedCenter || '');
-  const [showCenterSelect, setShowCenterSelect] = useState(false);
   const [blockingMode, setBlockingMode] = useState(false);
 
   const { bookings, loading: bookingsLoading } = useBookings();
@@ -196,12 +196,29 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
             <Calendar className="h-5 w-5 text-blue-600" />
             <div>
               <h1 className="text-sm font-semibold">The Nook Madrid</h1>
-              <button 
-                onClick={() => setShowCenterSelect(true)}
-                className="text-xs text-blue-600"
+              <Select
+                value={activeCenter}
+                onValueChange={(value) => {
+                  setActiveCenter(value);
+                  onCenterChange?.(value);
+                  const center = centers.find(c => c.id === value);
+                  toast({
+                    title: "Centro cambiado",
+                    description: `Mostrando calendario de ${center?.name}`,
+                  });
+                }}
               >
-                {currentCenter?.name || 'Centro'} ▼
-              </button>
+                <SelectTrigger className="w-auto border-0 p-0 h-auto text-xs text-blue-600 bg-transparent shadow-none">
+                  <SelectValue placeholder="Seleccionar centro" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                  {centers.map((center) => (
+                    <SelectItem key={center.id} value={center.id} className="text-sm">
+                      {center.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="text-right">
@@ -346,41 +363,10 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         <Button
           size="sm"
           className="bg-blue-600 text-white shadow-lg"
-          onClick={() => setShowCenterSelect(true)}
         >
           <Settings className="h-4 w-4" />
         </Button>
       </div>
-
-      {/* Modal selección de centro */}
-      <Dialog open={showCenterSelect} onOpenChange={setShowCenterSelect}>
-        <DialogContent className="max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle>Seleccionar Centro</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            {centers.map((center) => (
-              <Button
-                key={center.id}
-                variant={activeCenter === center.id ? "default" : "outline"}
-                className="w-full justify-start"
-                onClick={() => {
-                  setActiveCenter(center.id);
-                  setShowCenterSelect(false);
-                  onCenterChange?.(center.id);
-                  toast({
-                    title: "Centro cambiado",
-                    description: `Mostrando calendario de ${center.name}`,
-                  });
-                }}
-              >
-                <MapPin className="h-4 w-4 mr-2" />
-                {center.name}
-              </Button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Modal detalles de reserva */}
       <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
