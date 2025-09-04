@@ -114,6 +114,13 @@ const AdvancedCalendarView = () => {
   const [redeemOnCreate, setRedeemOnCreate] = useState(false);
 
   const { bookings, loading: bookingsLoading, refetch: refetchBookings } = useBookings();
+  
+  // Debug bookings
+  useEffect(() => {
+    console.log('AdvancedCalendarView - Bookings loaded:', bookings.length, bookings);
+    console.log('AdvancedCalendarView - Selected center:', selectedCenter);
+    console.log('AdvancedCalendarView - Status filters:', statusFilters);
+  }, [bookings, selectedCenter, statusFilters]);
   const { centers } = useCenters();
   const { lanes } = useLanes();
   const { services } = useServices();
@@ -200,6 +207,9 @@ const AdvancedCalendarView = () => {
 
   // Get booking for specific slot - now with filtering
   const getBookingForSlot = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
+    console.log('Looking for booking:', { centerId, laneId, date: date.toISOString(), timeSlot: timeSlot.toISOString() });
+    console.log('Available bookings:', bookings.length);
+    
     const booking = bookings.find(booking => {
       if (!booking.booking_datetime || booking.center_id !== centerId || booking.lane_id !== laneId) {
         return false;
@@ -219,8 +229,11 @@ const AdvancedCalendarView = () => {
       return timeSlot >= bookingStart && timeSlot < bookingEnd;
     });
 
+    console.log('Found booking:', booking ? booking.id : 'none');
+
     // Apply status filters - if filters are active, only show matching bookings
     if (booking && statusFilters.length > 0) {
+      console.log('Status filters active:', statusFilters, 'booking status:', booking.status);
       return statusFilters.includes(booking.status) ? booking : null;
     }
 
