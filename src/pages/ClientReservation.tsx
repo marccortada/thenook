@@ -193,6 +193,7 @@ const ClientReservation = () => {
       const availableEmployees = employees.filter(e => e.center_id === formData.center && e.active);
       
       let assignedLaneId = null;
+      let noAvailabilityInAssignedLanes = false;
       
       if (service_id && selection?.kind === 'service') {
         // First priority: Check if the service itself has assigned lanes
@@ -201,11 +202,11 @@ const ClientReservation = () => {
         if (selectedService?.lane_ids && selectedService.lane_ids.length > 0) {
           console.log(`🎯 Servicio "${selectedService.name}" tiene carriles asignados:`, selectedService.lane_ids);
           
-          // Find the first available lane from the service's assigned lanes
+          // Check availability in all assigned lanes
           for (const laneId of selectedService.lane_ids) {
             const lane = availableLanes.find(l => l.id === laneId);
             if (lane) {
-              // Check lane capacity for the time slot
+              // Check if this exact time slot is available
               const { data: existingBookings } = await supabase
                 .from('bookings')
                 .select('*')
@@ -218,20 +219,27 @@ const ClientReservation = () => {
                 assignedLaneId = laneId;
                 console.log(`✅ Servicio asignado al carril específico: ${lane.name}`);
                 break;
+              } else {
+                console.log(`❌ Carril específico ocupado: ${lane.name}`);
               }
             }
+          }
+          
+          if (!assignedLaneId) {
+            noAvailabilityInAssignedLanes = true;
+            console.log(`❌ TODOS los carriles específicos del servicio "${selectedService.name}" están ocupados`);
           }
         } else {
           // Second priority: Check treatment group configuration
           const serviceGroup = getTreatmentGroupByService(service_id, services);
           if (serviceGroup?.lane_ids && serviceGroup.lane_ids.length > 0) {
-            console.log(`🎯 Grupo "${serviceGroup.name}" tiene carriles asignados:`, serviceGroup.lane_ids);
+            console.log(`🎭 Grupo "${serviceGroup.name}" tiene carriles asignados:`, serviceGroup.lane_ids);
             
-            // Find the first available lane from the group's assigned lanes
+            // Check availability in all group lanes
             for (const laneId of serviceGroup.lane_ids) {
               const lane = availableLanes.find(l => l.id === laneId);
               if (lane) {
-                // Check lane capacity for the time slot
+                // Check if this exact time slot is available
                 const { data: existingBookings } = await supabase
                   .from('bookings')
                   .select('*')
@@ -244,14 +252,31 @@ const ClientReservation = () => {
                   assignedLaneId = laneId;
                   console.log(`✅ Servicio asignado al carril del grupo "${serviceGroup.name}": ${lane.name}`);
                   break;
+                } else {
+                  console.log(`❌ Carril del grupo ocupado: ${lane.name}`);
                 }
               }
+            }
+            
+            if (!assignedLaneId) {
+              noAvailabilityInAssignedLanes = true;
+              console.log(`❌ TODOS los carriles del grupo "${serviceGroup.name}" están ocupados`);
             }
           }
         }
       }
       
-      // Fallback to random assignment if no specific lanes configured or all are full
+      // If specific lanes are assigned but none are available, show error
+      if (noAvailabilityInAssignedLanes) {
+        toast({
+          title: "Sin disponibilidad",
+          description: "No hay carriles disponibles para este servicio en el horario seleccionado. Por favor, elige otra hora.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Fallback only if no specific lanes were configured
       if (!assignedLaneId) {
         const randomLane = availableLanes.length > 0 ? availableLanes[Math.floor(Math.random() * availableLanes.length)] : null;
         assignedLaneId = randomLane?.id || null;
