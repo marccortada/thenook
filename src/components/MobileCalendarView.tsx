@@ -180,15 +180,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     };
   };
 
-  // Get lane colors for headers (keep simple for headers)
+  // Get lane colors for headers (sin colores, solo gris neutro)
   const getLaneColor = (index: number) => {
-    const colors = [
-      'border-l-4 border-l-blue-500 bg-blue-50',
-      'border-l-4 border-l-green-500 bg-green-50',
-      'border-l-4 border-l-purple-500 bg-purple-50',
-      'border-l-4 border-l-orange-500 bg-orange-50'
-    ];
-    return colors[index] || colors[0];
+    return 'bg-gray-50'; // Sin colores, solo fondo gris neutro
   };
 
   const handleBookingClick = (booking: any) => {
@@ -330,7 +324,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                         {isStartOfBooking && booking && (
                           <div
                             onClick={() => !blockingMode && handleBookingClick(booking)}
-                            className="w-full rounded text-left cursor-pointer p-1 border-l-4"
+                            className="w-full rounded text-left cursor-pointer p-1 border-l-4 absolute top-0 left-0"
                             style={{
                               ...getBookingColorClasses(booking.service_id),
                               height: `${((booking.duration_minutes || 60) / 5) * 40}px`,
@@ -349,7 +343,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                           </div>
                         )}
                         {isOccupied && !isStartOfBooking && (
-                          <div className="w-full h-full bg-blue-50 opacity-50 pointer-events-none"></div>
+                          <div className="w-full h-full opacity-30 pointer-events-none" 
+                               style={{ backgroundColor: `${getServiceLaneColor(filteredBookings.find(b => isSlotOccupied(lane.id, timeStr) && b.lane_id === lane.id)?.service_id || '')}20` }}>
+                          </div>
                         )}
                       </div>
                     );
