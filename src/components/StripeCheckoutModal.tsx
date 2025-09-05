@@ -6,12 +6,13 @@ import { Loader2 } from "lucide-react";
 
 interface StripeCheckoutModalProps {
   clientSecret: string;
+  sessionId?: string;
   onClose: () => void;
 }
 
-const stripePromise = loadStripe("pk_test_51QUQJnAyNEkKfkLVZCjXBFLcYhbcJZKlQVfK8PTqzgxO3F1pv6rV6mNMdkgHfpOmYZGY7jANXs4QWWNKhJhNPcgr00wQ7BSEuK");
+const stripePromise = loadStripe("pk_live_51QUQJnAyNEkKfkLVcBfb7jqNpOvW3ksW8d7xvRzTK9ZTqYrJnCzXcVbNmOpAsQwErTyUiOpLkJhGfDsAzXcVbNm00kEY5L8ZT");
 
-export const StripeCheckoutModal = ({ clientSecret, onClose }: StripeCheckoutModalProps) => {
+export const StripeCheckoutModal = ({ clientSecret, sessionId, onClose }: StripeCheckoutModalProps) => {
   const [loading, setLoading] = useState(true);
 
   const options = {
@@ -20,8 +21,11 @@ export const StripeCheckoutModal = ({ clientSecret, onClose }: StripeCheckoutMod
       // El pago se completó exitosamente
       setTimeout(() => {
         onClose();
-        // Redireccionar o mostrar confirmación
-        window.location.href = "/pago-exitoso";
+        // Redireccionar con session_id para verificación
+        const redirectUrl = sessionId 
+          ? `/pago-exitoso?session_id=${sessionId}`
+          : "/pago-exitoso";
+        window.location.href = redirectUrl;
       }, 2000);
     },
   };

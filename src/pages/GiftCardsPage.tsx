@@ -114,6 +114,7 @@ const GiftCardsPage = () => {
   // Estados para el modal de Stripe
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
+  const [stripeSessionId, setStripeSessionId] = useState<string | null>(null);
   
   const { t } = useTranslation();
 
@@ -591,6 +592,7 @@ const GiftCardsPage = () => {
                               if (data?.client_secret) {
                                 console.log("✅ Client secret recibido, abriendo modal...");
                                 setStripeClientSecret(data.client_secret);
+                                setStripeSessionId(data.session_id);
                                 setShowStripeModal(true);
                               } else {
                                 console.log("❌ No se recibió client_secret");
@@ -630,6 +632,7 @@ const GiftCardsPage = () => {
               {stripeClientSecret && (
                 <StripeCheckoutModal 
                   clientSecret={stripeClientSecret}
+                  sessionId={stripeSessionId}
                   onClose={() => setShowStripeModal(false)}
                 />
               )}
