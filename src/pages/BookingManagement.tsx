@@ -11,6 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Clock, User, CreditCard, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import MobileResponsiveLayout from "@/components/MobileResponsiveLayout";
+import MobileCard from "@/components/MobileCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Booking {
   id: string;
@@ -51,6 +54,7 @@ export default function BookingManagement() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     document.title = "Gestión de Citas | The Nook Madrid";
@@ -165,123 +169,152 @@ export default function BookingManagement() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+        <MobileResponsiveLayout padding="md">
+          <h1 className={`font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent ${
+            isMobile ? 'text-lg' : 'text-2xl'
+          }`}>
             Gestión de Citas - The Nook Madrid
           </h1>
-        </div>
+        </MobileResponsiveLayout>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="grid gap-6">
+      <main className="py-4 sm:py-8">
+        <MobileResponsiveLayout maxWidth="7xl" padding="md">
+          <div className="space-y-4 sm:space-y-6">
             {bookings.map((booking) => (
-              <Card key={booking.id} className="shadow-md booking-card">
-                <CardHeader className="pb-4">
-                  <div className="flex justify-between items-start">
+              <MobileCard key={booking.id} className="booking-card" padding="sm">
+                <div className="space-y-3 sm:space-y-4">
+                  {/* Header Mobile/Desktop */}
+                  <div className={`${isMobile ? 'space-y-3' : 'flex justify-between items-start'}`}>
                     <div className="space-y-2">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Calendar className="h-5 w-5" />
+                      <div className={`font-semibold flex items-center gap-2 ${
+                        isMobile ? 'text-base' : 'text-lg'
+                      }`}>
+                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
                         Cita - {format(new Date(booking.booking_datetime), 'dd/MM/yyyy', { locale: es })}
-                      </CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      </div>
+                      <div className={`${
+                        isMobile ? 'flex flex-col gap-1' : 'flex items-center gap-4'
+                      } text-xs sm:text-sm text-muted-foreground`}>
                         <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
+                          <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                           {format(new Date(booking.booking_datetime), 'HH:mm', { locale: es })} 
                           ({booking.duration_minutes} min)
                         </div>
                         {booking.profiles && (
                           <div className="flex items-center gap-1">
-                            <User className="h-4 w-4" />
-                            {booking.profiles.first_name} {booking.profiles.last_name}
+                            <User className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span className="truncate">
+                              {booking.profiles.first_name} {booking.profiles.last_name}
+                            </span>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="text-right space-y-2">
-                      <div className="text-xl font-bold text-primary">
+                    <div className={`${isMobile ? 'flex justify-between items-center' : 'text-right'} space-y-2`}>
+                      <div className={`font-bold text-primary ${
+                        isMobile ? 'text-lg' : 'text-xl'
+                      }`}>
                         {(booking.total_price_cents / 100).toFixed(2)}€
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1 sm:gap-2">
                         {getStatusBadge(booking.status)}
                         {getPaymentBadge(booking.payment_status)}
                       </div>
                     </div>
                   </div>
-                </CardHeader>
 
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Details Grid */}
+                  <div className={`grid gap-3 sm:gap-4 ${
+                    isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+                  }`}>
                     <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Servicio</Label>
-                      <p className="font-medium">{booking.services?.name || 'Sin servicio'}</p>
+                      <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Servicio</Label>
+                      <p className="font-medium text-sm sm:text-base truncate">
+                        {booking.services?.name || 'Sin servicio'}
+                      </p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Centro</Label>
-                      <p className="font-medium">{booking.centers?.name || 'Sin centro'}</p>
+                      <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Centro</Label>
+                      <p className="font-medium text-sm sm:text-base truncate">
+                        {booking.centers?.name || 'Sin centro'}
+                      </p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Cliente</Label>
-                      <p className="font-medium">{booking.profiles?.email || 'Sin email'}</p>
+                      <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Cliente</Label>
+                      <p className="font-medium text-sm sm:text-base truncate">
+                        {booking.profiles?.email || 'Sin email'}
+                      </p>
                       {booking.profiles?.phone && (
-                        <p className="text-sm text-muted-foreground">{booking.profiles.phone}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          {booking.profiles.phone}
+                        </p>
                       )}
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Notas</Label>
-                      <p className="text-sm">{booking.notes || 'Sin notas'}</p>
+                      <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Notas</Label>
+                      <p className="text-xs sm:text-sm line-clamp-2">
+                        {booking.notes || 'Sin notas'}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 pt-4 border-t">
-                    <div className="flex items-center gap-2">
-                      <Label className="text-sm">Estado:</Label>
-                      <Select 
-                        value={booking.status} 
-                        onValueChange={(value) => updateBookingStatus(booking.id, value)}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {BOOKING_STATUSES.map((status) => (
-                            <SelectItem key={status.value} value={status.value}>
-                              {status.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {/* Actions */}
+                  <div className={`pt-3 sm:pt-4 border-t space-y-3 ${
+                    isMobile ? '' : 'flex flex-wrap gap-3 space-y-0'
+                  }`}>
+                    <div className={`${isMobile ? 'grid grid-cols-1 gap-3' : 'flex items-center gap-3'}`}>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs sm:text-sm whitespace-nowrap">Estado:</Label>
+                        <Select 
+                          value={booking.status} 
+                          onValueChange={(value) => updateBookingStatus(booking.id, value)}
+                        >
+                          <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-32 sm:w-40'}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {BOOKING_STATUSES.map((status) => (
+                              <SelectItem key={status.value} value={status.value}>
+                                {status.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs sm:text-sm whitespace-nowrap">Pago:</Label>
+                        <Select 
+                          value={booking.payment_status} 
+                          onValueChange={(value) => updatePaymentStatus(booking.id, value)}
+                        >
+                          <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-32 sm:w-40'}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PAYMENT_STATUSES.map((status) => (
+                              <SelectItem key={status.value} value={status.value}>
+                                {status.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Label className="text-sm">Pago:</Label>
-                      <Select 
-                        value={booking.payment_status} 
-                        onValueChange={(value) => updatePaymentStatus(booking.id, value)}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PAYMENT_STATUSES.map((status) => (
-                            <SelectItem key={status.value} value={status.value}>
-                              {status.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className={isMobile ? 'pt-2' : ''}>
+                      <PaymentModal 
+                        booking={booking} 
+                        onPaymentProcessed={fetchBookings} 
+                      />
                     </div>
-
-                    <PaymentModal 
-                      booking={booking} 
-                      onPaymentProcessed={fetchBookings} 
-                    />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </MobileCard>
             ))}
           </div>
-        </div>
+        </MobileResponsiveLayout>
       </main>
     </div>
   );
@@ -299,6 +332,7 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const handleOpenModal = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -441,17 +475,17 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
             style={{
               top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
-              width: `${Math.min(450, window.innerWidth - 40)}px`,
-              maxHeight: `${Math.min(550, window.innerHeight - 80)}px`,
+              width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(450, window.innerWidth - 40)}px`,
+              maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(550, window.innerHeight - 80)}px`,
               overflowY: 'auto'
             }}
           >
-            <div className="p-6">
+            <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
               {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="h-6 w-6 text-green-600" />
-                  <h3 className="text-xl font-semibold">Cobrar Cita</h3>
+              <div className={`flex items-center justify-between ${isMobile ? 'mb-4' : 'mb-6'}`}>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <DollarSign className={`text-green-600 ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`} />
+                  <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>Cobrar Cita</h3>
                 </div>
                 <Button
                   variant="outline"
@@ -464,28 +498,30 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
               </div>
               
               {/* Content */}
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Detalles */}
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-semibold mb-3">Detalles de la cita</h4>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className={`bg-gray-50 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
+                  <h4 className={`font-semibold ${isMobile ? 'mb-2 text-sm' : 'mb-3'}`}>Detalles de la cita</h4>
+                  <div className={`gap-3 text-sm ${
+                    isMobile ? 'grid grid-cols-1 space-y-2' : 'grid grid-cols-2'
+                  }`}>
                     <div>
-                      <p className="text-gray-500">Cliente</p>
-                      <p className="font-medium">
+                      <p className="text-gray-500 text-xs">Cliente</p>
+                      <p className="font-medium truncate">
                         {booking.profiles?.first_name} {booking.profiles?.last_name}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Servicio</p>
-                      <p className="font-medium">{booking.services?.name}</p>
+                      <p className="text-gray-500 text-xs">Servicio</p>
+                      <p className="font-medium truncate">{booking.services?.name}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Centro</p>
-                      <p className="font-medium">{booking.centers?.name}</p>
+                      <p className="text-gray-500 text-xs">Centro</p>
+                      <p className="font-medium truncate">{booking.centers?.name}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Importe</p>
-                      <p className="font-bold text-lg text-green-600">
+                      <p className="text-gray-500 text-xs">Importe</p>
+                      <p className={`font-bold text-green-600 ${isMobile ? 'text-base' : 'text-lg'}`}>
                         {(booking.total_price_cents / 100).toFixed(2)}€
                       </p>
                     </div>
@@ -494,12 +530,12 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
 
                 {/* Forma de pago */}
                 <div>
-                  <Label className="text-sm font-medium">Forma de Pago</Label>
+                  <Label className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>Forma de Pago</Label>
                   <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Seleccionar forma de pago..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent side="bottom" align="start" sideOffset={4}>
                       {PAYMENT_METHODS.map((method) => (
                         <SelectItem key={method.value} value={method.value}>
                           {method.label}
@@ -511,7 +547,7 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
 
                 {/* Notas */}
                 <div>
-                  <Label className="text-sm font-medium">Notas del pago (opcional)</Label>
+                  <Label className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>Notas del pago (opcional)</Label>
                   <Input
                     value={paymentNotes}
                     onChange={(e) => setPaymentNotes(e.target.value)}
@@ -521,11 +557,12 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
                 </div>
 
                 {/* Botones */}
-                <div className="flex gap-3 pt-4">
+                <div className={`flex gap-2 sm:gap-3 ${isMobile ? 'pt-3' : 'pt-4'}`}>
                   <Button 
                     variant="outline" 
                     className="flex-1"
                     onClick={closeModal}
+                    size={isMobile ? "sm" : "default"}
                   >
                     Cancelar
                   </Button>
@@ -533,9 +570,12 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
                     onClick={processPayment}
                     className="flex-1 bg-green-600 hover:bg-green-700"
                     disabled={!paymentMethod}
+                    size={isMobile ? "sm" : "default"}
                   >
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Confirmar - {(booking.total_price_cents / 100).toFixed(2)}€
+                    <DollarSign className={`${isMobile ? 'h-3 w-3 mr-1' : 'h-4 w-4 mr-2'}`} />
+                    <span className={isMobile ? 'text-xs' : ''}>
+                      Confirmar - {(booking.total_price_cents / 100).toFixed(2)}€
+                    </span>
                   </Button>
                 </div>
               </div>
