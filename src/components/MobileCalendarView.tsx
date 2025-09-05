@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -239,40 +239,58 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     setSelectedBooking(null);
   };
 
-  // Enhanced touch handlers for proper drag & drop
+  // Simplified touch handlers for drag & drop
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const handleTouchStart = (booking: any, event: React.TouchEvent) => {
     if (blockingMode) return;
     
     const touch = event.touches[0];
+    const rect = event.currentTarget.getBoundingClientRect();
+    
     setTouchStartTime(Date.now());
     setTouchStartPos({ x: touch.clientX, y: touch.clientY });
-    setDraggedBooking(null); // Reset initially
+    setDraggedBooking(null);
     setIsDragging(false);
     
-    // Set a timer for long press detection
-    setTimeout(() => {
-      const currentTime = Date.now();
-      if (currentTime - touchStartTime >= 500 && !isDragging) { // 500ms long press
-        console.log('🖐️ Long press detected - enabling drag for:', booking.id);
-        setDraggedBooking(booking);
+    // Clear any existing timer
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+    }
+    
+    // Start long press timer
+    longPressTimerRef.current = setTimeout(() => {
+      console.log('🖐️ Long press detected - enabling drag for:', booking.id);
+      setDraggedBooking(booking);
+      setDragOffset({
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      });
+      
+      // Add haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
       }
-    }, 500);
+    }, 300); // Reduced to 300ms for better UX
     
     console.log('🖐️ Touch start:', booking.id);
   };
 
   const handleTouchMove = (event: React.TouchEvent) => {
-    if (!draggedBooking) return;
-    
     const touch = event.touches[0];
     const distance = Math.sqrt(
       Math.pow(touch.clientX - touchStartPos.x, 2) + 
       Math.pow(touch.clientY - touchStartPos.y, 2)
     );
     
-    // Consider it dragging if moved more than 15px
-    if (distance > 15) {
+    // If moved more than 10px, cancel long press timer
+    if (distance > 10 && longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    
+    // If we have a dragged booking, we're in drag mode
+    if (draggedBooking) {
       setIsDragging(true);
       event.preventDefault(); // Prevent scrolling
       console.log('✋ Touch move - dragging confirmed');
@@ -280,32 +298,39 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   };
 
   const handleTouchEnd = (event: React.TouchEvent) => {
-    if (!draggedBooking) return;
-    
-    const touch = event.changedTouches[0];
-    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-    
-    console.log('🎯 Touch end - looking for drop target');
-    
-    // Buscar la celda de destino
-    let targetCell = elementBelow as HTMLElement;
-    while (targetCell && !targetCell.dataset?.laneId) {
-      targetCell = targetCell.parentElement as HTMLElement;
+    // Clear timer
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
     }
     
-    if (targetCell && targetCell.dataset?.laneId && targetCell.dataset?.timeSlot) {
-      const targetLaneId = targetCell.dataset.laneId;
-      const targetTimeStr = targetCell.dataset.timeSlot;
+    const wasDragging = isDragging;
+    
+    if (draggedBooking && wasDragging) {
+      const touch = event.changedTouches[0];
+      const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
       
-      // Solo mover si es a un carril diferente o tiempo diferente
-      if (targetLaneId !== draggedBooking.lane_id || targetTimeStr !== format(parseISO(draggedBooking.booking_datetime), 'HH:mm')) {
-        handleMoveBooking(draggedBooking, targetLaneId, targetTimeStr);
-      } else if (!isDragging) {
-        // Si no se movió, tratar como click para abrir modal
-        handleBookingClick(draggedBooking, event);
+      console.log('🎯 Touch end - looking for drop target');
+      
+      // Find target cell
+      let targetCell = elementBelow as HTMLElement;
+      while (targetCell && !targetCell.dataset?.laneId) {
+        targetCell = targetCell.parentElement as HTMLElement;
       }
-    } else if (!isDragging) {
-      // Si no se movió y no hay target, tratar como click
+      
+      if (targetCell && targetCell.dataset?.laneId && targetCell.dataset?.timeSlot) {
+        const targetLaneId = targetCell.dataset.laneId;
+        const targetTimeStr = targetCell.dataset.timeSlot;
+        
+        console.log('🎯 Drop target found:', { targetLaneId, targetTimeStr });
+        
+        // Move if different lane or time
+        if (targetLaneId !== draggedBooking.lane_id || targetTimeStr !== format(parseISO(draggedBooking.booking_datetime), 'HH:mm')) {
+          handleMoveBooking(draggedBooking, targetLaneId, targetTimeStr);
+        }
+      }
+    } else if (draggedBooking && !wasDragging) {
+      // Short tap - open modal
       handleBookingClick(draggedBooking, event);
     }
     
