@@ -40,11 +40,15 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const [activeCenter, setActiveCenter] = useState(selectedCenter || '');
   const [blockingMode, setBlockingMode] = useState(false);
 
+  console.log('🚀 MOBILE CALENDAR VIEW LOADING!');
+
   const { bookings, loading: bookingsLoading } = useBookings();
   const { lanes } = useLanes();
   const { centers } = useCenters();
   const { services } = useServices();
   const { treatmentGroups } = useTreatmentGroups();
+
+  console.log('📊 MOBILE DATA LOADED - bookings:', bookings.length, 'services:', services.length, 'groups:', treatmentGroups.length);
 
   // Update currentDate when selectedDate prop changes
   useEffect(() => {
