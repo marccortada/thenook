@@ -46,6 +46,8 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const [draggedBooking, setDraggedBooking] = useState<any>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [touchStartTime, setTouchStartTime] = useState<number>(0);
+  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   console.log('🚀 MOBILE CALENDAR VIEW LOADING!');
 
@@ -74,15 +76,15 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     }
   }, [centers, selectedCenter, activeCenter]);
 
-  // Generate time slots from 10:00 to 22:55 in 5-minute intervals
+  // Generate time slots from 10:00 to 22:00 in 5-minute intervals (same as desktop)
   const generateTimeSlots = () => {
     const slots = [];
-    const startHour = 10;  // Cambio: empezar a las 10 AM
+    const startHour = 10;
     const endHour = 22;
     
     for (let hour = startHour; hour <= endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 5) {
-        if (hour === endHour && minute > 55) break;
+        if (hour === endHour && minute > 0) break; // Stop at 22:00 exactly like desktop
         
         const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push(timeStr);
@@ -237,38 +239,44 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     setSelectedBooking(null);
   };
 
-  // Touch handlers para drag & drop
+  // Enhanced touch handlers for proper drag & drop
+  
   const handleTouchStart = (booking: any, event: React.TouchEvent) => {
     if (blockingMode) return;
     
     const touch = event.touches[0];
-    const rect = event.currentTarget.getBoundingClientRect();
-    
-    setDragOffset({
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top
-    });
-    
-    setDraggedBooking(booking);
+    setTouchStartTime(Date.now());
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+    setDraggedBooking(null); // Reset initially
     setIsDragging(false);
     
-    // Prevenir comportamientos por defecto
-    event.preventDefault();
+    // Set a timer for long press detection
+    setTimeout(() => {
+      const currentTime = Date.now();
+      if (currentTime - touchStartTime >= 500 && !isDragging) { // 500ms long press
+        console.log('🖐️ Long press detected - enabling drag for:', booking.id);
+        setDraggedBooking(booking);
+      }
+    }, 500);
     
-    console.log('🖐️ Touch start:', booking.id, 'Position:', { x: touch.clientX, y: touch.clientY });
+    console.log('🖐️ Touch start:', booking.id);
   };
 
   const handleTouchMove = (event: React.TouchEvent) => {
     if (!draggedBooking) return;
     
-    // Marcar como arrastrando después de un pequeño movimiento
     const touch = event.touches[0];
-    setIsDragging(true);
+    const distance = Math.sqrt(
+      Math.pow(touch.clientX - touchStartPos.x, 2) + 
+      Math.pow(touch.clientY - touchStartPos.y, 2)
+    );
     
-    // Prevenir scroll mientras arrastramos
-    event.preventDefault();
-    
-    console.log('✋ Touch move - dragging:', { x: touch.clientX, y: touch.clientY });
+    // Consider it dragging if moved more than 15px
+    if (distance > 15) {
+      setIsDragging(true);
+      event.preventDefault(); // Prevent scrolling
+      console.log('✋ Touch move - dragging confirmed');
+    }
   };
 
   const handleTouchEnd = (event: React.TouchEvent) => {
@@ -639,20 +647,11 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                               transform: draggedBooking?.id === booking.id ? 'scale(1.05)' : 'scale(1)',
                               transition: 'transform 0.2s ease, opacity 0.2s ease'
                             }}
-                            onTouchStart={(e) => {
-                              console.log('📱 Touch start on booking:', booking.id);
-                              handleTouchStart(booking, e);
-                            }}
-                            onTouchMove={(e) => {
-                              console.log('📱 Touch move on booking');
-                              handleTouchMove(e);
-                            }}
-                            onTouchEnd={(e) => {
-                              console.log('📱 Touch end on booking');
-                              handleTouchEnd(e);
-                            }}
+                            onTouchStart={(e) => handleTouchStart(booking, e)}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
                             onClick={(e) => {
-                              // Solo abrir modal si no se está arrastrando
+                              // Only handle click if it wasn't a drag operation
                               if (!isDragging && !draggedBooking) {
                                 e.stopPropagation();
                                 console.log('📱 BOOKING CLICKED ON MOBILE:', booking);
