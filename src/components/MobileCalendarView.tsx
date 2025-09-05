@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   ChevronLeft, 
@@ -42,8 +41,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [activeCenter, setActiveCenter] = useState(selectedCenter || '');
   const [blockingMode, setBlockingMode] = useState(false);
-  const [draggedBooking, setDraggedBooking] = useState<any>(null);
-  const [touchStart, setTouchStart] = useState<{ x: number, y: number } | null>(null);
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
 
   console.log('🚀 MOBILE CALENDAR VIEW LOADING!');
 
@@ -190,11 +188,49 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     return 'bg-gray-50'; // Sin colores, solo fondo gris neutro
   };
 
-  const handleBookingClick = (booking: any, event?: React.MouseEvent | React.TouchEvent) => {
+  const handleBookingClick = (booking: any, event: React.MouseEvent | React.TouchEvent) => {
     event?.stopPropagation();
     console.log('🔥 BOOKING CLICKED:', booking.id, 'Mobile:', isMobile);
+    
+    // Calcular posición del modal basada en el elemento clicado
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    
+    // Dimensiones del modal para móvil
+    const modalWidth = Math.min(350, windowWidth - 20);
+    const modalHeight = Math.min(400, windowHeight - 80);
+    
+    // Calcular posición - centrado horizontalmente, cerca del elemento clickeado
+    let top = rect.top + scrollTop - 50;
+    let left = (windowWidth - modalWidth) / 2;
+    
+    // Ajustar verticalmente para que esté siempre visible
+    const viewportTop = scrollTop + 20;
+    const viewportBottom = scrollTop + windowHeight - 20;
+    
+    if (top < viewportTop) {
+      top = viewportTop;
+    } else if (top + modalHeight > viewportBottom) {
+      top = viewportBottom - modalHeight;
+    }
+    
+    // Asegurar que no se salga horizontalmente
+    if (left < 10) left = 10;
+    if (left + modalWidth > windowWidth - 10) left = windowWidth - modalWidth - 10;
+    
+    console.log('📱 Modal position:', { top, left, elementTop: rect.top, scrollTop });
+    
+    setModalPosition({ top, left });
     setSelectedBooking(booking);
     setShowBookingDetails(true);
+  };
+
+  const closeModal = () => {
+    setShowBookingDetails(false);
+    setSelectedBooking(null);
   };
 
   const handleBlockSlot = (laneId: string, timeStr: string, event?: React.MouseEvent | React.TouchEvent) => {
@@ -210,89 +246,108 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const goToPreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const goToNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
-  // Componente del modal responsive
+  // Modal personalizado como en BookingManagement
   const BookingDetailsModal = () => {
-    console.log('📱 MODAL RENDER:', { showBookingDetails, selectedBooking: !!selectedBooking, isMobile });
-    if (!selectedBooking) return null;
+    if (!selectedBooking || !showBookingDetails) return null;
 
-    const content = (
-      <div className="space-y-4 p-4">
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{selectedBooking.profiles?.first_name || 'Cliente'}</span>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">
-            {format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
-          </span>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">{selectedBooking.duration_minutes || 60} minutos</span>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Euro className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">€{((selectedBooking.total_price_cents || 0) / 100).toFixed(2)}</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">{selectedBooking.services?.name || 'Servicio'}</span>
-        </div>
-
-        <div className="mt-4">
-          <Badge 
-            variant="outline" 
-            style={getBookingColorClasses(selectedBooking.service_id)}
-            className="border-l-4"
-          >
-            {selectedBooking.status}
-          </Badge>
-        </div>
-
-        <div className="flex gap-2 mt-6">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1"
-            onClick={() => setShowBookingDetails(false)}
-          >
-            Cerrar
-          </Button>
-          <Button 
-            size="sm" 
-            className="flex-1"
-            onClick={() => {
-              toast({
-                title: "Editar reserva",
-                description: "Función de edición en desarrollo",
-              });
-            }}
-          >
-            Editar
-          </Button>
-        </div>
-      </div>
-    );
-
-    // Usar Sheet que funciona mejor en móvil
     return (
-      <Sheet open={showBookingDetails} onOpenChange={setShowBookingDetails}>
-        <SheetContent side="bottom" className="h-auto max-h-[80vh]">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Detalles de la Cita
-            </SheetTitle>
-          </SheetHeader>
-          {content}
-        </SheetContent>
-      </Sheet>
+      <>
+        {/* Overlay */}
+        <div 
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={closeModal}
+        />
+        
+        {/* Modal */}
+        <div 
+          className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+          style={{
+            top: `${modalPosition.top}px`,
+            left: `${modalPosition.left}px`,
+            width: `${Math.min(350, window.innerWidth - 20)}px`,
+            maxHeight: `${window.innerHeight - 40}px`,
+            overflowY: 'auto'
+          }}
+        >
+          <div className="p-4">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-lg">Detalles de la Cita</h3>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={closeModal}
+                className="h-8 w-8 p-0"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            {/* Content */}
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-gray-500 text-xs">Cliente</p>
+                    <p className="font-medium">{selectedBooking.profiles?.first_name || 'Cliente'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-gray-500 text-xs">Servicio</p>
+                    <p className="font-medium">{selectedBooking.services?.name || 'Servicio'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-gray-500 text-xs">Fecha y Hora</p>
+                    <p className="font-medium">
+                      {format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-gray-500 text-xs">Duración</p>
+                      <p className="font-medium">{selectedBooking.duration_minutes || 60} min</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Precio</p>
+                      <p className="font-medium">€{((selectedBooking.total_price_cents || 0) / 100).toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={closeModal}
+                >
+                  Cerrar
+                </Button>
+                <Button 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => {
+                    toast({
+                      title: "Editar reserva",
+                      description: "Función de edición en desarrollo",
+                    });
+                  }}
+                >
+                  Editar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
     );
+  };
   };
 
   const currentCenter = centers.find(c => c.id === activeCenter);
@@ -365,8 +420,8 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         </div>
       </div>
 
-      {/* Headers de carriles - sticky pero debajo de los botones */}
-      <div className="bg-white border-b sticky top-[180px] z-40">
+      {/* Headers de carriles - sticky pero debajo del botón */}
+      <div className="bg-white border-b sticky top-[170px] z-40">
         <div className="grid grid-cols-5 text-xs">
           <div className="p-2 text-center border-r bg-gray-50">
             <span className="font-medium">Hora</span>
@@ -473,9 +528,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         )}
       </div>
 
-      {/* Botones de acción - movidos arriba para mejor visibilidad */}
+      {/* Botón de bloqueo - arriba y solo este */}
       <div className="bg-white p-3 border-b shadow-sm sticky top-[120px] z-30">
-        <div className="flex justify-center gap-3">
+        <div className="flex justify-center">
           <Button
             size="sm"
             variant={blockingMode ? "default" : "outline"}
@@ -493,13 +548,6 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
           >
             <Lock className="h-4 w-4 mr-1" />
             {blockingMode ? "Desbloquear" : "Bloquear"}
-          </Button>
-          <Button
-            size="sm"
-            className="bg-blue-600 text-white shadow-sm"
-          >
-            <Settings className="h-4 w-4 mr-1" />
-            Configurar
           </Button>
         </div>
       </div>
