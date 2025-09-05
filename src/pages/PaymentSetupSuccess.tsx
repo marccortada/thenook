@@ -11,16 +11,49 @@ export default function PaymentSetupSuccess() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
+  const [centerData, setCenterData] = useState({
+    name: 'The Nook Madrid',
+    phone: '911 481 474',
+    email: 'reservas@thenookmadrid.com',
+    address: 'Calle Zurbarán 10 bajo derecha, Madrid 28010'
+  });
 
   const setupIntentId = searchParams.get('setup_intent');
 
   useEffect(() => {
+    loadCenterData();
     if (setupIntentId) {
       confirmPaymentMethod();
     } else {
       setLoading(false);
     }
   }, [setupIntentId]);
+
+  const loadCenterData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('centers')
+        .select('name, address, phone, email')
+        .eq('active', true)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading center data:', error);
+        return;
+      }
+
+      if (data) {
+        setCenterData({
+          name: data.name || 'The Nook Madrid',
+          phone: data.phone || '911 481 474',
+          email: data.email || 'reservas@thenookmadrid.com',
+          address: data.address || 'Calle Zurbarán 10 bajo derecha, Madrid 28010'
+        });
+      }
+    } catch (error) {
+      console.error('Error loading center data:', error);
+    }
+  };
 
   const confirmPaymentMethod = async () => {
     try {
@@ -198,8 +231,9 @@ export default function PaymentSetupSuccess() {
             <div className="text-center text-sm">
               <p className="font-medium mb-2">¿Necesitas ayuda?</p>
               <p className="text-muted-foreground">
-                📧 reservas@thenookmadrid.com<br />
-                📞 +34 XXX XXX XXX
+                📧 {centerData.email}<br />
+                📞 {centerData.phone}<br />
+                📍 {centerData.address}
               </p>
               <p className="text-xs border-t pt-2 mt-3">
                 © GnerAI 2025 · Todos los derechos reservados
