@@ -12,6 +12,7 @@ import { useServices, usePackages, useCenters } from "@/hooks/useDatabase";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, Plus, Edit, X, ChevronDown, ChevronUp } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import HappyHourManagement from "@/components/HappyHourManagement";
 import PromotionsManagement from "@/components/PromotionsManagement";
@@ -25,6 +26,7 @@ export default function AdminPricingPromos() {
   const { packages, refetch: refetchPackages } = usePackages();
   const { centers } = useCenters();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     document.title = "Precios y Promos | The Nook Madrid";
@@ -674,9 +676,9 @@ export default function AdminPricingPromos() {
                             const windowHeight = window.innerHeight;
                             const windowWidth = window.innerWidth;
                             
-                            // Dimensiones del modal
-                            const modalWidth = Math.min(1000, windowWidth - 40);
-                            const modalHeight = Math.min(700, windowHeight - 80);
+                            // Dimensiones del modal responsive
+                            const modalWidth = Math.min(isMobile ? 350 : 1000, windowWidth - 40);
+                            const modalHeight = Math.min(isMobile ? windowHeight - 40 : 700, windowHeight - 80);
                             
                             // Calcular posición
                             let top = cardRect.top + scrollTop - 50; // Un poco arriba de la tarjeta
@@ -878,45 +880,47 @@ export default function AdminPricingPromos() {
                   style={{
                     top: `${modalPosition.top}px`,
                     left: `${modalPosition.left}px`,
-                    width: `${Math.min(1000, window.innerWidth - 40)}px`,
-                    maxHeight: `${Math.min(700, window.innerHeight - 80)}px`,
+                    width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(1000, window.innerWidth - 40)}px`,
+                    maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(700, window.innerHeight - 80)}px`,
                     overflowY: 'auto'
                   }}
                 >
-                  <div className="p-6">
+                  <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
                   <Card className="border-none shadow-none">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
+                    <CardHeader className={isMobile ? 'pb-3' : ''}>
+                      <CardTitle className={`flex items-center justify-between ${isMobile ? 'text-lg' : ''}`}>
                         <span className="flex items-center gap-2">
-                          <Edit className="h-5 w-5" />
-                          Editando: {editingService.name}
+                          <Edit className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+                          <span className={isMobile ? 'text-base' : ''}>Editando: {editingService.name}</span>
                         </span>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setEditingService(null)}
+                          className={isMobile ? 'h-8 w-8 p-0' : ''}
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <CardContent className={isMobile ? 'px-0' : ''}>
+                      <div className={`gap-3 ${isMobile ? 'grid grid-cols-1 space-y-3' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
                         <div>
-                          <Label htmlFor="edit-service-name">Nombre *</Label>
+                          <Label htmlFor="edit-service-name" className={isMobile ? 'text-xs' : ''}>Nombre *</Label>
                           <Input
                             id="edit-service-name"
                             value={editingService.name}
                             onChange={(e) => setEditingService({ ...editingService, name: e.target.value })}
+                            className={isMobile ? 'text-sm' : ''}
                           />
                         </div>
                         <div>
-                          <Label htmlFor="edit-service-type">Tipo</Label>
+                          <Label htmlFor="edit-service-type" className={isMobile ? 'text-xs' : ''}>Tipo</Label>
                           <Select
                             value={editingService.type}
                             onValueChange={(value: any) => setEditingService({ ...editingService, type: value })}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className={isMobile ? 'text-sm' : ''}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent 
@@ -925,7 +929,7 @@ export default function AdminPricingPromos() {
                               sideOffset={4}
                             >
                               {serviceTypes.map((type) => (
-                                <SelectItem key={type.value} value={type.value}>
+                                <SelectItem key={type.value} value={type.value} className={isMobile ? 'text-sm' : ''}>
                                   {type.label}
                                 </SelectItem>
                               ))}
@@ -933,7 +937,7 @@ export default function AdminPricingPromos() {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="edit-service-duration">Duración (min) *</Label>
+                          <Label htmlFor="edit-service-duration" className={isMobile ? 'text-xs' : ''}>Duración (min) *</Label>
                           <Input
                             id="edit-service-duration"
                             type="number"
@@ -941,10 +945,11 @@ export default function AdminPricingPromos() {
                             onChange={(e) => setEditingService({ ...editingService, duration_minutes: parseInt(e.target.value || '0') })}
                             min="1"
                             step="5"
+                            className={isMobile ? 'text-sm' : ''}
                           />
                         </div>
                         <div>
-                          <Label htmlFor="edit-service-price">Precio (€) *</Label>
+                          <Label htmlFor="edit-service-price" className={isMobile ? 'text-xs' : ''}>Precio (€) *</Label>
                           <Input
                             id="edit-service-price"
                             type="number"
@@ -956,10 +961,11 @@ export default function AdminPricingPromos() {
                               setEditingService({ ...editingService, price_cents: Math.round(value * 100) });
                             }}
                             min="0"
+                            className={isMobile ? 'text-sm' : ''}
                           />
                         </div>
                         <div>
-                          <Label htmlFor="edit-service-status">Estado</Label>
+                          <Label htmlFor="edit-service-status" className={isMobile ? 'text-xs' : ''}>Estado</Label>
                           <select
                             id="edit-service-status"
                             value={editingService.active ? 'true' : 'false'}
@@ -967,14 +973,14 @@ export default function AdminPricingPromos() {
                               console.log('Estado changed to:', e.target.value);
                               setEditingService({ ...editingService, active: e.target.value === 'true' });
                             }}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 ring-offset-background file:border-0 file:bg-transparent file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isMobile ? 'text-sm' : 'text-sm'}`}
                           >
                             <option value="true">Activo</option>
                             <option value="false">Inactivo</option>
                           </select>
                         </div>
                         <div>
-                          <Label htmlFor="edit-service-center">Centro</Label>
+                          <Label htmlFor="edit-service-center" className={isMobile ? 'text-xs' : ''}>Centro</Label>
                           <select
                             id="edit-service-center"
                             value={editingService.center_id || 'all'}
@@ -985,7 +991,7 @@ export default function AdminPricingPromos() {
                                 center_id: e.target.value === 'all' ? null : e.target.value 
                               });
                             }}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 ring-offset-background file:border-0 file:bg-transparent file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isMobile ? 'text-sm' : 'text-sm'}`}
                           >
                             <option value="all">Ambos centros</option>
                             {centers.map((center) => (
@@ -995,7 +1001,7 @@ export default function AdminPricingPromos() {
                             ))}
                           </select>
                         </div>
-                        <div className="col-span-2">
+                        <div className={isMobile ? '' : 'col-span-2'}>
                           <div className="flex items-center space-x-2 mb-2">
                             <input 
                               type="checkbox" 
@@ -1004,11 +1010,11 @@ export default function AdminPricingPromos() {
                               onChange={(e) => setEditingService({ ...editingService, has_discount: e.target.checked })}
                               className="rounded"
                             />
-                            <Label htmlFor="edit-has-discount" className="text-sm">Aplicar descuento</Label>
+                            <Label htmlFor="edit-has-discount" className={`${isMobile ? 'text-xs' : 'text-sm'}`}>Aplicar descuento</Label>
                           </div>
                           {editingService.has_discount && (
                             <div>
-                              <Label className="text-sm">Precio con descuento (€)</Label>
+                              <Label className={`${isMobile ? 'text-xs' : 'text-sm'}`}>Precio con descuento (€)</Label>
                               <Input 
                                 type="text" 
                                 placeholder="Escribe el precio: 85,50"
@@ -1022,28 +1028,38 @@ export default function AdminPricingPromos() {
                                     }
                                   }
                                 }}
-                                className="text-sm"
+                                className={`${isMobile ? 'text-xs' : 'text-sm'}`}
                               />
                             </div>
                           )}
                         </div>
-                        <div className="md:col-span-2 lg:col-span-3">
-                          <Label htmlFor="edit-service-description">Descripción</Label>
+                        <div className={isMobile ? '' : 'md:col-span-2 lg:col-span-3'}>
+                          <Label htmlFor="edit-service-description" className={isMobile ? 'text-xs' : ''}>Descripción</Label>
                           <Textarea
                             id="edit-service-description"
                             value={editingService.description || ''}
                             onChange={(e) => setEditingService({ ...editingService, description: e.target.value })}
-                            rows={3}
+                            rows={isMobile ? 2 : 3}
+                            className={isMobile ? 'text-sm' : ''}
                           />
                         </div>
                       </div>
-                      <div className="flex justify-end gap-2 mt-4">
-                        <Button variant="outline" onClick={() => setEditingService(null)}>
+                      <div className={`flex gap-2 mt-4 ${isMobile ? 'flex-col' : 'justify-end'}`}>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setEditingService(null)}
+                          size={isMobile ? "sm" : "default"}
+                          className={isMobile ? 'flex-1' : ''}
+                        >
                           Cancelar
                         </Button>
-                        <Button onClick={updateService} className="flex items-center gap-2">
+                        <Button 
+                          onClick={updateService} 
+                          className={`flex items-center gap-2 ${isMobile ? 'flex-1' : ''}`}
+                          size={isMobile ? "sm" : "default"}
+                        >
                           <Edit className="h-4 w-4" />
-                          Actualizar Servicio
+                          <span className={isMobile ? 'text-xs' : ''}>Actualizar Servicio</span>
                         </Button>
                       </div>
                     </CardContent>
