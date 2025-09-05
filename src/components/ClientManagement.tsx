@@ -24,6 +24,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientDialogContent } from "./ClientDialogContent";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ClientManagement = () => {
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
@@ -34,6 +35,7 @@ const ClientManagement = () => {
     bookings: ClientBooking[];
     editingClient: Partial<Client>;
     newNote: { title: string; content: string; category: string; priority: string };
+    modalPosition: { top: number; left: number };
   }>>(new Map());
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailForm, setEmailForm] = useState({
@@ -43,6 +45,7 @@ const ClientManagement = () => {
   });
   const [sendingEmail, setSendingEmail] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Ordenación y creación
   const [sortBy, setSortBy] = useState<'name' | 'total_spent' | 'last_booking' | 'created_at'>('name');
@@ -67,9 +70,41 @@ const ClientManagement = () => {
     }
   }, [searchQuery, clients]);
 
-  const handleClientClick = async (client: Client) => {
+  const handleClientClick = async (event: React.MouseEvent, client: Client) => {
     // Si ya está abierto, no hacer nada
     if (openDialogs.has(client.id)) return;
+    
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Obtener la tarjeta del cliente
+    const cardElement = event.currentTarget as HTMLElement;
+    const cardRect = cardElement.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    
+    // Dimensiones del modal
+    const modalWidth = Math.min(isMobile ? 350 : 700, windowWidth - 40);
+    const modalHeight = Math.min(isMobile ? windowHeight - 40 : 600, windowHeight - 80);
+    
+    // Calcular posición
+    let top = cardRect.top + scrollTop - 50; // Un poco arriba de la tarjeta
+    let left = (windowWidth - modalWidth) / 2; // Centrado horizontalmente
+    
+    // Ajustar verticalmente para que esté siempre visible
+    const viewportTop = scrollTop + 20;
+    const viewportBottom = scrollTop + windowHeight - 20;
+    
+    if (top < viewportTop) {
+      top = viewportTop;
+    } else if (top + modalHeight > viewportBottom) {
+      top = viewportBottom - modalHeight;
+    }
+    
+    // Asegurar que no se salga horizontalmente
+    if (left < 20) left = 20;
+    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
     
     const bookings = await fetchClientBookings(client.id);
     
@@ -77,7 +112,8 @@ const ClientManagement = () => {
       client,
       bookings,
       editingClient: client,
-      newNote: { title: "", content: "", category: "general", priority: "normal" }
+      newNote: { title: "", content: "", category: "general", priority: "normal" },
+      modalPosition: { top, left }
     }));
   };
 
@@ -368,8 +404,8 @@ const ClientManagement = () => {
           ).map((client) => (
             <Card 
               key={client.id} 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => handleClientClick(client)}
+              className="cursor-pointer hover:shadow-md transition-shadow client-card"
+              onClick={(e) => handleClientClick(e, client)}
             >
               <CardContent className="p-3 sm:p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -437,35 +473,61 @@ const ClientManagement = () => {
         const { notes } = useClientNotes(clientId);
         
         return (
-          <Dialog 
-            key={clientId} 
-            open={true} 
-            onOpenChange={(open) => !open && handleCloseDialog(clientId)}
-          >
-            <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="truncate">Ficha: {dialogData.client.first_name} {dialogData.client.last_name}</span>
-                </DialogTitle>
-              </DialogHeader>
-
-              <ClientDialogContent 
-                client={dialogData.client}
-                bookings={dialogData.bookings}
-                editingClient={dialogData.editingClient}
-                newNote={dialogData.newNote}
-                notes={notes}
-                onUpdateClient={() => handleUpdateClient(clientId)}
-                onCreateNote={() => handleCreateNote(clientId)}
-                onUpdateEditingClient={(updates) => updateDialogData(clientId, 'editingClient', { ...dialogData.editingClient, ...updates })}
-                onUpdateNewNote={(updates) => updateDialogData(clientId, 'newNote', { ...dialogData.newNote, ...updates })}
-                onOpenEmailModal={handleOpenEmailModal}
-                getStatusColor={getStatusColor}
-                getStatusText={getStatusText}
-              />
-            </DialogContent>
-          </Dialog>
+          <div key={clientId}>
+            {/* Overlay */}
+            <div 
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => handleCloseDialog(clientId)}
+            />
+            
+            {/* Modal */}
+            <div 
+              className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+              style={{
+                top: `${dialogData.modalPosition.top}px`,
+                left: `${dialogData.modalPosition.left}px`,
+                width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(700, window.innerWidth - 40)}px`,
+                maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(600, window.innerHeight - 80)}px`,
+                overflowY: 'auto'
+              }}
+            >
+              <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
+                {/* Header */}
+                <div className={`flex items-center justify-between ${isMobile ? 'mb-4' : 'mb-6'}`}>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <User className={`text-primary ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`} />
+                    <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>
+                      {dialogData.client.first_name} {dialogData.client.last_name}
+                    </h3>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCloseDialog(clientId)}
+                    className="h-8 w-8 p-0"
+                  >
+                    ✕
+                  </Button>
+                </div>
+                
+                {/* Content */}
+                <ClientDialogContent
+                  client={dialogData.client}
+                  bookings={dialogData.bookings}
+                  editingClient={dialogData.editingClient}
+                  newNote={dialogData.newNote}
+                  notes={notes}
+                  onUpdateClient={() => handleUpdateClient(clientId)}
+                  onCreateNote={() => handleCreateNote(clientId)}
+                  onUpdateEditingClient={(updates) => updateDialogData(clientId, 'editingClient', { ...dialogData.editingClient, ...updates })}
+                  onUpdateNewNote={(updates) => updateDialogData(clientId, 'newNote', { ...dialogData.newNote, ...updates })}
+                  onOpenEmailModal={handleOpenEmailModal}
+                  getStatusColor={getStatusColor}
+                  getStatusText={getStatusText}
+                />
+              </div>
+            </div>
+          </div>
         );
       })}
 
