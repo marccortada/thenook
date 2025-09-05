@@ -300,8 +300,14 @@ const AdvancedCalendarView = () => {
       const bookingStart = bookingDateTime;
       const bookingEnd = addMinutes(bookingStart, booking.duration_minutes || 60);
       
-      // Check if timeSlot falls within booking duration
-      const isTimeMatch = timeSlot >= bookingStart && timeSlot < bookingEnd;
+      // Para 55 minutos: incluir desde 10:00 hasta 10:55 (inclusive de la última slot)
+      const timeSlotTime = timeSlot.getTime();
+      const bookingStartTime = bookingStart.getTime();
+      const bookingEndTime = bookingEnd.getTime();
+      
+      // Incluir la slot si está dentro del rango Y también si es exactamente la slot final
+      const isTimeMatch = (timeSlotTime >= bookingStartTime && timeSlotTime < bookingEndTime) ||
+                         (timeSlotTime === bookingEndTime - (5 * 60 * 1000)); // Incluir la última slot de 5 min
       if (!isTimeMatch) return false;
       
       // Check if booking is specifically assigned to this lane (if lane_id exists)
@@ -871,7 +877,16 @@ const AdvancedCalendarView = () => {
                           const start = parseISO(b.booking_datetime);
                           const end = addMinutes(start, b.duration_minutes || 60);
                           const sameDay = isSameDay(start, selectedDate);
-                          return sameDay && timeSlot.time >= start && timeSlot.time < end;
+                          
+                          // Misma lógica para fallback: incluir última slot
+                          const timeSlotTime = timeSlot.time.getTime();
+                          const startTime = start.getTime();
+                          const endTime = end.getTime();
+                          
+                          const isInRange = (timeSlotTime >= startTime && timeSlotTime < endTime) ||
+                                          (timeSlotTime === endTime - (5 * 60 * 1000));
+                          
+                          return sameDay && isInRange;
                        });
                        if (fallback) booking = fallback;
                      }
