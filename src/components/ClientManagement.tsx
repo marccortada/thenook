@@ -4,11 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Users, 
@@ -16,11 +14,7 @@ import {
   Plus, 
   Phone, 
   Mail, 
-  Calendar,
-  Edit,
   User,
-  MapPin,
-  Clock,
   ArrowUpDown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -29,15 +23,18 @@ import { useClientNotes } from "@/hooks/useClientNotes";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import { ClientDialogContent } from "./ClientDialogContent";
 
 const ClientManagement = () => {
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [clientBookings, setClientBookings] = useState<ClientBooking[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<Partial<Client>>({});
-  const [newNote, setNewNote] = useState({ title: "", content: "", category: "general", priority: "normal" });
+  // Cambiar a Map para manejar múltiples modales independientes
+  const [openDialogs, setOpenDialogs] = useState<Map<string, {
+    client: Client;
+    bookings: ClientBooking[];
+    editingClient: Partial<Client>;
+    newNote: { title: string; content: string; category: string; priority: string };
+  }>>(new Map());
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailForm, setEmailForm] = useState({
     to: "",
@@ -55,13 +52,6 @@ const ClientManagement = () => {
 
   // Use the new hook
   const { clients, loading, updateClient, fetchClientBookings, refetch } = useClients();
-  // Debug logs para diagnosticar problemas de carga
-  console.log('🔍 ClientManagement Debug:', {
-    clientsCount: clients?.length || 0,
-    loading,
-    error: 'Revisar en useClients hook',
-    clients: clients?.slice(0, 3) // Solo primeros 3 clientes para no saturar console
-  });
 
   // Filter clients based on search query
   useEffect(() => {
@@ -78,16 +68,23 @@ const ClientManagement = () => {
   }, [searchQuery, clients]);
 
   const handleClientClick = async (client: Client) => {
-    setSelectedClient(client);
-    setEditingClient(client);
+    // Si ya está abierto, no hacer nada
+    if (openDialogs.has(client.id)) return;
+    
     const bookings = await fetchClientBookings(client.id);
-    setClientBookings(bookings);
-    setIsDialogOpen(true);
+    
+    setOpenDialogs(prev => new Map(prev).set(client.id, {
+      client,
+      bookings,
+      editingClient: client,
+      newNote: { title: "", content: "", category: "general", priority: "normal" }
+    }));
   };
 
-  const handleUpdateClient = async () => {
-    if (!selectedClient) return;
-    await updateClient(selectedClient.id, editingClient);
+  const handleUpdateClient = async (clientId: string) => {
+    const dialogData = openDialogs.get(clientId);
+    if (!dialogData) return;
+    await updateClient(clientId, dialogData.editingClient);
   };
 
   const handleOpenEmailModal = (client: any) => {
@@ -166,22 +163,32 @@ const ClientManagement = () => {
       toast({ title: 'Error', description: e.message || 'No se pudo crear el cliente', variant: 'destructive' });
     }
   };
-  const { notes, createNote, refetch: refetchNotes, error: notesError } = useClientNotes(selectedClient?.id);
 
-  const handleCreateNote = async () => {
-    if (!selectedClient || !newNote.title || !newNote.content) return;
+  const handleCreateNote = async (clientId: string) => {
+    const dialogData = openDialogs.get(clientId);
+    if (!dialogData || !dialogData.newNote.title || !dialogData.newNote.content) return;
 
     try {
+      // Usar el hook de forma dinámica
+      const { createNote } = useClientNotes(clientId);
+      
       await createNote({
-        client_id: selectedClient.id,
-        title: newNote.title,
-        content: newNote.content,
-        category: newNote.category as any,
-        priority: newNote.priority as any,
+        client_id: clientId,
+        title: dialogData.newNote.title,
+        content: dialogData.newNote.content,
+        category: dialogData.newNote.category as any,
+        priority: dialogData.newNote.priority as any,
       });
 
-      setNewNote({ title: "", content: "", category: "general", priority: "normal" });
-      await refetchNotes();
+      // Resetear la nota en el diálogo específico
+      setOpenDialogs(prev => {
+        const newMap = new Map(prev);
+        const data = newMap.get(clientId);
+        if (data) {
+          data.newNote = { title: "", content: "", category: "general", priority: "normal" };
+        }
+        return newMap;
+      });
       
       toast({
         title: "Éxito",
@@ -190,6 +197,25 @@ const ClientManagement = () => {
     } catch (error) {
       console.error('Error creating note:', error);
     }
+  };
+
+  const handleCloseDialog = (clientId: string) => {
+    setOpenDialogs(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(clientId);
+      return newMap;
+    });
+  };
+
+  const updateDialogData = (clientId: string, field: string, value: any) => {
+    setOpenDialogs(prev => {
+      const newMap = new Map(prev);
+      const data = newMap.get(clientId);
+      if (data) {
+        (data as any)[field] = value;
+      }
+      return newMap;
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -213,9 +239,6 @@ const ClientManagement = () => {
       default: return status;
     }
   };
-
-  // Debug visual para verificar que el componente se renderiza
-  console.log('🔍 ClientManagement se está renderizando');
 
   if (loading) {
     return (
@@ -409,369 +432,85 @@ const ClientManagement = () => {
         )}
       </div>
 
-      {/* Client Detail Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <User className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="truncate">Ficha: {selectedClient?.first_name} {selectedClient?.last_name}</span>
-            </DialogTitle>
-          </DialogHeader>
+      {/* Multiple Client Detail Dialogs */}
+      {Array.from(openDialogs.entries()).map(([clientId, dialogData]) => {
+        const { notes } = useClientNotes(clientId);
+        
+        return (
+          <Dialog 
+            key={clientId} 
+            open={true} 
+            onOpenChange={(open) => !open && handleCloseDialog(clientId)}
+          >
+            <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="truncate">Ficha: {dialogData.client.first_name} {dialogData.client.last_name}</span>
+                </DialogTitle>
+              </DialogHeader>
 
-          {selectedClient && (
-            <Tabs defaultValue="info" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 h-auto">
-                <TabsTrigger value="info" className="text-xs sm:text-sm px-2 py-2">Info</TabsTrigger>
-                <TabsTrigger value="bookings" className="text-xs sm:text-sm px-2 py-2">Reservas</TabsTrigger>
-                <TabsTrigger value="notes" className="text-xs sm:text-sm px-2 py-2">Notas</TabsTrigger>
-              </TabsList>
+              <ClientDialogContent 
+                client={dialogData.client}
+                bookings={dialogData.bookings}
+                editingClient={dialogData.editingClient}
+                newNote={dialogData.newNote}
+                notes={notes}
+                onUpdateClient={() => handleUpdateClient(clientId)}
+                onCreateNote={() => handleCreateNote(clientId)}
+                onUpdateEditingClient={(updates) => updateDialogData(clientId, 'editingClient', { ...dialogData.editingClient, ...updates })}
+                onUpdateNewNote={(updates) => updateDialogData(clientId, 'newNote', { ...dialogData.newNote, ...updates })}
+                onOpenEmailModal={handleOpenEmailModal}
+                getStatusColor={getStatusColor}
+                getStatusText={getStatusText}
+              />
+            </DialogContent>
+          </Dialog>
+        );
+      })}
 
-              <TabsContent value="info" className="space-y-3 sm:space-y-4 mt-4">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">Datos del Cliente</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 p-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                      <div>
-                        <Label htmlFor="first_name" className="text-sm">Nombre</Label>
-                        <Input
-                          id="first_name"
-                          value={editingClient.first_name || ""}
-                          onChange={(e) => setEditingClient({ ...editingClient, first_name: e.target.value })}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="last_name" className="text-sm">Apellidos</Label>
-                        <Input
-                          id="last_name"
-                          value={editingClient.last_name || ""}
-                          onChange={(e) => setEditingClient({ ...editingClient, last_name: e.target.value })}
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="email" className="text-sm">Email</Label>
-                      <div className="flex gap-2 mt-1">
-                        <Input
-                          id="email"
-                          type="email"
-                          value={editingClient.email || ""}
-                          onChange={(e) => setEditingClient({ ...editingClient, email: e.target.value })}
-                          className="flex-1"
-                        />
-                         {editingClient.email && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenEmailModal(editingClient);
-                            }}
-                            title="Enviar email"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="phone" className="text-sm">Teléfono</Label>
-                      <div className="flex gap-2 mt-1">
-                        <Input
-                          id="phone"
-                          value={editingClient.phone || ""}
-                          onChange={(e) => setEditingClient({ ...editingClient, phone: e.target.value })}
-                          className="flex-1"
-                        />
-                        {editingClient.phone && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            asChild
-                          >
-                            <a 
-                              href={`tel:${editingClient.phone}`} 
-                              title="Llamar"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Phone className="h-4 w-4" />
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    <Button onClick={handleUpdateClient} className="w-full mt-4">
-                      <Edit className="h-4 w-4 mr-2" />
-                      <span className="text-sm">Guardar Cambios</span>
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">Estadísticas</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
-                      <div className="p-3 bg-primary/5 rounded-lg">
-                        <p className="text-xl sm:text-2xl font-bold text-primary">{selectedClient.total_bookings}</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Total Reservas</p>
-                      </div>
-                      <div className="p-3 bg-green-50 rounded-lg">
-                        <p className="text-xl sm:text-2xl font-bold text-green-600">
-                          €{((selectedClient.total_spent || 0) / 100).toFixed(2)}
-                        </p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Total Gastado</p>
-                      </div>
-                      <div className="p-3 bg-blue-50 rounded-lg">
-                        <p className="text-xl sm:text-2xl font-bold text-blue-600">
-                          {selectedClient.last_booking 
-                            ? format(new Date(selectedClient.last_booking), 'dd/MM/yy', { locale: es })
-                            : 'N/A'
-                          }
-                        </p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Última Visita</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="bookings" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Historial de Reservas</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {clientBookings.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">
-                        No hay reservas registradas
-                      </p>
-                    ) : (
-                      <ScrollArea className="h-[400px]">
-                        <div className="space-y-3">
-                          {clientBookings.map((booking) => (
-                            <div key={booking.id} className="border rounded-lg p-3">
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <Calendar className="h-4 w-4" />
-                                    <span className="font-medium">
-                                      {format(new Date(booking.booking_datetime), 'dd/MM/yyyy HH:mm', { locale: es })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <MapPin className="h-3 w-3" />
-                                    {booking.center_name}
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <Badge className={getStatusColor(booking.status)}>
-                                    {getStatusText(booking.status)}
-                                  </Badge>
-                                  <p className="text-sm font-medium mt-1">
-                                    €{(booking.total_price_cents / 100).toFixed(2)}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <div className="text-sm">
-                                <p><strong>Servicio:</strong> {booking.service_name}</p>
-                                <p><strong>Duración:</strong> {booking.duration_minutes} min</p>
-                                {booking.notes && (
-                                  <p><strong>Notas:</strong> {booking.notes}</p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="notes" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Añadir Nueva Nota</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="note_title">Título</Label>
-                      <Input
-                        id="note_title"
-                        value={newNote.title}
-                        onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
-                        placeholder="Título de la nota"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="note_category">Categoría</Label>
-                        <Select value={newNote.category} onValueChange={(value) => setNewNote({ ...newNote, category: value })}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="general">General</SelectItem>
-                            <SelectItem value="preferences">Preferencias</SelectItem>
-                            <SelectItem value="medical">Médico</SelectItem>
-                            <SelectItem value="allergies">Alergias</SelectItem>
-                            <SelectItem value="behavior">Comportamiento</SelectItem>
-                            <SelectItem value="payment">Pago</SelectItem>
-                            <SelectItem value="complaints">Quejas</SelectItem>
-                            <SelectItem value="compliments">Cumplidos</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="note_priority">Prioridad</Label>
-                        <Select value={newNote.priority} onValueChange={(value) => setNewNote({ ...newNote, priority: value })}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="low">Baja</SelectItem>
-                            <SelectItem value="normal">Normal</SelectItem>
-                            <SelectItem value="high">Alta</SelectItem>
-                            <SelectItem value="urgent">Urgente</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="note_content">Contenido</Label>
-                      <Textarea
-                        id="note_content"
-                        value={newNote.content}
-                        onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
-                        placeholder="Escribe aquí el contenido de la nota..."
-                        rows={3}
-                      />
-                    </div>
-                    
-                    <Button onClick={handleCreateNote} className="w-full">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Añadir Nota
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Notas Existentes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {notes.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">
-                        No hay notas registradas
-                      </p>
-                    ) : (
-                      <ScrollArea className="h-[300px]">
-                        <div className="space-y-3">
-                          {notes.map((note) => (
-                            <div key={note.id} className="border rounded-lg p-3">
-                              <div className="flex justify-between items-start mb-2">
-                                <h4 className="font-medium">{note.title}</h4>
-                                <div className="flex gap-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {note.category}
-                                  </Badge>
-                                  <Badge 
-                                    variant={note.priority === 'urgent' ? 'destructive' : 
-                                           note.priority === 'high' ? 'default' : 'secondary'}
-                                    className="text-xs"
-                                  >
-                                    {note.priority}
-                                  </Badge>
-                                </div>
-                              </div>
-                              <p className="text-sm text-muted-foreground mb-2">{note.content}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {format(new Date(note.created_at), 'dd/MM/yyyy HH:mm', { locale: es })} • {note.staff_name}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de envío de correo */}
+      {/* Email Modal */}
       <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Enviar Correo Electrónico</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email-to">Dirección de correo</Label>
+              <Label htmlFor="email_to">Para</Label>
               <Input
-                id="email-to"
+                id="email_to"
                 type="email"
                 value={emailForm.to}
                 onChange={(e) => setEmailForm({ ...emailForm, to: e.target.value })}
-                placeholder="correo@ejemplo.com"
-                className="mt-1"
+                placeholder="destinatario@ejemplo.com"
               />
             </div>
-            
             <div>
-              <Label htmlFor="email-subject">Asunto</Label>
+              <Label htmlFor="email_subject">Asunto</Label>
               <Input
-                id="email-subject"
-                type="text"
+                id="email_subject"
                 value={emailForm.subject}
                 onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
                 placeholder="Asunto del correo"
-                className="mt-1"
               />
             </div>
-            
             <div>
-              <Label htmlFor="email-message">Mensaje</Label>
+              <Label htmlFor="email_message">Mensaje</Label>
               <Textarea
-                id="email-message"
+                id="email_message"
                 value={emailForm.message}
                 onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
-                placeholder="Escribe tu mensaje aquí..."
-                rows={6}
-                className="mt-1"
+                placeholder="Escribe aquí tu mensaje..."
+                rows={5}
               />
             </div>
-            
-            <div className="flex gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowEmailModal(false)}
-                className="flex-1"
-                disabled={sendingEmail}
-              >
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowEmailModal(false)}>
                 Cancelar
               </Button>
-              <Button
-                onClick={handleSendEmail}
-                className="flex-1"
-                disabled={sendingEmail}
-              >
-                {sendingEmail ? "Enviando..." : "Enviar Correo"}
+              <Button onClick={handleSendEmail} disabled={sendingEmail}>
+                {sendingEmail ? "Enviando..." : "Enviar"}
               </Button>
             </div>
           </div>
