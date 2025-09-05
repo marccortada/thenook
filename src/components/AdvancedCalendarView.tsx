@@ -904,7 +904,7 @@ const AdvancedCalendarView = () => {
                                  backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
                                  borderLeftColor: getServiceLaneColor(booking.service_id),
                                  color: getServiceLaneColor(booking.service_id),
-                                 height: `${(booking.duration_minutes || 60) * 0.8}px`,
+                                 height: `${((booking.duration_minutes || 60) / 5) * 48}px`,
                                  zIndex: 2
                                }}
                               draggable={true}
