@@ -192,12 +192,14 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
 
   const handleBookingClick = (booking: any, event?: React.MouseEvent | React.TouchEvent) => {
     event?.stopPropagation();
+    console.log('🔥 BOOKING CLICKED:', booking.id, 'Mobile:', isMobile);
     setSelectedBooking(booking);
     setShowBookingDetails(true);
   };
 
   const handleBlockSlot = (laneId: string, timeStr: string, event?: React.MouseEvent | React.TouchEvent) => {
     event?.stopPropagation();
+    console.log('🔒 SLOT BLOCKED:', laneId, timeStr);
     toast({
       title: "Carril bloqueado",
       description: `Carril bloqueado en ${timeStr}`,
@@ -205,48 +207,12 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     });
   };
 
-  // Touch handlers para drag & drop en móvil
-  const handleTouchStart = (booking: any, event: React.TouchEvent) => {
-    if (blockingMode) return;
-    
-    const touch = event.touches[0];
-    setTouchStart({ x: touch.clientX, y: touch.clientY });
-    setDraggedBooking(booking);
-  };
-
-  const handleTouchMove = (event: React.TouchEvent) => {
-    if (!draggedBooking || !touchStart) return;
-    event.preventDefault();
-  };
-
-  const handleTouchEnd = (laneId: string, timeStr: string, event: React.TouchEvent) => {
-    if (!draggedBooking || !touchStart) return;
-    
-    const touch = event.changedTouches[0];
-    const deltaX = Math.abs(touch.clientX - touchStart.x);
-    const deltaY = Math.abs(touch.clientY - touchStart.y);
-    
-    // Si no se movió mucho, tratar como click
-    if (deltaX < 10 && deltaY < 10) {
-      handleBookingClick(draggedBooking, event);
-    } else {
-      // Aquí iría la lógica para mover la reserva
-      toast({
-        title: "Mover reserva",
-        description: `Reserva movida a ${timeStr}`,
-        variant: "default"
-      });
-    }
-    
-    setDraggedBooking(null);
-    setTouchStart(null);
-  };
-
   const goToPreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const goToNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
   // Componente del modal/drawer responsive
   const BookingDetailsModal = () => {
+    console.log('📱 MODAL RENDER:', { showBookingDetails, selectedBooking: !!selectedBooking, isMobile });
     if (!selectedBooking) return null;
 
     const content = (
@@ -313,36 +279,21 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
       </div>
     );
 
-    if (isMobile) {
-      return (
-        <Drawer open={showBookingDetails} onOpenChange={setShowBookingDetails}>
-          <DrawerContent className="max-h-[85vh]">
-            <DrawerHeader>
-              <DrawerTitle className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Detalles de la Cita
-              </DrawerTitle>
-            </DrawerHeader>
-            <div className="px-4 pb-6">
-              {content}
-            </div>
-          </DrawerContent>
-        </Drawer>
-      );
-    }
-
+    // Siempre usar Drawer en este componente ya que es específicamente para móvil
     return (
-      <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
-        <DialogContent className="max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      <Drawer open={showBookingDetails} onOpenChange={setShowBookingDetails}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Detalles de la Cita
-            </DialogTitle>
-          </DialogHeader>
-          {content}
-        </DialogContent>
-      </Dialog>
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-6">
+            {content}
+          </div>
+        </DrawerContent>
+      </Drawer>
     );
   };
 
@@ -465,13 +416,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                           draggedBooking && "transition-colors duration-200"
                         )}
                         onClick={(e) => {
+                          console.log('📱 CELL CLICKED:', { blockingMode, hasBooking: !!booking });
                           if (blockingMode && !booking) {
                             handleBlockSlot(lane.id, timeStr, e);
-                          }
-                        }}
-                        onTouchEnd={(e) => {
-                          if (draggedBooking && draggedBooking.lane_id !== lane.id) {
-                            handleTouchEnd(lane.id, timeStr, e);
                           }
                         }}
                       >
@@ -488,10 +435,11 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                               height: `${((booking.duration_minutes || 60) / 5) * 40}px`,
                               zIndex: 10
                             }}
-                            onClick={(e) => handleBookingClick(booking, e)}
-                            onTouchStart={(e) => handleTouchStart(booking, e)}
-                            onTouchMove={handleTouchMove}
-                            onTouchEnd={(e) => e.preventDefault()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('📱 BOOKING CLICKED ON MOBILE:', booking);
+                              handleBookingClick(booking, e);
+                            }}
                           >
                             <div className="text-xs font-semibold truncate">
                               {booking.profiles?.first_name || 'Cliente'}
