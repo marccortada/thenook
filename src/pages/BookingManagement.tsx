@@ -331,6 +331,8 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -529,26 +531,60 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
                 </div>
 
                 {/* Forma de pago */}
-                <div>
+                <div className="relative">
                   <Label className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>Forma de Pago</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Seleccionar forma de pago..." />
-                    </SelectTrigger>
-                    <SelectContent 
-                      side="bottom" 
-                      align="start" 
-                      sideOffset={4}
-                      className="z-[100] bg-background border shadow-lg"
-                      onCloseAutoFocus={(e) => e.preventDefault()}
-                    >
-                      {PAYMENT_METHODS.map((method) => (
-                        <SelectItem key={method.value} value={method.value} className="hover:bg-accent">
-                          {method.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Button
+                    variant="outline"
+                    className="w-full mt-1 justify-between"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                      
+                      setDropdownPosition({
+                        top: rect.bottom + scrollTop + 4,
+                        left: rect.left + scrollLeft,
+                        width: rect.width
+                      });
+                      setIsDropdownOpen(!isDropdownOpen);
+                    }}
+                  >
+                    <span>{paymentMethod ? PAYMENT_METHODS.find(m => m.value === paymentMethod)?.label : "Seleccionar forma de pago..."}</span>
+                    <span className="ml-2">▼</span>
+                  </Button>
+                  
+                  {/* Dropdown personalizado */}
+                  {isDropdownOpen && (
+                    <>
+                      {/* Overlay para cerrar */}
+                      <div 
+                        className="fixed inset-0 z-[99]"
+                        onClick={() => setIsDropdownOpen(false)}
+                      />
+                      {/* Dropdown */}
+                      <div
+                        className="fixed z-[100] bg-background border rounded-md shadow-lg"
+                        style={{
+                          top: `${dropdownPosition.top}px`,
+                          left: `${dropdownPosition.left}px`,
+                          width: `${dropdownPosition.width}px`
+                        }}
+                      >
+                        {PAYMENT_METHODS.map((method) => (
+                          <button
+                            key={method.value}
+                            className="w-full text-left px-3 py-2 hover:bg-accent first:rounded-t-md last:rounded-b-md transition-colors"
+                            onClick={() => {
+                              setPaymentMethod(method.value);
+                              setIsDropdownOpen(false);
+                            }}
+                          >
+                            {method.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Notas */}
