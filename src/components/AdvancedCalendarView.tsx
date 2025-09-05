@@ -185,17 +185,7 @@ const AdvancedCalendarView = () => {
     const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
     if (!serviceGroup) return '#3B82F6';
 
-    // Return color based on group mapping
-    if (serviceGroup.name?.includes('Masajes') && !serviceGroup.name?.includes('Cuatro Manos')) {
-      return '#3B82F6'; // Azul - Masajes
-    } else if (serviceGroup.name?.includes('Tratamientos')) {
-      return '#10B981'; // Verde - Tratamientos
-    } else if (serviceGroup.name?.includes('Rituales')) {
-      return '#8B5CF6'; // Lila - Rituales
-    } else if (serviceGroup.name?.includes('Cuatro Manos')) {
-      return '#F59E0B'; // Amarillo - Masajes a Cuatro Manos
-    }
-    
+    // Use the actual color from the treatment group
     return serviceGroup.color || '#3B82F6';
   };
 
