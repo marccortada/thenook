@@ -239,11 +239,13 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     setSelectedBooking(null);
   };
 
-  // Simplified touch handlers for drag & drop
+  // Simplified and robust touch handlers for drag & drop
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const handleTouchStart = (booking: any, event: React.TouchEvent) => {
     if (blockingMode) return;
+    
+    console.log('🖐️ Touch start:', booking.id);
     
     const touch = event.touches[0];
     const rect = event.currentTarget.getBoundingClientRect();
@@ -258,7 +260,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
       clearTimeout(longPressTimerRef.current);
     }
     
-    // Start long press timer
+    // Start long press timer - more aggressive timing
     longPressTimerRef.current = setTimeout(() => {
       console.log('🖐️ Long press detected - enabling drag for:', booking.id);
       setDraggedBooking(booking);
@@ -267,37 +269,55 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         y: touch.clientY - rect.top
       });
       
+      // Add visual feedback
+      const element = event.currentTarget as HTMLElement;
+      element.style.transform = 'scale(1.1)';
+      element.style.zIndex = '1000';
+      
       // Add haptic feedback if available
       if (navigator.vibrate) {
-        navigator.vibrate(50);
+        navigator.vibrate(100);
       }
-    }, 300); // Reduced to 300ms for better UX
-    
-    console.log('🖐️ Touch start:', booking.id);
+      
+      console.log('🎯 Drag enabled with offset:', { x: touch.clientX - rect.left, y: touch.clientY - rect.top });
+    }, 200); // Even shorter - 200ms
   };
 
   const handleTouchMove = (event: React.TouchEvent) => {
+    console.log('✋ Touch move triggered');
+    
     const touch = event.touches[0];
     const distance = Math.sqrt(
       Math.pow(touch.clientX - touchStartPos.x, 2) + 
       Math.pow(touch.clientY - touchStartPos.y, 2)
     );
     
-    // If moved more than 10px, cancel long press timer
-    if (distance > 10 && longPressTimerRef.current) {
+    console.log('✋ Move distance:', distance);
+    
+    // If moved more than 5px, cancel long press timer (but only if no drag started)
+    if (distance > 5 && longPressTimerRef.current && !draggedBooking) {
+      console.log('✋ Canceling long press due to movement');
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
     
     // If we have a dragged booking, we're in drag mode
     if (draggedBooking) {
+      console.log('✋ Dragging confirmed - preventing scroll');
       setIsDragging(true);
       event.preventDefault(); // Prevent scrolling
-      console.log('✋ Touch move - dragging confirmed');
+      event.stopPropagation();
     }
   };
 
   const handleTouchEnd = (event: React.TouchEvent) => {
+    console.log('🎯 Touch end triggered');
+    
+    // Reset visual feedback
+    const element = event.currentTarget as HTMLElement;
+    element.style.transform = '';
+    element.style.zIndex = '';
+    
     // Clear timer
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
@@ -305,35 +325,54 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     }
     
     const wasDragging = isDragging;
+    const currentDraggedBooking = draggedBooking;
     
-    if (draggedBooking && wasDragging) {
+    console.log('🎯 Touch end state:', { wasDragging, hasDraggedBooking: !!currentDraggedBooking });
+    
+    if (currentDraggedBooking && wasDragging) {
       const touch = event.changedTouches[0];
       const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
       
-      console.log('🎯 Touch end - looking for drop target');
+      console.log('🎯 Looking for drop target at:', { x: touch.clientX, y: touch.clientY });
+      console.log('🎯 Element below:', elementBelow);
       
-      // Find target cell
+      // Find target cell by traversing up the DOM
       let targetCell = elementBelow as HTMLElement;
-      while (targetCell && !targetCell.dataset?.laneId) {
+      let attempts = 0;
+      while (targetCell && !targetCell.dataset?.laneId && attempts < 10) {
         targetCell = targetCell.parentElement as HTMLElement;
+        attempts++;
       }
+      
+      console.log('🎯 Target cell found:', targetCell?.dataset);
       
       if (targetCell && targetCell.dataset?.laneId && targetCell.dataset?.timeSlot) {
         const targetLaneId = targetCell.dataset.laneId;
         const targetTimeStr = targetCell.dataset.timeSlot;
         
-        console.log('🎯 Drop target found:', { targetLaneId, targetTimeStr });
+        console.log('🎯 Valid drop target:', { targetLaneId, targetTimeStr });
         
-        // Move if different lane or time
-        if (targetLaneId !== draggedBooking.lane_id || targetTimeStr !== format(parseISO(draggedBooking.booking_datetime), 'HH:mm')) {
-          handleMoveBooking(draggedBooking, targetLaneId, targetTimeStr);
+        // Check if it's actually a different position
+        const currentTime = format(parseISO(currentDraggedBooking.booking_datetime), 'HH:mm');
+        if (targetLaneId !== currentDraggedBooking.lane_id || targetTimeStr !== currentTime) {
+          console.log('🎯 Moving booking from', { 
+            fromLane: currentDraggedBooking.lane_id, 
+            fromTime: currentTime 
+          }, 'to', { targetLaneId, targetTimeStr });
+          handleMoveBooking(currentDraggedBooking, targetLaneId, targetTimeStr);
+        } else {
+          console.log('🎯 Same position - no move needed');
         }
+      } else {
+        console.log('🎯 No valid drop target found');
       }
-    } else if (draggedBooking && !wasDragging) {
+    } else if (currentDraggedBooking && !wasDragging) {
       // Short tap - open modal
-      handleBookingClick(draggedBooking, event);
+      console.log('🎯 Short tap detected - opening modal');
+      handleBookingClick(currentDraggedBooking, event);
     }
     
+    // Reset state
     setDraggedBooking(null);
     setIsDragging(false);
     setDragOffset({ x: 0, y: 0 });
