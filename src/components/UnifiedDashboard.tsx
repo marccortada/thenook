@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 
 // Import existing components
-import NotificationCenter from './NotificationCenter';
 import ReportsCenter from './ReportsCenter';
 import AdvancedReports from './AdvancedReports';
 
@@ -40,17 +39,6 @@ const UnifiedDashboard = () => {
       bgColor: 'bg-orange-50',
       components: [
         { id: 'management', title: 'Gestión Avanzada', component: AdvancedScheduleManagement },
-      ]
-    },
-    {
-      id: 'notifications',
-      title: 'Centro de Notificaciones',
-      description: 'Gestiona notificaciones automáticas y comunicaciones',
-      icon: Bell,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      components: [
-        { id: 'automation', title: 'Automatización', component: NotificationCenter },
       ]
     },
     {
@@ -85,7 +73,7 @@ const UnifiedDashboard = () => {
       <div className="flex flex-col gap-4">
 
         {/* Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sections.map((section) => {
             const Icon = section.icon;
             const isActive = activeSection === section.id;

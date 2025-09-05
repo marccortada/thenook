@@ -26,7 +26,6 @@ import GiftCardManagement from "@/components/GiftCardManagement";
 import AdvancedDashboard from "@/components/AdvancedDashboard";
 import TreatmentGroupsManagement from "@/components/TreatmentGroupsManagement";
 
-import NotificationCenter from "@/components/NotificationCenter";
 import ReportsCenter from "@/components/ReportsCenter";
 import AdminPricingPromos from "@/pages/AdminPricingPromos";
 import AdminSettings from "@/pages/AdminSettings";
@@ -92,13 +91,6 @@ const AdminDashboard = () => {
       label: "Dashboard Avanzado",
       icon: BarChart3,
       component: AdvancedDashboard,
-      roles: ["admin"]
-    },
-    {
-      id: "notificaciones",
-      label: "Notificaciones",
-      icon: Bell,
-      component: NotificationCenter,
       roles: ["admin"]
     },
     {
