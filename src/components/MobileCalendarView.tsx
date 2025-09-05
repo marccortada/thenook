@@ -158,15 +158,15 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const getServiceLaneColor = (serviceId: string) => {
     const service = services.find(s => s.id === serviceId);
     if (!service || !service.group_id) {
-      return '#3B82F6';
+      return '#3B82F6'; // Default blue if no service or group
     }
 
     const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
     if (!serviceGroup) {
-      return '#3B82F6';
+      return '#3B82F6'; // Default blue if no group found
     }
 
-    return serviceGroup.color || '#3B82F6';
+    return serviceGroup.color || '#3B82F6'; // Use group color or default
   };
 
   // Convert hex color to Tailwind classes
