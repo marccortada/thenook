@@ -631,9 +631,6 @@ const ClientReservation = () => {
                                 <MapPin className="h-4 w-4 flex-shrink-0" />
                                 <div className="flex-1">
                                   <p className="font-medium text-sm">{center.name}</p>
-                                  {center.address && (
-                                    <p className="text-xs text-muted-foreground">{center.address}</p>
-                                  )}
                                 </div>
                                 {isSelected && (
                                   <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,6 @@ import PackageManagement from "@/components/PackageManagement";
 import GiftCardManagement from "@/components/GiftCardManagement";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkingHours } from "@/hooks/useWorkingHours";
-import { supabase } from "@/integrations/supabase/client";
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState("general");
@@ -35,89 +34,23 @@ const AdminSettings = () => {
   const { workingHours, updateWorkingHours, saveWorkingHours, loading } = useWorkingHours();
 
   const [generalSettings, setGeneralSettings] = useState({
-    businessName: "",
-    address: "",
-    phone: "",
-    email: "",
-    website: "",
-    taxId: "",
+    businessName: "The Nook Madrid",
+    address: "Calle Ejemplo 123, Madrid",
+    phone: "+34 123 456 789",
+    email: "reservas@thenookmadrid.com",
+    website: "https://thenookmadrid.com",
+    taxId: "B12345678",
     currency: "EUR",
     timezone: "Europe/Madrid"
   });
-  const [loadingGeneral, setLoadingGeneral] = useState(false);
 
 
 
-  // Load general settings from database
-  const loadGeneralSettings = async () => {
-    try {
-      setLoadingGeneral(true);
-      const { data, error } = await supabase
-        .from('centers')
-        .select('name, address, phone, email')
-        .eq('active', true)
-        .single();
-
-      if (error) {
-        console.error('Error loading general settings:', error);
-        return;
-      }
-
-      if (data) {
-        setGeneralSettings(prev => ({
-          ...prev,
-          businessName: data.name || "",
-          address: data.address || "",
-          phone: data.phone || "",
-          email: data.email || ""
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading general settings:', error);
-    } finally {
-      setLoadingGeneral(false);
-    }
-  };
-
-  const handleSaveSettings = async () => {
-    try {
-      setLoadingGeneral(true);
-      
-      const { error } = await supabase
-        .from('centers')
-        .update({
-          name: generalSettings.businessName,
-          address: generalSettings.address,
-          phone: generalSettings.phone,
-          email: generalSettings.email,
-          updated_at: new Date().toISOString()
-        })
-        .eq('active', true);
-
-      if (error) {
-        console.error('Error saving general settings:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo guardar la configuración general",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      toast({
-        title: "Configuración guardada",
-        description: "La configuración general ha sido actualizada correctamente",
-      });
-    } catch (error) {
-      console.error('Error saving general settings:', error);
-      toast({
-        title: "Error", 
-        description: "No se pudo guardar la configuración general",
-        variant: "destructive"
-      });
-    } finally {
-      setLoadingGeneral(false);
-    }
+  const handleSaveSettings = (section: string) => {
+    toast({
+      title: "Configuración guardada",
+      description: `La configuración de ${section} ha sido actualizada correctamente`,
+    });
   };
 
   const handleSaveWorkingHours = async () => {
@@ -139,11 +72,6 @@ const AdminSettings = () => {
     { key: "saturday", label: "Sábado" },
     { key: "sunday", label: "Domingo" }
   ];
-
-  // Load data on component mount
-  useEffect(() => {
-    loadGeneralSettings();
-  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -251,12 +179,8 @@ const AdminSettings = () => {
                     className="min-h-[80px] sm:min-h-[100px]"
                   />
                 </div>
-                <Button 
-                  onClick={handleSaveSettings} 
-                  className="w-full sm:w-auto"
-                  disabled={loadingGeneral}
-                >
-                  {loadingGeneral ? "Guardando..." : "Guardar Configuración General"}
+                <Button onClick={() => handleSaveSettings("general")} className="w-full sm:w-auto">
+                  Guardar Configuración General
                 </Button>
               </CardContent>
             </Card>
