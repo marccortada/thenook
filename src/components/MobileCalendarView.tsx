@@ -348,7 +348,6 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
       </>
     );
   };
-  };
 
   const currentCenter = centers.find(c => c.id === activeCenter);
 
@@ -465,8 +464,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                         key={`${lane.id}-${timeStr}`} 
                         className={cn(
                           "border-r border-gray-200 last:border-r-0 p-1 min-h-[40px] relative bg-white",
-                          blockingMode ? "hover:bg-red-50 cursor-pointer" : "hover:bg-gray-50",
-                          draggedBooking && "transition-colors duration-200"
+                          blockingMode ? "hover:bg-red-50 cursor-pointer" : "hover:bg-gray-50"
                         )}
                         onClick={(e) => {
                           console.log('📱 CELL CLICKED:', { blockingMode, hasBooking: !!booking });
