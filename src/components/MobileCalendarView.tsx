@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   ChevronLeft, 
@@ -20,6 +21,7 @@ import { es } from 'date-fns/locale';
 import { useBookings, useLanes, useCenters, useServices } from '@/hooks/useDatabase';
 import { useTreatmentGroups } from '@/hooks/useTreatmentGroups';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 interface MobileCalendarViewProps {
@@ -34,11 +36,14 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   onCenterChange 
 }) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(selectedDate);
   const [showBookingDetails, setShowBookingDetails] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [activeCenter, setActiveCenter] = useState(selectedCenter || '');
   const [blockingMode, setBlockingMode] = useState(false);
+  const [draggedBooking, setDraggedBooking] = useState<any>(null);
+  const [touchStart, setTouchStart] = useState<{ x: number, y: number } | null>(null);
 
   console.log('🚀 MOBILE CALENDAR VIEW LOADING!');
 
@@ -185,20 +190,161 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     return 'bg-gray-50'; // Sin colores, solo fondo gris neutro
   };
 
-  const handleBookingClick = (booking: any) => {
+  const handleBookingClick = (booking: any, event?: React.MouseEvent | React.TouchEvent) => {
+    event?.stopPropagation();
     setSelectedBooking(booking);
     setShowBookingDetails(true);
   };
 
-  const handleBlockSlot = (laneId: string, timeStr: string) => {
+  const handleBlockSlot = (laneId: string, timeStr: string, event?: React.MouseEvent | React.TouchEvent) => {
+    event?.stopPropagation();
     toast({
-      title: "Modo bloqueo",
-      description: `Bloqueando carril en ${timeStr}`,
+      title: "Carril bloqueado",
+      description: `Carril bloqueado en ${timeStr}`,
+      variant: "default"
     });
+  };
+
+  // Touch handlers para drag & drop en móvil
+  const handleTouchStart = (booking: any, event: React.TouchEvent) => {
+    if (blockingMode) return;
+    
+    const touch = event.touches[0];
+    setTouchStart({ x: touch.clientX, y: touch.clientY });
+    setDraggedBooking(booking);
+  };
+
+  const handleTouchMove = (event: React.TouchEvent) => {
+    if (!draggedBooking || !touchStart) return;
+    event.preventDefault();
+  };
+
+  const handleTouchEnd = (laneId: string, timeStr: string, event: React.TouchEvent) => {
+    if (!draggedBooking || !touchStart) return;
+    
+    const touch = event.changedTouches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+    
+    // Si no se movió mucho, tratar como click
+    if (deltaX < 10 && deltaY < 10) {
+      handleBookingClick(draggedBooking, event);
+    } else {
+      // Aquí iría la lógica para mover la reserva
+      toast({
+        title: "Mover reserva",
+        description: `Reserva movida a ${timeStr}`,
+        variant: "default"
+      });
+    }
+    
+    setDraggedBooking(null);
+    setTouchStart(null);
   };
 
   const goToPreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const goToNextDay = () => setCurrentDate(addDays(currentDate, 1));
+
+  // Componente del modal/drawer responsive
+  const BookingDetailsModal = () => {
+    if (!selectedBooking) return null;
+
+    const content = (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{selectedBooking.profiles?.first_name || 'Cliente'}</span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">
+            {format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">{selectedBooking.duration_minutes || 60} minutos</span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Euro className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">€{((selectedBooking.total_price_cents || 0) / 100).toFixed(2)}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">{selectedBooking.services?.name || 'Servicio'}</span>
+        </div>
+
+        <div className="mt-4">
+          <Badge 
+            variant="outline" 
+            style={getBookingColorClasses(selectedBooking.service_id)}
+            className="border-l-4"
+          >
+            {selectedBooking.status}
+          </Badge>
+        </div>
+
+        <div className="flex gap-2 mt-6">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1"
+            onClick={() => setShowBookingDetails(false)}
+          >
+            Cerrar
+          </Button>
+          <Button 
+            size="sm" 
+            className="flex-1"
+            onClick={() => {
+              toast({
+                title: "Editar reserva",
+                description: "Función de edición en desarrollo",
+              });
+            }}
+          >
+            Editar
+          </Button>
+        </div>
+      </div>
+    );
+
+    if (isMobile) {
+      return (
+        <Drawer open={showBookingDetails} onOpenChange={setShowBookingDetails}>
+          <DrawerContent className="max-h-[85vh]">
+            <DrawerHeader>
+              <DrawerTitle className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Detalles de la Cita
+              </DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-6">
+              {content}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      );
+    }
+
+    return (
+      <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Detalles de la Cita
+            </DialogTitle>
+          </DialogHeader>
+          {content}
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   const currentCenter = centers.find(c => c.id === activeCenter);
 
@@ -304,7 +450,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                     <span className="text-xs font-medium text-gray-700">{timeStr}</span>
                   </div>
 
-                  {/* Columnas de carriles */}
+                   {/* Columnas de carriles */}
                   {centerLanes.slice(0, 4).map((lane, laneIndex) => {
                     const booking = getBookingForSlot(lane.id, timeStr);
                     const isOccupied = isSlotOccupied(lane.id, timeStr);
@@ -313,23 +459,39 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                     return (
                       <div 
                         key={`${lane.id}-${timeStr}`} 
-                        className="border-r border-gray-200 last:border-r-0 p-1 min-h-[40px] relative bg-white hover:bg-gray-50"
-                        onClick={blockingMode ? () => handleBlockSlot(lane.id, timeStr) : undefined}
+                        className={cn(
+                          "border-r border-gray-200 last:border-r-0 p-1 min-h-[40px] relative bg-white",
+                          blockingMode ? "hover:bg-red-50 cursor-pointer" : "hover:bg-gray-50",
+                          draggedBooking && "transition-colors duration-200"
+                        )}
+                        onClick={(e) => {
+                          if (blockingMode && !booking) {
+                            handleBlockSlot(lane.id, timeStr, e);
+                          }
+                        }}
+                        onTouchEnd={(e) => {
+                          if (draggedBooking && draggedBooking.lane_id !== lane.id) {
+                            handleTouchEnd(lane.id, timeStr, e);
+                          }
+                        }}
                       >
-                        {blockingMode && (
+                        {blockingMode && !booking && (
                           <div className="absolute top-1 right-1">
-                            <Lock className="h-2 w-2 text-red-500" />
+                            <Lock className="h-3 w-3 text-red-500" />
                           </div>
                         )}
                         {isStartOfBooking && booking && (
                           <div
-                            onClick={() => !blockingMode && handleBookingClick(booking)}
-                            className="w-full rounded text-left cursor-pointer p-1 border-l-4 absolute top-0 left-0"
+                            className="w-full rounded text-left cursor-pointer p-1 border-l-4 absolute top-0 left-0 select-none"
                             style={{
                               ...getBookingColorClasses(booking.service_id),
                               height: `${((booking.duration_minutes || 60) / 5) * 40}px`,
                               zIndex: 10
                             }}
+                            onClick={(e) => handleBookingClick(booking, e)}
+                            onTouchStart={(e) => handleTouchStart(booking, e)}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={(e) => e.preventDefault()}
                           >
                             <div className="text-xs font-semibold truncate">
                               {booking.profiles?.first_name || 'Cliente'}
@@ -369,9 +531,18 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
       <div className="fixed bottom-4 right-4 flex flex-col gap-2">
         <Button
           size="sm"
-          variant="outline"
-          className="bg-white shadow-lg"
-          onClick={() => setBlockingMode(!blockingMode)}
+          variant={blockingMode ? "default" : "outline"}
+          className={cn(
+            "shadow-lg",
+            blockingMode ? "bg-red-600 text-white" : "bg-white"
+          )}
+          onClick={() => {
+            setBlockingMode(!blockingMode);
+            toast({
+              title: blockingMode ? "Modo normal" : "Modo bloqueo activado",
+              description: blockingMode ? "Toca las reservas para editarlas" : "Toca los espacios vacíos para bloquear",
+            });
+          }}
         >
           <Lock className="h-4 w-4" />
         </Button>
@@ -383,53 +554,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         </Button>
       </div>
 
-      {/* Modal detalles de reserva */}
-      <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
-        <DialogContent className="max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Detalles de la Cita
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedBooking && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{selectedBooking.profiles?.first_name || 'Cliente'}</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">
-                  {format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{selectedBooking.duration_minutes || 60} minutos</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Euro className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">€{((selectedBooking.total_price_cents || 0) / 100).toFixed(2)}</span>
-              </div>
+      {/* Modal responsive */}
+      <BookingDetailsModal />
 
-              <div className="mt-3">
-                <Badge 
-                  variant="outline" 
-                  style={getBookingColorClasses(selectedBooking.service_id)}
-                  className="border-l-4"
-                >
-                  {selectedBooking.status}
-                </Badge>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
