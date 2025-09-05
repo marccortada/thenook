@@ -300,13 +300,9 @@ const AdvancedCalendarView = () => {
       const bookingStart = bookingDateTime;
       const bookingEnd = addMinutes(bookingStart, booking.duration_minutes || 60);
       
-      // SIMPLE: Para 55 minutos (10:00 - 10:55), incluir TODAS las slots hasta el final
-      const timeSlotMinutes = timeSlot.getHours() * 60 + timeSlot.getMinutes();
-      const bookingStartMinutes = bookingStart.getHours() * 60 + bookingStart.getMinutes();
-      const bookingEndMinutes = bookingStartMinutes + (booking.duration_minutes || 60);
-      
-      // Incluir la slot de inicio Y todas las slots hasta la duración exacta (inclusiva)
-      const isTimeMatch = timeSlotMinutes >= bookingStartMinutes && timeSlotMinutes <= bookingEndMinutes;
+      // Para 55 minutos: ocupar las 11 slots correctas (10:00 hasta 10:50)
+      // Pero visualmente llegar hasta 10:55 con la altura
+      const isTimeMatch = timeSlot >= bookingStart && timeSlot < bookingEnd;
       if (!isTimeMatch) return false;
       
       // Check if booking is specifically assigned to this lane (if lane_id exists)
@@ -871,20 +867,13 @@ const AdvancedCalendarView = () => {
                    {centerLanes.slice(0, 4).map((lane) => {
                      let booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, timeSlot.time);
                      if (!booking && lane.id === centerLanes[0].id) {
-                       const fallback = bookings.find(b => {
-                         if (!b.booking_datetime || b.center_id !== selectedCenter || b.lane_id) return false;
+                        const fallback = bookings.find(b => {
+                          if (!b.booking_datetime || b.center_id !== selectedCenter || b.lane_id) return false;
                           const start = parseISO(b.booking_datetime);
+                          const end = addMinutes(start, b.duration_minutes || 60);
                           const sameDay = isSameDay(start, selectedDate);
-                          
-                          // MISMA LÓGICA SIMPLE para fallback
-                          const timeSlotMinutes = timeSlot.time.getHours() * 60 + timeSlot.time.getMinutes();
-                          const startMinutes = start.getHours() * 60 + start.getMinutes();
-                          const endMinutes = startMinutes + (b.duration_minutes || 60);
-                          
-                          const isInRange = timeSlotMinutes >= startMinutes && timeSlotMinutes <= endMinutes;
-                          
-                          return sameDay && isInRange;
-                       });
+                          return sameDay && timeSlot.time >= start && timeSlot.time < end;
+                        });
                        if (fallback) booking = fallback;
                      }
                      const isBlocked = isLaneBlocked(lane.id, timeSlot.time);
