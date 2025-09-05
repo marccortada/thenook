@@ -61,14 +61,6 @@ const AdminSettings = () => {
     noShowFee: 50
   });
 
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    smsNotifications: false,
-    pushNotifications: true,
-    reminderHours: 24,
-    autoConfirmation: true,
-    marketingEmails: false
-  });
 
   const handleSaveSettings = (section: string) => {
     toast({
@@ -118,12 +110,11 @@ const AdminSettings = () => {
               <option value="general">🏢 General</option>
               <option value="codes">🏷️ Códigos</option>
               <option value="payments">💳 Pagos</option>
-              <option value="notifications">🔔 Notificaciones</option>
             </select>
           </div>
 
           {/* Desktop Tabs */}
-          <TabsList className="hidden lg:grid w-full grid-cols-4 h-auto mb-6">
+          <TabsList className="hidden lg:grid w-full grid-cols-3 h-auto mb-6">
             <TabsTrigger value="general" className="flex items-center gap-2 p-3">
               <Building2 className="h-4 w-4" />
               <span>General</span>
@@ -135,10 +126,6 @@ const AdminSettings = () => {
             <TabsTrigger value="payments" className="flex items-center gap-2 p-3">
               <CreditCard className="h-4 w-4" />
               <span>Pagos</span>
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2 p-3">
-              <Settings className="h-4 w-4" />
-              <span>Notificaciones</span>
             </TabsTrigger>
           </TabsList>
 
@@ -374,67 +361,6 @@ const AdminSettings = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="notifications" className="space-y-4 sm:space-y-6">
-            <Card className="shadow-sm border-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Configuración de Notificaciones
-                </CardTitle>
-                <CardDescription>
-                  Configura cómo y cuándo enviar notificaciones
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Notificaciones por email</Label>
-                    <Switch
-                      checked={notificationSettings.emailNotifications}
-                      onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, emailNotifications: checked }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Notificaciones por SMS</Label>
-                    <Switch
-                      checked={notificationSettings.smsNotifications}
-                      onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, smsNotifications: checked }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Confirmación automática</Label>
-                    <Switch
-                      checked={notificationSettings.autoConfirmation}
-                      onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, autoConfirmation: checked }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Emails de marketing</Label>
-                    <Switch
-                      checked={notificationSettings.marketingEmails}
-                      onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, marketingEmails: checked }))}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="reminderHours">Horas antes para recordatorio</Label>
-                  <Input
-                    id="reminderHours"
-                    type="number"
-                    min="1"
-                    max="168"
-                    value={notificationSettings.reminderHours}
-                    onChange={(e) => setNotificationSettings(prev => ({ ...prev, reminderHours: parseInt(e.target.value) }))}
-                  />
-                </div>
-
-                <Button onClick={() => handleSaveSettings("notificaciones")}>
-                  Guardar Configuración de Notificaciones
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
         </div>
       </main>
