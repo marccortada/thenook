@@ -88,6 +88,19 @@ export const useTreatmentGroups = () => {
         .single();
 
       if (error) {
+        // Handle duplicate key error (group already exists)
+        if (error.code === '23505') {
+          console.log('Group already exists, fetching existing:', groupData.name);
+          const { data: existing } = await supabase
+            .from('treatment_groups')
+            .select('*')
+            .eq('name', groupData.name)
+            .single();
+          
+          fetchTreatmentGroups();
+          return existing;
+        }
+        
         console.error('Error creating treatment group:', error);
         toast({
           title: 'Error',

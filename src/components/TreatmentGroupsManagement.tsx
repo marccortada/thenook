@@ -53,8 +53,9 @@ const TreatmentGroupsManagement: React.FC = () => {
   const { services, refetch: refetchServices } = useServices();
   const { lanes } = useLanes();
   const { centers } = useCenters();
-  const { treatmentGroups, createTreatmentGroup, updateTreatmentGroup, fetchTreatmentGroups } = useTreatmentGroups();
+  const { treatmentGroups, createTreatmentGroup, updateTreatmentGroup, fetchTreatmentGroups, loading: groupsLoading } = useTreatmentGroups();
   const { toast } = useToast();
+  const didInit = React.useRef(false);
 
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editingService, setEditingService] = useState<any>(null);
@@ -105,19 +106,31 @@ const TreatmentGroupsManagement: React.FC = () => {
 
   // Inicializar grupos predefinidos y asignar servicios automáticamente
   React.useEffect(() => {
+    // Only run initialization once and wait for data to load
+    if (didInit.current || groupsLoading || services.length === 0) {
+      return;
+    }
+
     const initializePredefinedGroups = async () => {
+      // Create a set of existing group names for efficient lookup
+      const existingNames = new Set(treatmentGroups.map(g => g.name.toLowerCase()));
+      
       for (const predefinedGroup of PREDEFINED_GROUPS) {
-        const existingGroup = treatmentGroups.find(g => g.name === predefinedGroup.name);
-        if (!existingGroup) {
-          const newGroup = await createTreatmentGroup({
-            name: predefinedGroup.name,
-            color: predefinedGroup.color,
-            active: true,
-          });
-          
-          if (newGroup) {
-            // Auto-assign services to this group
-            await assignServicesToGroup(predefinedGroup.id, newGroup.id);
+        if (!existingNames.has(predefinedGroup.name.toLowerCase())) {
+          console.log(`Creating missing group: ${predefinedGroup.name}`);
+          try {
+            const newGroup = await createTreatmentGroup({
+              name: predefinedGroup.name,
+              color: predefinedGroup.color,
+              active: true,
+            });
+            
+            if (newGroup) {
+              // Auto-assign services to this group
+              await assignServicesToGroup(predefinedGroup.id, newGroup.id);
+            }
+          } catch (error) {
+            console.log(`Group ${predefinedGroup.name} might already exist, continuing...`);
           }
         }
       }
@@ -141,20 +154,28 @@ const TreatmentGroupsManagement: React.FC = () => {
       }
     };
 
-    if (treatmentGroups.length >= PREDEFINED_GROUPS.length && services.length > 0) {
-      // Auto-assign any unassigned services to appropriate groups
-      PREDEFINED_GROUPS.forEach(async (predefinedGroup) => {
+    // Auto-assign any unassigned services to appropriate groups
+    const autoAssignServices = async () => {
+      for (const predefinedGroup of PREDEFINED_GROUPS) {
         const existingGroup = treatmentGroups.find(g => g.name === predefinedGroup.name);
         if (existingGroup) {
           await assignServicesToGroup(predefinedGroup.id, existingGroup.id);
         }
-      });
-    }
+      }
+    };
 
-    if (treatmentGroups.length < PREDEFINED_GROUPS.length) {
-      initializePredefinedGroups();
-    }
-  }, [treatmentGroups, createTreatmentGroup, services]);
+    const runInitialization = async () => {
+      didInit.current = true;
+      
+      if (treatmentGroups.length < PREDEFINED_GROUPS.length) {
+        await initializePredefinedGroups();
+      }
+      
+      await autoAssignServices();
+    };
+
+    runInitialization();
+  }, [treatmentGroups, createTreatmentGroup, services, groupsLoading, classifyServices]);
 
   // Combinar grupos predefinidos con los de la base de datos
   const combinedGroups = React.useMemo(() => {
