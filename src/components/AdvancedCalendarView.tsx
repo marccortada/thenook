@@ -166,6 +166,19 @@ const AdvancedCalendarView = () => {
   // Function to get lane color for a specific service (based on its treatment group)
   const getServiceLaneColor = (serviceId: string) => {
     const service = services.find(s => s.id === serviceId);
+    
+    // Debug específico para Ritual Sakura
+    if (serviceId === '662a9331-a126-4341-8904-aebbde7579bf') {
+      console.log('🎯 RITUAL SAKURA DEBUG:');
+      console.log('Service found:', service);
+      console.log('Treatment groups available:', treatmentGroups);
+      if (service) {
+        const group = treatmentGroups.find(tg => tg.id === service.group_id);
+        console.log('Group found:', group);
+        console.log('Final color will be:', group?.color || '#3B82F6');
+      }
+    }
+    
     if (!service || !service.group_id) {
       return '#3B82F6';
     }
