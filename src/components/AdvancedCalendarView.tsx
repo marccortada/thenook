@@ -179,13 +179,21 @@ const AdvancedCalendarView = () => {
 
   // Function to get lane color for a specific service (based on its treatment group)
   const getServiceLaneColor = (serviceId: string) => {
+    console.log('🎯 getServiceLaneColor called with serviceId:', serviceId);
+    console.log('🎯 Available services:', services.length);
+    console.log('🎯 Available treatment groups:', treatmentGroups.length);
+    
     const service = services.find(s => s.id === serviceId);
+    console.log('🎯 Found service:', service);
+    
     if (!service || !service.group_id) {
       console.log('🔍 No service or group_id for serviceId:', serviceId);
       return '#3B82F6';
     }
 
     const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
+    console.log('🎯 Found treatment group:', serviceGroup);
+    
     if (!serviceGroup) {
       console.log('🔍 No treatment group found for group_id:', service.group_id);
       return '#3B82F6';
