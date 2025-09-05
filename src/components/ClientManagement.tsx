@@ -1,92 +1,177 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  Users, 
-  Search, 
-  Plus, 
-  Phone, 
-  Mail, 
-  User,
-  ArrowUpDown
-} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useClients, Client, ClientBooking } from "@/hooks/useClients";
-import { useClientNotes } from "@/hooks/useClientNotes";
+import { Calendar, Clock, DollarSign, Edit, Eye, User, Phone, Mail, Tags, X } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { supabase } from "@/integrations/supabase/client";
-import { ClientDialogContent } from "./ClientDialogContent";
+import MobileResponsiveLayout from "@/components/MobileResponsiveLayout";
+import MobileCard from "@/components/MobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const ClientManagement = () => {
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  // Cambiar a Map para manejar múltiples modales independientes
-  const [openDialogs, setOpenDialogs] = useState<Map<string, {
-    client: Client;
-    bookings: ClientBooking[];
-    editingClient: Partial<Client>;
-    newNote: { title: string; content: string; category: string; priority: string };
-    modalPosition: { top: number; left: number };
-  }>>(new Map());
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailForm, setEmailForm] = useState({
-    to: "",
-    subject: "",
-    message: ""
-  });
-  const [sendingEmail, setSendingEmail] = useState(false);
+export default function ClientManagement() {
+  const { clients, loading, error, updateClient, fetchClientBookings } = useClients();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Ordenación y creación
-  const [sortBy, setSortBy] = useState<'name' | 'total_spent' | 'last_booking' | 'created_at'>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [showCreateClient, setShowCreateClient] = useState(false);
-  const [newClient, setNewClient] = useState({ first_name: '', last_name: '', email: '', phone: '' });
-
-  // Use the new hook
-  const { clients, loading, updateClient, fetchClientBookings, refetch } = useClients();
-
-  // Filter clients based on search query
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredClients(clients);
-    } else {
-      const filtered = clients.filter(client => 
-        `${client.first_name} ${client.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (client.phone && client.phone.includes(searchQuery))
-      );
-      setFilteredClients(filtered);
-    }
-  }, [searchQuery, clients]);
+    document.title = "Gestión de Clientes | The Nook Madrid";
+  }, []);
 
-  const handleClientClick = async (event: React.MouseEvent, client: Client) => {
-    // Si ya está abierto, no hacer nada
-    if (openDialogs.has(client.id)) return;
-    
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-muted-foreground">Cargando clientes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <MobileResponsiveLayout padding="md">
+          <h1 className={`font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent ${
+            isMobile ? 'text-lg' : 'text-2xl'
+          }`}>
+            Gestión de Clientes - The Nook Madrid
+          </h1>
+        </MobileResponsiveLayout>
+      </header>
+
+      <main className="py-4 sm:py-8">
+        <MobileResponsiveLayout maxWidth="7xl" padding="md">
+          <div className="space-y-4 sm:space-y-6">
+            {clients.map((client) => (
+              <MobileCard key={client.id} className="client-card" padding="sm">
+                <div className="space-y-3 sm:space-y-4">
+                  {/* Header Mobile/Desktop */}
+                  <div className={`${isMobile ? 'space-y-3' : 'flex justify-between items-start'}`}>
+                    <div className="space-y-2">
+                      <div className={`font-semibold flex items-center gap-2 ${
+                        isMobile ? 'text-base' : 'text-lg'
+                      }`}>
+                        <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                        {client.first_name} {client.last_name}
+                      </div>
+                      <div className={`${
+                        isMobile ? 'flex flex-col gap-1' : 'flex items-center gap-4'
+                      } text-xs sm:text-sm text-muted-foreground`}>
+                        <div className="flex items-center gap-1">
+                          <Mail className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="truncate">{client.email}</span>
+                        </div>
+                        {client.phone && (
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span className="truncate">{client.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className={`${isMobile ? 'flex justify-between items-center' : 'text-right'} space-y-2`}>
+                      <div className="space-y-1">
+                        <div className={`font-bold text-primary ${
+                          isMobile ? 'text-base' : 'text-lg'
+                        }`}>
+                          {(client.total_spent || 0) / 100}€ gastados
+                        </div>
+                        <div className="text-xs sm:text-sm text-muted-foreground">
+                          {client.total_bookings || 0} citas
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Details Grid */}
+                  <div className={`grid gap-3 sm:gap-4 ${
+                    isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                  }`}>
+                    <div>
+                      <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Fecha registro</Label>
+                      <p className="font-medium text-sm sm:text-base truncate">
+                        {format(new Date(client.created_at), 'dd/MM/yyyy', { locale: es })}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Última cita</Label>
+                      <p className="font-medium text-sm sm:text-base truncate">
+                        {client.last_booking ? 
+                          format(new Date(client.last_booking), 'dd/MM/yyyy', { locale: es }) : 
+                          'Sin citas'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Estado</Label>
+                      <Badge className={client.total_bookings ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                        {client.total_bookings ? 'Activo' : 'Nuevo'}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className={`pt-3 sm:pt-4 border-t ${
+                    isMobile ? 'flex justify-center' : 'flex justify-end'
+                  }`}>
+                    <ClientModal 
+                      client={client} 
+                      onClientUpdated={() => {}} 
+                    />
+                  </div>
+                </div>
+              </MobileCard>
+            ))}
+          </div>
+        </MobileResponsiveLayout>
+      </main>
+    </div>
+  );
+}
+
+// Componente individual para cada modal de cliente
+interface ClientModalProps {
+  client: Client;
+  onClientUpdated: () => void;
+}
+
+function ClientModal({ client, onClientUpdated }: ClientModalProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [clientBookings, setClientBookings] = useState<ClientBooking[]>([]);
+  const [editData, setEditData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: ''
+  });
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const { updateClient, fetchClientBookings } = useClients();
+
+  const handleOpenModal = async (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     
-    // Obtener la tarjeta del cliente
-    const cardElement = event.currentTarget as HTMLElement;
+    // Obtener la tarjeta completa (parent del botón)
+    const cardElement = event.currentTarget.closest('.client-card') as HTMLElement;
+    if (!cardElement) return;
+    
     const cardRect = cardElement.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const windowHeight = window.innerHeight;
     const windowWidth = window.innerWidth;
     
     // Dimensiones del modal
-    const modalWidth = Math.min(isMobile ? 350 : 700, windowWidth - 40);
-    const modalHeight = Math.min(isMobile ? windowHeight - 40 : 600, windowHeight - 80);
+    const modalWidth = Math.min(500, windowWidth - 40);
+    const modalHeight = Math.min(600, windowHeight - 80);
     
     // Calcular posición
     let top = cardRect.top + scrollTop - 50; // Un poco arriba de la tarjeta
@@ -106,480 +191,281 @@ const ClientManagement = () => {
     if (left < 20) left = 20;
     if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
     
-    const bookings = await fetchClientBookings(client.id);
+    console.log('Modal position:', { top, left, cardTop: cardRect.top, scrollTop });
     
-    setOpenDialogs(prev => new Map(prev).set(client.id, {
-      client,
-      bookings,
-      editingClient: client,
-      newNote: { title: "", content: "", category: "general", priority: "normal" },
-      modalPosition: { top, left }
-    }));
+    setModalPosition({ top, left });
+    
+    // Fetch client bookings
+    const bookings = await fetchClientBookings(client.id);
+    setClientBookings(bookings);
+    
+    setIsOpen(true);
   };
 
-  const handleUpdateClient = async (clientId: string) => {
-    const dialogData = openDialogs.get(clientId);
-    if (!dialogData) return;
-    await updateClient(clientId, dialogData.editingClient);
-  };
-
-  const handleOpenEmailModal = (client: any) => {
-    setEmailForm({
-      to: client.email || "",
-      subject: "",
-      message: ""
+  const handleEditClient = () => {
+    setEditingClient(client);
+    setEditData({
+      first_name: client.first_name,
+      last_name: client.last_name,
+      email: client.email,
+      phone: client.phone || ''
     });
-    setShowEmailModal(true);
   };
 
-  const handleSendEmail = async () => {
-    // Validar email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailForm.to)) {
-      toast({ title: "Error", description: "Por favor, introduce una dirección de correo válida", variant: "destructive" });
-      return;
-    }
-
-    if (!emailForm.subject.trim()) {
-      toast({ title: "Error", description: "Por favor, introduce un asunto", variant: "destructive" });
-      return;
-    }
-
-    if (!emailForm.message.trim()) {
-      toast({ title: "Error", description: "Por favor, introduce un mensaje", variant: "destructive" });
-      return;
-    }
-
-    setSendingEmail(true);
-
+  const handleSaveClient = async () => {
+    if (!editingClient) return;
+    
     try {
-      const { data, error } = await supabase.functions.invoke('send-email', {
-        body: {
-          to: emailForm.to,
-          subject: emailForm.subject,
-          message: emailForm.message
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        toast({ title: "Éxito", description: "Correo enviado correctamente" });
-        setShowEmailModal(false);
-        setEmailForm({ to: "", subject: "", message: "" });
-      } else {
-        throw new Error(data?.error || "Error al enviar el correo");
-      }
-    } catch (error: any) {
-      console.error("Error sending email:", error);
-      toast({ title: "Error", description: error.message || "Error al enviar el correo", variant: "destructive" });
-    } finally {
-      setSendingEmail(false);
-    }
-  };
-
-  const handleCreateClient = async () => {
-    try {
-      if (!newClient.first_name || !newClient.email) return;
-      const { error } = await supabase.from('profiles').insert([
-        {
-          email: newClient.email.trim(),
-          first_name: newClient.first_name.trim(),
-          last_name: newClient.last_name.trim(),
-          phone: newClient.phone.trim(),
-          role: 'client'
-        }
-      ]);
-      if (error) throw error;
-      toast({ title: 'Cliente creado', description: 'Se ha añadido el cliente correctamente.' });
-      setShowCreateClient(false);
-      setNewClient({ first_name: '', last_name: '', email: '', phone: '' });
-      await refetch?.();
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'No se pudo crear el cliente', variant: 'destructive' });
-    }
-  };
-
-  const handleCreateNote = async (clientId: string) => {
-    const dialogData = openDialogs.get(clientId);
-    if (!dialogData || !dialogData.newNote.title || !dialogData.newNote.content) return;
-
-    try {
-      // Usar el hook de forma dinámica
-      const { createNote } = useClientNotes(clientId);
-      
-      await createNote({
-        client_id: clientId,
-        title: dialogData.newNote.title,
-        content: dialogData.newNote.content,
-        category: dialogData.newNote.category as any,
-        priority: dialogData.newNote.priority as any,
-      });
-
-      // Resetear la nota en el diálogo específico
-      setOpenDialogs(prev => {
-        const newMap = new Map(prev);
-        const data = newMap.get(clientId);
-        if (data) {
-          data.newNote = { title: "", content: "", category: "general", priority: "normal" };
-        }
-        return newMap;
-      });
-      
+      await updateClient(editingClient.id, editData);
+      setEditingClient(null);
+      onClientUpdated();
       toast({
         title: "Éxito",
-        description: "Nota añadida correctamente",
+        description: "Cliente actualizado correctamente",
       });
     } catch (error) {
-      console.error('Error creating note:', error);
+      console.error('Error updating client:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el cliente",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleCloseDialog = (clientId: string) => {
-    setOpenDialogs(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(clientId);
-      return newMap;
+  const handleCancelEdit = () => {
+    setEditingClient(null);
+    setEditData({
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: ''
     });
   };
 
-  const updateDialogData = (clientId: string, field: string, value: any) => {
-    setOpenDialogs(prev => {
-      const newMap = new Map(prev);
-      const data = newMap.get(clientId);
-      if (data) {
-        (data as any)[field] = value;
-      }
-      return newMap;
-    });
+  const closeModal = () => {
+    setIsOpen(false);
+    setEditingClient(null);
   };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'no_show': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'Confirmada';
-      case 'pending': return 'Pendiente';
-      case 'cancelled': return 'Cancelada';
-      case 'completed': return 'Completada';
-      case 'no_show': return 'No Show';
-      default: return status;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-3">Cargando clientes...</span>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-          <Users className="h-5 w-5 sm:h-6 sm:w-6" />
-          Gestión de Clientes
-        </h2>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Ordenar por" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Nombre</SelectItem>
-              <SelectItem value="total_spent">Gasto total</SelectItem>
-              <SelectItem value="last_booking">Última visita</SelectItem>
-              <SelectItem value="created_at">Fecha de inclusión</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              aria-label="Cambiar orden"
-              className="flex-1 sm:flex-none"
-            >
-              <ArrowUpDown className="h-4 w-4 mr-2" />
-              {sortOrder === 'asc' ? 'Asc' : 'Desc'}
-            </Button>
-            <Button onClick={() => setShowCreateClient(true)} className="flex-1 sm:flex-none">
-              <Plus className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Nuevo cliente</span>
-              <span className="sm:hidden">Nuevo</span>
-            </Button>
-          </div>
-        </div>
-      </div>
+    <>
+      <Button
+        onClick={handleOpenModal}
+        className="flex items-center gap-2"
+        variant="outline"
+      >
+        <Eye className="h-4 w-4" />
+        Ver Detalles
+      </Button>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nombre, email o teléfono..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      <Dialog open={showCreateClient} onOpenChange={setShowCreateClient}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Nuevo Cliente</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="nc_name">Nombre</Label>
-                <Input id="nc_name" value={newClient.first_name} onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })} />
+      {isOpen && (
+        <>
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={closeModal}
+          />
+          
+          {/* Modal */}
+          <div 
+            className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+            style={{
+              top: `${modalPosition.top}px`,
+              left: `${modalPosition.left}px`,
+              width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(500, window.innerWidth - 40)}px`,
+              maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(600, window.innerHeight - 80)}px`,
+              overflowY: 'auto'
+            }}
+          >
+            <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
+              {/* Header */}
+              <div className={`flex items-center justify-between ${isMobile ? 'mb-4' : 'mb-6'}`}>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <User className={`text-primary ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`} />
+                  <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>
+                    {client.first_name} {client.last_name}
+                  </h3>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={closeModal}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="nc_last">Apellidos</Label>
-                <Input id="nc_last" value={newClient.last_name} onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })} />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="nc_email">Email</Label>
-              <Input id="nc_email" type="email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} />
-            </div>
-            <div>
-              <Label htmlFor="nc_phone">Teléfono</Label>
-              <Input id="nc_phone" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowCreateClient(false)}>Cancelar</Button>
-              <Button onClick={handleCreateClient} disabled={!newClient.first_name || !newClient.email}>Crear</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Clients Grid */}
-      <div className="grid gap-4">
-        {filteredClients.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No se encontraron clientes</h3>
-              <p className="text-muted-foreground">
-                {searchQuery ? 'Prueba con otros términos de búsqueda' : 'Los clientes aparecerán aquí cuando se registren'}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          ([...filteredClients]
-            .sort((a, b) => {
-              const dir = sortOrder === 'asc' ? 1 : -1;
-              if (sortBy === 'name') {
-                const an = `${a.first_name} ${a.last_name}`.toLowerCase();
-                const bn = `${b.first_name} ${b.last_name}`.toLowerCase();
-                return an.localeCompare(bn) * dir;
-              }
-              if (sortBy === 'total_spent') {
-                const av = (a.total_spent || 0);
-                const bv = (b.total_spent || 0);
-                return (av - bv) * dir;
-              }
-              if (sortBy === 'last_booking') {
-                const ad = a.last_booking ? new Date(a.last_booking).getTime() : 0;
-                const bd = b.last_booking ? new Date(b.last_booking).getTime() : 0;
-                return (ad - bd) * dir;
-              }
-              const ac = (a as any).created_at ? new Date((a as any).created_at).getTime() : 0;
-              const bc = (b as any).created_at ? new Date((b as any).created_at).getTime() : 0;
-              return (ac - bc) * dir;
-            })
-          ).map((client) => (
-            <Card 
-              key={client.id} 
-              className="cursor-pointer hover:shadow-md transition-shadow client-card"
-              onClick={(e) => handleClientClick(e, client)}
-            >
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <Avatar className="flex-shrink-0">
-                      <AvatarFallback>
-                        {client.first_name.charAt(0)}{client.last_name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-medium truncate">
-                        {client.first_name} {client.last_name}
-                      </h3>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1 min-w-0">
-                          <Mail className="h-3 w-3 flex-shrink-0" />
-                          <a 
-                            href={`mailto:${client.email}`}
-                            className="truncate hover:text-primary hover:underline transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {client.email}
-                          </a>
-                        </div>
-                        {client.phone && (
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3 flex-shrink-0" />
-                            <a 
-                              href={`tel:${client.phone}`}
-                              className="hover:text-primary hover:underline transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {client.phone}
-                            </a>
-                          </div>
-                        )}
-                      </div>
+              
+              {/* Content */}
+              <div className="space-y-3 sm:space-y-4">
+                {/* Información Personal */}
+                <div className={`bg-gray-50 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
+                  <h4 className={`font-semibold ${isMobile ? 'mb-2 text-sm' : 'mb-3'} flex items-center gap-2`}>
+                    <User className="h-4 w-4" />
+                    Información Personal
+                  </h4>
+                  <div className={`gap-3 text-sm ${
+                    isMobile ? 'grid grid-cols-1 space-y-2' : 'grid grid-cols-2'
+                  }`}>
+                    <div>
+                      <Label className="text-xs font-medium text-gray-500">Nombre</Label>
+                      <Input
+                        value={editingClient ? editData.first_name : client.first_name}
+                        onChange={editingClient ? 
+                          (e) => setEditData({...editData, first_name: e.target.value}) : 
+                          undefined
+                        }
+                        disabled={!editingClient}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-gray-500">Apellidos</Label>
+                      <Input
+                        value={editingClient ? editData.last_name : client.last_name}
+                        onChange={editingClient ? 
+                          (e) => setEditData({...editData, last_name: e.target.value}) : 
+                          undefined
+                        }
+                        disabled={!editingClient}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-gray-500">Email</Label>
+                      <Input
+                        value={editingClient ? editData.email : client.email}
+                        onChange={editingClient ? 
+                          (e) => setEditData({...editData, email: e.target.value}) : 
+                          undefined
+                        }
+                        disabled={!editingClient}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-gray-500">Teléfono</Label>
+                      <Input
+                        value={editingClient ? editData.phone : (client.phone || '')}
+                        onChange={editingClient ? 
+                          (e) => setEditData({...editData, phone: e.target.value}) : 
+                          undefined
+                        }
+                        disabled={!editingClient}
+                        className="mt-1"
+                      />
                     </div>
                   </div>
                   
-                  <div className="flex flex-col sm:text-right">
-                    <div className="flex flex-wrap gap-1 sm:gap-2 mb-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {client.total_bookings} reservas
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        €{((client.total_spent || 0) / 100).toFixed(2)}
-                      </Badge>
-                    </div>
-                    {client.last_booking && (
-                      <p className="text-xs text-muted-foreground">
-                        Última: {format(new Date(client.last_booking), 'dd/MM/yy', { locale: es })}
-                      </p>
+                  {/* Botones de acción */}
+                  <div className="flex gap-2 mt-3">
+                    {editingClient ? (
+                      <>
+                        <Button
+                          onClick={handleSaveClient}
+                          className="flex items-center gap-2"
+                          size={isMobile ? "sm" : "default"}
+                        >
+                          Guardar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleCancelEdit}
+                          size={isMobile ? "sm" : "default"}
+                        >
+                          Cancelar
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        onClick={handleEditClient}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        size={isMobile ? "sm" : "default"}
+                      >
+                        <Edit className="h-4 w-4" />
+                        Editar
+                      </Button>
                     )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
 
-      {/* Multiple Client Detail Dialogs */}
-      {Array.from(openDialogs.entries()).map(([clientId, dialogData]) => {
-        const { notes } = useClientNotes(clientId);
-        
-        return (
-          <div key={clientId}>
-            {/* Overlay */}
-            <div 
-              className="fixed inset-0 bg-black/50 z-40"
-              onClick={() => handleCloseDialog(clientId)}
-            />
-            
-            {/* Modal */}
-            <div 
-              className="fixed z-50 bg-white rounded-lg shadow-2xl border"
-              style={{
-                top: `${dialogData.modalPosition.top}px`,
-                left: `${dialogData.modalPosition.left}px`,
-                width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(700, window.innerWidth - 40)}px`,
-                maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(600, window.innerHeight - 80)}px`,
-                overflowY: 'auto'
-              }}
-            >
-              <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
-                {/* Header */}
-                <div className={`flex items-center justify-between ${isMobile ? 'mb-4' : 'mb-6'}`}>
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <User className={`text-primary ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`} />
-                    <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>
-                      {dialogData.client.first_name} {dialogData.client.last_name}
-                    </h3>
+                {/* Estadísticas */}
+                <div className={`gap-3 ${
+                  isMobile ? 'grid grid-cols-1' : 'grid grid-cols-3'
+                }`}>
+                  <div className="bg-blue-50 p-3 rounded-lg text-center">
+                    <Calendar className={`text-blue-600 mx-auto mb-1 ${isMobile ? 'h-6 w-6' : 'h-8 w-8'}`} />
+                    <div className={`font-bold text-blue-600 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                      {client.total_bookings || 0}
+                    </div>
+                    <div className="text-xs text-blue-700">Total Citas</div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCloseDialog(clientId)}
-                    className="h-8 w-8 p-0"
-                  >
-                    ✕
-                  </Button>
+                  <div className="bg-green-50 p-3 rounded-lg text-center">
+                    <DollarSign className={`text-green-600 mx-auto mb-1 ${isMobile ? 'h-6 w-6' : 'h-8 w-8'}`} />
+                    <div className={`font-bold text-green-600 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                      {((client.total_spent || 0) / 100).toFixed(2)}€
+                    </div>
+                    <div className="text-xs text-green-700">Total Gastado</div>
+                  </div>
+                  <div className="bg-purple-50 p-3 rounded-lg text-center">
+                    <Clock className={`text-purple-600 mx-auto mb-1 ${isMobile ? 'h-6 w-6' : 'h-8 w-8'}`} />
+                    <div className={`font-bold text-purple-600 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                      {client.last_booking ? 
+                        format(new Date(client.last_booking), 'dd/MM', { locale: es }) : 
+                        'N/A'
+                      }
+                    </div>
+                    <div className="text-xs text-purple-700">Última Cita</div>
+                  </div>
                 </div>
-                
-                {/* Content */}
-                <ClientDialogContent
-                  client={dialogData.client}
-                  bookings={dialogData.bookings}
-                  editingClient={dialogData.editingClient}
-                  newNote={dialogData.newNote}
-                  notes={notes}
-                  onUpdateClient={() => handleUpdateClient(clientId)}
-                  onCreateNote={() => handleCreateNote(clientId)}
-                  onUpdateEditingClient={(updates) => updateDialogData(clientId, 'editingClient', { ...dialogData.editingClient, ...updates })}
-                  onUpdateNewNote={(updates) => updateDialogData(clientId, 'newNote', { ...dialogData.newNote, ...updates })}
-                  onOpenEmailModal={handleOpenEmailModal}
-                  getStatusColor={getStatusColor}
-                  getStatusText={getStatusText}
-                />
+
+                {/* Historial de Citas */}
+                <div className="bg-white border rounded-lg p-3">
+                  <h4 className={`font-semibold ${isMobile ? 'mb-2 text-sm' : 'mb-3'} flex items-center gap-2`}>
+                    <Calendar className="h-4 w-4" />
+                    Historial ({clientBookings.length} citas)
+                  </h4>
+                  <div className={`space-y-2 ${isMobile ? 'max-h-40' : 'max-h-48'} overflow-y-auto`}>
+                    {clientBookings.length > 0 ? (
+                      clientBookings.map((booking) => (
+                        <div key={booking.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <div className="flex-1 min-w-0">
+                            <div className={`font-medium truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                              {format(new Date(booking.booking_datetime), 'dd/MM/yyyy - HH:mm', { locale: es })}
+                            </div>
+                            <div className={`text-gray-600 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                              {booking.service_name}
+                            </div>
+                          </div>
+                          <div className="text-right ml-2">
+                            <div className={`font-bold text-green-600 ${isMobile ? 'text-sm' : ''}`}>
+                              {(booking.total_price_cents / 100).toFixed(2)}€
+                            </div>
+                            <Badge className={`text-xs ${
+                              booking.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              booking.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                              booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {booking.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-gray-500 py-4 text-sm">
+                        No hay citas registradas
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        );
-      })}
-
-      {/* Email Modal */}
-      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Enviar Correo Electrónico</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="email_to">Para</Label>
-              <Input
-                id="email_to"
-                type="email"
-                value={emailForm.to}
-                onChange={(e) => setEmailForm({ ...emailForm, to: e.target.value })}
-                placeholder="destinatario@ejemplo.com"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email_subject">Asunto</Label>
-              <Input
-                id="email_subject"
-                value={emailForm.subject}
-                onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
-                placeholder="Asunto del correo"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email_message">Mensaje</Label>
-              <Textarea
-                id="email_message"
-                value={emailForm.message}
-                onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
-                placeholder="Escribe aquí tu mensaje..."
-                rows={5}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowEmailModal(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSendEmail} disabled={sendingEmail}>
-                {sendingEmail ? "Enviando..." : "Enviar"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </>
+      )}
+    </>
   );
-};
-
-export default ClientManagement;
+}
