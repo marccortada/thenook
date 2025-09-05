@@ -132,24 +132,10 @@ const AdvancedCalendarView = () => {
   const { treatmentGroups } = useTreatmentGroups();
 
 
-  // Function to get color for a lane based on its assigned treatment group
+  // Function to get color for a lane based on its assigned treatment group (DEPRECATED - USE getServiceLaneColor instead)
   const getLaneColor = (laneId: string, centerId: string) => {
-    const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
-    const laneIndex = centerLanes.findIndex(l => l.id === laneId);
-    
-    // Fixed assignment based on main treatment groups:
-    // Carril 1: Masajes (Azul)
-    // Carril 2: Tratamientos (Verde) 
-    // Carril 3: Rituales (Lila)
-    // Carril 4: Masajes a Cuatro Manos (Amarillo)
-    const groupColors = [
-      '#3B82F6', // Azul - Masajes
-      '#10B981', // Verde - Tratamientos  
-      '#8B5CF6', // Lila - Rituales
-      '#F59E0B'  // Amarillo - Masajes a Cuatro Manos
-    ];
-    
-    return groupColors[laneIndex] || groupColors[0];
+    // This function should no longer be used - use getServiceLaneColor with actual service data
+    return '#3B82F6'; // Default blue
   };
 
   // Function to get lane assignment based on service treatment group
@@ -852,7 +838,7 @@ const AdvancedCalendarView = () => {
                 <div key={lane.id} className="sticky top-0 z-10 bg-background border-b">
                   <div 
                     className="p-2 text-center font-medium border-r"
-                    style={{ backgroundColor: `${getLaneColor(lane.id, selectedCenter)}20`, borderLeft: `4px solid ${getLaneColor(lane.id, selectedCenter)}` }}
+                    style={{ backgroundColor: `#f1f5f920`, borderLeft: `4px solid #6b7280` }}
                   >
                     <div className="font-semibold text-sm">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
                     <div className="text-xs text-muted-foreground">Cap: {lane.capacity}</div>
@@ -1039,7 +1025,7 @@ const AdvancedCalendarView = () => {
                   <div key={`${date.toISOString()}-${lane.id}`} className="sticky top-0 z-10 bg-background border-b">
                     <div 
                       className="p-1 text-center font-medium border-r"
-                      style={{ backgroundColor: `${getLaneColor(lane.id, selectedCenter)}20`, borderLeft: `3px solid ${getLaneColor(lane.id, selectedCenter)}` }}
+                      style={{ backgroundColor: `#f1f5f920`, borderLeft: `3px solid #6b7280` }}
                     >
                       <div className="font-semibold text-[9px]">
                         {format(date, "EEE", { locale: es })} - {(lane.name || '').replace(/ra[ií]l/gi, 'C')}
