@@ -419,6 +419,30 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         </div>
       </div>
 
+      {/* Botón de bloqueo - arriba y solo este */}
+      <div className="bg-white p-3 border-b shadow-sm sticky top-[120px] z-30">
+        <div className="flex justify-center">
+          <Button
+            size="sm"
+            variant={blockingMode ? "default" : "outline"}
+            className={cn(
+              "shadow-sm",
+              blockingMode ? "bg-red-600 text-white" : "bg-white"
+            )}
+            onClick={() => {
+              setBlockingMode(!blockingMode);
+              toast({
+                title: blockingMode ? "Modo normal" : "Modo bloqueo activado",
+                description: blockingMode ? "Toca las reservas para editarlas" : "Toca los espacios vacíos para bloquear",
+              });
+            }}
+          >
+            <Lock className="h-4 w-4 mr-1" />
+            {blockingMode ? "Desbloquear" : "Bloquear"}
+          </Button>
+        </div>
+      </div>
+
       {/* Headers de carriles - sticky pero debajo del botón */}
       <div className="bg-white border-b sticky top-[170px] z-40">
         <div className="grid grid-cols-5 text-xs">
@@ -453,7 +477,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                     <span className="text-xs font-medium text-gray-700">{timeStr}</span>
                   </div>
 
-                   {/* Columnas de carriles */}
+                  {/* Columnas de carriles */}
                   {centerLanes.slice(0, 4).map((lane, laneIndex) => {
                     const booking = getBookingForSlot(lane.id, timeStr);
                     const isOccupied = isSlotOccupied(lane.id, timeStr);
@@ -524,30 +548,6 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
             )}
           </div>
         )}
-      </div>
-
-      {/* Botón de bloqueo - arriba y solo este */}
-      <div className="bg-white p-3 border-b shadow-sm sticky top-[120px] z-30">
-        <div className="flex justify-center">
-          <Button
-            size="sm"
-            variant={blockingMode ? "default" : "outline"}
-            className={cn(
-              "shadow-sm",
-              blockingMode ? "bg-red-600 text-white" : "bg-white"
-            )}
-            onClick={() => {
-              setBlockingMode(!blockingMode);
-              toast({
-                title: blockingMode ? "Modo normal" : "Modo bloqueo activado",
-                description: blockingMode ? "Toca las reservas para editarlas" : "Toca los espacios vacíos para bloquear",
-              });
-            }}
-          >
-            <Lock className="h-4 w-4 mr-1" />
-            {blockingMode ? "Desbloquear" : "Bloquear"}
-          </Button>
-        </div>
       </div>
 
       {/* Modal responsive */}
