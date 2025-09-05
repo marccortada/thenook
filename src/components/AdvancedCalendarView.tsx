@@ -1208,14 +1208,19 @@ const AdvancedCalendarView = () => {
                  avoidCollisions={true}
                  collisionPadding={20}
                >
-                 {centers.map((center) => (
-                   <SelectItem key={center.id} value={center.id}>
-                     <div className="flex items-center gap-2">
-                       <MapPin className="w-4 h-4" />
-                       {center.name}
-                     </div>
-                   </SelectItem>
-                 ))}
+                  {centers.map((center) => (
+                    <SelectItem key={center.id} value={center.id}>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        <div>
+                          <div className="font-medium">{center.name}</div>
+                          {center.address && (
+                            <div className="text-xs text-muted-foreground">{center.address}</div>
+                          )}
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
                </SelectContent>
             </Select>
           </div>
