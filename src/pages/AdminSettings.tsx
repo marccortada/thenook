@@ -12,7 +12,7 @@ import {
   Building2, 
   Clock, 
   Users, 
-  CreditCard, 
+   
   Shield, 
   Palette,
   Package,
@@ -44,15 +44,6 @@ const AdminSettings = () => {
     timezone: "Europe/Madrid"
   });
 
-  const [paymentSettings, setPaymentSettings] = useState({
-    acceptCash: true,
-    acceptCard: true,
-    acceptTransfer: true,
-    depositRequired: true,
-    depositPercentage: 50,
-    cancellationHours: 24,
-    noShowFee: 50
-  });
 
 
   const handleSaveSettings = (section: string) => {
@@ -112,12 +103,12 @@ const AdminSettings = () => {
             >
               <option value="general">🏢 General</option>
               <option value="codes">🏷️ Códigos</option>
-              <option value="payments">💳 Pagos</option>
+              
             </select>
           </div>
 
           {/* Desktop Tabs */}
-          <TabsList className="hidden lg:grid w-full grid-cols-3 h-auto mb-6">
+          <TabsList className="hidden lg:grid w-full grid-cols-2 h-auto mb-6">
             <TabsTrigger value="general" className="flex items-center gap-2 p-3">
               <Building2 className="h-4 w-4" />
               <span>General</span>
@@ -125,10 +116,6 @@ const AdminSettings = () => {
             <TabsTrigger value="codes" className="flex items-center gap-2 p-3">
               <Hash className="h-4 w-4" />
               <span>Códigos</span>
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="flex items-center gap-2 p-3">
-              <CreditCard className="h-4 w-4" />
-              <span>Pagos</span>
             </TabsTrigger>
           </TabsList>
 
@@ -264,91 +251,6 @@ const AdminSettings = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="payments" className="space-y-4 sm:space-y-6">
-            <Card className="shadow-sm border-2">
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
-                  Configuración de Pagos
-                </CardTitle>
-                <CardDescription className="text-sm sm:text-base">
-                  Gestiona los métodos de pago y políticas
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Aceptar pagos en efectivo</Label>
-                    <Switch
-                      checked={paymentSettings.acceptCash}
-                      onCheckedChange={(checked) => setPaymentSettings(prev => ({ ...prev, acceptCash: checked }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Aceptar pagos con tarjeta</Label>
-                    <Switch
-                      checked={paymentSettings.acceptCard}
-                      onCheckedChange={(checked) => setPaymentSettings(prev => ({ ...prev, acceptCard: checked }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Aceptar transferencias</Label>
-                    <Switch
-                      checked={paymentSettings.acceptTransfer}
-                      onCheckedChange={(checked) => setPaymentSettings(prev => ({ ...prev, acceptTransfer: checked }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Requiere depósito para reservas</Label>
-                    <Switch
-                      checked={paymentSettings.depositRequired}
-                      onCheckedChange={(checked) => setPaymentSettings(prev => ({ ...prev, depositRequired: checked }))}
-                    />
-                  </div>
-                </div>
-
-                {paymentSettings.depositRequired && (
-                  <div>
-                    <Label htmlFor="depositPercentage">Porcentaje de depósito (%)</Label>
-                    <Input
-                      id="depositPercentage"
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={paymentSettings.depositPercentage}
-                      onChange={(e) => setPaymentSettings(prev => ({ ...prev, depositPercentage: parseInt(e.target.value) }))}
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <Label htmlFor="cancellationHours">Horas mínimas para cancelación gratuita</Label>
-                  <Input
-                    id="cancellationHours"
-                    type="number"
-                    min="0"
-                    value={paymentSettings.cancellationHours}
-                    onChange={(e) => setPaymentSettings(prev => ({ ...prev, cancellationHours: parseInt(e.target.value) }))}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="noShowFee">Tarifa por no presentarse (€)</Label>
-                  <Input
-                    id="noShowFee"
-                    type="number"
-                    min="0"
-                    value={paymentSettings.noShowFee}
-                    onChange={(e) => setPaymentSettings(prev => ({ ...prev, noShowFee: parseFloat(e.target.value) }))}
-                  />
-                </div>
-
-                <Button onClick={() => handleSaveSettings("pagos")}>
-                  Guardar Configuración de Pagos
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
         </Tabs>
         </div>
