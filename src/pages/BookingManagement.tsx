@@ -535,9 +535,15 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Seleccionar forma de pago..." />
                     </SelectTrigger>
-                    <SelectContent side="bottom" align="start" sideOffset={4}>
+                    <SelectContent 
+                      side="bottom" 
+                      align="start" 
+                      sideOffset={4}
+                      className="z-[100] bg-background border shadow-lg"
+                      onCloseAutoFocus={(e) => e.preventDefault()}
+                    >
                       {PAYMENT_METHODS.map((method) => (
-                        <SelectItem key={method.value} value={method.value}>
+                        <SelectItem key={method.value} value={method.value} className="hover:bg-accent">
                           {method.label}
                         </SelectItem>
                       ))}
