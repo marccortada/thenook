@@ -895,7 +895,11 @@ const AdvancedCalendarView = () => {
                                 style={{ 
                                   backgroundColor: `${(() => {
                                     const color = getServiceLaneColor(booking.service_id);
-                                    console.log('🎯 RENDERING BOOKING:', booking.services?.name, 'service_id:', booking.service_id, 'Color será:', color);
+                                    if (booking.service_id === '662a9331-a126-4341-8904-aebbde7579bf') {
+                                      console.log('🎯 RITUAL SAKURA FOUND! service_id:', booking.service_id);
+                                      console.log('🎯 RITUAL SAKURA COLOR:', color);
+                                      console.log('🎯 RITUAL SAKURA booking:', booking);
+                                    }
                                     return color;
                                   })()}20`,
                                   borderLeftColor: getServiceLaneColor(booking.service_id),
