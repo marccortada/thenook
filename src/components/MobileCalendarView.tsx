@@ -252,17 +252,23 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     setDraggedBooking(booking);
     setIsDragging(false);
     
-    console.log('🖐️ Touch start:', booking.id);
+    // Prevenir comportamientos por defecto
+    event.preventDefault();
+    
+    console.log('🖐️ Touch start:', booking.id, 'Position:', { x: touch.clientX, y: touch.clientY });
   };
 
   const handleTouchMove = (event: React.TouchEvent) => {
     if (!draggedBooking) return;
     
-    // Prevenir scroll mientras arrastramos
-    event.preventDefault();
+    // Marcar como arrastrando después de un pequeño movimiento
+    const touch = event.touches[0];
     setIsDragging(true);
     
-    console.log('✋ Touch move - dragging');
+    // Prevenir scroll mientras arrastramos
+    event.preventDefault();
+    
+    console.log('✋ Touch move - dragging:', { x: touch.clientX, y: touch.clientY });
   };
 
   const handleTouchEnd = (event: React.TouchEvent) => {
@@ -623,20 +629,31 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                         {isStartOfBooking && booking && (
                           <div
                             className={cn(
-                              "w-full rounded text-left cursor-pointer p-1 border-l-4 absolute top-0 left-0 select-none",
-                              draggedBooking?.id === booking.id && "opacity-70 z-50"
+                              "w-full rounded text-left cursor-pointer p-1 border-l-4 absolute top-0 left-0 select-none touch-manipulation",
+                              draggedBooking?.id === booking.id && "opacity-70 z-50 scale-105 shadow-lg"
                             )}
                             style={{
                               ...getBookingColorClasses(booking.service_id),
                               height: `${((booking.duration_minutes || 60) / 5) * 40}px`,
-                              zIndex: draggedBooking?.id === booking.id ? 50 : 10
+                              zIndex: draggedBooking?.id === booking.id ? 50 : 10,
+                              transform: draggedBooking?.id === booking.id ? 'scale(1.05)' : 'scale(1)',
+                              transition: 'transform 0.2s ease, opacity 0.2s ease'
                             }}
-                            onTouchStart={(e) => handleTouchStart(booking, e)}
-                            onTouchMove={handleTouchMove}
-                            onTouchEnd={handleTouchEnd}
+                            onTouchStart={(e) => {
+                              console.log('📱 Touch start on booking:', booking.id);
+                              handleTouchStart(booking, e);
+                            }}
+                            onTouchMove={(e) => {
+                              console.log('📱 Touch move on booking');
+                              handleTouchMove(e);
+                            }}
+                            onTouchEnd={(e) => {
+                              console.log('📱 Touch end on booking');
+                              handleTouchEnd(e);
+                            }}
                             onClick={(e) => {
                               // Solo abrir modal si no se está arrastrando
-                              if (!isDragging) {
+                              if (!isDragging && !draggedBooking) {
                                 e.stopPropagation();
                                 console.log('📱 BOOKING CLICKED ON MOBILE:', booking);
                                 handleBookingClick(booking, e);
