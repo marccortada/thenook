@@ -904,7 +904,7 @@ const AdvancedCalendarView = () => {
                                  backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
                                  borderLeftColor: getServiceLaneColor(booking.service_id),
                                  color: getServiceLaneColor(booking.service_id),
-                                 height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48 - 4}px`,
+                                 height: `${((booking.duration_minutes || 60) / 5) * 48}px`,
                                  zIndex: 2
                                }}
                               draggable={true}
@@ -1091,7 +1091,7 @@ const AdvancedCalendarView = () => {
                                    backgroundColor: `${getServiceLaneColor(booking.service_id)}40`,
                                    borderLeftColor: getServiceLaneColor(booking.service_id),
                                    color: getServiceLaneColor(booking.service_id),
-                                   height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
+                                    height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
                                    minHeight: '24px'
                                  }}
                                draggable={true}
