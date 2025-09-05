@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   ChevronLeft, 
@@ -210,13 +210,13 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const goToPreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const goToNextDay = () => setCurrentDate(addDays(currentDate, 1));
 
-  // Componente del modal/drawer responsive
+  // Componente del modal responsive
   const BookingDetailsModal = () => {
     console.log('📱 MODAL RENDER:', { showBookingDetails, selectedBooking: !!selectedBooking, isMobile });
     if (!selectedBooking) return null;
 
     const content = (
-      <div className="space-y-4">
+      <div className="space-y-4 p-4">
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{selectedBooking.profiles?.first_name || 'Cliente'}</span>
@@ -279,21 +279,19 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
       </div>
     );
 
-    // Siempre usar Drawer en este componente ya que es específicamente para móvil
+    // Usar Sheet que funciona mejor en móvil
     return (
-      <Drawer open={showBookingDetails} onOpenChange={setShowBookingDetails}>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader>
-            <DrawerTitle className="flex items-center gap-2">
+      <Sheet open={showBookingDetails} onOpenChange={setShowBookingDetails}>
+        <SheetContent side="bottom" className="h-auto max-h-[80vh]">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Detalles de la Cita
-            </DrawerTitle>
-          </DrawerHeader>
-          <div className="px-4 pb-6">
-            {content}
-          </div>
-        </DrawerContent>
-      </Drawer>
+            </SheetTitle>
+          </SheetHeader>
+          {content}
+        </SheetContent>
+      </Sheet>
     );
   };
 
@@ -367,8 +365,8 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         </div>
       </div>
 
-      {/* Headers de carriles - sticky */}
-      <div className="bg-white border-b sticky top-[120px] z-40">
+      {/* Headers de carriles - sticky pero debajo de los botones */}
+      <div className="bg-white border-b sticky top-[180px] z-40">
         <div className="grid grid-cols-5 text-xs">
           <div className="p-2 text-center border-r bg-gray-50">
             <span className="font-medium">Hora</span>
@@ -475,31 +473,35 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         )}
       </div>
 
-      {/* Botones de acción flotantes */}
-      <div className="fixed bottom-4 right-4 flex flex-col gap-2">
-        <Button
-          size="sm"
-          variant={blockingMode ? "default" : "outline"}
-          className={cn(
-            "shadow-lg",
-            blockingMode ? "bg-red-600 text-white" : "bg-white"
-          )}
-          onClick={() => {
-            setBlockingMode(!blockingMode);
-            toast({
-              title: blockingMode ? "Modo normal" : "Modo bloqueo activado",
-              description: blockingMode ? "Toca las reservas para editarlas" : "Toca los espacios vacíos para bloquear",
-            });
-          }}
-        >
-          <Lock className="h-4 w-4" />
-        </Button>
-        <Button
-          size="sm"
-          className="bg-blue-600 text-white shadow-lg"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
+      {/* Botones de acción - movidos arriba para mejor visibilidad */}
+      <div className="bg-white p-3 border-b shadow-sm sticky top-[120px] z-30">
+        <div className="flex justify-center gap-3">
+          <Button
+            size="sm"
+            variant={blockingMode ? "default" : "outline"}
+            className={cn(
+              "shadow-sm",
+              blockingMode ? "bg-red-600 text-white" : "bg-white"
+            )}
+            onClick={() => {
+              setBlockingMode(!blockingMode);
+              toast({
+                title: blockingMode ? "Modo normal" : "Modo bloqueo activado",
+                description: blockingMode ? "Toca las reservas para editarlas" : "Toca los espacios vacíos para bloquear",
+              });
+            }}
+          >
+            <Lock className="h-4 w-4 mr-1" />
+            {blockingMode ? "Desbloquear" : "Bloquear"}
+          </Button>
+          <Button
+            size="sm"
+            className="bg-blue-600 text-white shadow-sm"
+          >
+            <Settings className="h-4 w-4 mr-1" />
+            Configurar
+          </Button>
+        </div>
       </div>
 
       {/* Modal responsive */}
