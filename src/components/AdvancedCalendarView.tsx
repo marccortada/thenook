@@ -300,14 +300,13 @@ const AdvancedCalendarView = () => {
       const bookingStart = bookingDateTime;
       const bookingEnd = addMinutes(bookingStart, booking.duration_minutes || 60);
       
-      // Para 55 minutos: incluir desde 10:00 hasta 10:55 (inclusive de la última slot)
-      const timeSlotTime = timeSlot.getTime();
-      const bookingStartTime = bookingStart.getTime();
-      const bookingEndTime = bookingEnd.getTime();
+      // SIMPLE: Para 55 minutos (10:00 - 10:55), incluir TODAS las slots hasta el final
+      const timeSlotMinutes = timeSlot.getHours() * 60 + timeSlot.getMinutes();
+      const bookingStartMinutes = bookingStart.getHours() * 60 + bookingStart.getMinutes();
+      const bookingEndMinutes = bookingStartMinutes + (booking.duration_minutes || 60);
       
-      // Incluir la slot si está dentro del rango Y también si es exactamente la slot final
-      const isTimeMatch = (timeSlotTime >= bookingStartTime && timeSlotTime < bookingEndTime) ||
-                         (timeSlotTime === bookingEndTime - (5 * 60 * 1000)); // Incluir la última slot de 5 min
+      // Incluir la slot de inicio Y todas las slots hasta la duración exacta (inclusiva)
+      const isTimeMatch = timeSlotMinutes >= bookingStartMinutes && timeSlotMinutes <= bookingEndMinutes;
       if (!isTimeMatch) return false;
       
       // Check if booking is specifically assigned to this lane (if lane_id exists)
@@ -875,16 +874,14 @@ const AdvancedCalendarView = () => {
                        const fallback = bookings.find(b => {
                          if (!b.booking_datetime || b.center_id !== selectedCenter || b.lane_id) return false;
                           const start = parseISO(b.booking_datetime);
-                          const end = addMinutes(start, b.duration_minutes || 60);
                           const sameDay = isSameDay(start, selectedDate);
                           
-                          // Misma lógica para fallback: incluir última slot
-                          const timeSlotTime = timeSlot.time.getTime();
-                          const startTime = start.getTime();
-                          const endTime = end.getTime();
+                          // MISMA LÓGICA SIMPLE para fallback
+                          const timeSlotMinutes = timeSlot.time.getHours() * 60 + timeSlot.time.getMinutes();
+                          const startMinutes = start.getHours() * 60 + start.getMinutes();
+                          const endMinutes = startMinutes + (b.duration_minutes || 60);
                           
-                          const isInRange = (timeSlotTime >= startTime && timeSlotTime < endTime) ||
-                                          (timeSlotTime === endTime - (5 * 60 * 1000));
+                          const isInRange = timeSlotMinutes >= startMinutes && timeSlotMinutes <= endMinutes;
                           
                           return sameDay && isInRange;
                        });
