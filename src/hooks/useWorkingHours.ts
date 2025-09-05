@@ -141,8 +141,7 @@ export const useWorkingHours = () => {
       const { error } = await supabase
         .from('centers')
         .update({ working_hours: dbFormat, updated_at: new Date().toISOString() })
-        .eq('active', true)
-        .limit(1);
+        .eq('active', true);
 
       if (error) {
         console.error('Error saving working hours:', error);
