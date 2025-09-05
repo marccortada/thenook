@@ -180,11 +180,18 @@ const AdvancedCalendarView = () => {
   // Function to get lane color for a specific service (based on its treatment group)
   const getServiceLaneColor = (serviceId: string) => {
     const service = services.find(s => s.id === serviceId);
-    if (!service || !service.group_id) return '#3B82F6';
+    if (!service || !service.group_id) {
+      console.log('🔍 No service or group_id for serviceId:', serviceId);
+      return '#3B82F6';
+    }
 
     const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
-    if (!serviceGroup) return '#3B82F6';
+    if (!serviceGroup) {
+      console.log('🔍 No treatment group found for group_id:', service.group_id);
+      return '#3B82F6';
+    }
 
+    console.log('🎨 Service:', service.name, 'Group:', serviceGroup.name, 'Color:', serviceGroup.color);
     // Use the actual color from the treatment group
     return serviceGroup.color || '#3B82F6';
   };
