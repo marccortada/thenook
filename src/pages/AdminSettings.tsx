@@ -26,10 +26,12 @@ import InternalCodesManagement from "@/components/InternalCodesManagement";
 import PackageManagement from "@/components/PackageManagement";
 import GiftCardManagement from "@/components/GiftCardManagement";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkingHours } from "@/hooks/useWorkingHours";
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState("general");
   const { toast } = useToast();
+  const { workingHours, updateWorkingHours, saveWorkingHours, loading } = useWorkingHours();
 
   const [generalSettings, setGeneralSettings] = useState({
     businessName: "The Nook Madrid",
@@ -39,16 +41,7 @@ const AdminSettings = () => {
     website: "https://thenookmadrid.com",
     taxId: "B12345678",
     currency: "EUR",
-    timezone: "Europe/Madrid",
-    workingHours: {
-      monday: { open: "10:00", close: "22:00", closed: false },
-      tuesday: { open: "10:00", close: "22:00", closed: false },
-      wednesday: { open: "10:00", close: "22:00", closed: false },
-      thursday: { open: "10:00", close: "22:00", closed: false },
-      friday: { open: "10:00", close: "22:00", closed: false },
-      saturday: { open: "10:00", close: "22:00", closed: false },
-      sunday: { open: "10:00", close: "22:00", closed: false }
-    }
+    timezone: "Europe/Madrid"
   });
 
   const [paymentSettings, setPaymentSettings] = useState({
@@ -67,6 +60,16 @@ const AdminSettings = () => {
       title: "Configuración guardada",
       description: `La configuración de ${section} ha sido actualizada correctamente`,
     });
+  };
+
+  const handleSaveWorkingHours = async () => {
+    const success = await saveWorkingHours(workingHours);
+    if (success) {
+      toast({
+        title: "Horarios guardados",
+        description: "Los horarios de trabajo se han actualizado en todo el sistema",
+      });
+    }
   };
 
   const daysOfWeek = [
@@ -211,46 +214,28 @@ const AdminSettings = () => {
                     <div className="flex items-center gap-3 sm:gap-4">
                       <span className="font-medium w-16 sm:w-20 text-sm sm:text-base">{day.label}</span>
                       <Switch
-                        checked={!generalSettings.workingHours[day.key as keyof typeof generalSettings.workingHours].closed}
+                        checked={!workingHours[day.key as keyof typeof workingHours].closed}
                         onCheckedChange={(checked) => 
-                          setGeneralSettings(prev => ({
-                            ...prev,
-                            workingHours: {
-                              ...prev.workingHours,
-                              [day.key]: { ...prev.workingHours[day.key as keyof typeof prev.workingHours], closed: !checked }
-                            }
-                          }))
+                          updateWorkingHours(day.key as keyof typeof workingHours, { closed: !checked })
                         }
                       />
                     </div>
-                    {!generalSettings.workingHours[day.key as keyof typeof generalSettings.workingHours].closed && (
+                    {!workingHours[day.key as keyof typeof workingHours].closed && (
                       <div className="flex items-center gap-2">
                         <Input
                           type="time"
-                          value={generalSettings.workingHours[day.key as keyof typeof generalSettings.workingHours].open}
+                          value={workingHours[day.key as keyof typeof workingHours].open}
                           onChange={(e) => 
-                            setGeneralSettings(prev => ({
-                              ...prev,
-                              workingHours: {
-                                ...prev.workingHours,
-                                [day.key]: { ...prev.workingHours[day.key as keyof typeof prev.workingHours], open: e.target.value }
-                              }
-                            }))
+                            updateWorkingHours(day.key as keyof typeof workingHours, { open: e.target.value })
                           }
                           className="w-20 sm:w-24 h-9 text-sm"
                         />
                         <span className="text-muted-foreground">-</span>
                         <Input
                           type="time"
-                          value={generalSettings.workingHours[day.key as keyof typeof generalSettings.workingHours].close}
+                          value={workingHours[day.key as keyof typeof workingHours].close}
                           onChange={(e) => 
-                            setGeneralSettings(prev => ({
-                              ...prev,
-                              workingHours: {
-                                ...prev.workingHours,
-                                [day.key]: { ...prev.workingHours[day.key as keyof typeof prev.workingHours], close: e.target.value }
-                              }
-                            }))
+                            updateWorkingHours(day.key as keyof typeof workingHours, { close: e.target.value })
                           }
                           className="w-20 sm:w-24 h-9 text-sm"
                         />
@@ -258,8 +243,12 @@ const AdminSettings = () => {
                     )}
                   </div>
                 ))}
-                <Button onClick={() => handleSaveSettings("horarios")} className="w-full sm:w-auto mt-4">
-                  Guardar Horarios
+                <Button 
+                  onClick={handleSaveWorkingHours} 
+                  className="w-full sm:w-auto mt-4"
+                  disabled={loading}
+                >
+                  {loading ? "Guardando..." : "Guardar Horarios"}
                 </Button>
               </CardContent>
             </Card>
