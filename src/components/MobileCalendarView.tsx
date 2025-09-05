@@ -21,6 +21,7 @@ import { useBookings, useLanes, useCenters, useServices } from '@/hooks/useDatab
 import { useTreatmentGroups } from '@/hooks/useTreatmentGroups';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { createClient } from '@supabase/supabase-js';
 import { cn } from '@/lib/utils';
 
 interface MobileCalendarViewProps {
@@ -42,6 +43,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const [activeCenter, setActiveCenter] = useState(selectedCenter || '');
   const [blockingMode, setBlockingMode] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  const [draggedBooking, setDraggedBooking] = useState<any>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
 
   console.log('🚀 MOBILE CALENDAR VIEW LOADING!');
 
@@ -231,6 +235,117 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const closeModal = () => {
     setShowBookingDetails(false);
     setSelectedBooking(null);
+  };
+
+  // Touch handlers para drag & drop
+  const handleTouchStart = (booking: any, event: React.TouchEvent) => {
+    if (blockingMode) return;
+    
+    const touch = event.touches[0];
+    const rect = event.currentTarget.getBoundingClientRect();
+    
+    setDragOffset({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top
+    });
+    
+    setDraggedBooking(booking);
+    setIsDragging(false);
+    
+    console.log('🖐️ Touch start:', booking.id);
+  };
+
+  const handleTouchMove = (event: React.TouchEvent) => {
+    if (!draggedBooking) return;
+    
+    // Prevenir scroll mientras arrastramos
+    event.preventDefault();
+    setIsDragging(true);
+    
+    console.log('✋ Touch move - dragging');
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent) => {
+    if (!draggedBooking) return;
+    
+    const touch = event.changedTouches[0];
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    console.log('🎯 Touch end - looking for drop target');
+    
+    // Buscar la celda de destino
+    let targetCell = elementBelow as HTMLElement;
+    while (targetCell && !targetCell.dataset?.laneId) {
+      targetCell = targetCell.parentElement as HTMLElement;
+    }
+    
+    if (targetCell && targetCell.dataset?.laneId && targetCell.dataset?.timeSlot) {
+      const targetLaneId = targetCell.dataset.laneId;
+      const targetTimeStr = targetCell.dataset.timeSlot;
+      
+      // Solo mover si es a un carril diferente o tiempo diferente
+      if (targetLaneId !== draggedBooking.lane_id || targetTimeStr !== format(parseISO(draggedBooking.booking_datetime), 'HH:mm')) {
+        handleMoveBooking(draggedBooking, targetLaneId, targetTimeStr);
+      } else if (!isDragging) {
+        // Si no se movió, tratar como click para abrir modal
+        handleBookingClick(draggedBooking, event);
+      }
+    } else if (!isDragging) {
+      // Si no se movió y no hay target, tratar como click
+      handleBookingClick(draggedBooking, event);
+    }
+    
+    setDraggedBooking(null);
+    setIsDragging(false);
+    setDragOffset({ x: 0, y: 0 });
+  };
+
+  // Función para mover la reserva
+  const handleMoveBooking = async (booking: any, newLaneId: string, newTimeStr: string) => {
+    try {
+      // Calcular nueva fecha/hora
+      const currentDate = parseISO(booking.booking_datetime);
+      const [newHours, newMinutes] = newTimeStr.split(':').map(Number);
+      
+      const newDateTime = new Date(currentDate);
+      newDateTime.setHours(newHours, newMinutes, 0, 0);
+      
+      console.log('🚚 Moving booking:', {
+        bookingId: booking.id,
+        from: { laneId: booking.lane_id, time: format(parseISO(booking.booking_datetime), 'HH:mm') },
+        to: { laneId: newLaneId, time: newTimeStr }
+      });
+      
+      // Importar supabase client para actualizar la reserva
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          lane_id: newLaneId,
+          booking_datetime: newDateTime.toISOString()
+        })
+        .eq('id', booking.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Reserva movida",
+        description: `Reserva movida a ${newTimeStr} en carril ${centerLanes.findIndex(l => l.id === newLaneId) + 1}`,
+        variant: "default"
+      });
+      
+      // Recargar las reservas para reflejar el cambio
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Error moving booking:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo mover la reserva",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleBlockSlot = (laneId: string, timeStr: string, event?: React.MouseEvent | React.TouchEvent) => {
@@ -486,9 +601,12 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                     return (
                       <div 
                         key={`${lane.id}-${timeStr}`} 
+                        data-lane-id={lane.id}
+                        data-time-slot={timeStr}
                         className={cn(
                           "border-r border-gray-200 last:border-r-0 p-1 min-h-[40px] relative bg-white",
-                          blockingMode ? "hover:bg-red-50 cursor-pointer" : "hover:bg-gray-50"
+                          blockingMode ? "hover:bg-red-50 cursor-pointer" : "hover:bg-gray-50",
+                          draggedBooking && "transition-colors duration-200"
                         )}
                         onClick={(e) => {
                           console.log('📱 CELL CLICKED:', { blockingMode, hasBooking: !!booking });
@@ -504,16 +622,25 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                         )}
                         {isStartOfBooking && booking && (
                           <div
-                            className="w-full rounded text-left cursor-pointer p-1 border-l-4 absolute top-0 left-0 select-none"
+                            className={cn(
+                              "w-full rounded text-left cursor-pointer p-1 border-l-4 absolute top-0 left-0 select-none",
+                              draggedBooking?.id === booking.id && "opacity-70 z-50"
+                            )}
                             style={{
                               ...getBookingColorClasses(booking.service_id),
                               height: `${((booking.duration_minutes || 60) / 5) * 40}px`,
-                              zIndex: 10
+                              zIndex: draggedBooking?.id === booking.id ? 50 : 10
                             }}
+                            onTouchStart={(e) => handleTouchStart(booking, e)}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
                             onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('📱 BOOKING CLICKED ON MOBILE:', booking);
-                              handleBookingClick(booking, e);
+                              // Solo abrir modal si no se está arrastrando
+                              if (!isDragging) {
+                                e.stopPropagation();
+                                console.log('📱 BOOKING CLICKED ON MOBILE:', booking);
+                                handleBookingClick(booking, e);
+                              }
                             }}
                           >
                             <div className="text-xs font-semibold truncate">
