@@ -60,7 +60,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     }
   }, [centers, selectedCenter, activeCenter]);
 
-  // Generate time slots from 10:00 to 22:00 in 5-minute intervals
+  // Generate time slots from 10:00 to 22:55 in 5-minute intervals
   const generateTimeSlots = () => {
     const slots = [];
     const startHour = 10;  // Cambio: empezar a las 10 AM
@@ -68,7 +68,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     
     for (let hour = startHour; hour <= endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 5) {
-        if (hour === endHour && minute > 0) break;
+        if (hour === endHour && minute > 55) break;
         
         const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push(timeStr);

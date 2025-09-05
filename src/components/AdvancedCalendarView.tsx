@@ -231,13 +231,14 @@ const AdvancedCalendarView = () => {
     }
   }, [centers, selectedCenter]);
 
-  // Generate time slots from 10:00 to 22:00 every 5 minutes
+  // Generate time slots from 10:00 to 22:55 every 5 minutes
   const generateTimeSlots = (): TimeSlot[] => {
     const slots: TimeSlot[] = [];
     const base = startOfDay(selectedDate);
     for (let hour = 10; hour <= 22; hour++) {
       for (let minute = 0; minute < 60; minute += 5) {
-        if (hour === 22 && minute > 0) break; // Stop at 22:00
+        // Include all slots up to 22:55
+        if (hour === 22 && minute > 55) break;
         const time = new Date(base);
         time.setHours(hour, minute, 0, 0);
         slots.push({
@@ -251,12 +252,12 @@ const AdvancedCalendarView = () => {
 
   const timeSlots = generateTimeSlots();
 
-  // Time options for selects: every 5 minutes from 10:00 to 22:00
+  // Time options for selects: every 5 minutes from 10:00 to 22:55
   const timeOptions5m = React.useMemo(() => {
     const opts: string[] = [];
     const base = startOfDay(selectedDate);
     const start = new Date(base); start.setHours(10, 0, 0, 0);
-    const end = new Date(base); end.setHours(22, 0, 0, 0);
+    const end = new Date(base); end.setHours(22, 55, 0, 0);
     const cur = new Date(start);
     while (cur <= end) {
       opts.push(format(cur, 'HH:mm'));
