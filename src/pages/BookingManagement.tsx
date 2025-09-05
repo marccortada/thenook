@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Clock, User, CreditCard, DollarSign } from "lucide-react";
@@ -297,49 +297,7 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const { toast } = useToast();
-
-  const handleOpenModal = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    // Obtener la tarjeta completa (parent del botón)
-    const cardElement = event.currentTarget.closest('.booking-card') as HTMLElement;
-    if (!cardElement) return;
-    
-    const cardRect = cardElement.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const windowWidth = window.innerWidth;
-    
-    // Dimensiones del modal
-    const modalWidth = Math.min(450, windowWidth - 40);
-    const modalHeight = Math.min(550, windowHeight - 80);
-    
-    // Calcular posición
-    let top = cardRect.top + scrollTop - 50; // Un poco arriba de la tarjeta
-    let left = (windowWidth - modalWidth) / 2; // Centrado horizontalmente
-    
-    // Ajustar verticalmente para que esté siempre visible
-    const viewportTop = scrollTop + 20;
-    const viewportBottom = scrollTop + windowHeight - 20;
-    
-    if (top < viewportTop) {
-      top = viewportTop;
-    } else if (top + modalHeight > viewportBottom) {
-      top = viewportBottom - modalHeight;
-    }
-    
-    // Asegurar que no se salga horizontalmente
-    if (left < 20) left = 20;
-    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-    
-    console.log('Modal position:', { top, left, cardTop: cardRect.top, scrollTop });
-    
-    setModalPosition({ top, left });
-    setIsOpen(true);
-  };
 
   const processPayment = async () => {
     if (!paymentMethod) {
@@ -410,139 +368,97 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
     }
   };
 
-  const closeModal = () => {
-    setIsOpen(false);
-    setPaymentMethod('');
-    setPaymentNotes('');
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setPaymentMethod('');
+      setPaymentNotes('');
+    }
   };
 
   return (
-    <>
-      <Button
-        onClick={handleOpenModal}
-        className="flex items-center gap-2"
-        variant="outline"
-      >
-        <CreditCard className="h-4 w-4" />
-        Cobrar Cita
-      </Button>
-
-      {isOpen && (
-        <>
-          {/* Overlay */}
-          <div 
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={closeModal}
-          />
-          
-          {/* Modal */}
-          <div 
-            className="fixed z-50 bg-white rounded-lg shadow-2xl border"
-            style={{
-              top: `${modalPosition.top}px`,
-              left: `${modalPosition.left}px`,
-              width: `${Math.min(450, window.innerWidth - 40)}px`,
-              maxHeight: `${Math.min(550, window.innerHeight - 80)}px`,
-              overflowY: 'auto'
-            }}
-          >
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="h-6 w-6 text-green-600" />
-                  <h3 className="text-xl font-semibold">Cobrar Cita</h3>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={closeModal}
-                  className="h-8 w-8 p-0"
-                >
-                  ✕
-                </Button>
-              </div>
-              
-              {/* Content */}
-              <div className="space-y-4">
-                {/* Detalles */}
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-semibold mb-3">Detalles de la cita</h4>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-gray-500">Cliente</p>
-                      <p className="font-medium">
-                        {booking.profiles?.first_name} {booking.profiles?.last_name}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Servicio</p>
-                      <p className="font-medium">{booking.services?.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Centro</p>
-                      <p className="font-medium">{booking.centers?.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Importe</p>
-                      <p className="font-bold text-lg text-green-600">
-                        {(booking.total_price_cents / 100).toFixed(2)}€
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Forma de pago */}
-                <div>
-                  <Label className="text-sm font-medium">Forma de Pago</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Seleccionar forma de pago..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAYMENT_METHODS.map((method) => (
-                        <SelectItem key={method.value} value={method.value}>
-                          {method.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Notas */}
-                <div>
-                  <Label className="text-sm font-medium">Notas del pago (opcional)</Label>
-                  <Input
-                    value={paymentNotes}
-                    onChange={(e) => setPaymentNotes(e.target.value)}
-                    placeholder="Notas adicionales..."
-                    className="mt-1"
-                  />
-                </div>
-
-                {/* Botones */}
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={closeModal}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={processPayment}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    disabled={!paymentMethod}
-                  >
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Confirmar - {(booking.total_price_cents / 100).toFixed(2)}€
-                  </Button>
-                </div>
-              </div>
+    <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
+      <CollapsibleTrigger asChild>
+        <Button className="flex items-center gap-2" variant="outline">
+          <CreditCard className="h-4 w-4" />
+          Cobrar Cita
+        </Button>
+      </CollapsibleTrigger>
+      
+      <CollapsibleContent className="mt-4">
+        <div className="border rounded-lg p-4 bg-card space-y-4">
+          {/* Header */}
+          <div className="flex items-center gap-3 pb-4 border-b">
+            <DollarSign className="h-5 w-5 text-green-600" />
+            <h4 className="font-semibold">Cobrar Cita</h4>
+            <div className="ml-auto font-bold text-green-600">
+              {(booking.total_price_cents / 100).toFixed(2)}€
             </div>
           </div>
-        </>
-      )}
-    </>
+          
+          {/* Detalles resumidos */}
+          <div className="grid grid-cols-2 gap-3 text-sm bg-muted/50 p-3 rounded-md">
+            <div>
+              <span className="text-muted-foreground">Cliente:</span>
+              <span className="ml-1 font-medium">
+                {booking.profiles?.first_name} {booking.profiles?.last_name}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Servicio:</span>
+              <span className="ml-1 font-medium">{booking.services?.name}</span>
+            </div>
+          </div>
+
+          {/* Forma de pago */}
+          <div>
+            <Label className="text-sm font-medium">Seleccionar forma de pago</Label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <SelectTrigger className="mt-2">
+                <SelectValue placeholder="Elige el método de pago..." />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYMENT_METHODS.map((method) => (
+                  <SelectItem key={method.value} value={method.value}>
+                    {method.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Notas */}
+          <div>
+            <Label className="text-sm font-medium">Notas del pago (opcional)</Label>
+            <Input
+              value={paymentNotes}
+              onChange={(e) => setPaymentNotes(e.target.value)}
+              placeholder="Notas adicionales..."
+              className="mt-2"
+            />
+          </div>
+
+          {/* Botones */}
+          <div className="flex gap-3 pt-2">
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => setIsOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={processPayment}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              disabled={!paymentMethod}
+            >
+              <DollarSign className="h-4 w-4 mr-2" />
+              Confirmar Pago
+            </Button>
+          </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
