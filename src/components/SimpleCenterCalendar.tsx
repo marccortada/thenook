@@ -542,7 +542,7 @@ const SimpleCenterCalendar = () => {
                                 getStatusColor(booking.status)
                               )}
                               style={{
-                                height: `${((booking.duration_minutes || 60) / 30) * 50}px`,
+                                height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 50}px`,
                                 minHeight: '46px'
                               }}
                               onClick={() => handleBookingClick(booking)}

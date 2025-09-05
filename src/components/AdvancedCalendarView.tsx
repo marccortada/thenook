@@ -301,7 +301,7 @@ const AdvancedCalendarView = () => {
       const bookingStart = bookingDateTime;
       const bookingEnd = addMinutes(bookingStart, booking.duration_minutes || 60);
       
-      // Check time overlap first
+      // Check time overlap - include end time if it matches exactly a time slot
       const isTimeMatch = timeSlot >= bookingStart && timeSlot < bookingEnd;
       if (!isTimeMatch) return false;
       
@@ -905,7 +905,7 @@ const AdvancedCalendarView = () => {
                                  backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
                                  borderLeftColor: getServiceLaneColor(booking.service_id),
                                  color: getServiceLaneColor(booking.service_id),
-                                 height: `${((booking.duration_minutes || 60) / 5) * 48}px`,
+                                 height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48}px`,
                                  zIndex: 2
                                }}
                               draggable={true}

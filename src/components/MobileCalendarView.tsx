@@ -314,7 +314,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                               getStatusColor(booking.status)
                             )}
                             style={{
-                              height: `${((booking.duration_minutes || 60) / 5) * 40}px`,
+                              height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 40}px`,
                               zIndex: 10
                             }}
                           >
