@@ -88,11 +88,11 @@ const SimpleCenterCalendar = () => {
 
   const timeSlots = generateTimeSlots();
 
-  // Time options for forms: every 5 minutes from 10:00 to 22:55
+  // Time options for forms: every 5 minutes from 10:00 to 22:00
   const timeOptions = React.useMemo(() => {
     const opts: string[] = [];
     const start = new Date(); start.setHours(10, 0, 0, 0);
-    const end = new Date(); end.setHours(22, 55, 0, 0);
+    const end = new Date(); end.setHours(22, 0, 0, 0);
     const cur = new Date(start);
     while (cur <= end) {
       opts.push(format(cur, 'HH:mm'));
@@ -542,7 +542,7 @@ const SimpleCenterCalendar = () => {
                                 getStatusColor(booking.status)
                               )}
                               style={{
-                                height: `${Math.ceil((booking.duration_minutes || 60) / 30) * 50}px`,
+                                height: `${(booking.duration_minutes || 60) * 0.83}px`,
                                 minHeight: '46px'
                               }}
                               onClick={() => handleBookingClick(booking)}

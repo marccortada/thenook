@@ -231,14 +231,13 @@ const AdvancedCalendarView = () => {
     }
   }, [centers, selectedCenter]);
 
-  // Generate time slots from 10:00 to 22:55 every 5 minutes
+  // Generate time slots from 10:00 to 22:00 every 5 minutes
   const generateTimeSlots = (): TimeSlot[] => {
     const slots: TimeSlot[] = [];
     const base = startOfDay(selectedDate);
     for (let hour = 10; hour <= 22; hour++) {
       for (let minute = 0; minute < 60; minute += 5) {
-        // Include all slots up to 22:55
-        if (hour === 22 && minute > 55) break;
+        if (hour === 22 && minute > 0) break; // Stop at 22:00 exactly
         const time = new Date(base);
         time.setHours(hour, minute, 0, 0);
         slots.push({
@@ -252,12 +251,12 @@ const AdvancedCalendarView = () => {
 
   const timeSlots = generateTimeSlots();
 
-  // Time options for selects: every 5 minutes from 10:00 to 22:55
+  // Time options for selects: every 5 minutes from 10:00 to 22:00
   const timeOptions5m = React.useMemo(() => {
     const opts: string[] = [];
     const base = startOfDay(selectedDate);
     const start = new Date(base); start.setHours(10, 0, 0, 0);
-    const end = new Date(base); end.setHours(22, 55, 0, 0);
+    const end = new Date(base); end.setHours(22, 0, 0, 0);
     const cur = new Date(start);
     while (cur <= end) {
       opts.push(format(cur, 'HH:mm'));
@@ -301,13 +300,8 @@ const AdvancedCalendarView = () => {
       const bookingStart = bookingDateTime;
       const bookingEnd = addMinutes(bookingStart, booking.duration_minutes || 60);
       
-      // CORRECCIÓN: Incluir el slot exacto del final para duraciones exactas
-      // Para 55 minutos: incluir desde 08:00 hasta 08:55 (inclusive)
-      const timeSlotMinutes = timeSlot.getHours() * 60 + timeSlot.getMinutes();
-      const bookingStartMinutes = bookingStart.getHours() * 60 + bookingStart.getMinutes();
-      const bookingEndMinutes = bookingStartMinutes + (booking.duration_minutes || 60);
-      
-      const isTimeMatch = timeSlotMinutes >= bookingStartMinutes && timeSlotMinutes < bookingEndMinutes;
+      // Check if timeSlot falls within booking duration
+      const isTimeMatch = timeSlot >= bookingStart && timeSlot < bookingEnd;
       if (!isTimeMatch) return false;
       
       // Check if booking is specifically assigned to this lane (if lane_id exists)
@@ -877,13 +871,7 @@ const AdvancedCalendarView = () => {
                           const start = parseISO(b.booking_datetime);
                           const end = addMinutes(start, b.duration_minutes || 60);
                           const sameDay = isSameDay(start, selectedDate);
-                          
-                          // CORRECCIÓN: Misma lógica para fallback bookings
-                          const timeSlotMinutes = timeSlot.time.getHours() * 60 + timeSlot.time.getMinutes();
-                          const startMinutes = start.getHours() * 60 + start.getMinutes();
-                          const endMinutes = startMinutes + (b.duration_minutes || 60);
-                          
-                          return sameDay && timeSlotMinutes >= startMinutes && timeSlotMinutes < endMinutes;
+                          return sameDay && timeSlot.time >= start && timeSlot.time < end;
                        });
                        if (fallback) booking = fallback;
                      }
@@ -916,7 +904,7 @@ const AdvancedCalendarView = () => {
                                  backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
                                  borderLeftColor: getServiceLaneColor(booking.service_id),
                                  color: getServiceLaneColor(booking.service_id),
-                                 height: `${Math.ceil((booking.duration_minutes || 60) / 5) * 48}px`,
+                                 height: `${(booking.duration_minutes || 60) * 0.8}px`,
                                  zIndex: 2
                                }}
                               draggable={true}
