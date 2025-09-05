@@ -165,27 +165,27 @@ const AdvancedCalendarView = () => {
 
   // Function to get lane color for a specific service (based on its treatment group)
   const getServiceLaneColor = (serviceId: string) => {
-    console.log('🎯 getServiceLaneColor called with serviceId:', serviceId);
-    console.log('🎯 Available services:', services.length);
-    console.log('🎯 Available treatment groups:', treatmentGroups.length);
+    console.log('🔍 DESKTOP DEBUG - serviceId:', serviceId);
+    console.log('🔍 DESKTOP DEBUG - services loaded:', services.length);
+    console.log('🔍 DESKTOP DEBUG - treatment groups loaded:', treatmentGroups.length);
     
     const service = services.find(s => s.id === serviceId);
-    console.log('🎯 Found service:', service);
+    console.log('🔍 DESKTOP DEBUG - found service:', service);
     
     if (!service || !service.group_id) {
-      console.log('🔍 No service or group_id for serviceId:', serviceId);
+      console.log('🔍 DESKTOP DEBUG - No service or group_id, returning blue');
       return '#3B82F6';
     }
 
     const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
-    console.log('🎯 Found treatment group:', serviceGroup);
+    console.log('🔍 DESKTOP DEBUG - found treatment group:', serviceGroup);
     
     if (!serviceGroup) {
-      console.log('🔍 No treatment group found for group_id:', service.group_id);
+      console.log('🔍 DESKTOP DEBUG - No treatment group found, returning blue');
       return '#3B82F6';
     }
 
-    console.log('🎨 Service:', service.name, 'Group:', serviceGroup.name, 'Color:', serviceGroup.color);
+    console.log('🎨 DESKTOP - Service:', service.name, 'Group:', serviceGroup.name, 'Color:', serviceGroup.color);
     // Use the actual color from the treatment group
     return serviceGroup.color || '#3B82F6';
   };

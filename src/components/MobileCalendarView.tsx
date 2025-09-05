@@ -152,11 +152,25 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
 
   // Function to get lane color for a specific service (based on its treatment group)
   const getServiceLaneColor = (serviceId: string) => {
+    console.log('🔍 MOBILE DEBUG - serviceId:', serviceId);
+    console.log('🔍 MOBILE DEBUG - services loaded:', services.length);
+    console.log('🔍 MOBILE DEBUG - treatment groups loaded:', treatmentGroups.length);
+    
     const service = services.find(s => s.id === serviceId);
-    if (!service || !service.group_id) return '#3B82F6';
+    console.log('🔍 MOBILE DEBUG - found service:', service);
+    
+    if (!service || !service.group_id) {
+      console.log('🔍 MOBILE DEBUG - No service or group_id, returning blue');
+      return '#3B82F6';
+    }
 
     const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
-    if (!serviceGroup) return '#3B82F6';
+    console.log('🔍 MOBILE DEBUG - found treatment group:', serviceGroup);
+    
+    if (!serviceGroup) {
+      console.log('🔍 MOBILE DEBUG - No treatment group found, returning blue');
+      return '#3B82F6';
+    }
 
     console.log('🎨 MOBILE - Service:', service.name, 'Group:', serviceGroup.name, 'Color:', serviceGroup.color);
     // Use the actual color from the treatment group
