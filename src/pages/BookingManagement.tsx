@@ -418,7 +418,7 @@ function PaymentModal({ booking, onPaymentProcessed }: PaymentModalProps) {
               <SelectTrigger className="mt-2">
                 <SelectValue placeholder="Elige el método de pago..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent side="bottom" align="start" sideOffset={4}>
                 {PAYMENT_METHODS.map((method) => (
                   <SelectItem key={method.value} value={method.value}>
                     {method.label}
