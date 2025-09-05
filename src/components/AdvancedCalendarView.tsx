@@ -889,22 +889,26 @@ const AdvancedCalendarView = () => {
                              }
                            }}
                          >
-                          {booking && isFirstSlotOfBooking && (
-                            <div
-                               className="absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md cursor-move"
-                               style={{ 
-                                 backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
-                                 borderLeftColor: getServiceLaneColor(booking.service_id),
-                                 color: getServiceLaneColor(booking.service_id),
-                                 height: `${((booking.duration_minutes || 60) / 5) * 48}px`,
-                                 zIndex: 2
+                           {booking && isFirstSlotOfBooking && (
+                             <div
+                                className="absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md cursor-move"
+                                style={{ 
+                                  backgroundColor: `${(() => {
+                                    const color = getServiceLaneColor(booking.service_id);
+                                    console.log('🎯 RENDERING BOOKING:', booking.services?.name, 'service_id:', booking.service_id, 'Color será:', color);
+                                    return color;
+                                  })()}20`,
+                                  borderLeftColor: getServiceLaneColor(booking.service_id),
+                                  color: getServiceLaneColor(booking.service_id),
+                                  height: `${((booking.duration_minutes || 60) / 5) * 48}px`,
+                                  zIndex: 2
+                                }}
+                               draggable={true}
+                               onDragStart={(e) => {
+                                 e.dataTransfer.setData('booking', JSON.stringify(booking));
+                                 e.dataTransfer.effectAllowed = 'move';
                                }}
-                              draggable={true}
-                              onDragStart={(e) => {
-                                e.dataTransfer.setData('booking', JSON.stringify(booking));
-                                e.dataTransfer.effectAllowed = 'move';
-                              }}
-                            >
+                             >
                               <div className="flex justify-between items-start">
                                 <div className="flex-1">
                                   <div className="text-sm font-semibold truncate">{booking.profiles?.first_name} {booking.profiles?.last_name}</div>
