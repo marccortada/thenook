@@ -165,28 +165,16 @@ const AdvancedCalendarView = () => {
 
   // Function to get lane color for a specific service (based on its treatment group)
   const getServiceLaneColor = (serviceId: string) => {
-    console.log('🔍 DESKTOP DEBUG - serviceId:', serviceId);
-    console.log('🔍 DESKTOP DEBUG - services loaded:', services.length);
-    console.log('🔍 DESKTOP DEBUG - treatment groups loaded:', treatmentGroups.length);
-    
     const service = services.find(s => s.id === serviceId);
-    console.log('🔍 DESKTOP DEBUG - found service:', service);
-    
     if (!service || !service.group_id) {
-      console.log('🔍 DESKTOP DEBUG - No service or group_id, returning blue');
       return '#3B82F6';
     }
 
     const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
-    console.log('🔍 DESKTOP DEBUG - found treatment group:', serviceGroup);
-    
     if (!serviceGroup) {
-      console.log('🔍 DESKTOP DEBUG - No treatment group found, returning blue');
       return '#3B82F6';
     }
 
-    console.log('🎨 DESKTOP - Service:', service.name, 'Group:', serviceGroup.name, 'Color:', serviceGroup.color);
-    // Use the actual color from the treatment group
     return serviceGroup.color || '#3B82F6';
   };
 
@@ -892,21 +880,13 @@ const AdvancedCalendarView = () => {
                            {booking && isFirstSlotOfBooking && (
                              <div
                                 className="absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md cursor-move"
-                                style={{ 
-                                  backgroundColor: `${(() => {
-                                    const color = getServiceLaneColor(booking.service_id);
-                                    if (booking.service_id === '662a9331-a126-4341-8904-aebbde7579bf') {
-                                      console.log('🎯 RITUAL SAKURA FOUND! service_id:', booking.service_id);
-                                      console.log('🎯 RITUAL SAKURA COLOR:', color);
-                                      console.log('🎯 RITUAL SAKURA booking:', booking);
-                                    }
-                                    return color;
-                                  })()}20`,
-                                  borderLeftColor: getServiceLaneColor(booking.service_id),
-                                  color: getServiceLaneColor(booking.service_id),
-                                  height: `${((booking.duration_minutes || 60) / 5) * 48}px`,
-                                  zIndex: 2
-                                }}
+                                 style={{ 
+                                   backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
+                                   borderLeftColor: getServiceLaneColor(booking.service_id),
+                                   color: getServiceLaneColor(booking.service_id),
+                                   height: `${((booking.duration_minutes || 60) / 5) * 48}px`,
+                                   zIndex: 2
+                                 }}
                                draggable={true}
                                onDragStart={(e) => {
                                  e.dataTransfer.setData('booking', JSON.stringify(booking));
