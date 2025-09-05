@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { format, addDays, subDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useBookings, useLanes, useCenters } from '@/hooks/useDatabase';
+import { useBookings, useLanes, useCenters, useServices } from '@/hooks/useDatabase';
+import { useTreatmentGroups } from '@/hooks/useTreatmentGroups';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +43,8 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const { bookings, loading: bookingsLoading } = useBookings();
   const { lanes } = useLanes();
   const { centers } = useCenters();
+  const { services } = useServices();
+  const { treatmentGroups } = useTreatmentGroups();
 
   // Update currentDate when selectedDate prop changes
   useEffect(() => {
@@ -147,19 +150,31 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     });
   };
 
-  // Get status colors
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'bg-blue-100 border-l-4 border-l-blue-500 text-blue-800';
-      case 'pending': return 'bg-yellow-100 border-l-4 border-l-yellow-500 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 border-l-4 border-l-red-500 text-red-800';
-      case 'completed': return 'bg-green-100 border-l-4 border-l-green-500 text-green-800';
-      case 'no_show': return 'bg-gray-100 border-l-4 border-l-gray-500 text-gray-800';
-      default: return 'bg-blue-100 border-l-4 border-l-blue-500 text-blue-800';
-    }
+  // Function to get lane color for a specific service (based on its treatment group)
+  const getServiceLaneColor = (serviceId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    if (!service || !service.group_id) return '#3B82F6';
+
+    const serviceGroup = treatmentGroups.find(tg => tg.id === service.group_id);
+    if (!serviceGroup) return '#3B82F6';
+
+    console.log('🎨 MOBILE - Service:', service.name, 'Group:', serviceGroup.name, 'Color:', serviceGroup.color);
+    // Use the actual color from the treatment group
+    return serviceGroup.color || '#3B82F6';
   };
 
-  // Get lane colors for headers
+  // Convert hex color to Tailwind classes
+  const getBookingColorClasses = (serviceId: string) => {
+    const color = getServiceLaneColor(serviceId);
+    // Return inline styles instead of Tailwind classes for dynamic colors
+    return {
+      backgroundColor: `${color}20`,
+      borderLeftColor: color,
+      color: color
+    };
+  };
+
+  // Get lane colors for headers (keep simple for headers)
   const getLaneColor = (index: number) => {
     const colors = [
       'border-l-4 border-l-blue-500 bg-blue-50',
@@ -309,11 +324,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                         {isStartOfBooking && booking && (
                           <div
                             onClick={() => !blockingMode && handleBookingClick(booking)}
-                            className={cn(
-                              "w-full rounded text-left cursor-pointer p-1",
-                              getStatusColor(booking.status)
-                            )}
+                            className="w-full rounded text-left cursor-pointer p-1 border-l-4"
                             style={{
+                              ...getBookingColorClasses(booking.service_id),
                               height: `${((booking.duration_minutes || 60) / 5) * 40}px`,
                               zIndex: 10
                             }}
@@ -403,7 +416,11 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
               </div>
 
               <div className="mt-3">
-                <Badge variant="outline" className={getStatusColor(selectedBooking.status)}>
+                <Badge 
+                  variant="outline" 
+                  style={getBookingColorClasses(selectedBooking.service_id)}
+                  className="border-l-4"
+                >
                   {selectedBooking.status}
                 </Badge>
               </div>
