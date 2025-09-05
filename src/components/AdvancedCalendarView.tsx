@@ -301,8 +301,13 @@ const AdvancedCalendarView = () => {
       const bookingStart = bookingDateTime;
       const bookingEnd = addMinutes(bookingStart, booking.duration_minutes || 60);
       
-      // Check time overlap - include end time if it matches exactly a time slot
-      const isTimeMatch = timeSlot >= bookingStart && timeSlot < bookingEnd;
+      // CORRECCIÓN: Incluir el slot exacto del final para duraciones exactas
+      // Para 55 minutos: incluir desde 08:00 hasta 08:55 (inclusive)
+      const timeSlotMinutes = timeSlot.getHours() * 60 + timeSlot.getMinutes();
+      const bookingStartMinutes = bookingStart.getHours() * 60 + bookingStart.getMinutes();
+      const bookingEndMinutes = bookingStartMinutes + (booking.duration_minutes || 60);
+      
+      const isTimeMatch = timeSlotMinutes >= bookingStartMinutes && timeSlotMinutes < bookingEndMinutes;
       if (!isTimeMatch) return false;
       
       // Check if booking is specifically assigned to this lane (if lane_id exists)
@@ -869,10 +874,16 @@ const AdvancedCalendarView = () => {
                      if (!booking && lane.id === centerLanes[0].id) {
                        const fallback = bookings.find(b => {
                          if (!b.booking_datetime || b.center_id !== selectedCenter || b.lane_id) return false;
-                         const start = parseISO(b.booking_datetime);
-                         const end = addMinutes(start, b.duration_minutes || 60);
-                         const sameDay = isSameDay(start, selectedDate);
-                         return sameDay && timeSlot.time >= start && timeSlot.time < end;
+                          const start = parseISO(b.booking_datetime);
+                          const end = addMinutes(start, b.duration_minutes || 60);
+                          const sameDay = isSameDay(start, selectedDate);
+                          
+                          // CORRECCIÓN: Misma lógica para fallback bookings
+                          const timeSlotMinutes = timeSlot.time.getHours() * 60 + timeSlot.time.getMinutes();
+                          const startMinutes = start.getHours() * 60 + start.getMinutes();
+                          const endMinutes = startMinutes + (b.duration_minutes || 60);
+                          
+                          return sameDay && timeSlotMinutes >= startMinutes && timeSlotMinutes < endMinutes;
                        });
                        if (fallback) booking = fallback;
                      }
