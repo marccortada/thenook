@@ -18,7 +18,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useIsMobile } from "@/hooks/use-mobile";
+
 interface CartItem {
   id: string;
   name: string;
@@ -124,14 +124,11 @@ const GiftCardsPage = () => {
   const [stripeSessionId, setStripeSessionId] = useState<string | null>(null);
   
   const { t } = useTranslation();
-  const isMobile = useIsMobile();
 
-  // Efecto para seguir al modal cuando se abre (solo en desktop)
+  // Efecto para seguir al modal cuando se abre
   useEffect(() => {
-    if (isCartOpen && !isMobile) {
-      // Pequeño delay para asegurar que el modal se ha renderizado
+    if (isCartOpen) {
       setTimeout(() => {
-        // Buscar el modal y hacer scroll hacia él
         const modalElement = document.querySelector('[role="dialog"]');
         if (modalElement) {
           modalElement.scrollIntoView({
@@ -142,7 +139,7 @@ const GiftCardsPage = () => {
         }
       }, 100);
     }
-  }, [isCartOpen, isMobile]);
+  }, [isCartOpen]);
 
   // Función para traducir nombres de paquetes/tarjetas
   const translatePackageName = (name: string) => {
@@ -377,7 +374,7 @@ const GiftCardsPage = () => {
         console.log("🔄 Dialog onOpenChange llamado:", open);
         setIsCartOpen(open);
       }}>
-        <DialogContent className="w-[95vw] max-w-[600px] h-[85vh] max-h-[85vh] p-0 overflow-hidden flex flex-col">
+        <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
             <DialogTitle>{t('your_cart')}</DialogTitle>
             <DialogDescription className="sr-only">
