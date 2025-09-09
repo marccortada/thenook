@@ -375,180 +375,184 @@ const GiftCardsPage = () => {
         setIsCartOpen(open);
       }}>
         <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] p-0 overflow-hidden flex flex-col">
-          <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
+          {/* Header fijo */}
+          <DialogHeader className="flex-shrink-0 px-6 py-4 border-b bg-background">
             <DialogTitle>{t('your_cart')}</DialogTitle>
             <DialogDescription className="sr-only">
               {t('your_cart')}
             </DialogDescription>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(90vh-120px)] px-6 py-4">
+          
+          {/* Contenido scrolleable */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="space-y-4">
               {items.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
               ) : (
-                  <>
-                    {/* Lista de productos */}
-                    <div className="space-y-3">
-                      {items.map((it) => (
-                        <div key={it.id} className="flex items-center justify-between gap-3 border rounded-md p-3">
-                          <div>
-                            <p className="text-sm font-medium leading-tight">{it.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {euro(it.priceCents)} × {it.quantity}
-                            </p>
-                          </div>
-                          <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
-                            {t('remove')}
-                          </Button>
+                <>
+                  {/* Lista de productos */}
+                  <div className="space-y-3">
+                    {items.map((it) => (
+                      <div key={it.id} className="flex items-center justify-between gap-3 border rounded-md p-3">
+                        <div>
+                          <p className="text-sm font-medium leading-tight">{it.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {euro(it.priceCents)} × {it.quantity}
+                          </p>
                         </div>
-                      ))}
-                    </div>
+                        <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
+                          {t('remove')}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
 
-                    {/* Total */}
-                    <div className="flex items-center justify-between border-t pt-3">
-                      <span className="text-sm text-muted-foreground">{t('total')}</span>
-                      <span className="font-semibold">{euro(totalCents)}</span>
+                  {/* Total */}
+                  <div className="flex items-center justify-between border-t pt-3">
+                    <span className="text-sm text-muted-foreground">{t('total')}</span>
+                    <span className="font-semibold">{euro(totalCents)}</span>
+                  </div>
+                  
+                  {/* Campos de comprador */}
+                  <div className="space-y-3 border-t pt-3">
+                    <div>
+                      <Label htmlFor="purchased_by_name" className="text-sm">{t('purchased_by_name')}</Label>
+                      <Input
+                        id="purchased_by_name"
+                        value={purchasedByName}
+                        onChange={(e) => setPurchasedByName(e.target.value)}
+                        placeholder={t('buyer_name_placeholder')}
+                        className="mt-1"
+                      />
                     </div>
                     
-                    {/* Campos de comprador */}
-                    <div className="space-y-3 border-t pt-3">
-                      <div>
-                        <Label htmlFor="purchased_by_name" className="text-sm">{t('purchased_by_name')}</Label>
-                        <Input
-                          id="purchased_by_name"
-                          value={purchasedByName}
-                          onChange={(e) => setPurchasedByName(e.target.value)}
-                          placeholder={t('buyer_name_placeholder')}
-                          className="mt-1"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="purchased_by_email" className="text-sm">{t('buyer_email')}</Label>
-                        <Input
-                          id="purchased_by_email"
-                          type="email"
-                          value={purchasedByEmail}
-                          onChange={(e) => setPurchasedByEmail(e.target.value)}
-                          placeholder={t('buyer_email_placeholder')}
-                          className="mt-1"
-                        />
-                      </div>
+                    <div>
+                      <Label htmlFor="purchased_by_email" className="text-sm">{t('buyer_email')}</Label>
+                      <Input
+                        id="purchased_by_email"
+                        type="email"
+                        value={purchasedByEmail}
+                        onChange={(e) => setPurchasedByEmail(e.target.value)}
+                        placeholder={t('buyer_email_placeholder')}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Checkbox ¿Es un regalo? */}
+                  <div className="border-t pt-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="is_gift" 
+                        checked={isGift}
+                        onCheckedChange={(checked) => setIsGift(!!checked)}
+                      />
+                      <Label htmlFor="is_gift" className="text-sm">{t('is_gift')}</Label>
                     </div>
                     
-                    {/* Checkbox ¿Es un regalo? */}
-                    <div className="border-t pt-3">
-                      <div className="flex items-center space-x-2">
+                    {isGift && (
+                      <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
+                        <div>
+                          <Label htmlFor="recipient_name" className="text-sm">{t('recipient_name_required')}</Label>
+                          <Input
+                            id="recipient_name"
+                            value={recipientName}
+                            onChange={(e) => setRecipientName(e.target.value)}
+                            placeholder={t('recipient_name_placeholder')}
+                            className="mt-1"
+                            required={isGift}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="recipient_email" className="text-sm">{t('recipient_email')}</Label>
+                          <Input
+                            id="recipient_email"
+                            type="email"
+                            value={recipientEmail}
+                            onChange={(e) => setRecipientEmail(e.target.value)}
+                            placeholder={t('buyer_email_placeholder')}
+                            className="mt-1"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
+                          <Textarea
+                            id="gift_message"
+                            value={giftMessage}
+                            onChange={(e) => setGiftMessage(e.target.value)}
+                            placeholder={t('gift_message_placeholder')}
+                            className="mt-1"
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Opciones de personalización */}
+                  <div className="border-t pt-4 space-y-4">
+                    <h4 className="text-sm font-semibold">{t('gift_card_config')}</h4>
+                    
+                    <div className="grid gap-4">
+                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <Label htmlFor="show_price" className="text-sm">{t('show_price_on_card')}</Label>
                         <Checkbox 
-                          id="is_gift" 
-                          checked={isGift}
-                          onCheckedChange={(checked) => setIsGift(!!checked)}
+                          id="show_price" 
+                          checked={showPrice}
+                          onCheckedChange={(checked) => setShowPrice(!!checked)}
                         />
-                        <Label htmlFor="is_gift" className="text-sm">{t('is_gift')}</Label>
                       </div>
                       
-                      {isGift && (
-                        <div className="space-y-3 mt-3 pl-6 border-l-2 border-primary/20">
-                          <div>
-                            <Label htmlFor="recipient_name" className="text-sm">{t('recipient_name_required')}</Label>
-                            <Input
-                              id="recipient_name"
-                              value={recipientName}
-                              onChange={(e) => setRecipientName(e.target.value)}
-                              placeholder={t('recipient_name_placeholder')}
-                              className="mt-1"
-                              required={isGift}
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <Label className="text-sm font-medium mb-3 block">{t('who_to_send_card')}</Label>
+                        <div className="grid gap-2">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="send_to_buyer"
+                              name="send_option"
+                              checked={sendToBuyer}
+                              onChange={() => setSendToBuyer(true)}
+                              className="h-4 w-4"
                             />
+                            <Label htmlFor="send_to_buyer" className="text-sm">{t('send_to_buyer')}</Label>
                           </div>
-                          
-                          <div>
-                            <Label htmlFor="recipient_email" className="text-sm">{t('recipient_email')}</Label>
-                            <Input
-                              id="recipient_email"
-                              type="email"
-                              value={recipientEmail}
-                              onChange={(e) => setRecipientEmail(e.target.value)}
-                              placeholder={t('buyer_email_placeholder')}
-                              className="mt-1"
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="send_to_recipient"
+                              name="send_option"
+                              checked={!sendToBuyer}
+                              onChange={() => setSendToBuyer(false)}
+                              className="h-4 w-4"
                             />
+                            <Label htmlFor="send_to_recipient" className="text-sm">{t('send_to_recipient')}</Label>
                           </div>
-                          
-                          <div>
-                            <Label htmlFor="gift_message" className="text-sm">{t('gift_message')}</Label>
-                            <Textarea
-                              id="gift_message"
-                              value={giftMessage}
-                              onChange={(e) => setGiftMessage(e.target.value)}
-                              placeholder={t('gift_message_placeholder')}
-                              className="mt-1"
-                              rows={3}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Opciones de personalización */}
-                    <div className="border-t pt-4 space-y-4">
-                      <h4 className="text-sm font-semibold">{t('gift_card_config')}</h4>
-                      
-                      <div className="grid gap-4">
-                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                          <Label htmlFor="show_price" className="text-sm">{t('show_price_on_card')}</Label>
-                          <Checkbox 
-                            id="show_price" 
-                            checked={showPrice}
-                            onCheckedChange={(checked) => setShowPrice(!!checked)}
-                          />
-                        </div>
-                        
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <Label className="text-sm font-medium mb-3 block">{t('who_to_send_card')}</Label>
-                          <div className="grid gap-2">
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                id="send_to_buyer"
-                                name="send_option"
-                                checked={sendToBuyer}
-                                onChange={() => setSendToBuyer(true)}
-                                className="h-4 w-4"
-                              />
-                              <Label htmlFor="send_to_buyer" className="text-sm">{t('send_to_buyer')}</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                id="send_to_recipient"
-                                name="send_option"
-                                checked={!sendToBuyer}
-                                onChange={() => setSendToBuyer(false)}
-                                className="h-4 w-4"
-                              />
-                              <Label htmlFor="send_to_recipient" className="text-sm">{t('send_to_recipient')}</Label>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                          <Label htmlFor="show_buyer_data" className="text-sm">{t('show_buyer_data')}</Label>
-                          <Checkbox 
-                            id="show_buyer_data" 
-                            checked={showBuyerData}
-                            onCheckedChange={(checked) => setShowBuyerData(!!checked)}
-                          />
                         </div>
                       </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <Label htmlFor="show_buyer_data" className="text-sm">{t('show_buyer_data')}</Label>
+                        <Checkbox 
+                          id="show_buyer_data" 
+                          checked={showBuyerData}
+                          onCheckedChange={(checked) => setShowBuyerData(!!checked)}
+                        />
+                      </div>
                     </div>
+                  </div>
 
-                    <PaymentMethodsInfo />
-                  </>
-                )}
+                  <PaymentMethodsInfo />
+                </>
+              )}
             </div>
           </div>
-              {/* Botones fijos en la parte inferior */}
-              {items.length > 0 && (
-                <div className="flex-shrink-0 border-t pt-4 pb-6 bg-background">
+          
+          {/* Footer fijo con botones */}
+          {items.length > 0 && (
+            <div className="flex-shrink-0 border-t px-6 py-4 bg-background">
                   <div className="grid grid-cols-2 gap-3">
                     <Button variant="secondary" onClick={clear} className="h-12 text-sm">
                       {t('empty_cart_button')}
