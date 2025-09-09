@@ -18,6 +18,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useIsMobile } from "@/hooks/use-mobile";
 interface CartItem {
   id: string;
   name: string;
