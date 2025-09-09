@@ -377,19 +377,18 @@ const GiftCardsPage = () => {
         console.log("🔄 Dialog onOpenChange llamado:", open);
         setIsCartOpen(open);
       }}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-0 animate-scale-in">
-          <div className="flex flex-col h-full">
-            <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
-              <DialogTitle>{t('your_cart')}</DialogTitle>
-              <DialogDescription className="sr-only">
-                {t('your_cart')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col h-full min-h-0 px-6">
-              <div className="flex-1 overflow-y-auto space-y-4 py-4">
-                {items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
-                ) : (
+        <DialogContent className="w-[95vw] max-w-[600px] h-[85vh] max-h-[85vh] p-0 overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
+            <DialogTitle>{t('your_cart')}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t('your_cart')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="space-y-4">
+              {items.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
+              ) : (
                   <>
                     {/* Lista de productos */}
                     <div className="space-y-3">
@@ -548,8 +547,8 @@ const GiftCardsPage = () => {
                     <PaymentMethodsInfo />
                   </>
                 )}
-              </div>
-              
+            </div>
+          </div>
               {/* Botones fijos en la parte inferior */}
               {items.length > 0 && (
                 <div className="flex-shrink-0 border-t pt-4 pb-6 bg-background">
@@ -646,9 +645,92 @@ const GiftCardsPage = () => {
                     </Button>
                   </div>
                 </div>
-              )}
+               )}
+          
+          {/* Botones fijos en la parte inferior */}
+          {items.length > 0 && (
+            <div className="border-t px-6 py-4 bg-background">
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="secondary" onClick={clear} className="h-12 text-sm">
+                  {t('empty_cart_button')}
+                </Button>
+                <Button 
+                  className="h-12 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-sm font-semibold"
+                  onClick={async () => {
+                    if (items.length === 0) return;
+                    if (isGift && !recipientName.trim()) {
+                      toast.error(t('recipient_name_error'));
+                      return;
+                    }
+                    if (!purchasedByName.trim()) {
+                      toast.error(t('buyer_name_error'));
+                      return;
+                    }
+                    if (!purchasedByEmail.trim()) {
+                      toast.error(t('buyer_email_error'));
+                      return;
+                    }
+                    
+                    try {
+                      const payload = {
+                        intent: "gift_cards",
+                        gift_cards: {
+                          items: items.map(i => ({ 
+                            amount_cents: i.priceCents, 
+                            quantity: i.quantity,
+                            name: i.name,
+                            id: i.id
+                          })),
+                          purchased_by: {
+                            name: purchasedByName.trim(),
+                            email: purchasedByEmail.trim(),
+                          },
+                          ...(isGift && {
+                            recipient: {
+                              name: recipientName.trim(),
+                              email: recipientEmail.trim(),
+                            }
+                          }),
+                          options: {
+                            is_gift: isGift,
+                            gift_message: giftMessage.trim(),
+                            show_price_on_card: showPrice,
+                            show_buyer_data: showBuyerData,
+                            send_to_buyer: sendToBuyer,
+                          }
+                        }
+                      };
+
+                      const { data, error } = await supabase.functions.invoke('create-checkout', {
+                        body: payload
+                      });
+
+                      if (error) {
+                        console.error("❌ Error en create-checkout:", error);
+                        toast.error("Error en el checkout");
+                        return;
+                      }
+
+                      if (data?.client_secret) {
+                        setStripeClientSecret(data.client_secret);
+                        setStripeSessionId(data.session_id);
+                        setShowStripeModal(true);
+                        setIsCartOpen(false);
+                      } else {
+                        toast.error("Error en el checkout");
+                      }
+                    } catch (error) {
+                      console.error("❌ Error:", error);
+                      toast.error("Error en el checkout");
+                    }
+                  }}
+                  disabled={!purchasedByName || !purchasedByEmail || (isGift && (!recipientName || !recipientEmail))}
+                >
+                  {t('buy_button')} - {euro(totalCents)}
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 
