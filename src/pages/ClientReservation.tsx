@@ -23,6 +23,8 @@ import { Link } from "react-router-dom";
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { DatePickerModal } from "@/components/DatePickerModal";
+import { TimePickerModal } from "@/components/TimePickerModal";
 
 const ClientReservation = () => {
   const { toast } = useToast();
@@ -679,184 +681,27 @@ const ClientReservation = () => {
                      {/* Date picker */}
                      <div>
                        <Label className="text-sm">Fecha *</Label>
-                       {isMobile ? (
-                         <Drawer open={showCalendar} onOpenChange={setShowCalendar}>
-                           <DrawerTrigger asChild>
-                             <Button
-                               variant="outline"
-                               className={cn(
-                                 "w-full justify-start text-left font-normal mt-1",
-                                 !formData.date && "text-muted-foreground"
-                               )}
-                             >
-                               <CalendarIcon className="mr-2 h-4 w-4" />
-                               {formData.date ? format(formData.date, "PPP", { locale: es }) : t('select_date')}
-                             </Button>
-                           </DrawerTrigger>
-                            <DrawerContent className="min-h-[70vh] max-h-[95vh]">
-                              <DrawerHeader className="text-center pb-2">
-                                <DrawerTitle className="text-xl font-semibold">Seleccionar Fecha</DrawerTitle>
-                              </DrawerHeader>
-                              <div className="px-6 pb-8 overflow-y-auto flex-1">
-                                <div className="flex justify-center">
-                                  <Calendar
-                                  mode="single"
-                                  selected={formData.date}
-                                  onSelect={(date) => {
-                                    setFormData({ ...formData, date });
-                                    setShowCalendar(false);
-                                  }}
-                                    disabled={(date) => date < new Date()}
-                                    locale={es}
-                                    className="w-full max-w-sm mx-auto p-3 pointer-events-auto"
-                                    classNames={{
-                                      months: "flex flex-col space-y-6 w-full",
-                                      month: "space-y-6 w-full",
-                                      caption: "flex justify-center pt-2 relative items-center w-full mb-4",
-                                      caption_label: "text-lg font-bold text-foreground",
-                                      nav: "space-x-1 flex items-center",
-                                      nav_button: "h-12 w-12 bg-transparent p-0 opacity-80 hover:opacity-100 border-2 border-input hover:bg-accent hover:text-accent-foreground rounded-lg transition-all",
-                                      nav_button_previous: "absolute left-2",
-                                      nav_button_next: "absolute right-2",
-                                      table: "w-full border-collapse space-y-2",
-                                      head_row: "flex w-full mb-2",
-                                      head_cell: "text-muted-foreground rounded-md w-12 font-semibold text-base flex items-center justify-center py-3",
-                                      row: "flex w-full mt-3",
-                                      cell: "text-center text-base p-1 relative w-12 h-12 flex items-center justify-center",
-                                      day: "h-11 w-11 p-0 font-medium text-base cursor-pointer rounded-lg hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-all duration-200 flex items-center justify-center border border-transparent hover:border-accent-foreground/20",
-                                      day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground border-primary",
-                                      day_today: "bg-accent text-accent-foreground font-bold border-accent-foreground/30",
-                                      day_outside: "text-muted-foreground opacity-40",
-                                      day_disabled: "text-muted-foreground opacity-20 cursor-not-allowed",
-                                      day_hidden: "invisible",
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </DrawerContent>
-                         </Drawer>
-                       ) : (
-                         <Popover open={showCalendar} onOpenChange={setShowCalendar}>
-                           <PopoverTrigger asChild>
-                             <Button
-                               variant="outline"
-                               className={cn(
-                                 "w-full justify-start text-left font-normal mt-1",
-                                 !formData.date && "text-muted-foreground"
-                               )}
-                             >
-                               <CalendarIcon className="mr-2 h-4 w-4" />
-                               {formData.date ? format(formData.date, "PPP", { locale: es }) : t('select_date')}
-                             </Button>
-                           </PopoverTrigger>
-                           <PopoverContent 
-                             className="w-auto p-0 z-[60] bg-popover border border-border shadow-lg max-h-[80vh] overflow-y-auto"
-                             align="start"
-                             side="bottom"
-                             sideOffset={4}
-                             alignOffset={0}
-                             avoidCollisions={true}
-                             collisionPadding={16}
-                           >
-                             <Calendar
-                               mode="single"
-                               selected={formData.date}
-                               onSelect={(date) => {
-                                 setFormData({ ...formData, date });
-                                 setShowCalendar(false);
-                               }}
-                               disabled={(date) => date < new Date()}
-                               initialFocus
-                               locale={es}
-                             />
-                           </PopoverContent>
-                         </Popover>
-                       )}
+                       <DatePickerModal
+                         open={showCalendar}
+                         onOpenChange={setShowCalendar}
+                         selected={formData.date}
+                         onSelect={(date) => setFormData({ ...formData, date })}
+                         disabled={(date) => date < new Date()}
+                         placeholder={t('select_date')}
+                       />
                      </div>
 
                      {/* Time picker */}
                      <div>
                        <Label className="text-sm">Hora *</Label>
-                       {isMobile ? (
-                         <Drawer open={showTimeDropdown} onOpenChange={setShowTimeDropdown}>
-                           <DrawerTrigger asChild>
-                             <Button
-                               variant="outline"
-                               className={cn(
-                                 "w-full justify-start text-left font-normal mt-1",
-                                 !formData.time && "text-muted-foreground"
-                               )}
-                             >
-                               <Clock className="mr-2 h-4 w-4" />
-                               {formData.time || t('select_time')}
-                             </Button>
-                           </DrawerTrigger>
-                            <DrawerContent className="min-h-[60vh] max-h-[95vh]">
-                              <DrawerHeader className="text-center pb-2">
-                                <DrawerTitle className="text-xl font-semibold">Seleccionar Hora</DrawerTitle>
-                              </DrawerHeader>
-                              <div className="px-6 pb-8 overflow-y-auto flex-1">
-                                <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
-                                  {timeSlots.map((time) => (
-                                    <Button
-                                      key={time}
-                                      variant={formData.time === time ? "default" : "outline"}
-                                      size="lg"
-                                      onClick={() => {
-                                        setFormData({ ...formData, time });
-                                        setShowTimeDropdown(false);
-                                      }}
-                                      className="h-16 text-base font-semibold min-w-0 flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
-                                    >
-                                      {time}
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
-                            </DrawerContent>
-                         </Drawer>
-                       ) : (
-                         <Popover open={showTimeDropdown} onOpenChange={setShowTimeDropdown}>
-                           <PopoverTrigger asChild>
-                             <Button
-                               variant="outline"
-                               className={cn(
-                                 "w-full justify-start text-left font-normal mt-1",
-                                 !formData.time && "text-muted-foreground"
-                               )}
-                             >
-                               <Clock className="mr-2 h-4 w-4" />
-                               {formData.time || t('select_time')}
-                             </Button>
-                           </PopoverTrigger>
-                           <PopoverContent 
-                             className="w-full p-0 z-[60] bg-popover border border-border shadow-lg max-h-60 overflow-y-auto"
-                             align="start"
-                             side="bottom"
-                             sideOffset={4}
-                             alignOffset={0}
-                             avoidCollisions={true}
-                             collisionPadding={16}
-                             onInteractOutside={() => setShowTimeDropdown(false)}
-                           >
-                             <div className="p-1">
-                               {timeSlots.map((time) => (
-                                 <button
-                                   key={time}
-                                   onClick={() => {
-                                     setFormData({ ...formData, time });
-                                     setShowTimeDropdown(false);
-                                   }}
-                                   className="w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground flex items-center space-x-2 rounded-md transition-colors"
-                                 >
-                                   <Clock className="h-3 w-3" />
-                                   <span>{time}</span>
-                                 </button>
-                               ))}
-                             </div>
-                           </PopoverContent>
-                         </Popover>
-                       )}
+                       <TimePickerModal
+                         open={showTimeDropdown}
+                         onOpenChange={setShowTimeDropdown}
+                         selected={formData.time}
+                         onSelect={(time) => setFormData({ ...formData, time })}
+                         timeSlots={timeSlots}
+                         placeholder={t('select_time')}
+                       />
                      </div>
                    </div>
                  </div>
