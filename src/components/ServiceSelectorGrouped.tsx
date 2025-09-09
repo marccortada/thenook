@@ -95,7 +95,7 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
       }
     });
 
-    return Object.values(groups).filter(group => group.services.length > 0);
+    return Object.values(groups);
   }, [services]);
 
   const handleSelect = (id: string, kind: "service" | "package") => {

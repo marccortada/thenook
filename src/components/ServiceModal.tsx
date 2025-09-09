@@ -285,10 +285,8 @@ const ServiceModal: React.FC<Props> = ({
       groups['rituales'].packages.push(...packages);
     }
 
-    // Return only groups with content
-    return Object.values(groups).filter(group => 
-      group.services.length > 0 || group.packages.length > 0
-    );
+    // Return all groups - always show all categories
+    return Object.values(groups);
   }, [services, packages, mode]);
 
   const ServiceGroup: React.FC<{ 
