@@ -220,26 +220,30 @@ const ServiceModal: React.FC<Props> = ({
   const groupedServices = React.useMemo(() => {
     const groups = {
       'masajes-individuales': {
-        name: 'Masajes Individuales',
+        name: 'Masaje Individual',
         color: '#3B82F6',
+        icon: '💆‍♀️',
         services: [] as Service[],
         packages: [] as Package[]
       },
       'masajes-pareja': {
-        name: 'Masajes en Pareja',
+        name: 'Masaje para Dos',
         color: '#10B981',
+        icon: '💑',
         services: [] as Service[],
         packages: [] as Package[]
       },
       'masajes-cuatro-manos': {
-        name: 'Masajes a Cuatro Manos',
+        name: 'Masaje a Cuatro Manos',
         color: '#F59E0B',
+        icon: '🤲',
         services: [] as Service[],
         packages: [] as Package[]
       },
       'rituales': {
-        name: 'Rituales',
+        name: 'Rituales Individuales',
         color: '#8B5CF6',
+        icon: '✨',
         services: [] as Service[],
         packages: [] as Package[]
       }
@@ -277,8 +281,9 @@ const ServiceModal: React.FC<Props> = ({
     services: Service[]; 
     packages?: Package[];
     icon?: React.ReactNode;
-  }> = ({ title, services, packages = [], icon }) => {
-    const [isExpanded, setIsExpanded] = useState(true);
+    emoji?: string;
+  }> = ({ title, services, packages = [], icon, emoji }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
     const totalItems = services.length + packages.length;
     
     if (totalItems === 0) return null;
@@ -288,21 +293,32 @@ const ServiceModal: React.FC<Props> = ({
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className={cn(
-            "w-full flex items-center gap-2 px-1 rounded-md py-2 transition-colors group",
-            (isAdmin || isEmployee) 
-              ? "hover:bg-accent/50" 
-              : "hover:bg-muted/30"
+            "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group",
+            "bg-gradient-to-r from-accent/30 to-accent/10 hover:from-accent/50 hover:to-accent/20",
+            "border border-border/50 hover:border-border shadow-sm hover:shadow-md"
           )}
         >
-          {(isAdmin || isEmployee) && icon}
-          <h4 className="font-semibold text-base text-foreground">{title}</h4>
-          <span className="text-xs text-muted-foreground ml-2">({totalItems})</span>
-          <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
-          {isExpanded ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+          {emoji && (
+            <span className="text-xl group-hover:scale-110 transition-transform duration-200">
+              {emoji}
+            </span>
           )}
+          {(isAdmin || isEmployee) && icon && (
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: icon as string }} />
+          )}
+          <h4 className="font-semibold text-base text-foreground">{title}</h4>
+          <div className="flex items-center gap-2 ml-auto">
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
+              {totalItems} {totalItems === 1 ? 'servicio' : 'servicios'}
+            </Badge>
+            <div className="p-1 rounded-full bg-background/50 group-hover:bg-background transition-colors">
+              {isExpanded ? (
+                <ChevronUp className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              )}
+            </div>
+          </div>
         </button>
         
         {isExpanded && (
@@ -331,12 +347,19 @@ const ServiceModal: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[95vw] max-h-[75vh] overflow-hidden flex flex-col bg-gradient-to-br from-background to-accent/5 fixed top-[65%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999]">
-        <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 -mx-6 px-6 -mt-6 pt-6">
-          <DialogTitle className="text-xl font-bold text-foreground">
-            Seleccionar Servicio
-          </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</DialogDescription>
+      <DialogContent className="max-w-3xl w-[95vw] max-h-[80vh] overflow-hidden flex flex-col bg-gradient-to-br from-background via-accent/5 to-background fixed top-[55%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999]">
+        <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-primary/5 via-accent/10 to-secondary/5 -mx-6 px-6 -mt-6 pt-6 rounded-t-lg">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-primary/10">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-bold text-foreground">
+                Seleccionar Servicio
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto -mx-6 px-6 service-modal-scroll">
@@ -347,7 +370,8 @@ const ServiceModal: React.FC<Props> = ({
                 title={group.name} 
                 services={group.services}
                 packages={group.packages}
-                icon={(isAdmin || isEmployee) ? <div className="w-4 h-4 rounded-full" style={{ backgroundColor: group.color }} /> : null}
+                icon={group.color}
+                emoji={group.icon}
               />
             ))}
           </div>
