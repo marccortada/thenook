@@ -1,7 +1,6 @@
 import * as React from "react"
 import * as AccordionPrimitive from "@radix-ui/react-accordion"
 import { ChevronDown } from "lucide-react"
-import { useViewportPositioning } from "@/hooks/useViewportPositioning"
 
 import { cn } from "@/lib/utils"
 
@@ -41,50 +40,16 @@ AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName
 
 const AccordionContent = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content> & {
-    autoScroll?: boolean;
-  }
->(({ className, children, autoScroll = true, ...props }, ref) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const viewportRef = useViewportPositioning(isOpen, 200);
-
-  React.useEffect(() => {
-    const element = ref && 'current' in ref ? ref.current : null;
-    if (!element) return;
-
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'data-state') {
-          const target = mutation.target as HTMLElement;
-          const newState = target.getAttribute('data-state');
-          setIsOpen(newState === 'open');
-        }
-      });
-    });
-
-    observer.observe(element, { attributes: true });
-    return () => observer.disconnect();
-  }, [ref]);
-
-  return (
-    <AccordionPrimitive.Content
-      ref={(node) => {
-        if (typeof ref === 'function') {
-          ref(node);
-        } else if (ref) {
-          ref.current = node;
-        }
-        if (viewportRef) {
-          viewportRef.current = node;
-        }
-      }}
-      className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
-      {...props}
-    >
-      <div className={cn("pb-4 pt-0", className)}>{children}</div>
-    </AccordionPrimitive.Content>
-  );
-});
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <AccordionPrimitive.Content
+    ref={ref}
+    className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+    {...props}
+  >
+    <div className={cn("pb-4 pt-0", className)}>{children}</div>
+  </AccordionPrimitive.Content>
+))
 
 AccordionContent.displayName = AccordionPrimitive.Content.displayName
 

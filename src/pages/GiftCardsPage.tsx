@@ -17,7 +17,6 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useCenterOnOpen } from "@/components/ViewportSafeWrapper";
 interface CartItem {
   id: string;
   name: string;
@@ -123,9 +122,6 @@ const GiftCardsPage = () => {
   const [stripeSessionId, setStripeSessionId] = useState<string | null>(null);
   
   const { t } = useTranslation();
-  
-  // Hook para centrar el modal del carrito cuando se abre
-  const cartModalRef = useCenterOnOpen(isCartOpen);
 
   // Función para traducir nombres de paquetes/tarjetas
   const translatePackageName = (name: string) => {
@@ -360,7 +356,7 @@ const GiftCardsPage = () => {
         console.log("🔄 Dialog onOpenChange llamado:", open);
         setIsCartOpen(open);
       }}>
-        <DialogContent ref={cartModalRef} className="max-w-[90vw] sm:max-w-[480px] max-h-[80vh] overflow-hidden flex flex-col p-0 z-[9999]">
+        <DialogContent className="max-w-[90vw] sm:max-w-[480px] max-h-[80vh] overflow-hidden flex flex-col p-0">
           <div className="flex flex-col h-full">
             <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
               <DialogTitle>{t('your_cart')}</DialogTitle>
