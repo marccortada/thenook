@@ -261,7 +261,7 @@ const ServiceModal: React.FC<Props> = ({
       const name = service.name.toLowerCase();
       const description = (service.description || '').toLowerCase();
       const isRitualService = name.includes('ritual') || description.includes('ritual');
-      const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas');
+      const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo') || name.includes('two') || description.includes('dos personas') || description.includes('pareja') || description.includes('para dos');
       
       if (name.includes('cuatro manos')) {
         groups['masajes-cuatro-manos'].services.push(service);
@@ -280,9 +280,20 @@ const ServiceModal: React.FC<Props> = ({
       }
     });
 
-    // Add packages to rituales individuales
+    // Add packages to appropriate ritual groups
     if (mode === "combined" || mode === "voucher") {
-      groups['rituales'].packages.push(...packages);
+      packages.forEach(pkg => {
+        const name = pkg.name.toLowerCase();
+        const description = (pkg.description || '').toLowerCase();
+        const isRitualPackage = name.includes('ritual') || description.includes('ritual');
+        const isDuoPackage = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo') || description.includes('dos personas') || description.includes('pareja') || description.includes('para dos');
+        
+        if (isRitualPackage && isDuoPackage) {
+          groups['rituales-pareja'].packages.push(pkg);
+        } else {
+          groups['rituales'].packages.push(pkg);
+        }
+      });
     }
 
     // Return all groups - always show all categories

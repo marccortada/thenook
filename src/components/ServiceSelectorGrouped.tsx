@@ -76,7 +76,7 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
       const name = service.name.toLowerCase();
       const description = (service.description || '').toLowerCase();
       const isRitualService = name.includes('ritual') || description.includes('ritual');
-      const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas');
+      const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo') || name.includes('two') || description.includes('dos personas') || description.includes('pareja') || description.includes('para dos');
       
       if (name.includes('cuatro manos')) {
         groups['masajes-cuatro-manos'].services.push(service);
