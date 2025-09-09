@@ -348,10 +348,13 @@ const GiftCardsPage = () => {
 
       {/* Cart Dialog */}
       <Dialog open={isCartOpen} onOpenChange={setIsCartOpen}>
-        <DialogContent className="max-w-[90vw] sm:max-w-[480px] max-h-[90vh] flex flex-col p-0">
+        <DialogContent className="max-w-[90vw] sm:max-w-[480px] max-h-[80vh] overflow-hidden flex flex-col fixed top-[55%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] p-0">
           <div className="flex flex-col h-full">
             <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
               <DialogTitle>{t('your_cart')}</DialogTitle>
+              <DialogDescription className="sr-only">
+                {t('your_cart')}
+              </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col h-full min-h-0 px-6">
               <div className="flex-1 overflow-y-auto space-y-4 py-4">
