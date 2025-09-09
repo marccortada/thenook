@@ -662,6 +662,7 @@ const ClientReservation = () => {
                     packages={[]}
                     selectedId={selection?.id}
                     onSelect={(id, kind) => setSelection({ id, kind })}
+                    useDropdown={true}
                   />
                 </div>
               )}
