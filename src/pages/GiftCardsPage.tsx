@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogOverlay } from "@/components/ui/dialog";
 import { ViewportSafeWrapper } from "@/components/ViewportSafeWrapper";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -356,7 +356,8 @@ const GiftCardsPage = () => {
         console.log("🔄 Dialog onOpenChange llamado:", open);
         setIsCartOpen(open);
       }}>
-        <DialogContent className="!fixed !top-1/2 !left-1/2 !transform !-translate-x-1/2 !-translate-y-1/2 !z-[9999] !bg-background max-w-[90vw] sm:max-w-[480px] max-h-[80vh] overflow-hidden flex flex-col p-0 border shadow-lg">
+        <DialogOverlay className="!z-[9998]" />
+        <DialogContent className="!fixed !top-1/2 !left-1/2 !transform !-translate-x-1/2 !-translate-y-1/2 !z-[9999] !bg-background max-w-[90vw] sm:max-w-[480px] max-h-[80vh] overflow-hidden flex flex-col p-0 border shadow-lg !pointer-events-auto">
           <div className="flex flex-col h-full">
             <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
               <DialogTitle>{t('your_cart')}</DialogTitle>
