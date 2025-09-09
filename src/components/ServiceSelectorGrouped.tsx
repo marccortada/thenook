@@ -46,22 +46,22 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
   const groupedServices = React.useMemo(() => {
     const groups = {
       'masajes-individuales': {
-        name: 'Masajes Individuales',
+        name: 'Masaje Individual',
         color: '#3B82F6',
         services: [] as Service[],
       },
       'masajes-pareja': {
-        name: 'Masajes en Pareja',
+        name: 'Masaje para Dos',
         color: '#10B981',
         services: [] as Service[],
       },
       'masajes-cuatro-manos': {
-        name: 'Masajes a Cuatro Manos',
+        name: 'Masaje a Cuatro Manos',
         color: '#F59E0B',
         services: [] as Service[],
       },
       'rituales': {
-        name: 'Rituales',
+        name: 'Rituales Individuales',
         color: '#8B5CF6',
         services: [] as Service[],
       }
@@ -164,7 +164,7 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
             <div className="p-4 space-y-4">
               {groupedServices.map((group, index) => {
                 const GroupCollapsible = () => {
-                  const [isExpanded, setIsExpanded] = useState(true);
+                  const [isExpanded, setIsExpanded] = useState(false);
                   
                   return (
                     <div key={index} className="space-y-2">
