@@ -384,7 +384,7 @@ const GiftCardsPage = () => {
           </DialogHeader>
           
           {/* Contenido scrolleable */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="overflow-y-auto px-6 py-4" style={{ height: 'calc(90vh - 140px)' }}>
             <div className="space-y-4">
               {items.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t('cart_empty')}</p>
@@ -550,103 +550,6 @@ const GiftCardsPage = () => {
             </div>
           </div>
           
-          {/* Footer fijo con botones */}
-          {items.length > 0 && (
-            <div className="flex-shrink-0 border-t px-6 py-4 bg-background">
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button variant="secondary" onClick={clear} className="h-12 text-sm">
-                      {t('empty_cart_button')}
-                    </Button>
-                    <Button 
-                      className="h-12 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-sm font-semibold"
-                      onClick={async () => {
-                        console.log("=== INICIANDO PROCESO DE PAGO ===");
-                        console.log("Items en carrito:", items.length);
-                        console.log("Es regalo:", isGift);
-                        console.log("Nombre comprador:", purchasedByName);
-                        console.log("Email comprador:", purchasedByEmail);
-                        
-                        if (items.length === 0) {
-                          console.log("❌ Carrito vacío");
-                          return;
-                        }
-                        
-                        if (isGift && !recipientName.trim()) {
-                          console.log("❌ Falta nombre del beneficiario");
-                          toast.error(t('recipient_name_error'));
-                          return;
-                        }
-                        
-                        try {
-                          if (!purchasedByName.trim()) {
-                            console.log("❌ Falta nombre del comprador");
-                            toast.error(t('buyer_name_error'));
-                            return;
-                          }
-                          if (!purchasedByEmail.trim()) {
-                            console.log("❌ Falta email del comprador");
-                            toast.error(t('buyer_email_error'));
-                            return;
-                          }
-                          
-                          console.log("✅ Validaciones pasadas, creando payload...");
-                          
-                          const payload = {
-                            intent: "gift_cards",
-                            gift_cards: {
-                              items: items.map(i => ({ 
-                                amount_cents: i.priceCents, 
-                                quantity: i.quantity,
-                                name: i.name,
-                                purchased_by_name: purchasedByName,
-                                purchased_by_email: purchasedByEmail,
-                                is_gift: isGift,
-                                recipient_name: isGift ? recipientName : undefined,
-                                recipient_email: isGift ? recipientEmail : undefined,
-                                gift_message: isGift ? giftMessage : undefined,
-                                show_price: showPrice,
-                                send_to_buyer: sendToBuyer,
-                                show_buyer_data: showBuyerData
-                              })),
-                              total_cents: totalCents
-                            },
-                            currency: "eur"
-                          };
-                          
-                          console.log("📦 Payload creado:", payload);
-                          console.log("🚀 Llamando a create-checkout...");
-                          
-                          const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-                          
-                          console.log("📥 Respuesta recibida:");
-                          console.log("Data:", data);
-                          console.log("Error:", error);
-                          
-                          if (error) {
-                            console.log("❌ Error en la función:", error);
-                            throw error;
-                          }
-                          
-                          if (data?.client_secret) {
-                            console.log("✅ Client secret recibido, abriendo modal...");
-                            setStripeClientSecret(data.client_secret);
-                            setStripeSessionId(data.session_id);
-                            setShowStripeModal(true);
-                          } else {
-                            console.log("❌ No se recibió client_secret");
-                            toast.error("No se recibió configuración de pago");
-                          }
-                        } catch (e: any) {
-                          console.log("💥 Error capturado:", e);
-                          toast.error(e.message || t('payment_init_error'));
-                        }
-                      }}
-                    >
-                      {t('buy_button')} - {euro(totalCents)}
-                    </Button>
-                  </div>
-                </div>
-               )}
           
           {/* Botones fijos en la parte inferior */}
           {items.length > 0 && (
