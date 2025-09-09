@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { ViewportSafeWrapper } from "@/components/ViewportSafeWrapper";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -122,10 +123,11 @@ const GiftCardsPage = () => {
   const [stripeSessionId, setStripeSessionId] = useState<string | null>(null);
   
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
-  // Efecto para seguir al modal cuando se abre
+  // Efecto para seguir al modal cuando se abre (solo en desktop)
   useEffect(() => {
-    if (isCartOpen) {
+    if (isCartOpen && !isMobile) {
       // Pequeño delay para asegurar que el modal se ha renderizado
       setTimeout(() => {
         // Buscar el modal y hacer scroll hacia él
@@ -139,7 +141,7 @@ const GiftCardsPage = () => {
         }
       }, 100);
     }
-  }, [isCartOpen]);
+  }, [isCartOpen, isMobile]);
 
   // Función para traducir nombres de paquetes/tarjetas
   const translatePackageName = (name: string) => {
