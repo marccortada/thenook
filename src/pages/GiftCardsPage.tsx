@@ -356,7 +356,7 @@ const GiftCardsPage = () => {
         console.log("🔄 Dialog onOpenChange llamado:", open);
         setIsCartOpen(open);
       }}>
-        <DialogContent className="!fixed !inset-0 !z-[9999] !flex !items-center !justify-center !bg-background !border !shadow-lg !w-[90vw] !max-w-[480px] !h-[80vh] !mx-auto !my-auto overflow-hidden flex-col p-0">
+        <DialogContent className="!fixed !top-1/2 !left-1/2 !transform !-translate-x-1/2 !-translate-y-1/2 !z-[9999] !bg-background max-w-[90vw] sm:max-w-[480px] max-h-[80vh] overflow-hidden flex flex-col p-0 border shadow-lg">
           <div className="flex flex-col h-full">
             <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
               <DialogTitle>{t('your_cart')}</DialogTitle>
