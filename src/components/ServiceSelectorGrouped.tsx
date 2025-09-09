@@ -125,9 +125,20 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
         </div>
         
         <div className="text-right">
-          <p className="text-sm font-bold text-foreground">
-            €{(service.price_cents / 100).toFixed(2)}
-          </p>
+          {service.has_discount && service.discount_price_cents ? (
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground line-through">
+                €{(service.price_cents / 100).toFixed(2)}
+              </p>
+              <p className="text-sm font-bold text-primary">
+                €{(service.discount_price_cents / 100).toFixed(2)}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm font-bold text-foreground">
+              €{(service.price_cents / 100).toFixed(2)}
+            </p>
+          )}
         </div>
       </div>
     </button>
