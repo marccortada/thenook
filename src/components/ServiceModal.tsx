@@ -246,26 +246,41 @@ const ServiceModal: React.FC<Props> = ({
         icon: '✨',
         services: [] as Service[],
         packages: [] as Package[]
+      },
+      'rituales-pareja': {
+        name: 'Rituales para Dos',
+        color: '#EC4899',
+        icon: '💖',
+        services: [] as Service[],
+        packages: [] as Package[]
       }
     };
 
     // Classify services based on their names
     services.forEach(service => {
       const name = service.name.toLowerCase();
+      const description = (service.description || '').toLowerCase();
+      const isRitualService = name.includes('ritual') || description.includes('ritual');
+      const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas');
       
       if (name.includes('cuatro manos')) {
         groups['masajes-cuatro-manos'].services.push(service);
-      } else if (name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas')) {
+      } else if (isRitualService && isDuoService) {
+        // Rituales para dos personas van al grupo específico de rituales para dos
+        groups['rituales-pareja'].services.push(service);
+      } else if (isDuoService) {
+        // Masajes para dos personas (que no sean rituales)
         groups['masajes-pareja'].services.push(service);
-      } else if (service.type === 'package' || name.includes('ritual')) {
+      } else if (isRitualService || service.type === 'package') {
+        // Rituales individuales
         groups['rituales'].services.push(service);
       } else {
-        // Individual massages and treatments
+        // Masajes individuales
         groups['masajes-individuales'].services.push(service);
       }
     });
 
-    // Add packages to rituales
+    // Add packages to rituales individuales
     if (mode === "combined" || mode === "voucher") {
       groups['rituales'].packages.push(...packages);
     }
