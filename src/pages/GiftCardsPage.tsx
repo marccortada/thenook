@@ -197,11 +197,11 @@ const GiftCardsPage = () => {
       console.warn('Translation system error, using fallback');
     }
     
-    // Fallback: usar mapeo directo
-    const { language } = useTranslation();
+    // Usar idioma por defecto sin llamar useTranslation nuevamente
+    const currentLang = 'es'; // default language
     const mapping = translationMap[normalizedKey];
-    if (mapping && mapping[language]) {
-      return mapping[language];
+    if (mapping && mapping[currentLang]) {
+      return mapping[currentLang];
     }
     
     // Si no hay traducción, devolver nombre limpio
