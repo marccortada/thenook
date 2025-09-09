@@ -220,35 +220,35 @@ const ServiceModal: React.FC<Props> = ({
   const groupedServices = React.useMemo(() => {
     const groups = {
       'masajes-individuales': {
-        name: 'Masaje Individual',
+        name: 'Tarjetas para Masaje Individual',
         color: '#3B82F6',
         icon: '💆‍♀️',
         services: [] as Service[],
         packages: [] as Package[]
       },
       'masajes-pareja': {
-        name: 'Masaje para Dos',
+        name: 'Tarjetas para Masaje para Dos',
         color: '#10B981',
         icon: '💑',
         services: [] as Service[],
         packages: [] as Package[]
       },
       'masajes-cuatro-manos': {
-        name: 'Masaje a Cuatro Manos',
+        name: 'Tarjetas para Masaje a Cuatro Manos',
         color: '#F59E0B',
         icon: '🤲',
         services: [] as Service[],
         packages: [] as Package[]
       },
       'rituales': {
-        name: 'Rituales Individuales',
+        name: 'Tarjetas para Rituales Individuales',
         color: '#8B5CF6',
         icon: '✨',
         services: [] as Service[],
         packages: [] as Package[]
       },
       'rituales-pareja': {
-        name: 'Rituales para Dos',
+        name: 'Tarjetas para Rituales para Dos',
         color: '#EC4899',
         icon: '💖',
         services: [] as Service[],

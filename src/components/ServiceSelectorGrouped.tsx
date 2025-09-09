@@ -46,27 +46,27 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
   const groupedServices = React.useMemo(() => {
     const groups = {
       'masajes-individuales': {
-        name: 'Masaje Individual',
+        name: 'Tarjetas para Masaje Individual',
         color: '#3B82F6',
         services: [] as Service[],
       },
       'masajes-pareja': {
-        name: 'Masaje para Dos',
+        name: 'Tarjetas para Masaje para Dos',
         color: '#10B981',
         services: [] as Service[],
       },
       'masajes-cuatro-manos': {
-        name: 'Masaje a Cuatro Manos',
+        name: 'Tarjetas para Masaje a Cuatro Manos',
         color: '#F59E0B',
         services: [] as Service[],
       },
       'rituales': {
-        name: 'Rituales Individuales',
+        name: 'Tarjetas para Rituales Individuales',
         color: '#8B5CF6',
         services: [] as Service[],
       },
       'rituales-pareja': {
-        name: 'Rituales para Dos',
+        name: 'Tarjetas para Rituales para Dos',
         color: '#EC4899',
         services: [] as Service[],
       }

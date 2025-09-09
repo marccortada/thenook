@@ -176,10 +176,10 @@ const translations = {
      "gift_message": "Mensaje de regalo (opcional)",
      "gift_message_placeholder": "Tu mensaje personalizado...",
      "empty_cart_button": "Vaciar",
-      "individual_massages_packages": "Tarjetas para Masajes Individuales",
-      "four_hands_packages": "Tarjetas para Masajes a Cuatro Manos",
-      "rituals_packages": "Tarjetas para Rituales",
-      "couples_packages": "Tarjetas para Masajes en Pareja",
+       "individual_massages_packages": "Tarjetas para Masaje Individual",
+       "four_hands_packages": "Tarjetas para Masaje a Cuatro Manos",
+       "rituals_packages": "Tarjetas para Rituales Individuales",
+       "couples_packages": "Tarjetas para Masaje para Dos",
      "sessions_count": "sesiones",
      
      // Package names translations
