@@ -98,6 +98,11 @@ const isRitual = (name?: string) => !!name?.toLowerCase().includes("ritual");
 
 const GiftCardsPage = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
+  
+  // Debug log para monitorear cambios en isCartOpen
+  useEffect(() => {
+    console.log("📱 Estado isCartOpen cambió a:", isCartOpen);
+  }, [isCartOpen]);
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
   const [purchasedByName, setPurchasedByName] = useState("");
   const [purchasedByEmail, setPurchasedByEmail] = useState("");
@@ -347,7 +352,10 @@ const GiftCardsPage = () => {
       </div>
 
       {/* Cart Dialog */}
-      <Dialog open={isCartOpen} onOpenChange={setIsCartOpen}>
+      <Dialog open={isCartOpen} onOpenChange={(open) => {
+        console.log("🔄 Dialog onOpenChange llamado:", open);
+        setIsCartOpen(open);
+      }}>
         <DialogContent className="!fixed !top-[55%] !left-1/2 !transform !-translate-x-1/2 !-translate-y-1/2 !z-[9999] !bg-background max-w-[90vw] sm:max-w-[480px] max-h-[80vh] overflow-hidden flex flex-col p-0 border shadow-lg">
           <div className="flex flex-col h-full">
             <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
@@ -678,10 +686,14 @@ const GiftCardsPage = () => {
                                 <Button
                                   size="sm"
                                   className="w-full"
-                                  onClick={() => {
-                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                    setIsCartOpen(true);
-                                  }}
+                                 onClick={() => {
+                                   console.log("🛒 Botón Añadir al Carrito clickeado - Individual");
+                                   console.log("Estado actual isCartOpen:", isCartOpen);
+                                   add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                   console.log("Producto añadido, ahora abriendo carrito...");
+                                   setIsCartOpen(true);
+                                   console.log("setIsCartOpen(true) llamado - debería abrir el modal");
+                                 }}
                                 >
                                   {t('add_to_cart')}
                                 </Button>
