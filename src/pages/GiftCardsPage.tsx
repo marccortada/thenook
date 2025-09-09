@@ -123,6 +123,24 @@ const GiftCardsPage = () => {
   
   const { t } = useTranslation();
 
+  // Efecto para seguir al modal cuando se abre
+  useEffect(() => {
+    if (isCartOpen) {
+      // Pequeño delay para asegurar que el modal se ha renderizado
+      setTimeout(() => {
+        // Buscar el modal y hacer scroll hacia él
+        const modalElement = document.querySelector('[role="dialog"]');
+        if (modalElement) {
+          modalElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'center'
+          });
+        }
+      }, 100);
+    }
+  }, [isCartOpen]);
+
   // Función para traducir nombres de paquetes/tarjetas
   const translatePackageName = (name: string) => {
     // Limpiar el nombre quitando "TARJETA REGALO" y texto extra
@@ -356,7 +374,7 @@ const GiftCardsPage = () => {
         console.log("🔄 Dialog onOpenChange llamado:", open);
         setIsCartOpen(open);
       }}>
-        <DialogContent className="max-w-[90vw] sm:max-w-[480px] max-h-[80vh] overflow-hidden flex flex-col p-0">
+        <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-0 animate-scale-in">
           <div className="flex flex-col h-full">
             <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
               <DialogTitle>{t('your_cart')}</DialogTitle>
