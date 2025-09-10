@@ -307,7 +307,9 @@ const ServiceModal: React.FC<Props> = ({
     }
 
     // Return all groups - always show all categories
-    return Object.values(groups);
+    const result = Object.values(groups);
+    console.log('ServiceModal - Final groups result:', result.map(g => ({ name: g.name, services: g.services.length, packages: g.packages.length })));
+    return result;
   }, [services, packages, mode]);
 
   const ServiceGroup: React.FC<{ 

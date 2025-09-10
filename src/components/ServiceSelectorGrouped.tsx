@@ -100,12 +100,12 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
       }
     });
 
-    console.log('ServiceSelectorGrouped groups result:');
-    Object.entries(groups).forEach(([key, group]) => {
-      console.log(`${key}: ${group.services.length} services`);
-    });
-
-    return Object.values(groups);
+    const result = Object.values(groups);
+    console.log('ServiceSelectorGrouped - Final groups result:', result.map(g => ({ name: g.name, services: g.services.length })));
+    console.log('ServiceSelectorGrouped - All group keys:', Object.keys(groups));
+    console.log('ServiceSelectorGrouped - rituales-pareja group exists:', !!groups['rituales-pareja']);
+    
+    return result;
   }, [services]);
 
   const handleSelect = (id: string, kind: "service" | "package") => {
