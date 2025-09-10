@@ -299,9 +299,10 @@ const GiftCardsPage = () => {
   const groups = useMemo(() => {
     const individuales = giftItems.filter((i) => i.type === "fixed" && !isCuatroManos(i.name) && !isRitual(i.name) && !isDuo(i.name));
     const cuatro = giftItems.filter((i) => i.type === "fixed" && isCuatroManos(i.name));
-    const rituales = giftItems.filter((i) => i.type === "fixed" && isRitual(i.name));
-    const paraDos = giftItems.filter((i) => i.type === "fixed" && isDuo(i.name));
-    return { individuales, cuatro, rituales, paraDos };
+    const rituales = giftItems.filter((i) => i.type === "fixed" && isRitual(i.name) && !isDuo(i.name));
+    const ritualesParaDos = giftItems.filter((i) => i.type === "fixed" && isRitual(i.name) && isDuo(i.name));
+    const paraDos = giftItems.filter((i) => i.type === "fixed" && isDuo(i.name) && !isRitual(i.name));
+    return { individuales, cuatro, rituales, ritualesParaDos, paraDos };
   }, [giftItems]);
 
   const { items, add, remove, clear, totalCents } = useLocalCart();
@@ -838,10 +839,53 @@ const GiftCardsPage = () => {
                        ))}
                     </div>
                   </AccordionContent>
-                </AccordionItem>
-              )}
+                 </AccordionItem>
+               )}
 
-            </Accordion>
+               {groups.ritualesParaDos.length > 0 && (
+                 <AccordionItem value="tarjetas-rituales-dos" className="border rounded-lg p-0">
+                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                      <h2 className="text-lg font-semibold">Tarjetas para Rituales para Dos</h2>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                          {groups.ritualesParaDos.map((item) => (
+                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
+                               <OptimizedImage
+                                 src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                                 alt={translatePackageName(item.name)}
+                                 className="aspect-[4/3]"
+                                 width={400}
+                                 height={300}
+                                 quality={80}
+                               />
+                              <CardHeader className="pb-2 p-3">
+                                <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
+                              </CardHeader>
+                               <CardContent className="pb-2 p-3 pt-0">
+                                 <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                               </CardContent>
+                               <CardFooter className="pt-2 p-3">
+                                 <Button
+                                   size="sm"
+                                   className="w-full text-xs"
+                                   onClick={() => {
+                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                     setIsCartOpen(true);
+                                   }}
+                                 >
+                                   {t('add_to_cart')}
+                                 </Button>
+                               </CardFooter>
+                           </Card>
+                        ))}
+                     </div>
+                   </AccordionContent>
+                 </AccordionItem>
+               )}
+
+             </Accordion>
           </section>
         </article>
       </main>
