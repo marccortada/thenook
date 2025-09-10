@@ -81,7 +81,7 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
       const isRitualService = name.includes('ritual') || description.includes('ritual');
       const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo') || name.includes('two') || description.includes('dos personas') || description.includes('pareja') || description.includes('para dos');
       
-      console.log(`ServiceSelector - Service "${service.name}": isRitual=${isRitualService}, isDuo=${isDuoService}, name="${name}"`);
+      console.log(`ServiceSelector - Service "${service.name}": isRitual=${isRitualService}, isDuo=${isDuoService}, name="${name}", description="${description}"`);
       
       if (name.includes('cuatro manos')) {
         console.log(`-> Clasificando "${service.name}" como cuatro manos`);
@@ -94,6 +94,10 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
         console.log(`-> Clasificando "${service.name}" como masaje para dos`);
         // Masajes para dos personas (que no sean rituales)
         groups['masajes-pareja'].services.push(service);
+      } else if (isRitualService && !isDuoService) {
+        console.log(`-> Clasificando "${service.name}" como ritual individual`);
+        // Solo rituales individuales (no para dos personas)
+        groups['rituales'].services.push(service);
       } else if (isRitualService && !isDuoService) {
         // Solo rituales individuales (no para dos personas)
         groups['rituales'].services.push(service);
