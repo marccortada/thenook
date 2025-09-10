@@ -263,6 +263,12 @@ const ServiceModal: React.FC<Props> = ({
       const isRitualService = name.includes('ritual') || description.includes('ritual');
       const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo') || name.includes('two') || description.includes('dos personas') || description.includes('pareja') || description.includes('para dos');
       
+      console.log(`Service "${service.name}": isRitual=${isRitualService}, isDuo=${isDuoService}, name="${name}"`);
+      
+      if (isRitualService && isDuoService) {
+        console.log(`-> Clasificando "${service.name}" como ritual para dos`);
+      }
+      
       if (name.includes('cuatro manos')) {
         groups['masajes-cuatro-manos'].services.push(service);
       } else if (isRitualService && isDuoService) {
