@@ -18,6 +18,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useCenterOnOpen } from "@/components/ViewportSafeWrapper";
 
 interface CartItem {
   id: string;
@@ -312,26 +313,16 @@ const GiftCardsPage = () => {
   const { items, add, remove, clear, totalCents } = useLocalCart();
 
   const handleCustomGiftToggle = (groupKey: string) => {
-    const newState = !customGiftDialogs[groupKey];
     setCustomGiftDialogs(prev => ({
       ...prev,
-      [groupKey]: newState
+      [groupKey]: !prev[groupKey]
     }));
-    
-    // Si se está abriendo el modal, hacer scroll suave al centro de la pantalla
-    if (newState) {
-      setTimeout(() => {
-        window.scrollTo({
-          top: window.pageYOffset + (window.innerHeight / 2) - 200,
-          behavior: 'smooth'
-        });
-      }, 100);
-    }
   };
 
   const renderCustomGiftCard = (groupKey: string, title: string) => {
     const isOpen = customGiftDialogs[groupKey] || false;
     const customValue = customValues[groupKey] || "";
+    const dialogRef = useCenterOnOpen(isOpen);
     
     const predefinedValues = [25, 50, 100, 200];
     
@@ -379,7 +370,7 @@ const GiftCardsPage = () => {
               <Settings className="h-4 w-4 mr-2" />
               Personalizar
             </Button>
-            <DialogContent className="sm:max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+            <DialogContent ref={dialogRef} className="sm:max-w-md max-h-[80vh] overflow-hidden">
               <DialogHeader>
                 <DialogTitle>Personalizar Tarjeta Regalo</DialogTitle>
                 <DialogDescription>
