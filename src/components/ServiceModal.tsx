@@ -280,6 +280,16 @@ const ServiceModal: React.FC<Props> = ({
       }
     });
 
+    console.log('Services classification debug:');
+    console.log('Total services:', services.length);
+    console.log('Services by group:');
+    Object.entries(groups).forEach(([key, group]) => {
+      console.log(`${key}: ${group.services.length} services`);
+      if (group.services.length > 0) {
+        console.log('Services in this group:', group.services.map(s => s.name));
+      }
+    });
+
     // Add packages to appropriate ritual groups
     if (mode === "combined" || mode === "voucher") {
       packages.forEach(pkg => {
@@ -310,7 +320,8 @@ const ServiceModal: React.FC<Props> = ({
     const [isExpanded, setIsExpanded] = useState(false);
     const totalItems = services.length + packages.length;
     
-    if (totalItems === 0) return null;
+    // Always show all groups, even if empty
+    // if (totalItems === 0) return null;
 
     return (
       <div className="space-y-3">

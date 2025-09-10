@@ -72,11 +72,16 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
       }
     };
 
+    console.log('ServiceSelectorGrouped classification debug:');
+    console.log('Total services:', services.length);
+    
     services.forEach(service => {
       const name = service.name.toLowerCase();
       const description = (service.description || '').toLowerCase();
       const isRitualService = name.includes('ritual') || description.includes('ritual');
       const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo') || name.includes('two') || description.includes('dos personas') || description.includes('pareja') || description.includes('para dos');
+      
+      console.log(`Service "${service.name}": isRitual=${isRitualService}, isDuo=${isDuoService}`);
       
       if (name.includes('cuatro manos')) {
         groups['masajes-cuatro-manos'].services.push(service);
@@ -93,6 +98,11 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
         // Masajes individuales
         groups['masajes-individuales'].services.push(service);
       }
+    });
+
+    console.log('ServiceSelectorGrouped groups result:');
+    Object.entries(groups).forEach(([key, group]) => {
+      console.log(`${key}: ${group.services.length} services`);
     });
 
     return Object.values(groups);
