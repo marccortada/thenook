@@ -18,7 +18,6 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useCenterOnOpen } from "@/components/ViewportSafeWrapper";
 
 interface CartItem {
   id: string;
@@ -312,24 +311,6 @@ const GiftCardsPage = () => {
 
   const { items, add, remove, clear, totalCents } = useLocalCart();
 
-  // Create refs for each possible dialog at component level to avoid hooks violations
-  const individualesDialogRef = useCenterOnOpen(customGiftDialogs['individuales'] || false);
-  const cuatroDialogRef = useCenterOnOpen(customGiftDialogs['cuatro'] || false);
-  const ritualesDialogRef = useCenterOnOpen(customGiftDialogs['rituales'] || false);
-  const ritualesParaDosDialogRef = useCenterOnOpen(customGiftDialogs['ritualesParaDos'] || false);
-  const paraDosDialogRef = useCenterOnOpen(customGiftDialogs['paraDos'] || false);
-
-  const getDialogRef = (groupKey: string) => {
-    switch (groupKey) {
-      case 'individuales': return individualesDialogRef;
-      case 'cuatro': return cuatroDialogRef;
-      case 'rituales': return ritualesDialogRef;
-      case 'ritualesParaDos': return ritualesParaDosDialogRef;
-      case 'paraDos': return paraDosDialogRef;
-      default: return null;
-    }
-  };
-
   const handleCustomGiftToggle = (groupKey: string) => {
     setCustomGiftDialogs(prev => ({
       ...prev,
@@ -340,7 +321,6 @@ const GiftCardsPage = () => {
   const renderCustomGiftCard = (groupKey: string, title: string) => {
     const isOpen = customGiftDialogs[groupKey] || false;
     const customValue = customValues[groupKey] || "";
-    const dialogRef = getDialogRef(groupKey);
     
     const predefinedValues = [25, 50, 100, 200];
     
@@ -388,55 +368,57 @@ const GiftCardsPage = () => {
               <Settings className="h-4 w-4 mr-2" />
               Personalizar
             </Button>
-            <DialogContent ref={dialogRef} className="sm:max-w-md max-h-[80vh] overflow-hidden">
-              <DialogHeader>
-                <DialogTitle>Personalizar Tarjeta Regalo</DialogTitle>
-                <DialogDescription>
-                  Selecciona el valor de tu tarjeta regalo para {title.toLowerCase()}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  {predefinedValues.map((value) => (
-                    <Button
-                      key={value}
-                      variant="outline"
-                      onClick={() => handleCustomAmountAdd(value)}
-                      className="h-12"
-                    >
-                      {value}€
-                    </Button>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="custom-amount">Otro valor (€)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="custom-amount"
-                      type="number"
-                      min="10"
-                      max="500"
-                      placeholder="Ej: 75"
-                      value={customValue}
-                      onChange={(e) => handleCustomValueChange(e.target.value)}
-                    />
-                    <Button
-                      onClick={() => {
-                        const amount = parseInt(customValue);
-                        if (amount >= 10 && amount <= 500) {
-                          handleCustomAmountAdd(amount);
-                        }
-                      }}
-                      disabled={!customValue || parseInt(customValue) < 10 || parseInt(customValue) > 500}
-                    >
-                      Añadir
-                    </Button>
+            <DialogContent className="sm:max-w-md">
+              <ViewportSafeWrapper isOpen={isOpen} autoScroll={true} delay={100}>
+                <DialogHeader>
+                  <DialogTitle>Personalizar Tarjeta Regalo</DialogTitle>
+                  <DialogDescription>
+                    Selecciona el valor de tu tarjeta regalo para {title.toLowerCase()}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    {predefinedValues.map((value) => (
+                      <Button
+                        key={value}
+                        variant="outline"
+                        onClick={() => handleCustomAmountAdd(value)}
+                        className="h-12"
+                      >
+                        {value}€
+                      </Button>
+                    ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Valor mínimo: 10€ - Valor máximo: 500€
-                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-amount">Otro valor (€)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="custom-amount"
+                        type="number"
+                        min="10"
+                        max="500"
+                        placeholder="Ej: 75"
+                        value={customValue}
+                        onChange={(e) => handleCustomValueChange(e.target.value)}
+                      />
+                      <Button
+                        onClick={() => {
+                          const amount = parseInt(customValue);
+                          if (amount >= 10 && amount <= 500) {
+                            handleCustomAmountAdd(amount);
+                          }
+                        }}
+                        disabled={!customValue || parseInt(customValue) < 10 || parseInt(customValue) > 500}
+                      >
+                        Añadir
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Valor mínimo: 10€ - Valor máximo: 500€
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </ViewportSafeWrapper>
             </DialogContent>
           </Dialog>
         </CardFooter>
