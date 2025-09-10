@@ -185,7 +185,7 @@ export default function PublicLandingPage() {
                 ></iframe>
                 <Button variant="outline" className="w-full" asChild>
                   <a 
-                    href="https://maps.google.com/?q=C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid" 
+                    href="https://maps.google.com/?q=Centro+de+masajes+Madrid+Concha+Espina+The+Nook,+C.+del+Príncipe+de+Vergara,+204+duplicado+posterior,+local+10,+28002+Madrid" 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
