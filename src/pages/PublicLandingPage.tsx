@@ -169,7 +169,7 @@ export default function PublicLandingPage() {
                 Centro Concha Espina
               </CardTitle>
               <CardDescription>
-                C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid
+                Centro de masajes Madrid Concha Espina - The Nook, C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid
               </CardDescription>
             </CardHeader>
             <CardContent>
