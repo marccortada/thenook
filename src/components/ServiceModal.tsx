@@ -271,8 +271,8 @@ const ServiceModal: React.FC<Props> = ({
       } else if (isDuoService) {
         // Masajes para dos personas (que no sean rituales)
         groups['masajes-pareja'].services.push(service);
-      } else if (isRitualService || service.type === 'package') {
-        // Rituales individuales
+      } else if (isRitualService && !isDuoService) {
+        // Solo rituales individuales (no para dos personas)
         groups['rituales'].services.push(service);
       } else {
         // Masajes individuales
