@@ -12,7 +12,7 @@ import { ViewportSafeWrapper } from "@/components/ViewportSafeWrapper";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, X, Settings } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import OptimizedImage from "@/components/OptimizedImage";
 import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
@@ -122,6 +122,10 @@ const GiftCardsPage = () => {
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
   const [stripeSessionId, setStripeSessionId] = useState<string | null>(null);
+  
+  // Estados para tarjetas regalo personalizadas
+  const [customGiftDialogs, setCustomGiftDialogs] = useState<Record<string, boolean>>({});
+  const [customAmounts, setCustomAmounts] = useState<Record<string, number>>({});
   
   const { t } = useTranslation();
 
@@ -306,6 +310,108 @@ const GiftCardsPage = () => {
   }, [giftItems]);
 
   const { items, add, remove, clear, totalCents } = useLocalCart();
+
+  const handleCustomGiftToggle = (groupKey: string) => {
+    setCustomGiftDialogs(prev => ({
+      ...prev,
+      [groupKey]: !prev[groupKey]
+    }));
+  };
+
+  const handleCustomAmountAdd = (groupKey: string, amount: number) => {
+    add({
+      name: `Tarjeta Regalo Personalizada - ${amount}€`,
+      priceCents: amount * 100
+    });
+    setCustomGiftDialogs(prev => ({
+      ...prev,
+      [groupKey]: false
+    }));
+  };
+
+  const renderCustomGiftCard = (groupKey: string, title: string) => {
+    const isOpen = customGiftDialogs[groupKey] || false;
+    const [customValue, setCustomValue] = useState("");
+    
+    const predefinedValues = [25, 50, 100, 200];
+    
+    return (
+      <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-dashed border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Settings className="h-5 w-5 text-primary" />
+            Tarjeta Regalo Personalizada
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Elige el valor que prefieras para {title.toLowerCase()}
+          </p>
+        </CardHeader>
+        <CardFooter className="pt-0">
+          <Dialog open={isOpen} onOpenChange={(open) => handleCustomGiftToggle(groupKey)}>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => handleCustomGiftToggle(groupKey)}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Personalizar
+            </Button>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Personalizar Tarjeta Regalo</DialogTitle>
+                <DialogDescription>
+                  Selecciona el valor de tu tarjeta regalo para {title.toLowerCase()}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  {predefinedValues.map((value) => (
+                    <Button
+                      key={value}
+                      variant="outline"
+                      onClick={() => handleCustomAmountAdd(groupKey, value)}
+                      className="h-12"
+                    >
+                      {value}€
+                    </Button>
+                  ))}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="custom-amount">Otro valor (€)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="custom-amount"
+                      type="number"
+                      min="10"
+                      max="500"
+                      placeholder="Ej: 75"
+                      value={customValue}
+                      onChange={(e) => setCustomValue(e.target.value)}
+                    />
+                    <Button
+                      onClick={() => {
+                        const amount = parseInt(customValue);
+                        if (amount >= 10 && amount <= 500) {
+                          handleCustomAmountAdd(groupKey, amount);
+                          setCustomValue("");
+                        }
+                      }}
+                      disabled={!customValue || parseInt(customValue) < 10 || parseInt(customValue) > 500}
+                    >
+                      Añadir
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Valor mínimo: 10€ - Valor máximo: 500€
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </CardFooter>
+      </Card>
+    );
+  };
 
   useEffect(() => {
     document.title = "Tarjetas Regalo | The Nook Madrid";
@@ -673,6 +779,7 @@ const GiftCardsPage = () => {
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {renderCustomGiftCard('individuales', 'Masajes Individuales')}
                         {groups.individuales.map((item) => (
                           <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                              <OptimizedImage
@@ -720,6 +827,7 @@ const GiftCardsPage = () => {
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                         {renderCustomGiftCard('paraDos', 'Masajes para Dos Personas')}
                          {groups.paraDos.map((item) => (
                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                               <OptimizedImage
@@ -763,6 +871,7 @@ const GiftCardsPage = () => {
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                         {renderCustomGiftCard('cuatro', 'Masajes a Cuatro Manos')}
                          {groups.cuatro.map((item) => (
                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                               <OptimizedImage
@@ -806,6 +915,7 @@ const GiftCardsPage = () => {
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                         {renderCustomGiftCard('rituales', 'Rituales Individuales')}
                          {groups.rituales.map((item) => (
                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
                               <OptimizedImage
@@ -849,6 +959,7 @@ const GiftCardsPage = () => {
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
                       <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                          {renderCustomGiftCard('ritualesParaDos', 'Rituales para Dos Personas')}
                           {groups.ritualesParaDos.map((item) => (
                             <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
                                <OptimizedImage
