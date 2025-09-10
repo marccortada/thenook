@@ -312,6 +312,24 @@ const GiftCardsPage = () => {
 
   const { items, add, remove, clear, totalCents } = useLocalCart();
 
+  // Create refs for each possible dialog at component level to avoid hooks violations
+  const individualesDialogRef = useCenterOnOpen(customGiftDialogs['individuales'] || false);
+  const cuatroDialogRef = useCenterOnOpen(customGiftDialogs['cuatro'] || false);
+  const ritualesDialogRef = useCenterOnOpen(customGiftDialogs['rituales'] || false);
+  const ritualesParaDosDialogRef = useCenterOnOpen(customGiftDialogs['ritualesParaDos'] || false);
+  const paraDosDialogRef = useCenterOnOpen(customGiftDialogs['paraDos'] || false);
+
+  const getDialogRef = (groupKey: string) => {
+    switch (groupKey) {
+      case 'individuales': return individualesDialogRef;
+      case 'cuatro': return cuatroDialogRef;
+      case 'rituales': return ritualesDialogRef;
+      case 'ritualesParaDos': return ritualesParaDosDialogRef;
+      case 'paraDos': return paraDosDialogRef;
+      default: return null;
+    }
+  };
+
   const handleCustomGiftToggle = (groupKey: string) => {
     setCustomGiftDialogs(prev => ({
       ...prev,
@@ -322,7 +340,7 @@ const GiftCardsPage = () => {
   const renderCustomGiftCard = (groupKey: string, title: string) => {
     const isOpen = customGiftDialogs[groupKey] || false;
     const customValue = customValues[groupKey] || "";
-    const dialogRef = useCenterOnOpen(isOpen);
+    const dialogRef = getDialogRef(groupKey);
     
     const predefinedValues = [25, 50, 100, 200];
     
