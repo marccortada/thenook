@@ -175,7 +175,7 @@ export default function PublicLandingPage() {
             <CardContent>
               <div className="space-y-4">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.3644!2d-3.6736659!3d40.4347875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd4227a3b8b2e5f9%3A0xa1b2c3d4e5f6789!2sCentro%20de%20masajes%20Madrid%20Concha%20Espina%20-%20The%20Nook%2C%20C.%20del%20Pr%C3%ADncipe%20de%20Vergara%2C%20204%20duplicado%20posterior%2C%20local%2010%2C%2028002%20Madrid!5e0!3m2!1sen!2ses!4v1234567890"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.364!2d-3.6736659!3d40.4347875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDI2JzA1LjIiTiAzwrA0MCcyNS4yIlc!5e0!3m2!1sen!2ses!4v1646123456789!5m2!1sen!2ses&q=C.+del+Príncipe+de+Vergara,+204+duplicado+posterior,+local+10,+28002+Madrid"
                   width="100%"
                   height="200"
                   style={{ border: 0, borderRadius: "8px" }}
