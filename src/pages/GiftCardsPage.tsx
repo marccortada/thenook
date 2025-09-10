@@ -125,7 +125,7 @@ const GiftCardsPage = () => {
   
   // Estados para tarjetas regalo personalizadas
   const [customGiftDialogs, setCustomGiftDialogs] = useState<Record<string, boolean>>({});
-  const [customAmounts, setCustomAmounts] = useState<Record<string, number>>({});
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
   
   const { t } = useTranslation();
 
@@ -318,22 +318,34 @@ const GiftCardsPage = () => {
     }));
   };
 
-  const handleCustomAmountAdd = (groupKey: string, amount: number) => {
-    add({
-      name: `Tarjeta Regalo Personalizada - ${amount}€`,
-      priceCents: amount * 100
-    });
-    setCustomGiftDialogs(prev => ({
-      ...prev,
-      [groupKey]: false
-    }));
-  };
-
   const renderCustomGiftCard = (groupKey: string, title: string) => {
     const isOpen = customGiftDialogs[groupKey] || false;
-    const [customValue, setCustomValue] = useState("");
+    const customValue = customValues[groupKey] || "";
     
     const predefinedValues = [25, 50, 100, 200];
+    
+    const handleCustomValueChange = (value: string) => {
+      setCustomValues(prev => ({
+        ...prev,
+        [groupKey]: value
+      }));
+    };
+    
+    const handleCustomAmountAdd = (amount: number) => {
+      add({
+        name: `Tarjeta Regalo Personalizada - ${amount}€`,
+        priceCents: amount * 100
+      });
+      setCustomGiftDialogs(prev => ({
+        ...prev,
+        [groupKey]: false
+      }));
+      // Limpiar el valor personalizado
+      setCustomValues(prev => ({
+        ...prev,
+        [groupKey]: ""
+      }));
+    };
     
     return (
       <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-dashed border-primary/20">
@@ -369,7 +381,7 @@ const GiftCardsPage = () => {
                     <Button
                       key={value}
                       variant="outline"
-                      onClick={() => handleCustomAmountAdd(groupKey, value)}
+                      onClick={() => handleCustomAmountAdd(value)}
                       className="h-12"
                     >
                       {value}€
@@ -386,14 +398,13 @@ const GiftCardsPage = () => {
                       max="500"
                       placeholder="Ej: 75"
                       value={customValue}
-                      onChange={(e) => setCustomValue(e.target.value)}
+                      onChange={(e) => handleCustomValueChange(e.target.value)}
                     />
                     <Button
                       onClick={() => {
                         const amount = parseInt(customValue);
                         if (amount >= 10 && amount <= 500) {
-                          handleCustomAmountAdd(groupKey, amount);
-                          setCustomValue("");
+                          handleCustomAmountAdd(amount);
                         }
                       }}
                       disabled={!customValue || parseInt(customValue) < 10 || parseInt(customValue) > 500}
