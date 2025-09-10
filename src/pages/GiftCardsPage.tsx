@@ -312,10 +312,21 @@ const GiftCardsPage = () => {
   const { items, add, remove, clear, totalCents } = useLocalCart();
 
   const handleCustomGiftToggle = (groupKey: string) => {
+    const newState = !customGiftDialogs[groupKey];
     setCustomGiftDialogs(prev => ({
       ...prev,
-      [groupKey]: !prev[groupKey]
+      [groupKey]: newState
     }));
+    
+    // Si se está abriendo el modal, hacer scroll suave al centro de la pantalla
+    if (newState) {
+      setTimeout(() => {
+        window.scrollTo({
+          top: window.pageYOffset + (window.innerHeight / 2) - 200,
+          behavior: 'smooth'
+        });
+      }, 100);
+    }
   };
 
   const renderCustomGiftCard = (groupKey: string, title: string) => {
@@ -368,7 +379,7 @@ const GiftCardsPage = () => {
               <Settings className="h-4 w-4 mr-2" />
               Personalizar
             </Button>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
               <DialogHeader>
                 <DialogTitle>Personalizar Tarjeta Regalo</DialogTitle>
                 <DialogDescription>
