@@ -958,14 +958,14 @@ export default function AdminPricingPromos() {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent position="item-aligned">
-                        <SelectItem value="all">Todos los centros</SelectItem>
-                        {centers.map((center) => (
-                          <SelectItem key={center.id} value={center.id}>
-                            {center.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                       <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
+                         <SelectItem value="all">Todos los centros</SelectItem>
+                         {centers.map((center) => (
+                           <SelectItem key={center.id} value={center.id}>
+                             {center.name}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
                     </Select>
                   </div>
                   <div>
@@ -1086,17 +1086,13 @@ export default function AdminPricingPromos() {
                             <SelectTrigger className={isMobile ? 'text-sm' : ''}>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent 
-                              className="z-[60] bg-background border shadow-lg" 
-                              position="popper"
-                              sideOffset={4}
-                            >
-                              {serviceTypes.map((type) => (
-                                <SelectItem key={type.value} value={type.value} className={isMobile ? 'text-sm' : ''}>
-                                  {type.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
+                             <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
+                               {serviceTypes.map((type) => (
+                                 <SelectItem key={type.value} value={type.value} className={isMobile ? 'text-sm' : ''}>
+                                   {type.label}
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
                           </Select>
                         </div>
                         <div>
@@ -1258,14 +1254,14 @@ export default function AdminPricingPromos() {
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar servicio" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos los servicios</SelectItem>
-                          {services.map((service: any) => (
-                            <SelectItem key={service.id} value={service.id}>
-                              {service.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
+                         <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
+                           <SelectItem value="all">Todos los servicios</SelectItem>
+                           {services.map((service: any) => (
+                             <SelectItem key={service.id} value={service.id}>
+                               {service.name}
+                             </SelectItem>
+                           ))}
+                         </SelectContent>
                       </Select>
                     </div>
                     <div>
@@ -1293,14 +1289,14 @@ export default function AdminPricingPromos() {
                         <SelectTrigger>
                           <SelectValue placeholder="Todos los centros" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos los centros</SelectItem>
-                          {centers.map((center) => (
-                            <SelectItem key={center.id} value={center.id}>
-                              {center.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
+                         <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
+                           <SelectItem value="all">Todos los centros</SelectItem>
+                           {centers.map((center) => (
+                             <SelectItem key={center.id} value={center.id}>
+                               {center.name}
+                             </SelectItem>
+                           ))}
+                         </SelectContent>
                       </Select>
                     </div>
                     <div>
