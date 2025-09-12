@@ -832,7 +832,7 @@ const AdvancedCalendarView = () => {
               {timeSlots.map((timeSlot, timeIndex) => (
                 <React.Fragment key={timeIndex}>
                   {/* Time label */}
-                  <div className="p-2 text-center text-sm border-r border-b bg-muted/30 font-medium h-12 flex items-center justify-center">
+                  <div className="p-1 text-center text-xs border-r border-b bg-muted/30 font-medium h-6 flex items-center justify-center">
                     {timeSlot.hour}
                   </div>
 
@@ -856,7 +856,7 @@ const AdvancedCalendarView = () => {
                      return (
                          <div
                            key={lane.id}
-                           className="relative h-12 border-r border-b hover:bg-muted/20 cursor-pointer transition-colors"
+                           className="relative h-6 border-r border-b hover:bg-muted/20 cursor-pointer transition-colors"
                            onClick={(e) => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
                            onDragOver={(e) => {
                              e.preventDefault();
@@ -878,7 +878,7 @@ const AdvancedCalendarView = () => {
                                    backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
                                    borderLeftColor: getServiceLaneColor(booking.service_id),
                                    color: getServiceLaneColor(booking.service_id),
-                                   height: `${((booking.duration_minutes || 60) / 5) * 48}px`,
+                                   height: `${((booking.duration_minutes || 60) / 5) * 24}px`,
                                    zIndex: 2
                                  }}
                                draggable={true}
