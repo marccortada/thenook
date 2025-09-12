@@ -732,6 +732,11 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                             <div className="text-xs text-gray-600 mt-1">
                               €{((booking.total_price_cents || 0) / 100).toFixed(0)}
                             </div>
+                            {booking.notes && (
+                              <div className="text-xs text-gray-500 mt-1 truncate italic">
+                                "{booking.notes}"
+                              </div>
+                            )}
                           </div>
                         )}
                         {isOccupied && !isStartOfBooking && (
