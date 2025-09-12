@@ -543,12 +543,18 @@ const AdvancedCalendarView = () => {
       const selectedService = services.find(s => s.id === bookingForm.serviceId);
       if (!selectedService) throw new Error('Servicio no encontrado');
 
-      // Auto-assign lane based on service treatment group
+      // Use the specific lane and time slot that the user clicked on
       let assignedLaneId = bookingForm.laneId;
-      const recommendedLane = getLaneForService(bookingForm.serviceId, bookingForm.centerId);
-      if (recommendedLane) {
-        assignedLaneId = recommendedLane.id;
-        console.log('Auto-assigned lane for service:', { serviceId: bookingForm.serviceId, laneId: assignedLaneId, laneName: recommendedLane.name });
+      
+      // Only auto-assign lane if no specific lane was selected (shouldn't happen with slot clicks)
+      if (!assignedLaneId) {
+        const recommendedLane = getLaneForService(bookingForm.serviceId, bookingForm.centerId);
+        if (recommendedLane) {
+          assignedLaneId = recommendedLane.id;
+          console.log('Auto-assigned lane for service (no specific slot):', { serviceId: bookingForm.serviceId, laneId: assignedLaneId, laneName: recommendedLane.name });
+        }
+      } else {
+        console.log('Using user-selected lane from slot click:', { laneId: assignedLaneId, timeSlot: bookingForm.timeSlot });
       }
 
       // Create booking datetime
