@@ -57,7 +57,7 @@ const AdminSettings = () => {
         .from('centers')
         .select('name, address, phone, email, whatsapp')
         .eq('active', true)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error loading general settings:', error);
