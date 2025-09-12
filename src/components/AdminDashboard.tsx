@@ -35,7 +35,7 @@ import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("nueva-reserva");
+  const [activeTab, setActiveTab] = useState("calendario");
   const { user, isAdmin, isEmployee, loading } = useSimpleAuth();
   const navigate = useNavigate();
 
