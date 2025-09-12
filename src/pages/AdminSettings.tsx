@@ -40,6 +40,7 @@ const AdminSettings = () => {
     phone: "",
     email: "",
     website: "",
+    whatsapp: "+34 622 36 09 22",
     taxId: "",
     currency: "EUR",
     timezone: "Europe/Madrid"
@@ -54,7 +55,7 @@ const AdminSettings = () => {
       setLoadingGeneral(true);
       const { data, error } = await supabase
         .from('centers')
-        .select('name, address, phone, email')
+        .select('name, address, phone, email, whatsapp')
         .eq('active', true)
         .single();
 
@@ -69,7 +70,8 @@ const AdminSettings = () => {
           businessName: data.name || "",
           address: data.address || "",
           phone: data.phone || "",
-          email: data.email || ""
+          email: data.email || "",
+          whatsapp: data.whatsapp || "+34 622 36 09 22"
         }));
       }
     } catch (error) {
@@ -90,6 +92,7 @@ const AdminSettings = () => {
           address: generalSettings.address,
           phone: generalSettings.phone,
           email: generalSettings.email,
+          whatsapp: generalSettings.whatsapp,
           updated_at: new Date().toISOString()
         })
         .eq('active', true);
@@ -220,6 +223,16 @@ const AdminSettings = () => {
                       value={generalSettings.phone}
                       onChange={(e) => setGeneralSettings(prev => ({ ...prev, phone: e.target.value }))}
                       className="h-10 sm:h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp" className="text-sm font-medium">WhatsApp</Label>
+                    <Input
+                      id="whatsapp"
+                      value={generalSettings.whatsapp}
+                      onChange={(e) => setGeneralSettings(prev => ({ ...prev, whatsapp: e.target.value }))}
+                      className="h-10 sm:h-11"
+                      placeholder="+34 622 36 09 22"
                     />
                   </div>
                   <div className="space-y-2">
