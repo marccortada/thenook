@@ -1510,10 +1510,10 @@ export default function AdminPricingPromos() {
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
-                            <SelectItem value="true">Activo</SelectItem>
-                            <SelectItem value="false">Inactivo</SelectItem>
-                          </SelectContent>
+                           <SelectContent className="bg-background border z-50" position="popper" align="start" side="bottom" sideOffset={4}>
+                             <SelectItem value="true">Activo</SelectItem>
+                             <SelectItem value="false">Inactivo</SelectItem>
+                           </SelectContent>
                         </Select>
                       </div>
                       <div>
@@ -1522,10 +1522,10 @@ export default function AdminPricingPromos() {
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
-                            <SelectItem value="true">Sí</SelectItem>
-                            <SelectItem value="false">No</SelectItem>
-                          </SelectContent>
+                           <SelectContent className="bg-background border z-50" position="popper" align="start" side="bottom" sideOffset={4}>
+                             <SelectItem value="true">Sí</SelectItem>
+                             <SelectItem value="false">No</SelectItem>
+                           </SelectContent>
                         </Select>
                       </div>
                     </div>
@@ -1625,20 +1625,20 @@ export default function AdminPricingPromos() {
                                <Label>Estado</Label>
                                <Select value={String(edit.active)} onValueChange={(v) => handleGiftChange(opt.id, 'active', v === 'true')}>
                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                 <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
-                                   <SelectItem value="true">Activo</SelectItem>
-                                   <SelectItem value="false">Inactivo</SelectItem>
-                                 </SelectContent>
+                                  <SelectContent className="bg-background border z-50" position="popper" align="start" side="bottom" sideOffset={4}>
+                                    <SelectItem value="true">Activo</SelectItem>
+                                    <SelectItem value="false">Inactivo</SelectItem>
+                                  </SelectContent>
                                </Select>
                              </div>
                              <div>
                                <Label>Mostrar Online</Label>
                                <Select value={String(edit.show_online)} onValueChange={(v) => handleGiftChange(opt.id, 'show_online', v === 'true')}>
                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                 <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
-                                   <SelectItem value="true">Sí</SelectItem>
-                                   <SelectItem value="false">No</SelectItem>
-                                 </SelectContent>
+                                  <SelectContent className="bg-background border z-50" position="popper" align="start" side="bottom" sideOffset={4}>
+                                    <SelectItem value="true">Sí</SelectItem>
+                                    <SelectItem value="false">No</SelectItem>
+                                  </SelectContent>
                                </Select>
                              </div>
                              
