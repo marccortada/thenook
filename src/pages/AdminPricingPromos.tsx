@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -562,85 +563,105 @@ export default function AdminPricingPromos() {
           <TabsContent value="services" className="mt-6 space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Servicios - Edición Rápida</CardTitle>
+                <CardTitle>Servicios - Edición Rápida por Grupos</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {uniqueServices.map((g) => {
-                    const edit = serviceEdits[g.key] || { 
-                      price_euros: g.price_euros, 
-                      active: g.allActive, 
-                      has_discount: g.hasDiscount,
-                      discount_price_euros: g.discountPriceEuros
-                    };
-                    return (
-                      <div key={g.key} className="border rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <div className="font-medium">{g.name}</div>
-                            <div className="text-xs text-muted-foreground">{g.type} · {g.duration_minutes} min</div>
-                          </div>
-                          <PriceDisplay 
-                            originalPrice={edit.price_euros * 100} 
-                            className="text-sm font-semibold"
+                <Accordion type="multiple" defaultValue={groupedServices.map(g => g.id)} className="w-full">
+                  {groupedServices.map((group) => (
+                    <AccordionItem value={group.id} key={group.id}>
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-4 h-4 rounded-full" 
+                            style={{ backgroundColor: group.color }}
                           />
+                          <span className="font-medium">{group.name}</span>
+                          <Badge variant="secondary" className="ml-2">
+                            {group.services.length} servicios
+                          </Badge>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 items-end">
-                          <div>
-                            <Label>Precio (€)</Label>
-                            <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handleServiceChange(g.key, 'price_euros', parseFloat(e.target.value || '0'))} />
-                          </div>
-                          <div>
-                            <Label>Estado</Label>
-                            <Select value={String(edit.active)} onValueChange={(v) => handleServiceChange(g.key, 'active', v === 'true')}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="true">Activo</SelectItem>
-                                <SelectItem value="false">Inactivo</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="col-span-2">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <input 
-                                type="checkbox" 
-                                id={`discount-${g.key}`}
-                                checked={edit.has_discount}
-                                onChange={(e) => handleServiceChange(g.key, 'has_discount', e.target.checked)}
-                                className="rounded"
-                              />
-                              <Label htmlFor={`discount-${g.key}`} className="text-sm">Aplicar descuento</Label>
-                            </div>
-                            {edit.has_discount && (
-                              <div className="mb-2">
-                                <Label className="text-sm">Precio con descuento (€)</Label>
-                                <Input 
-                                  type="text" 
-                                  placeholder="Escribe el precio: 85,50"
-                                  defaultValue=""
-                                  onBlur={(e) => {
-                                    if (e.target.value) {
-                                      const value = e.target.value.replace(',', '.');
-                                      const numValue = parseFloat(value);
-                                      if (!isNaN(numValue) && numValue > 0) {
-                                        handleServiceChange(g.key, 'discount_price_euros', numValue);
-                                      }
-                                    }
-                                  }}
-                                  className="text-sm"
-                                />
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {group.services.map((service) => {
+                            const edit = serviceEdits[service.id] || { 
+                              price_euros: service.price_cents / 100, 
+                              active: service.active, 
+                              has_discount: service.has_discount,
+                              discount_price_euros: service.discount_price_cents / 100
+                            };
+                            return (
+                              <div key={service.id} className="border rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div>
+                                    <div className="font-medium">{service.name}</div>
+                                    <div className="text-xs text-muted-foreground">{service.type} · {service.duration_minutes} min</div>
+                                  </div>
+                                  <PriceDisplay 
+                                    originalPrice={edit.price_euros * 100} 
+                                    className="text-sm font-semibold"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 items-end">
+                                  <div>
+                                    <Label>Precio (€)</Label>
+                                    <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handleServiceChange(service.id, 'price_euros', parseFloat(e.target.value || '0'))} />
+                                  </div>
+                                  <div>
+                                    <Label>Estado</Label>
+                                    <Select value={String(edit.active)} onValueChange={(v) => handleServiceChange(service.id, 'active', v === 'true')}>
+                                      <SelectTrigger><SelectValue /></SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="true">Activo</SelectItem>
+                                        <SelectItem value="false">Inactivo</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <input 
+                                        type="checkbox" 
+                                        id={`discount-${service.id}`}
+                                        checked={edit.has_discount}
+                                        onChange={(e) => handleServiceChange(service.id, 'has_discount', e.target.checked)}
+                                        className="rounded"
+                                      />
+                                      <Label htmlFor={`discount-${service.id}`} className="text-sm">Aplicar descuento</Label>
+                                    </div>
+                                    {edit.has_discount && (
+                                      <div className="mb-2">
+                                        <Label className="text-sm">Precio con descuento (€)</Label>
+                                        <Input 
+                                          type="text" 
+                                          placeholder="Escribe el precio: 85,50"
+                                          defaultValue=""
+                                          onBlur={(e) => {
+                                            if (e.target.value) {
+                                              const value = e.target.value.replace(',', '.');
+                                              const numValue = parseFloat(value);
+                                              if (!isNaN(numValue) && numValue > 0) {
+                                                handleServiceChange(service.id, 'discount_price_euros', numValue);
+                                              }
+                                            }
+                                          }}
+                                          className="text-sm"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="col-span-2 flex items-center justify-between">
+                                    <div className="text-xs text-muted-foreground">Se actualizará en todos los centros</div>
+                                    <Button size="sm" onClick={() => saveService(service.id, [service.id])}>Guardar</Button>
+                                  </div>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                          <div className="col-span-2 flex items-center justify-between">
-                            <div className="text-xs text-muted-foreground">Se actualizará en todos los centros</div>
-                            <Button size="sm" onClick={() => saveService(g.key, g.ids)}>Guardar</Button>
-                          </div>
+                            );
+                          })}
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </CardContent>
             </Card>
           </TabsContent>
