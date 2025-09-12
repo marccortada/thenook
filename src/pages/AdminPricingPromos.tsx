@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useServices, usePackages, useCenters } from "@/hooks/useDatabase";
+import { useTreatmentGroups } from "@/hooks/useTreatmentGroups";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, Plus, Edit, X, ChevronDown, ChevronUp } from "lucide-react";
@@ -25,6 +26,7 @@ export default function AdminPricingPromos() {
   const { services, refetch: refetchServices } = useServices();
   const { packages, refetch: refetchPackages } = usePackages();
   const { centers } = useCenters();
+  const { treatmentGroups } = useTreatmentGroups();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -71,6 +73,44 @@ export default function AdminPricingPromos() {
     { value: 'treatment' as const, label: 'Tratamiento' },
     { value: 'package' as const, label: 'Paquete' }
   ];
+
+  // Group services by treatment groups
+  const groupedServices = useMemo(() => {
+    const groups = new Map();
+    
+    // Create groups for existing treatment groups
+    treatmentGroups.forEach(group => {
+      groups.set(group.id, {
+        id: group.id,
+        name: group.name,
+        color: group.color,
+        services: []
+      });
+    });
+    
+    // Add a group for ungrouped services
+    groups.set('ungrouped', {
+      id: 'ungrouped',
+      name: 'Sin Grupo',
+      color: '#6B7280',
+      services: []
+    });
+    
+    // Assign services to groups
+    services.forEach(service => {
+      const groupId = service.group_id || 'ungrouped';
+      const group = groups.get(groupId);
+      if (group) {
+        group.services.push(service);
+      } else {
+        // If service has a group_id but group doesn't exist, put it in ungrouped
+        groups.get('ungrouped').services.push(service);
+      }
+    });
+    
+    // Convert to array and filter out empty groups
+    return Array.from(groups.values()).filter(group => group.services.length > 0);
+  }, [services, treatmentGroups]);
 
   const createService = async () => {
     if (!newService.name || !newService.duration_minutes || !newService.price_cents) {
@@ -626,8 +666,20 @@ export default function AdminPricingPromos() {
               </CardHeader>
               {!isServicesCollapsed && (
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {services.map((service: any) => (
+                {groupedServices.map((group) => (
+                  <div key={group.id} className="mb-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div 
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: group.color }}
+                      />
+                      <h3 className="text-lg font-semibold">{group.name}</h3>
+                      <span className="text-sm text-muted-foreground">
+                        ({group.services.length} servicios)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ml-6">
+                      {group.services.map((service: any) => (
                     <div key={service.id} className="border rounded-lg p-4 service-card">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
@@ -721,8 +773,10 @@ export default function AdminPricingPromos() {
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                        ))}
+                    </div>
+                  </div>
+                ))}
               </CardContent>
               )}
             </Card>
