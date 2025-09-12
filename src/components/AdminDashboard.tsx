@@ -52,13 +52,6 @@ const AdminDashboard = () => {
 
   const menuItems = [
     {
-      id: "nueva-reserva",
-      label: "Nueva Reserva",
-      icon: CalendarDays,
-      component: ReservationSystem,
-      roles: ["admin", "employee"]
-    },
-    {
       id: "calendario",
       label: "Calendario",
       icon: Calendar,
