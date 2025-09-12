@@ -20,6 +20,8 @@ import HappyHourManagement from "@/components/HappyHourManagement";
 import PromotionsManagement from "@/components/PromotionsManagement";
 import PriceDisplay from "@/components/PriceDisplay";
 import { ImageUploadCropper } from "@/components/ImageUploadCropper";
+import InlineSelect from "@/components/InlineSelect";
+
 
 const currency = (euros?: number) => typeof euros === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(euros) : "-";
 
@@ -1506,27 +1508,19 @@ export default function AdminPricingPromos() {
                      </div>
                       <div>
                         <Label htmlFor="giftcard-status">Estado</Label>
-                        <Select value={String(newGiftCard.active)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, active: v === 'true' }))}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                           <SelectContent className="bg-background border z-50" position="popper" align="start" side="bottom" sideOffset={4}>
-                             <SelectItem value="true">Activo</SelectItem>
-                             <SelectItem value="false">Inactivo</SelectItem>
-                           </SelectContent>
-                        </Select>
+                        <InlineSelect
+                          value={String(newGiftCard.active)}
+                          onChange={(v) => setNewGiftCard(prev => ({ ...prev, active: v === 'true' }))}
+                          options={[{ label: 'Activo', value: 'true' }, { label: 'Inactivo', value: 'false' }]}
+                        />
                       </div>
                       <div>
                         <Label htmlFor="giftcard-show-online">Mostrar Online</Label>
-                        <Select value={String(newGiftCard.show_online)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, show_online: v === 'true' }))}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                           <SelectContent className="bg-background border z-50" position="popper" align="start" side="bottom" sideOffset={4}>
-                             <SelectItem value="true">Sí</SelectItem>
-                             <SelectItem value="false">No</SelectItem>
-                           </SelectContent>
-                        </Select>
+                        <InlineSelect
+                          value={String(newGiftCard.show_online)}
+                          onChange={(v) => setNewGiftCard(prev => ({ ...prev, show_online: v === 'true' }))}
+                          options={[{ label: 'Sí', value: 'true' }, { label: 'No', value: 'false' }]}
+                        />
                       </div>
                     </div>
                     
@@ -1623,23 +1617,19 @@ export default function AdminPricingPromos() {
                              </div>
                              <div>
                                <Label>Estado</Label>
-                               <Select value={String(edit.active)} onValueChange={(v) => handleGiftChange(opt.id, 'active', v === 'true')}>
-                                 <SelectTrigger><SelectValue /></SelectTrigger>
-                                  <SelectContent className="bg-background border z-50" position="popper" align="start" side="bottom" sideOffset={4}>
-                                    <SelectItem value="true">Activo</SelectItem>
-                                    <SelectItem value="false">Inactivo</SelectItem>
-                                  </SelectContent>
-                               </Select>
+                               <InlineSelect
+                                 value={String(edit.active)}
+                                 onChange={(v) => handleGiftChange(opt.id, 'active', v === 'true')}
+                                 options={[{ label: 'Activo', value: 'true' }, { label: 'Inactivo', value: 'false' }]}
+                               />
                              </div>
                              <div>
                                <Label>Mostrar Online</Label>
-                               <Select value={String(edit.show_online)} onValueChange={(v) => handleGiftChange(opt.id, 'show_online', v === 'true')}>
-                                 <SelectTrigger><SelectValue /></SelectTrigger>
-                                  <SelectContent className="bg-background border z-50" position="popper" align="start" side="bottom" sideOffset={4}>
-                                    <SelectItem value="true">Sí</SelectItem>
-                                    <SelectItem value="false">No</SelectItem>
-                                  </SelectContent>
-                               </Select>
+                               <InlineSelect
+                                 value={String(edit.show_online)}
+                                 onChange={(v) => handleGiftChange(opt.id, 'show_online', v === 'true')}
+                                 options={[{ label: 'Sí', value: 'true' }, { label: 'No', value: 'false' }]}
+                               />
                              </div>
                              
                              {/* Acordeón de configuración online para tarjetas regalo */}
