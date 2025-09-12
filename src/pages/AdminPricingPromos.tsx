@@ -665,12 +665,40 @@ export default function AdminPricingPromos() {
                                      <Label>Mostrar Online</Label>
                                      <Select value={String(edit.show_online)} onValueChange={(v) => handleServiceChange(service.id, 'show_online', v === 'true')}>
                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                       <SelectContent>
+                                       <SelectContent className="bg-background border z-50">
                                          <SelectItem value="true">Sí</SelectItem>
                                          <SelectItem value="false">No</SelectItem>
                                        </SelectContent>
                                      </Select>
                                    </div>
+                                   
+                                   {/* Acordeón de configuración online */}
+                                   {edit.show_online && (
+                                     <div className="col-span-3 mt-2">
+                                       <Accordion type="single" collapsible className="w-full">
+                                         <AccordionItem value="online-config" className="border rounded-lg">
+                                           <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
+                                             <span className="text-muted-foreground">⚙️ Configuración Online</span>
+                                           </AccordionTrigger>
+                                           <AccordionContent className="px-3 pb-3">
+                                             <div className="space-y-2 text-sm">
+                                               <div className="flex items-center justify-between">
+                                                 <span>Estado online:</span>
+                                                 <span className="text-green-600 font-medium">✓ Visible en web</span>
+                                               </div>
+                                               <div className="flex items-center justify-between">
+                                                 <span>Disponible para reserva:</span>
+                                                 <span className="text-blue-600 font-medium">✓ Sí</span>
+                                               </div>
+                                               <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
+                                                 Este servicio aparecerá en la web y estará disponible para reservar online.
+                                               </div>
+                                             </div>
+                                           </AccordionContent>
+                                         </AccordionItem>
+                                       </Accordion>
+                                     </div>
+                                   )}
                                    <div className="col-span-3">
                                     <div className="flex items-center space-x-2 mb-2">
                                       <input 
@@ -1366,13 +1394,42 @@ export default function AdminPricingPromos() {
                                <Label>Mostrar Online</Label>
                                <Select value={String(edit.show_online)} onValueChange={(v) => handlePackageChange(g.key, 'show_online', v === 'true')}>
                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                 <SelectContent>
+                                 <SelectContent className="bg-background border z-50">
                                    <SelectItem value="true">Sí</SelectItem>
                                    <SelectItem value="false">No</SelectItem>
                                  </SelectContent>
                                </Select>
                              </div>
-                            <div className="col-span-2 flex items-center space-x-2">
+                             
+                             {/* Acordeón de configuración online para paquetes */}
+                             {edit.show_online && (
+                               <div className="col-span-3 mt-2">
+                                 <Accordion type="single" collapsible className="w-full">
+                                   <AccordionItem value="package-online-config" className="border rounded-lg">
+                                     <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
+                                       <span className="text-muted-foreground">⚙️ Configuración Online - Bono</span>
+                                     </AccordionTrigger>
+                                     <AccordionContent className="px-3 pb-3">
+                                       <div className="space-y-2 text-sm">
+                                         <div className="flex items-center justify-between">
+                                           <span>Estado online:</span>
+                                           <span className="text-green-600 font-medium">✓ Visible en tienda</span>
+                                         </div>
+                                         <div className="flex items-center justify-between">
+                                           <span>Disponible para compra:</span>
+                                           <span className="text-blue-600 font-medium">✓ Sí</span>
+                                         </div>
+                                         <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
+                                           Este bono aparecerá en la tienda online y estará disponible para comprar.
+                                         </div>
+                                       </div>
+                                     </AccordionContent>
+                                   </AccordionItem>
+                                 </Accordion>
+                               </div>
+                             )}
+                             
+                             <div className="col-span-2 flex items-center space-x-2">
                               <input 
                                 type="checkbox" 
                                 id={`discount-${g.key}`}
@@ -1463,19 +1520,47 @@ export default function AdminPricingPromos() {
                          </SelectContent>
                        </Select>
                      </div>
-                     <div>
-                       <Label htmlFor="giftcard-show-online">Mostrar Online</Label>
-                       <Select value={String(newGiftCard.show_online)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, show_online: v === 'true' }))}>
-                         <SelectTrigger>
-                           <SelectValue />
-                         </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="true">Sí</SelectItem>
-                           <SelectItem value="false">No</SelectItem>
-                         </SelectContent>
-                       </Select>
-                     </div>
-                  </div>
+                      <div>
+                        <Label htmlFor="giftcard-show-online">Mostrar Online</Label>
+                        <Select value={String(newGiftCard.show_online)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, show_online: v === 'true' }))}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border z-50">
+                            <SelectItem value="true">Sí</SelectItem>
+                            <SelectItem value="false">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    {/* Acordeón de configuración online para nueva tarjeta regalo */}
+                    {newGiftCard.show_online && (
+                      <div className="mt-4">
+                        <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem value="new-giftcard-online-config" className="border rounded-lg">
+                            <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
+                              <span className="text-muted-foreground">🎁 Vista previa configuración online</span>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-3 pb-3">
+                              <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between">
+                                  <span>Estado online:</span>
+                                  <span className="text-green-600 font-medium">✓ Se mostrará en tienda</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span>Disponible para compra:</span>
+                                  <span className="text-blue-600 font-medium">✓ Sí</span>
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
+                                  Esta tarjeta regalo aparecerá en la tienda online después de crearla.
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      </div>
+                    )}
                   <div className="grid grid-cols-1 gap-4 mt-4">
                     <div>
                       <Label htmlFor="giftcard-description">Descripción</Label>
@@ -1554,13 +1639,42 @@ export default function AdminPricingPromos() {
                                <Label>Mostrar Online</Label>
                                <Select value={String(edit.show_online)} onValueChange={(v) => handleGiftChange(opt.id, 'show_online', v === 'true')}>
                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                 <SelectContent>
+                                 <SelectContent className="bg-background border z-50">
                                    <SelectItem value="true">Sí</SelectItem>
                                    <SelectItem value="false">No</SelectItem>
                                  </SelectContent>
                                </Select>
                              </div>
-                            <div className="col-span-3 mb-2">
+                             
+                             {/* Acordeón de configuración online para tarjetas regalo */}
+                             {edit.show_online && (
+                               <div className="col-span-3 mt-2">
+                                 <Accordion type="single" collapsible className="w-full">
+                                   <AccordionItem value="giftcard-online-config" className="border rounded-lg">
+                                     <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
+                                       <span className="text-muted-foreground">🎁 Configuración Online - Tarjeta Regalo</span>
+                                     </AccordionTrigger>
+                                     <AccordionContent className="px-3 pb-3">
+                                       <div className="space-y-2 text-sm">
+                                         <div className="flex items-center justify-between">
+                                           <span>Estado online:</span>
+                                           <span className="text-green-600 font-medium">✓ Visible en tienda</span>
+                                         </div>
+                                         <div className="flex items-center justify-between">
+                                           <span>Disponible para compra:</span>
+                                           <span className="text-blue-600 font-medium">✓ Sí</span>
+                                         </div>
+                                         <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
+                                           Esta tarjeta regalo aparecerá en la tienda online y estará disponible para comprar.
+                                         </div>
+                                       </div>
+                                     </AccordionContent>
+                                   </AccordionItem>
+                                 </Accordion>
+                               </div>
+                             )}
+                             
+                             <div className="col-span-3 mb-2">
                               <input 
                                 type="file" 
                                 accept="image/*" 
