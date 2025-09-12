@@ -36,7 +36,6 @@ const AdminSettings = () => {
 
   const [generalSettings, setGeneralSettings] = useState({
     businessName: "",
-    address: "",
     phone: "",
     email: "",
     website: "",
@@ -55,23 +54,23 @@ const AdminSettings = () => {
       setLoadingGeneral(true);
       const { data, error } = await supabase
         .from('centers')
-        .select('name, address, phone, email, whatsapp')
+        .select('name, phone, email, whatsapp')
         .eq('active', true)
-        .maybeSingle();
+        .limit(1);
 
       if (error) {
         console.error('Error loading general settings:', error);
         return;
       }
 
-      if (data) {
+      if (data && data.length > 0) {
+        const centerData = data[0];
         setGeneralSettings(prev => ({
           ...prev,
-          businessName: data?.name || "",
-          address: data?.address || "",
-          phone: data?.phone || "",
-          email: data?.email || "",
-          whatsapp: (data as any)?.whatsapp || "+34 622 36 09 22"
+          businessName: centerData?.name || "",
+          phone: centerData?.phone || "",
+          email: centerData?.email || "",
+          whatsapp: (centerData as any)?.whatsapp || "+34 622 36 09 22"
         }));
       }
     } catch (error) {
@@ -89,7 +88,6 @@ const AdminSettings = () => {
         .from('centers')
         .update({
           name: generalSettings.businessName,
-          address: generalSettings.address,
           phone: generalSettings.phone,
           email: generalSettings.email,
           whatsapp: generalSettings.whatsapp,
@@ -254,15 +252,6 @@ const AdminSettings = () => {
                       className="h-10 sm:h-11"
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address" className="text-sm font-medium">Dirección</Label>
-                  <Textarea
-                    id="address"
-                    value={generalSettings.address}
-                    onChange={(e) => setGeneralSettings(prev => ({ ...prev, address: e.target.value }))}
-                    className="min-h-[80px] sm:min-h-[100px]"
-                  />
                 </div>
                 <Button 
                   onClick={handleSaveSettings} 
