@@ -97,48 +97,14 @@ export default function AdminPricingPromos() {
       services: []
     });
     
-    // Function to classify services based on name and description
-    const classifyService = (service) => {
-      const name = (service.name || '').toLowerCase();
-      const description = (service.description || '').toLowerCase();
-      
-      // Check for "para dos" patterns
-      const isForTwo = name.includes('para dos') || name.includes('dos personas') || 
-                      name.includes('pareja') || name.includes('2 personas') || 
-                      name.includes('duo') || description.includes('para dos') ||
-                      description.includes('dos personas') || description.includes('pareja');
-      
-      // Check for ritual patterns
-      const isRitual = name.includes('ritual') || description.includes('ritual');
-      
-      // Check for cuatro manos patterns
-      const isFourHands = name.includes('cuatro manos') || name.includes('4 manos') ||
-                         description.includes('cuatro manos');
-      
-      // Classification logic
-      if (isRitual && isForTwo) {
-        return 'rituales-pareja';
-      } else if (isRitual) {
-        return 'rituales';
-      } else if (isFourHands) {
-        return 'masajes-cuatro-manos';
-      } else if (isForTwo) {
-        return 'masajes-pareja';
-      } else if (name.includes('masaje') || description.includes('masaje')) {
-        return 'masajes-individuales';
-      }
-      
-      return service.group_id || 'ungrouped';
-    };
-    
     // Assign services to groups
     services.forEach(service => {
-      const groupId = classifyService(service);
+      const groupId = service.group_id || 'ungrouped';
       const group = groups.get(groupId);
       if (group) {
         group.services.push(service);
       } else {
-        // If classified group doesn't exist, put it in ungrouped
+        // If service has a group_id but group doesn't exist, put it in ungrouped
         groups.get('ungrouped').services.push(service);
       }
     });

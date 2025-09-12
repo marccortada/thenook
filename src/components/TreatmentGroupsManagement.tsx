@@ -45,13 +45,7 @@ const PREDEFINED_GROUPS = [
     id: 'rituales',
     name: 'Rituales',
     color: '#8B5CF6',
-    description: 'Rituales individuales'
-  },
-  {
-    id: 'rituales-pareja',
-    name: 'Rituales para Dos',
-    color: '#C084FC',
-    description: 'Rituales para dos personas'
+    description: 'Rituales y paquetes'
   }
 ];
 
