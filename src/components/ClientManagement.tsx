@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useClients, Client, ClientBooking } from "@/hooks/useClients";
-import { Calendar, Clock, DollarSign, Edit, Eye, User, Phone, Mail, Tags, X } from "lucide-react";
+import { Calendar, Clock, DollarSign, Edit, Eye, User, Phone, Mail, Tags, X, Search } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import MobileResponsiveLayout from "@/components/MobileResponsiveLayout";
@@ -17,6 +17,19 @@ export default function ClientManagement() {
   const { clients, loading, error, updateClient, fetchClientBookings } = useClients();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Filter clients based on search term
+  const filteredClients = clients.filter(client => {
+    const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
+    const email = client.email?.toLowerCase() || '';
+    const phone = client.phone?.toLowerCase() || '';
+    const search = searchTerm.toLowerCase();
+    
+    return fullName.includes(search) || 
+           email.includes(search) || 
+           phone.includes(search);
+  });
 
   useEffect(() => {
     document.title = "Gestión de Clientes | The Nook Madrid";
@@ -48,7 +61,57 @@ export default function ClientManagement() {
       <main className="py-4 sm:py-8">
         <MobileResponsiveLayout maxWidth="7xl" padding="md">
           <div className="space-y-4 sm:space-y-6">
-            {clients.map((client) => (
+            {/* Search Section */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  Buscar Cliente
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar por nombre, email o teléfono..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                  {searchTerm && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                      onClick={() => setSearchTerm("")}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                {searchTerm && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {filteredClients.length} cliente(s) encontrado(s)
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Clients List */}
+            {filteredClients.length === 0 && searchTerm ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No se encontraron clientes</h3>
+                  <p className="text-muted-foreground">
+                    No hay clientes que coincidan con "{searchTerm}"
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4 sm:space-y-6">
+                {filteredClients.map((client) => (
               <MobileCard key={client.id} className="client-card" padding="sm">
                 <div className="space-y-3 sm:space-y-4">
                   {/* Header Mobile/Desktop */}
@@ -127,7 +190,9 @@ export default function ClientManagement() {
                   </div>
                 </div>
               </MobileCard>
-            ))}
+                ))}
+              </div>
+            )}
           </div>
         </MobileResponsiveLayout>
       </main>
