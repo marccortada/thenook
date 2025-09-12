@@ -454,10 +454,8 @@ const AdvancedCalendarView = () => {
         toast({ title: 'Error', description: 'Selecciona un cliente o introduce email', variant: 'destructive' });
         return;
       }
-      if (bookingForm.isWalkIn && !bookingForm.clientName.trim()) {
-        toast({ title: 'Error', description: 'Introduce un nombre para el cliente walk-in', variant: 'destructive' });
-        return;
-      }
+      // If WALK IN without a name, use a sensible default so it can be saved
+      const walkInName = bookingForm.isWalkIn ? (bookingForm.clientName?.trim() || 'Walk-in') : bookingForm.clientName;
 
       // Check availability before creating booking
       const availability = getSlotAvailability(bookingForm.centerId, bookingForm.date, bookingForm.timeSlot);
@@ -598,8 +596,8 @@ const AdvancedCalendarView = () => {
 
       const successMessage = bookingForm.isWalkIn 
         ? (bookingForm.saveAsClient 
-            ? `✅ Reserva WALK IN creada y cliente ${bookingForm.clientName} guardado para futuras visitas`
-            : `✅ Reserva WALK IN creada para ${bookingForm.clientName}`)
+            ? `✅ Reserva WALK IN creada y cliente ${walkInName} guardado para futuras visitas`
+            : `✅ Reserva WALK IN creada${walkInName ? ` para ${walkInName}` : ''}`)
         : '✅ Reserva Creada';
       
       toast({ title: successMessage, description: 'Reserva creada correctamente.' });
