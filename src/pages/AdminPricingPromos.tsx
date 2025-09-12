@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Trash2, Plus, Edit, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-import HappyHourManagement from "@/components/HappyHourManagement";
+
 import PromotionsManagement from "@/components/PromotionsManagement";
 import PriceDisplay from "@/components/PriceDisplay";
 import { ImageUploadCropper } from "@/components/ImageUploadCropper";
@@ -602,7 +602,7 @@ export default function AdminPricingPromos() {
             <TabsTrigger value="packages" className="text-xs sm:text-sm px-2 py-2">Bonos</TabsTrigger>
             <TabsTrigger value="giftcards" className="text-xs sm:text-sm px-2 py-2">Tarjetas</TabsTrigger>
             <TabsTrigger value="promotions" className="text-xs sm:text-sm px-2 py-2">Promos</TabsTrigger>
-            <TabsTrigger value="happy-hours" className="text-xs sm:text-sm px-2 py-2">Happy Hours</TabsTrigger>
+            
           </TabsList>
 
           <TabsContent value="services" className="mt-6 space-y-4">
@@ -1740,9 +1740,6 @@ export default function AdminPricingPromos() {
             <PromotionsManagement />
           </TabsContent>
 
-          <TabsContent value="happy-hours" className="mt-6">
-            <HappyHourManagement />
-          </TabsContent>
         </Tabs>
         </div>
       </main>

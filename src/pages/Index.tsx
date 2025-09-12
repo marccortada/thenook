@@ -12,7 +12,7 @@ import ClientManagement from "@/components/ClientManagement";
 import SpecialistClients from "@/components/SpecialistClients";
 import InternalCodesManagement from "@/components/InternalCodesManagement";
 import InventoryManagement from "@/components/InventoryManagement";
-import HappyHourManagement from "@/components/HappyHourManagement";
+
 import RealTimeMetrics from "@/components/RealTimeMetrics";
 
 import AdvancedDashboard from "@/components/AdvancedDashboard";
