@@ -683,100 +683,101 @@ export default function AdminPricingPromos() {
                       </AccordionTrigger>
                       <AccordionContent className="pt-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div key={service.id} className="border rounded-lg p-4 service-card">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{service.name}</h3>
-                          <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
-                            <span>{service.duration_minutes} min</span>
-                            <span>•</span>
-                             <PriceDisplay 
-                               originalPrice={service.price_cents} 
-                               serviceId={service.id}
-                               centerId={service.center_id}
-                               serviceDiscount={{
-                                 has_discount: !!service.has_discount,
-                                 discount_price_cents: service.discount_price_cents || 0
-                               }}
-                               className="text-sm"
-                             />
-                          </div>
-                          {service.description && (
-                            <p className="text-xs text-muted-foreground mb-2">{service.description}</p>
-                          )}
-                          <div className="flex items-center gap-2 text-xs">
-                            <span className={`px-2 py-1 rounded ${service.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                              {service.active ? 'Activo' : 'Inactivo'}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {centers.find(c => c.id === service.center_id)?.name || 'Todos los centros'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            
-                            // Obtener la tarjeta del servicio (parent del botón)
-                            const serviceCard = e.currentTarget.closest('.service-card') as HTMLElement;
-                            if (!serviceCard) return;
-                            
-                            const cardRect = serviceCard.getBoundingClientRect();
-                            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                            const windowHeight = window.innerHeight;
-                            const windowWidth = window.innerWidth;
-                            
-                            // Dimensiones del modal responsive
-                            const modalWidth = Math.min(isMobile ? 350 : 1000, windowWidth - 40);
-                            const modalHeight = Math.min(isMobile ? windowHeight - 40 : 700, windowHeight - 80);
-                            
-                            // Calcular posición
-                            let top = cardRect.top + scrollTop - 50; // Un poco arriba de la tarjeta
-                            let left = (windowWidth - modalWidth) / 2; // Centrado horizontalmente
-                            
-                            // Ajustar verticalmente para que esté siempre visible
-                            const viewportTop = scrollTop + 20;
-                            const viewportBottom = scrollTop + windowHeight - 20;
-                            
-                            if (top < viewportTop) {
-                              top = viewportTop;
-                            } else if (top + modalHeight > viewportBottom) {
-                              top = viewportBottom - modalHeight;
-                            }
-                            
-                            // Asegurar que no se salga horizontalmente
-                            if (left < 20) left = 20;
-                            if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-                            
-                            console.log('Service edit modal position:', { top, left, cardTop: cardRect.top, scrollTop });
-                            
-                            setModalPosition({ top, left });
-                            setEditingService({ ...service });
-                          }}
-                          className="flex-1"
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Editar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            deleteService(service.id);
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                        ))}
+                          {group.services.map((service: any) => (
+                            <div key={service.id} className="border rounded-lg p-4 service-card">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                  <h3 className="font-semibold text-lg">{service.name}</h3>
+                                  <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
+                                    <span>{service.duration_minutes} min</span>
+                                    <span>•</span>
+                                     <PriceDisplay 
+                                       originalPrice={service.price_cents} 
+                                       serviceId={service.id}
+                                       centerId={service.center_id}
+                                       serviceDiscount={{
+                                         has_discount: !!service.has_discount,
+                                         discount_price_cents: service.discount_price_cents || 0
+                                       }}
+                                       className="text-sm"
+                                     />
+                                  </div>
+                                  {service.description && (
+                                    <p className="text-xs text-muted-foreground mb-2">{service.description}</p>
+                                  )}
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <span className={`px-2 py-1 rounded ${service.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                      {service.active ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                      {centers.find(c => c.id === service.center_id)?.name || 'Todos los centros'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    
+                                    // Obtener la tarjeta del servicio (parent del botón)
+                                    const serviceCard = e.currentTarget.closest('.service-card') as HTMLElement;
+                                    if (!serviceCard) return;
+                                    
+                                    const cardRect = serviceCard.getBoundingClientRect();
+                                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                                    const windowHeight = window.innerHeight;
+                                    const windowWidth = window.innerWidth;
+                                    
+                                    // Dimensiones del modal responsive
+                                    const modalWidth = Math.min(isMobile ? 350 : 1000, windowWidth - 40);
+                                    const modalHeight = Math.min(isMobile ? windowHeight - 40 : 700, windowHeight - 80);
+                                    
+                                    // Calcular posición
+                                    let top = cardRect.top + scrollTop - 50; // Un poco arriba de la tarjeta
+                                    let left = (windowWidth - modalWidth) / 2; // Centrado horizontalmente
+                                    
+                                    // Ajustar verticalmente para que esté siempre visible
+                                    const viewportTop = scrollTop + 20;
+                                    const viewportBottom = scrollTop + windowHeight - 20;
+                                    
+                                    if (top < viewportTop) {
+                                      top = viewportTop;
+                                    } else if (top + modalHeight > viewportBottom) {
+                                      top = viewportBottom - modalHeight;
+                                    }
+                                    
+                                    // Asegurar que no se salga horizontalmente
+                                    if (left < 20) left = 20;
+                                    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
+                                    
+                                    console.log('Service edit modal position:', { top, left, cardTop: cardRect.top, scrollTop });
+                                    
+                                    setModalPosition({ top, left });
+                                    setEditingService({ ...service });
+                                  }}
+                                  className="flex-1"
+                                >
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  Editar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    deleteService(service.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </AccordionContent>
                     </AccordionItem>
