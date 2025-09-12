@@ -39,7 +39,6 @@ import ClientSelector from '@/components/ClientSelector';
 
 const PackageManagement = () => {
   const [selectedClient, setSelectedClient] = useState<string>('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCreateGiftCardDialog, setShowCreateGiftCardDialog] = useState(false);
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [notesText, setNotesText] = useState('');
@@ -97,60 +96,6 @@ const PackageManagement = () => {
 
   const getUsagePercentage = (remaining: number, initial: number) => {
     return Math.round(((initial - remaining) / initial) * 100);
-  };
-
-  const handleCreatePackage = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const selectedPkg = availablePackages.find((p) => p.id === selectedPackageId);
-
-    const packageData = {
-      client_id: createClientId,
-      package_id: selectedPackageId,
-      purchase_price_cents: selectedPkg?.price_cents ?? 0,
-      total_sessions: selectedPkg?.sessions_count ?? 1,
-      notes: (formData.get('notes') as string) || undefined,
-    };
-
-    if (!packageData.client_id || !packageData.package_id) {
-      return;
-    }
-
-    try {
-      await createPackage(packageData);
-      setShowCreateDialog(false);
-      refetch();
-    } catch (error) {
-      console.error('Error creating package:', error);
-    }
-  };
-
-  const handleCreateGiftCard = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const giftCardData = {
-      initial_balance_cents: Math.round(parseFloat(formData.get('amount') as string) * 100),
-      assigned_client_id: createGiftCardClientId || undefined,
-      expiry_date: selectedDate ? selectedDate.toISOString() : undefined,
-      purchased_by_name: (formData.get('purchased_by_name') as string) || undefined,
-      purchased_by_email: (formData.get('purchased_by_email') as string) || undefined,
-    };
-
-    if (!giftCardData.initial_balance_cents || giftCardData.initial_balance_cents <= 0) {
-      return;
-    }
-
-    try {
-      await createGiftCard(giftCardData);
-      setShowCreateGiftCardDialog(false);
-      setCreateGiftCardClientId('');
-      setSelectedDate(undefined);
-      refetchGiftCards();
-    } catch (error) {
-      console.error('Error creating gift card:', error);
-    }
   };
 
   const handleUseSession = async (packageId: string) => {
@@ -297,61 +242,8 @@ const PackageManagement = () => {
         {/* Pestañas de Bonos */}
         <TabsContent value="bonos-all">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader>
               <CardTitle>Todos los Bonos</CardTitle>
-              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Crear Bono
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Crear Nuevo Bono</DialogTitle>
-                    <DialogDescription>Selecciona el cliente y el paquete.</DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleCreatePackage} className="space-y-4">
-                    <div>
-                      <ClientSelector
-                        placeholder="Busca por nombre, email o teléfono"
-                        onSelect={(c) => setCreateClientId(c.id)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="package_id">Paquete</Label>
-                      <Select name="package_id" required value={selectedPackageId} onValueChange={setSelectedPackageId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar paquete" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availablePackages.map((pkg) => (
-                            <SelectItem key={pkg.id} value={pkg.id}>
-                              {pkg.name} - {pkg.sessions_count} sesiones
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="notes">Notas (opcional)</Label>
-                      <Textarea 
-                        id="notes" 
-                        name="notes" 
-                        placeholder="Información adicional..."
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
-                        Cancelar
-                      </Button>
-                      <Button type="submit" disabled={!createClientId || !selectedPackageId}>
-                        Crear Bono
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
             </CardHeader>
             <CardContent>
               {packages.length === 0 ? (

@@ -36,7 +36,6 @@ import { ImageUploadCropper } from '@/components/ImageUploadCropper';
 
 const GiftCardManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingCard, setEditingCard] = useState<GiftCard | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [giftCardImage, setGiftCardImage] = useState<File | null>(null);
@@ -73,41 +72,6 @@ const GiftCardManagement = () => {
 
   const getUsagePercentage = (remaining: number, initial: number) => {
     return Math.round(((initial - remaining) / initial) * 100);
-  };
-
-  const handleCreateGiftCard = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const giftCardData = {
-      initial_balance_cents: Math.round(parseFloat(formData.get('amount') as string) * 100),
-      assigned_client_id: createClientId || undefined,
-      purchased_by_name: (formData.get('purchased_by_name') as string) || undefined,
-      purchased_by_email: (formData.get('purchased_by_email') as string) || undefined,
-    };
-
-    if (!giftCardData.initial_balance_cents || giftCardData.initial_balance_cents <= 0) {
-      return;
-    }
-
-    try {
-      // TODO: Handle image upload to Supabase storage if giftCardImage exists
-      // The image and crop data are available in giftCardImage and giftCardImageCrop
-      await createGiftCard(giftCardData);
-      setShowCreateDialog(false);
-      setCreateClientId('');
-      setSelectedDate(undefined);
-      setGiftCardImage(null);
-      setGiftCardImageCrop(null);
-      refetch();
-    } catch (error) {
-      console.error('Error creating gift card:', error);
-    }
-  };
-
-  const handleImageSelect = (file: File, cropData?: { x: number; y: number; width: number; height: number }) => {
-    setGiftCardImage(file);
-    setGiftCardImageCrop(cropData || null);
   };
 
   const handleUpdateGiftCard = async (id: string, updates: Partial<GiftCard>) => {
@@ -190,75 +154,6 @@ const GiftCardManagement = () => {
             <span className="hidden sm:inline">Actualizar</span>
             <span className="sm:hidden">Actualizar</span>
           </Button>
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
-                <Plus className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Crear Tarjeta Regalo</span>
-                <span className="sm:hidden">Crear</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Crear Nueva Tarjeta Regalo</DialogTitle>
-                <DialogDescription>Crea una nueva tarjeta regalo especificando el monto y cliente opcional.</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreateGiftCard} className="space-y-4">
-                <div>
-                  <Label htmlFor="amount">Monto (€)</Label>
-                  <Input
-                    id="amount"
-                    name="amount"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    required
-                    placeholder="50.00"
-                  />
-                </div>
-                <div>
-                  <Label>Cliente (opcional)</Label>
-                  <ClientSelector
-                    placeholder="Busca por nombre, email o teléfono"
-                    onSelect={(c) => setCreateClientId(c.id)}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Opcional - deja vacío para tarjeta sin cliente asignado</p>
-                </div>
-                <div>
-                  <Label htmlFor="purchased_by_name">Comprado por (nombre)</Label>
-                  <Input
-                    id="purchased_by_name"
-                    name="purchased_by_name"
-                    placeholder="Nombre del comprador"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="purchased_by_email">Email del comprador</Label>
-                  <Input
-                    id="purchased_by_email"
-                    name="purchased_by_email"
-                    type="email"
-                    placeholder="email@ejemplo.com"
-                  />
-                </div>
-                <div>
-                  <ImageUploadCropper
-                    label="Imagen de la tarjeta regalo (opcional)"
-                    onImageSelect={handleImageSelect}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Sube una imagen personalizada para la tarjeta regalo</p>
-                </div>
-                <div className="flex flex-col sm:flex-row justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)} className="w-full sm:w-auto">
-                    Cancelar
-                  </Button>
-                  <Button type="submit" className="w-full sm:w-auto">
-                    Crear Tarjeta Regalo
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
