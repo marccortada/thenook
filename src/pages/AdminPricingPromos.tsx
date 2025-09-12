@@ -666,20 +666,23 @@ export default function AdminPricingPromos() {
               </CardHeader>
               {!isServicesCollapsed && (
               <CardContent>
-                {groupedServices.map((group) => (
-                  <div key={group.id} className="mb-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div 
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: group.color }}
-                      />
-                      <h3 className="text-lg font-semibold">{group.name}</h3>
-                      <span className="text-sm text-muted-foreground">
-                        ({group.services.length} servicios)
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ml-6">
-                      {group.services.map((service: any) => (
+                <Accordion type="multiple" className="w-full space-y-4">
+                  {groupedServices.map((group) => (
+                    <AccordionItem key={group.id} value={group.id} className="border rounded-lg px-4">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-4 h-4 rounded-full"
+                            style={{ backgroundColor: group.color }}
+                          />
+                          <span className="text-lg font-semibold">{group.name}</span>
+                          <span className="text-sm text-muted-foreground">
+                            ({group.services.length} servicios)
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div key={service.id} className="border rounded-lg p-4 service-card">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
@@ -774,9 +777,11 @@ export default function AdminPricingPromos() {
                       </div>
                     </div>
                         ))}
-                    </div>
-                  </div>
-                ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </CardContent>
               )}
             </Card>
