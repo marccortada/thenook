@@ -74,9 +74,6 @@ const AdvancedCalendarView = () => {
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
   
-  // Filter state
-  const [statusFilters, setStatusFilters] = useState<string[]>([]);
-  
   // Lane blocking state
   const [blockingMode, setBlockingMode] = useState(false);
   const [blockStartSlot, setBlockStartSlot] = useState<{ laneId: string; timeSlot: Date } | null>(null);
@@ -122,8 +119,7 @@ const AdvancedCalendarView = () => {
   useEffect(() => {
     console.log('AdvancedCalendarView - Bookings loaded:', bookings.length, bookings);
     console.log('AdvancedCalendarView - Selected center:', selectedCenter);
-    console.log('AdvancedCalendarView - Status filters:', statusFilters);
-  }, [bookings, selectedCenter, statusFilters]);
+  }, [bookings, selectedCenter]);
   const { centers } = useCenters();
   const { lanes } = useLanes();
   const { services } = useServices();
@@ -317,13 +313,7 @@ const AdvancedCalendarView = () => {
 
     console.log('Found booking:', booking ? booking.id : 'none');
 
-    // Apply status filters - if filters are active, only show matching bookings
-    if (booking && statusFilters.length > 0) {
-      console.log('Status filters active:', statusFilters, 'booking status:', booking.status);
-      return statusFilters.includes(booking.status) ? booking : null;
-    }
-
-    // Always show bookings when no filters are active
+    // Always show all bookings
     return booking;
   };
 
@@ -1220,41 +1210,6 @@ const AdvancedCalendarView = () => {
             </Select>
           </div>
 
-          {/* Status Filter */}
-          {(isAdmin || isEmployee) && (
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Estado</label>
-              <Select value={statusFilters.length === 0 ? "all" : statusFilters.join(',')} onValueChange={(value) => {
-                if (value === "all") {
-                  setStatusFilters([]);
-                } else {
-                  setStatusFilters(value.split(',').filter(Boolean));
-                }
-              }}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Todos los estados" />
-                </SelectTrigger>
-                 <SelectContent 
-                   position="popper"
-                   side="bottom"
-                   align="start"
-                   sideOffset={4}
-                   avoidCollisions={true}
-                   collisionPadding={20}
-                 >
-                   <SelectItem value="all">Todos los estados</SelectItem>
-                   <SelectItem value="no_show">Solo No Shows</SelectItem>
-                   <SelectItem value="cancelled">Solo Canceladas</SelectItem>
-                   <SelectItem value="pending">Solo Pendientes</SelectItem>
-                   <SelectItem value="confirmed">Solo Confirmadas</SelectItem>
-                   <SelectItem value="requested">Solo Solicitadas</SelectItem>
-                   <SelectItem value="new">Solo Nuevas</SelectItem>
-                   <SelectItem value="online">Solo Online</SelectItem>
-                   <SelectItem value="completed">Solo Completadas</SelectItem>
-                 </SelectContent>
-              </Select>
-            </div>
-          )}
           
           {/* View Mode Toggle - Better Mobile Layout */}
           <div className="space-y-1">
