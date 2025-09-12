@@ -655,7 +655,7 @@ export default function AdminPricingPromos() {
                                      <Label>Estado</Label>
                                      <Select value={String(edit.active)} onValueChange={(v) => handleServiceChange(service.id, 'active', v === 'true')}>
                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                       <SelectContent>
+                                       <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
                                          <SelectItem value="true">Activo</SelectItem>
                                          <SelectItem value="false">Inactivo</SelectItem>
                                        </SelectContent>
@@ -665,7 +665,7 @@ export default function AdminPricingPromos() {
                                      <Label>Mostrar Online</Label>
                                      <Select value={String(edit.show_online)} onValueChange={(v) => handleServiceChange(service.id, 'show_online', v === 'true')}>
                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                       <SelectContent className="bg-background border z-50">
+                                       <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
                                          <SelectItem value="true">Sí</SelectItem>
                                          <SelectItem value="false">No</SelectItem>
                                        </SelectContent>
@@ -1384,7 +1384,7 @@ export default function AdminPricingPromos() {
                                <Label>Estado</Label>
                                <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(g.key, 'active', v === 'true')}>
                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                 <SelectContent>
+                                 <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
                                    <SelectItem value="true">Activo</SelectItem>
                                    <SelectItem value="false">Inactivo</SelectItem>
                                  </SelectContent>
@@ -1394,7 +1394,7 @@ export default function AdminPricingPromos() {
                                <Label>Mostrar Online</Label>
                                <Select value={String(edit.show_online)} onValueChange={(v) => handlePackageChange(g.key, 'show_online', v === 'true')}>
                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                 <SelectContent className="bg-background border z-50">
+                                 <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
                                    <SelectItem value="true">Sí</SelectItem>
                                    <SelectItem value="false">No</SelectItem>
                                  </SelectContent>
@@ -1508,25 +1508,25 @@ export default function AdminPricingPromos() {
                          onChange={(e) => setNewGiftCard(prev => ({ ...prev, amount_euros: parseFloat(e.target.value) || 0 }))}
                        />
                      </div>
-                     <div>
-                       <Label htmlFor="giftcard-status">Estado</Label>
-                       <Select value={String(newGiftCard.active)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, active: v === 'true' }))}>
-                         <SelectTrigger>
-                           <SelectValue />
-                         </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="true">Activo</SelectItem>
-                           <SelectItem value="false">Inactivo</SelectItem>
-                         </SelectContent>
-                       </Select>
-                     </div>
+                      <div>
+                        <Label htmlFor="giftcard-status">Estado</Label>
+                        <Select value={String(newGiftCard.active)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, active: v === 'true' }))}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
+                            <SelectItem value="true">Activo</SelectItem>
+                            <SelectItem value="false">Inactivo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div>
                         <Label htmlFor="giftcard-show-online">Mostrar Online</Label>
                         <Select value={String(newGiftCard.show_online)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, show_online: v === 'true' }))}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-background border z-50">
+                          <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
                             <SelectItem value="true">Sí</SelectItem>
                             <SelectItem value="false">No</SelectItem>
                           </SelectContent>
@@ -1629,7 +1629,7 @@ export default function AdminPricingPromos() {
                                <Label>Estado</Label>
                                <Select value={String(edit.active)} onValueChange={(v) => handleGiftChange(opt.id, 'active', v === 'true')}>
                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                 <SelectContent>
+                                 <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
                                    <SelectItem value="true">Activo</SelectItem>
                                    <SelectItem value="false">Inactivo</SelectItem>
                                  </SelectContent>
@@ -1639,7 +1639,7 @@ export default function AdminPricingPromos() {
                                <Label>Mostrar Online</Label>
                                <Select value={String(edit.show_online)} onValueChange={(v) => handleGiftChange(opt.id, 'show_online', v === 'true')}>
                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                 <SelectContent className="bg-background border z-50">
+                                 <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
                                    <SelectItem value="true">Sí</SelectItem>
                                    <SelectItem value="false">No</SelectItem>
                                  </SelectContent>
