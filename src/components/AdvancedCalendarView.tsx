@@ -887,33 +887,20 @@ const AdvancedCalendarView = () => {
                                  e.dataTransfer.effectAllowed = 'move';
                                }}
                              >
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="text-sm font-semibold truncate">{booking.profiles?.first_name} {booking.profiles?.last_name}</div>
-                                  <div className="text-xs text-muted-foreground truncate">
-                                    {booking.services?.name}
-                                  </div>
-                                  <div className="text-xs font-medium">
-                                    €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  {booking.payment_status === 'paid' && (
-                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                  )}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-4 w-4 p-0 hover:bg-red-500 hover:text-white"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      deleteBooking(booking.id);
-                                    }}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
+                               <div className="flex items-start">
+                                 <div className="flex-1">
+                                   <div className="text-sm font-semibold truncate">{booking.profiles?.first_name} {booking.profiles?.last_name}</div>
+                                   <div className="text-xs text-muted-foreground truncate">
+                                     {booking.services?.name}
+                                   </div>
+                                   <div className="text-xs font-medium">
+                                     €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
+                                   </div>
+                                 </div>
+                                 {booking.payment_status === 'paid' && (
+                                   <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                 )}
+                               </div>
                            </div>
                          )}
                          {isBlocked && !booking && (
