@@ -913,6 +913,11 @@ const AdvancedCalendarView = () => {
                                    <div className="text-xs font-medium">
                                      €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
                                    </div>
+                                   {booking.notes && (
+                                     <div className="text-xs text-muted-foreground truncate italic mt-1">
+                                       "{booking.notes}"
+                                     </div>
+                                   )}
                                  </div>
                                  {booking.payment_status === 'paid' && (
                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
