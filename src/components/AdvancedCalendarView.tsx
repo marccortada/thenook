@@ -637,8 +637,16 @@ const AdvancedCalendarView = () => {
   // Move booking to new slot
   const moveBooking = async (bookingId: string, newCenterId: string, newLaneId: string, newDate: Date, newTime: Date) => {
     try {
+      // Create the exact datetime for the new position
       const newDateTime = new Date(newDate);
       newDateTime.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
+
+      console.log('📍 Moving booking:', {
+        bookingId,
+        from: bookings.find(b => b.id === bookingId)?.booking_datetime,
+        to: newDateTime.toISOString(),
+        lane: newLaneId
+      });
 
       const { error } = await supabase
         .from('bookings')
@@ -862,14 +870,16 @@ const AdvancedCalendarView = () => {
                              e.preventDefault();
                              e.dataTransfer.dropEffect = 'move';
                            }}
-                           onDrop={(e) => {
-                             e.preventDefault();
-                             const bookingData = e.dataTransfer.getData('booking');
-                             if (bookingData) {
-                               const booking = JSON.parse(bookingData);
-                               moveBooking(booking.id, selectedCenter, lane.id, selectedDate, timeSlot.time);
-                             }
-                           }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const bookingData = e.dataTransfer.getData('booking');
+                              if (bookingData) {
+                                const draggedBooking = JSON.parse(bookingData);
+                                // Use the current timeSlot as the new position (where the drop occurred)
+                                // This ensures the booking moves to exactly where the user dropped it
+                                moveBooking(draggedBooking.id, selectedCenter, lane.id, selectedDate, timeSlot.time);
+                              }
+                            }}
                          >
                            {booking && isFirstSlotOfBooking && (
                              <div
@@ -881,11 +891,18 @@ const AdvancedCalendarView = () => {
                                    height: `${((booking.duration_minutes || 60) / 5) * 24}px`,
                                    zIndex: 2
                                  }}
-                               draggable={true}
-                               onDragStart={(e) => {
-                                 e.dataTransfer.setData('booking', JSON.stringify(booking));
-                                 e.dataTransfer.effectAllowed = 'move';
-                               }}
+                                draggable={true}
+                                onDragStart={(e) => {
+                                  // Store both booking data and the original time slot for reference
+                                  const dragData = {
+                                    ...booking,
+                                    originalTimeSlot: timeSlot.time.toISOString()
+                                  };
+                                  e.dataTransfer.setData('booking', JSON.stringify(dragData));
+                                  e.dataTransfer.effectAllowed = 'move';
+                                  // Set drag image to be the booking card itself for better visual feedback
+                                  e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 10, 10);
+                                }}
                              >
                                <div className="flex items-start">
                                  <div className="flex-1">
