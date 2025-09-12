@@ -391,11 +391,16 @@ const DailyAgendaView = () => {
                                     <div className="text-xs text-muted-foreground truncate w-full hidden lg:block leading-tight">
                                       {format(convertBookingToSlot(booking).startTime, 'HH:mm')}
                                     </div>
-                                    {booking.notes && (
-                                      <div className="text-xs text-muted-foreground truncate w-full leading-tight italic mt-1">
-                                        "{booking.notes}"
-                                      </div>
-                                    )}
+                                     {booking.notes && (
+                                       <div className="text-xs text-muted-foreground truncate w-full leading-tight italic mt-1">
+                                         "📝 {booking.notes}"
+                                       </div>
+                                     )}
+                                     {booking.client_notes && booking.client_notes.length > 0 && (
+                                       <div className="text-xs text-orange-600 truncate w-full leading-tight italic mt-1">
+                                         "🔔 {booking.client_notes[0].content}"
+                                       </div>
+                                     )}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="max-w-sm">
@@ -406,9 +411,12 @@ const DailyAgendaView = () => {
                                       <div>💼 {convertBookingToSlot(booking).serviceName}</div>
                                       <div>💰 €{convertBookingToSlot(booking).price}</div>
                                       <div>📊 {convertBookingToSlot(booking).status}</div>
-                                      {booking.notes && (
-                                        <div>💬 "{booking.notes}"</div>
-                                      )}
+                                       {booking.notes && (
+                                         <div>💬 "{booking.notes}"</div>
+                                       )}
+                                       {booking.client_notes && booking.client_notes.length > 0 && (
+                                         <div>🔔 "{booking.client_notes[0].content}"</div>
+                                       )}
                                     </div>
                                   </div>
                                 </TooltipContent>

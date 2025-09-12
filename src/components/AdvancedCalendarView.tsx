@@ -915,7 +915,12 @@ const AdvancedCalendarView = () => {
                                    </div>
                                    {booking.notes && (
                                      <div className="text-xs text-muted-foreground truncate italic mt-1">
-                                       "{booking.notes}"
+                                       "📝 {booking.notes}"
+                                     </div>
+                                   )}
+                                   {booking.client_notes && booking.client_notes.length > 0 && (
+                                     <div className="text-xs text-orange-600 truncate italic mt-1">
+                                       "🔔 {booking.client_notes[0].content}"
                                      </div>
                                    )}
                                  </div>

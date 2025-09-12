@@ -86,6 +86,14 @@ export interface Booking {
   centers?: {
     name: string;
   };
+  client_notes?: Array<{
+    id: string;
+    title: string;
+    content: string;
+    is_alert: boolean;
+    priority: string;
+    created_at: string;
+  }>;
 }
 
 export interface Package {
@@ -282,7 +290,29 @@ export const useBookings = () => {
         .order('booking_datetime', { ascending: true });
 
       if (error) throw error;
-      setBookings(data || []);
+
+      // Para cada booking, obtener la última nota interna del cliente
+      const bookingsWithNotes = await Promise.all(
+        (data || []).map(async (booking) => {
+          if (booking.client_id) {
+            const { data: clientNotes } = await supabase
+              .from('client_notes')
+              .select('id, title, content, is_alert, priority, created_at')
+              .eq('client_id', booking.client_id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            return {
+              ...booking,
+              client_notes: clientNotes ? [clientNotes] : []
+            };
+          }
+          return booking;
+        })
+      );
+
+      setBookings(bookingsWithNotes);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching bookings');
     } finally {
