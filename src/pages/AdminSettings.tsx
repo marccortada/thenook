@@ -67,11 +67,11 @@ const AdminSettings = () => {
       if (data) {
         setGeneralSettings(prev => ({
           ...prev,
-          businessName: data.name || "",
-          address: data.address || "",
-          phone: data.phone || "",
-          email: data.email || "",
-          whatsapp: data.whatsapp || "+34 622 36 09 22"
+          businessName: data?.name || "",
+          address: data?.address || "",
+          phone: data?.phone || "",
+          email: data?.email || "",
+          whatsapp: (data as any)?.whatsapp || "+34 622 36 09 22"
         }));
       }
     } catch (error) {
