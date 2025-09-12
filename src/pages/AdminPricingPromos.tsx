@@ -38,10 +38,10 @@ export default function AdminPricingPromos() {
   // Estado para colapsar/expandir secciones
   const [isServicesCollapsed, setIsServicesCollapsed] = useState(false);
 
-  // Servicios - edición rápida de precio/estado/descuento
-  const [serviceEdits, setServiceEdits] = useState<Record<string, { price_euros: number; active: boolean; has_discount: boolean; discount_price_euros: number }>>({});
+  // Servicios - edición rápida de precio/estado/descuento/visibilidad online
+  const [serviceEdits, setServiceEdits] = useState<Record<string, { price_euros: number; active: boolean; has_discount: boolean; discount_price_euros: number; show_online: boolean }>>({});
 
-  const handleServiceChange = (id: string, field: 'price_euros'|'active'|'has_discount'|'discount_price_euros', value: any) => {
+  const handleServiceChange = (id: string, field: 'price_euros'|'active'|'has_discount'|'discount_price_euros'|'show_online', value: any) => {
     setServiceEdits((prev) => ({
       ...prev,
       [id]: { 
@@ -49,6 +49,7 @@ export default function AdminPricingPromos() {
         active: prev[id]?.active ?? true, 
         has_discount: prev[id]?.has_discount ?? false,
         discount_price_euros: prev[id]?.discount_price_euros ?? 0,
+        show_online: prev[id]?.show_online ?? true,
         [field]: value 
       }
     }));
@@ -64,7 +65,8 @@ export default function AdminPricingPromos() {
     active: true,
     center_id: '',
     has_discount: false,
-    discount_price_cents: 0
+    discount_price_cents: 0,
+    show_online: true
   });
   const [editingService, setEditingService] = useState<any>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
@@ -161,6 +163,7 @@ export default function AdminPricingPromos() {
         active: newService.active,
         has_discount: newService.has_discount,
         discount_price_cents: newService.discount_price_cents,
+        show_online: newService.show_online,
         center_id: newService.center_id || null
       });
 
@@ -177,7 +180,8 @@ export default function AdminPricingPromos() {
           active: true,
           center_id: '',
           has_discount: false,
-          discount_price_cents: 0
+          discount_price_cents: 0,
+          show_online: true
         });
         refetchServices();
       }
@@ -202,7 +206,8 @@ export default function AdminPricingPromos() {
         center_id: editingService.center_id,
         active: editingService.active,
         has_discount: editingService.has_discount || false,
-        discount_price_cents: editingService.discount_price_cents || 0
+        discount_price_cents: editingService.discount_price_cents || 0,
+        show_online: editingService.show_online ?? true
       };
 
       console.log('Update data:', updateData);
@@ -324,7 +329,8 @@ export default function AdminPricingPromos() {
         price_cents: priceCents, 
         active: edit.active,
         has_discount: edit.has_discount,
-        discount_price_cents: discountPriceCents
+        discount_price_cents: discountPriceCents,
+        show_online: edit.show_online
       }).eq('id', id);
     }
     toast({ title: 'Guardado', description: 'Servicio actualizado en todos los centros' });
@@ -333,9 +339,9 @@ export default function AdminPricingPromos() {
     refetchServices();
   };
 
-  // Bonos (paquetes) - edición de precio/sesiones/estado + alta (agrupados sin duplicados entre centros)
-  const [packageEdits, setPackageEdits] = useState<Record<string, { price_euros: number; sessions_count: number; active: boolean; has_discount: boolean; discount_price_euros: number }>>({});
-  const handlePackageChange = (id: string, field: 'price_euros'|'sessions_count'|'active'|'has_discount'|'discount_price_euros', value: any) => {
+  // Bonos (paquetes) - edición de precio/sesiones/estado/visibilidad online + alta (agrupados sin duplicados entre centros)
+  const [packageEdits, setPackageEdits] = useState<Record<string, { price_euros: number; sessions_count: number; active: boolean; has_discount: boolean; discount_price_euros: number; show_online: boolean }>>({});
+  const handlePackageChange = (id: string, field: 'price_euros'|'sessions_count'|'active'|'has_discount'|'discount_price_euros'|'show_online', value: any) => {
     setPackageEdits((prev) => ({
       ...prev,
       [id]: { 
@@ -344,7 +350,8 @@ export default function AdminPricingPromos() {
         active: prev[id]?.active ?? true, 
         has_discount: prev[id]?.has_discount ?? false,
         discount_price_euros: prev[id]?.discount_price_euros ?? 0,
-        [field]: value 
+        show_online: prev[id]?.show_online ?? true,
+        [field]: value
       }
     }));
   };
@@ -388,7 +395,8 @@ export default function AdminPricingPromos() {
         sessions_count: edit.sessions_count,
         active: edit.active,
         has_discount: edit.has_discount,
-        discount_price_cents: discountPriceCents
+        discount_price_cents: discountPriceCents,
+        show_online: edit.show_online
       }).eq('id', id);
     }
     toast({ title: 'Guardado', description: 'Bono actualizado en todos los centros' });
@@ -397,14 +405,15 @@ export default function AdminPricingPromos() {
     refetchPackages();
   };
 
-  // Tarjetas regalo - opciones de importes (sin duplicados)
+  // Tarjetas regalo - opciones de importes (sin duplicados) con visibilidad online
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
-  const [giftEdits, setGiftEdits] = useState<Record<string, { amount_euros: number; active: boolean }>>({});
+  const [giftEdits, setGiftEdits] = useState<Record<string, { amount_euros: number; active: boolean; show_online: boolean }>>({});
   const [newGiftCard, setNewGiftCard] = useState({
     name: '',
     description: '',
     amount_euros: 0,
     active: true,
+    show_online: true,
     image: null as File | null,
     imageCrop: null as { x: number; y: number; width: number; height: number } | null
   });
@@ -419,10 +428,10 @@ export default function AdminPricingPromos() {
     fetchGiftOptions();
   }, []);
 
-  const handleGiftChange = (id: string, field: 'amount_euros'|'active', value: any) => {
+  const handleGiftChange = (id: string, field: 'amount_euros'|'active'|'show_online', value: any) => {
     setGiftEdits((prev) => ({
       ...prev,
-      [id]: { amount_euros: prev[id]?.amount_euros ?? 0, active: prev[id]?.active ?? true, [field]: value }
+      [id]: { amount_euros: prev[id]?.amount_euros ?? 0, active: prev[id]?.active ?? true, show_online: prev[id]?.show_online ?? true, [field]: value }
     }));
   };
 
@@ -431,7 +440,7 @@ export default function AdminPricingPromos() {
     if (!edit) return;
 
     const amountCents = Math.round(edit.amount_euros * 100);
-    await supabase.from('gift_card_options').update({ amount_cents: amountCents, is_active: edit.active }).eq('id', id);
+    await supabase.from('gift_card_options').update({ amount_cents: amountCents, is_active: edit.active, show_online: edit.show_online }).eq('id', id);
     toast({ title: 'Guardado', description: 'Opción de tarjeta regalo actualizada' });
     delete giftEdits[id];
     setGiftEdits({...giftEdits});
@@ -509,7 +518,8 @@ export default function AdminPricingPromos() {
         description: newGiftCard.description || null,
         image_url: imageUrl,
         amount_cents: Math.round(newGiftCard.amount_euros * 100),
-        is_active: newGiftCard.active
+        is_active: newGiftCard.active,
+        show_online: newGiftCard.show_online
       };
       
       console.log('Inserting gift card option:', insertData);
@@ -527,6 +537,7 @@ export default function AdminPricingPromos() {
           description: '',
           amount_euros: 0,
           active: true,
+          show_online: true,
           image: null,
           imageCrop: null
         });
@@ -616,12 +627,13 @@ export default function AdminPricingPromos() {
                       <AccordionContent className="pt-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {group.services.map((service) => {
-                            const edit = serviceEdits[service.id] || { 
-                              price_euros: service.price_cents / 100, 
-                              active: service.active, 
-                              has_discount: service.has_discount,
-                              discount_price_euros: service.discount_price_cents / 100
-                            };
+                             const edit = serviceEdits[service.id] || { 
+                               price_euros: service.price_cents / 100, 
+                               active: service.active, 
+                               has_discount: service.has_discount,
+                               discount_price_euros: service.discount_price_cents / 100,
+                               show_online: service.show_online ?? true
+                             };
                             return (
                               <div key={service.id} className="border rounded-lg p-3">
                                 <div className="flex items-center justify-between mb-2">
@@ -634,22 +646,32 @@ export default function AdminPricingPromos() {
                                     className="text-sm font-semibold"
                                   />
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 items-end">
-                                  <div>
-                                    <Label>Precio (€)</Label>
-                                    <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handleServiceChange(service.id, 'price_euros', parseFloat(e.target.value || '0'))} />
-                                  </div>
-                                  <div>
-                                    <Label>Estado</Label>
-                                    <Select value={String(edit.active)} onValueChange={(v) => handleServiceChange(service.id, 'active', v === 'true')}>
-                                      <SelectTrigger><SelectValue /></SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="true">Activo</SelectItem>
-                                        <SelectItem value="false">Inactivo</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="col-span-2">
+                                 <div className="grid grid-cols-3 gap-2 items-end">
+                                   <div>
+                                     <Label>Precio (€)</Label>
+                                     <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handleServiceChange(service.id, 'price_euros', parseFloat(e.target.value || '0'))} />
+                                   </div>
+                                   <div>
+                                     <Label>Estado</Label>
+                                     <Select value={String(edit.active)} onValueChange={(v) => handleServiceChange(service.id, 'active', v === 'true')}>
+                                       <SelectTrigger><SelectValue /></SelectTrigger>
+                                       <SelectContent>
+                                         <SelectItem value="true">Activo</SelectItem>
+                                         <SelectItem value="false">Inactivo</SelectItem>
+                                       </SelectContent>
+                                     </Select>
+                                   </div>
+                                   <div>
+                                     <Label>Mostrar Online</Label>
+                                     <Select value={String(edit.show_online)} onValueChange={(v) => handleServiceChange(service.id, 'show_online', v === 'true')}>
+                                       <SelectTrigger><SelectValue /></SelectTrigger>
+                                       <SelectContent>
+                                         <SelectItem value="true">Sí</SelectItem>
+                                         <SelectItem value="false">No</SelectItem>
+                                       </SelectContent>
+                                     </Select>
+                                   </div>
+                                   <div className="col-span-3">
                                     <div className="flex items-center space-x-2 mb-2">
                                       <input 
                                         type="checkbox" 
@@ -681,7 +703,7 @@ export default function AdminPricingPromos() {
                                       </div>
                                     )}
                                   </div>
-                                  <div className="col-span-2 flex items-center justify-between">
+                                  <div className="col-span-3 flex items-center justify-between">
                                     <div className="text-xs text-muted-foreground">Se actualizará en todos los centros</div>
                                     <Button size="sm" onClick={() => saveService(service.id, [service.id])}>Guardar</Button>
                                   </div>
@@ -1294,13 +1316,14 @@ export default function AdminPricingPromos() {
                 <AccordionContent className="px-6 pb-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {uniquePackages.map((g) => {
-                      const edit = packageEdits[g.key] || { 
-                        price_euros: g.price_euros, 
-                        sessions_count: g.sessions_count, 
-                        active: g.allActive,
-                        has_discount: g.hasDiscount,
-                        discount_price_euros: g.discountPriceEuros
-                      };
+                       const edit = packageEdits[g.key] || { 
+                         price_euros: g.price_euros, 
+                         sessions_count: g.sessions_count, 
+                         active: g.allActive,
+                         has_discount: g.hasDiscount,
+                         discount_price_euros: g.discountPriceEuros,
+                         show_online: true  // Default value
+                       };
                       const finalPrice = edit.has_discount ? edit.discount_price_euros : edit.price_euros;
                       return (
                         <div key={g.key} className="border rounded-lg p-3">
@@ -1320,26 +1343,36 @@ export default function AdminPricingPromos() {
                               )}
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-2 items-end">
-                            <div>
-                              <Label>Precio (€)</Label>
-                              <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handlePackageChange(g.key, 'price_euros', parseFloat(e.target.value || '0'))} />
-                            </div>
-                            <div>
-                              <Label>Sesiones</Label>
-                              <Input type="number" min="1" value={edit.sessions_count} onChange={(e) => handlePackageChange(g.key, 'sessions_count', parseInt(e.target.value || '1'))} />
-                            </div>
-                            <div>
-                              <Label>Estado</Label>
-                              <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(g.key, 'active', v === 'true')}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="true">Activo</SelectItem>
-                                  <SelectItem value="false">Inactivo</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex items-center space-x-2">
+                           <div className="grid grid-cols-3 gap-2 items-end">
+                             <div>
+                               <Label>Precio (€)</Label>
+                               <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handlePackageChange(g.key, 'price_euros', parseFloat(e.target.value || '0'))} />
+                             </div>
+                             <div>
+                               <Label>Sesiones</Label>
+                               <Input type="number" min="1" value={edit.sessions_count} onChange={(e) => handlePackageChange(g.key, 'sessions_count', parseInt(e.target.value || '1'))} />
+                             </div>
+                             <div>
+                               <Label>Estado</Label>
+                               <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(g.key, 'active', v === 'true')}>
+                                 <SelectTrigger><SelectValue /></SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="true">Activo</SelectItem>
+                                   <SelectItem value="false">Inactivo</SelectItem>
+                                 </SelectContent>
+                               </Select>
+                             </div>
+                             <div>
+                               <Label>Mostrar Online</Label>
+                               <Select value={String(edit.show_online)} onValueChange={(v) => handlePackageChange(g.key, 'show_online', v === 'true')}>
+                                 <SelectTrigger><SelectValue /></SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="true">Sí</SelectItem>
+                                   <SelectItem value="false">No</SelectItem>
+                                 </SelectContent>
+                               </Select>
+                             </div>
+                            <div className="col-span-2 flex items-center space-x-2">
                               <input 
                                 type="checkbox" 
                                 id={`discount-${g.key}`}
@@ -1350,7 +1383,7 @@ export default function AdminPricingPromos() {
                               <Label htmlFor={`discount-${g.key}`} className="text-sm">Descuento</Label>
                             </div>
                             {edit.has_discount && (
-                              <div className="col-span-2">
+                               <div className="col-span-3">
                                 <Label className="text-sm">Precio con descuento (€)</Label>
                                 <Input 
                                   type="number" 
@@ -1362,7 +1395,7 @@ export default function AdminPricingPromos() {
                                 />
                               </div>
                             )}
-                            <div className="col-span-2 flex justify-end">
+                            <div className="col-span-3 flex justify-end">
                               <Button size="sm" onClick={() => savePackage(g.key, g.ids)}>Guardar</Button>
                             </div>
                           </div>
@@ -1396,40 +1429,52 @@ export default function AdminPricingPromos() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="giftcard-name">Nombre *</Label>
-                      <Input
-                        id="giftcard-name"
-                        placeholder="Ej: Tarjeta 50€"
-                        value={newGiftCard.name}
-                        onChange={(e) => setNewGiftCard(prev => ({ ...prev, name: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="giftcard-amount">Importe (€) *</Label>
-                      <Input
-                        id="giftcard-amount"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="50.00"
-                        value={newGiftCard.amount_euros || ''}
-                        onChange={(e) => setNewGiftCard(prev => ({ ...prev, amount_euros: parseFloat(e.target.value) || 0 }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="giftcard-status">Estado</Label>
-                      <Select value={String(newGiftCard.active)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, active: v === 'true' }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="true">Activo</SelectItem>
-                          <SelectItem value="false">Inactivo</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                     <div>
+                       <Label htmlFor="giftcard-name">Nombre *</Label>
+                       <Input
+                         id="giftcard-name"
+                         placeholder="Ej: Tarjeta 50€"
+                         value={newGiftCard.name}
+                         onChange={(e) => setNewGiftCard(prev => ({ ...prev, name: e.target.value }))}
+                       />
+                     </div>
+                     <div>
+                       <Label htmlFor="giftcard-amount">Importe (€) *</Label>
+                       <Input
+                         id="giftcard-amount"
+                         type="number"
+                         step="0.01"
+                         min="0"
+                         placeholder="50.00"
+                         value={newGiftCard.amount_euros || ''}
+                         onChange={(e) => setNewGiftCard(prev => ({ ...prev, amount_euros: parseFloat(e.target.value) || 0 }))}
+                       />
+                     </div>
+                     <div>
+                       <Label htmlFor="giftcard-status">Estado</Label>
+                       <Select value={String(newGiftCard.active)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, active: v === 'true' }))}>
+                         <SelectTrigger>
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="true">Activo</SelectItem>
+                           <SelectItem value="false">Inactivo</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                     <div>
+                       <Label htmlFor="giftcard-show-online">Mostrar Online</Label>
+                       <Select value={String(newGiftCard.show_online)} onValueChange={(v) => setNewGiftCard(prev => ({ ...prev, show_online: v === 'true' }))}>
+                         <SelectTrigger>
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="true">Sí</SelectItem>
+                           <SelectItem value="false">No</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4 mt-4">
                     <div>
@@ -1478,7 +1523,7 @@ export default function AdminPricingPromos() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {giftOptions.map((opt) => {
-                      const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active };
+                      const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active, show_online: opt.show_online ?? true };
                       return (
                         <div key={opt.id} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
@@ -1490,22 +1535,32 @@ export default function AdminPricingPromos() {
                               <img src={opt.image_url} alt={opt.name} className="w-full h-20 object-cover rounded" />
                             </div>
                           )}
-                          <div className="grid grid-cols-2 gap-2 items-end">
-                            <div>
-                              <Label>Importe (€)</Label>
-                              <Input type="number" step="0.01" value={edit.amount_euros} onChange={(e) => handleGiftChange(opt.id, 'amount_euros', parseFloat(e.target.value || '0'))} />
-                            </div>
-                            <div>
-                              <Label>Estado</Label>
-                              <Select value={String(edit.active)} onValueChange={(v) => handleGiftChange(opt.id, 'active', v === 'true')}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="true">Activo</SelectItem>
-                                  <SelectItem value="false">Inactivo</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="col-span-2 mb-2">
+                           <div className="grid grid-cols-3 gap-2 items-end">
+                             <div>
+                               <Label>Importe (€)</Label>
+                               <Input type="number" step="0.01" value={edit.amount_euros} onChange={(e) => handleGiftChange(opt.id, 'amount_euros', parseFloat(e.target.value || '0'))} />
+                             </div>
+                             <div>
+                               <Label>Estado</Label>
+                               <Select value={String(edit.active)} onValueChange={(v) => handleGiftChange(opt.id, 'active', v === 'true')}>
+                                 <SelectTrigger><SelectValue /></SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="true">Activo</SelectItem>
+                                   <SelectItem value="false">Inactivo</SelectItem>
+                                 </SelectContent>
+                               </Select>
+                             </div>
+                             <div>
+                               <Label>Mostrar Online</Label>
+                               <Select value={String(edit.show_online)} onValueChange={(v) => handleGiftChange(opt.id, 'show_online', v === 'true')}>
+                                 <SelectTrigger><SelectValue /></SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="true">Sí</SelectItem>
+                                   <SelectItem value="false">No</SelectItem>
+                                 </SelectContent>
+                               </Select>
+                             </div>
+                            <div className="col-span-3 mb-2">
                               <input 
                                 type="file" 
                                 accept="image/*" 

@@ -933,6 +933,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           name: string
+          show_online: boolean
           updated_at: string
         }
         Insert: {
@@ -943,6 +944,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name: string
+          show_online?: boolean
           updated_at?: string
         }
         Update: {
@@ -953,6 +955,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name?: string
+          show_online?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -1612,6 +1615,7 @@ export type Database = {
           price_cents: number
           service_id: string | null
           sessions_count: number
+          show_online: boolean
           updated_at: string
         }
         Insert: {
@@ -1627,6 +1631,7 @@ export type Database = {
           price_cents: number
           service_id?: string | null
           sessions_count?: number
+          show_online?: boolean
           updated_at?: string
         }
         Update: {
@@ -1642,6 +1647,7 @@ export type Database = {
           price_cents?: number
           service_id?: string | null
           sessions_count?: number
+          show_online?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -2124,6 +2130,7 @@ export type Database = {
           lane_ids: string[] | null
           name: string
           price_cents: number
+          show_online: boolean
           type: Database["public"]["Enums"]["service_type"]
           updated_at: string
         }
@@ -2141,6 +2148,7 @@ export type Database = {
           lane_ids?: string[] | null
           name: string
           price_cents: number
+          show_online?: boolean
           type: Database["public"]["Enums"]["service_type"]
           updated_at?: string
         }
@@ -2158,6 +2166,7 @@ export type Database = {
           lane_ids?: string[] | null
           name?: string
           price_cents?: number
+          show_online?: boolean
           type?: Database["public"]["Enums"]["service_type"]
           updated_at?: string
         }
