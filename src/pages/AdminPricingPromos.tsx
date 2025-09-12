@@ -75,43 +75,75 @@ export default function AdminPricingPromos() {
     { value: 'package' as const, label: 'Paquete' }
   ];
 
-  // Group services by treatment groups
+  // Group services using the same logic as client reservation selector
   const groupedServices = useMemo(() => {
-    const groups = new Map();
+    const groups = {
+      'masajes-individuales': {
+        id: 'masajes-individuales',
+        name: 'Masajes Individuales',
+        color: '#3B82F6',
+        services: [] as any[],
+      },
+      'masajes-pareja': {
+        id: 'masajes-pareja',
+        name: 'Masajes para Dos',
+        color: '#10B981',
+        services: [] as any[],
+      },
+      'masajes-cuatro-manos': {
+        id: 'masajes-cuatro-manos',
+        name: 'Masajes a Cuatro Manos',
+        color: '#F59E0B',
+        services: [] as any[],
+      },
+      'rituales': {
+        id: 'rituales',
+        name: 'Rituales Individuales',
+        color: '#8B5CF6',
+        services: [] as any[],
+      },
+      'rituales-pareja': {
+        id: 'rituales-pareja',
+        name: 'Rituales para Dos',
+        color: '#EC4899',
+        services: [] as any[],
+      }
+    };
+
+    console.log('AdminPricingPromos classification debug:');
+    console.log('Total services:', services.length);
     
-    // Create groups for existing treatment groups
-    treatmentGroups.forEach(group => {
-      groups.set(group.id, {
-        id: group.id,
-        name: group.name,
-        color: group.color,
-        services: []
-      });
-    });
-    
-    // Add a group for ungrouped services
-    groups.set('ungrouped', {
-      id: 'ungrouped',
-      name: 'Sin Grupo',
-      color: '#6B7280',
-      services: []
-    });
-    
-    // Assign services to groups
     services.forEach(service => {
-      const groupId = service.group_id || 'ungrouped';
-      const group = groups.get(groupId);
-      if (group) {
-        group.services.push(service);
+      const name = service.name.toLowerCase();
+      const description = (service.description || '').toLowerCase();
+      const isRitualService = name.includes('ritual') || description.includes('ritual');
+      const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo') || name.includes('two') || description.includes('dos personas') || description.includes('pareja') || description.includes('para dos');
+      
+      console.log(`AdminPricingPromos - Service "${service.name}": isRitual=${isRitualService}, isDuo=${isDuoService}, name="${name}", description="${description}"`);
+      
+      if (name.includes('cuatro manos')) {
+        console.log(`-> Clasificando "${service.name}" como cuatro manos`);
+        groups['masajes-cuatro-manos'].services.push(service);
+      } else if (isRitualService && isDuoService) {
+        console.log(`-> Clasificando "${service.name}" como ritual para dos`);
+        groups['rituales-pareja'].services.push(service);
+      } else if (isDuoService) {
+        console.log(`-> Clasificando "${service.name}" como masaje para dos`);
+        groups['masajes-pareja'].services.push(service);
+      } else if (isRitualService && !isDuoService) {
+        console.log(`-> Clasificando "${service.name}" como ritual individual`);
+        groups['rituales'].services.push(service);
       } else {
-        // If service has a group_id but group doesn't exist, put it in ungrouped
-        groups.get('ungrouped').services.push(service);
+        console.log(`-> Clasificando "${service.name}" como masaje individual`);
+        groups['masajes-individuales'].services.push(service);
       }
     });
+
+    const result = Object.values(groups).filter(group => group.services.length > 0);
+    console.log('AdminPricingPromos - Final groups result:', result.map(g => ({ name: g.name, services: g.services.length })));
     
-    // Convert to array and filter out empty groups
-    return Array.from(groups.values()).filter(group => group.services.length > 0);
-  }, [services, treatmentGroups]);
+    return result;
+  }, [services]);
 
   const createService = async () => {
     if (!newService.name || !newService.duration_minutes || !newService.price_cents) {
