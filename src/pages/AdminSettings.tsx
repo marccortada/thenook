@@ -40,9 +40,8 @@ const AdminSettings = () => {
     email: "",
     website: "",
     whatsapp: "+34 622 36 09 22",
-    taxId: "",
-    currency: "EUR",
-    timezone: "Europe/Madrid"
+    addressZurbaran: "",
+    addressConchaEspina: ""
   });
   const [loadingGeneral, setLoadingGeneral] = useState(false);
 
@@ -54,7 +53,7 @@ const AdminSettings = () => {
       setLoadingGeneral(true);
       const { data, error } = await supabase
         .from('centers')
-        .select('name, phone, email, whatsapp')
+        .select('name, phone, email, whatsapp, website, address_zurbaran, address_concha_espina')
         .eq('active', true)
         .limit(1);
 
@@ -70,7 +69,10 @@ const AdminSettings = () => {
           businessName: centerData?.name || "",
           phone: centerData?.phone || "",
           email: centerData?.email || "",
-          whatsapp: (centerData as any)?.whatsapp || "+34 622 36 09 22"
+          website: (centerData as any)?.website || "",
+          whatsapp: (centerData as any)?.whatsapp || "+34 622 36 09 22",
+          addressZurbaran: (centerData as any)?.address_zurbaran || "C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid",
+          addressConchaEspina: (centerData as any)?.address_concha_espina || "C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid"
         }));
       }
     } catch (error) {
@@ -90,7 +92,10 @@ const AdminSettings = () => {
           name: generalSettings.businessName,
           phone: generalSettings.phone,
           email: generalSettings.email,
+          website: generalSettings.website,
           whatsapp: generalSettings.whatsapp,
+          address_zurbaran: generalSettings.addressZurbaran,
+          address_concha_espina: generalSettings.addressConchaEspina,
           updated_at: new Date().toISOString()
         })
         .eq('active', true);
@@ -336,9 +341,16 @@ const AdminSettings = () => {
                       <MapPin className="h-4 w-4 text-primary" />
                       <h4 className="font-medium text-sm sm:text-base">Centro Zurbarán</h4>
                     </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid
-                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="addressZurbaran" className="text-xs font-medium">Dirección</Label>
+                      <Textarea
+                        id="addressZurbaran"
+                        value={generalSettings.addressZurbaran}
+                        onChange={(e) => setGeneralSettings(prev => ({ ...prev, addressZurbaran: e.target.value }))}
+                        className="min-h-[60px] text-xs resize-none"
+                        rows={3}
+                      />
+                    </div>
                     <div className="rounded-lg overflow-hidden border">
                       <iframe
                         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.5489!2d-3.6917!3d40.4296!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd4228849b1e5263%3A0x7e1b9e3f8b3c1234!2sC.%20de%20Zurbar%C3%A1n%2C%2010%2C%20Chamber%C3%AD%2C%2028010%20Madrid!5e0!3m2!1sen!2ses!4v1234567890"
@@ -368,9 +380,16 @@ const AdminSettings = () => {
                       <MapPin className="h-4 w-4 text-primary" />
                       <h4 className="font-medium text-sm sm:text-base">Centro Concha Espina</h4>
                     </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid
-                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="addressConchaEspina" className="text-xs font-medium">Dirección</Label>
+                      <Textarea
+                        id="addressConchaEspina"
+                        value={generalSettings.addressConchaEspina}
+                        onChange={(e) => setGeneralSettings(prev => ({ ...prev, addressConchaEspina: e.target.value }))}
+                        className="min-h-[60px] text-xs resize-none"
+                        rows={3}
+                      />
+                    </div>
                     <div className="rounded-lg overflow-hidden border">
                       <iframe
                         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.364!2d-3.6736659!3d40.4347875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDI2JzA1LjIiTiAzwrA0MCcyNS4yIlc!5e0!3m2!1sen!2ses!4v1646123456789!5m2!1sen!2ses&q=C.+del+Príncipe+de+Vergara,+204+duplicado+posterior,+local+10,+28002+Madrid"
@@ -394,6 +413,13 @@ const AdminSettings = () => {
                     </Button>
                   </div>
                 </div>
+                <Button 
+                  onClick={handleSaveSettings} 
+                  className="w-full sm:w-auto"
+                  disabled={loadingGeneral}
+                >
+                  {loadingGeneral ? "Guardando..." : "Guardar Ubicaciones"}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>

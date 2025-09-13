@@ -334,36 +334,45 @@ export type Database = {
         Row: {
           active: boolean | null
           address: string | null
+          address_concha_espina: string | null
+          address_zurbaran: string | null
           created_at: string
           email: string | null
           id: string
           name: string
           phone: string | null
           updated_at: string
+          website: string | null
           whatsapp: string | null
           working_hours: Json | null
         }
         Insert: {
           active?: boolean | null
           address?: string | null
+          address_concha_espina?: string | null
+          address_zurbaran?: string | null
           created_at?: string
           email?: string | null
           id?: string
           name: string
           phone?: string | null
           updated_at?: string
+          website?: string | null
           whatsapp?: string | null
           working_hours?: Json | null
         }
         Update: {
           active?: boolean | null
           address?: string | null
+          address_concha_espina?: string | null
+          address_zurbaran?: string | null
           created_at?: string
           email?: string | null
           id?: string
           name?: string
           phone?: string | null
           updated_at?: string
+          website?: string | null
           whatsapp?: string | null
           working_hours?: Json | null
         }
