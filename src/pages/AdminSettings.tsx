@@ -45,6 +45,9 @@ const AdminSettings = () => {
   });
   const [loadingGeneral, setLoadingGeneral] = useState(false);
 
+  const [pricingPolicies, setPricingPolicies] = useState([]);
+  const [loadingPolicies, setLoadingPolicies] = useState(false);
+
 
 
   // Load general settings from database
@@ -136,6 +139,66 @@ const AdminSettings = () => {
     }
   };
 
+  // Load pricing policies
+  const loadPricingPolicies = async () => {
+    try {
+      setLoadingPolicies(true);
+      const { data, error } = await supabase
+        .from('pricing_policies')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading pricing policies:', error);
+        return;
+      }
+
+      setPricingPolicies(data || []);
+    } catch (error) {
+      console.error('Error loading pricing policies:', error);
+    } finally {
+      setLoadingPolicies(false);
+    }
+  };
+
+  // Save pricing policy
+  const handleSavePricingPolicy = async (policyId: string, percentage: number) => {
+    try {
+      const { error } = await supabase
+        .from('pricing_policies')
+        .update({ 
+          percentage_charge: percentage,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', policyId);
+
+      if (error) {
+        console.error('Error saving pricing policy:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo guardar la política de precios",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Política guardada",
+        description: "La política de precios ha sido actualizada correctamente",
+      });
+      
+      // Reload policies
+      loadPricingPolicies();
+    } catch (error) {
+      console.error('Error saving pricing policy:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la política de precios",
+        variant: "destructive"
+      });
+    }
+  };
+
   const daysOfWeek = [
     { key: "monday", label: "Lunes" },
     { key: "tuesday", label: "Martes" },
@@ -149,6 +212,7 @@ const AdminSettings = () => {
   // Load data on component mount
   useEffect(() => {
     loadGeneralSettings();
+    loadPricingPolicies();
   }, []);
 
   return (
@@ -180,16 +244,21 @@ const AdminSettings = () => {
               className="w-full p-3 border rounded-lg bg-background text-sm font-medium shadow-sm"
             >
               <option value="general">🏢 General</option>
+              <option value="pricing">💰 Precios y Políticas</option>
               <option value="codes">🏷️ Códigos</option>
               
             </select>
           </div>
 
           {/* Desktop Tabs */}
-          <TabsList className="hidden lg:grid w-full grid-cols-2 h-auto mb-6">
+          <TabsList className="hidden lg:grid w-full grid-cols-3 h-auto mb-6">
             <TabsTrigger value="general" className="flex items-center gap-2 p-3">
               <Building2 className="h-4 w-4" />
               <span>General</span>
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="flex items-center gap-2 p-3">
+              <Percent className="h-4 w-4" />
+              <span>Precios y Políticas</span>
             </TabsTrigger>
             <TabsTrigger value="codes" className="flex items-center gap-2 p-3">
               <Hash className="h-4 w-4" />
@@ -420,6 +489,80 @@ const AdminSettings = () => {
                 >
                   {loadingGeneral ? "Guardando..." : "Guardar Ubicaciones"}
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pricing" className="space-y-4 sm:space-y-6">
+            <Card className="shadow-sm border-2">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <Percent className="h-4 w-4 sm:h-5 sm:w-5" />
+                  Políticas de Precios y Stripe
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base">
+                  Configura las políticas de cobro para no-shows, cancelaciones y otros eventos conectados con Stripe
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 sm:space-y-6">
+                {loadingPolicies ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Cargando políticas...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pricingPolicies.map((policy: any) => (
+                      <div key={policy.id} className="border rounded-lg p-4 bg-accent/10">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <h4 className="font-medium text-sm sm:text-base">{policy.policy_name}</h4>
+                            <p className="text-xs sm:text-sm text-muted-foreground">{policy.description}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              defaultValue={policy.percentage_charge}
+                              className="w-20 h-9 text-sm"
+                              onBlur={(e) => {
+                                const newValue = parseFloat(e.target.value) || 0;
+                                if (newValue !== policy.percentage_charge) {
+                                  handleSavePricingPolicy(policy.id, newValue);
+                                }
+                              }}
+                            />
+                            <span className="text-sm text-muted-foreground">%</span>
+                          </div>
+                        </div>
+                        {policy.policy_type === 'no_show' && (
+                          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <p className="text-xs text-blue-800">
+                              <strong>Stripe Integration:</strong> Si el cliente no se presenta y el porcentaje es mayor a 0%, 
+                              se cobrará automáticamente este porcentaje del precio del servicio a la tarjeta guardada en Stripe.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="border-t pt-6">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <h4 className="font-medium text-yellow-800 mb-2">🔧 Configuración de Stripe</h4>
+                    <p className="text-sm text-yellow-700 mb-3">
+                      Para que las políticas de precios funcionen correctamente, asegúrate de que Stripe esté configurado 
+                      y las tarjetas de los clientes estén guardadas durante el proceso de reserva.
+                    </p>
+                    <ul className="text-xs text-yellow-600 space-y-1">
+                      <li>• <strong>No Show (0%):</strong> No se cobra nada aunque haya tarjeta guardada</li>
+                      <li>• <strong>No Show (&gt;0%):</strong> Se cobra el porcentaje automáticamente</li>
+                      <li>• <strong>Cancelaciones:</strong> Se aplicarán según las políticas configuradas</li>
+                    </ul>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

@@ -1718,6 +1718,50 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_policies: {
+        Row: {
+          center_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          percentage_charge: number
+          policy_name: string
+          policy_type: string
+          updated_at: string
+        }
+        Insert: {
+          center_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          percentage_charge?: number
+          policy_name: string
+          policy_type: string
+          updated_at?: string
+        }
+        Update: {
+          center_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          percentage_charge?: number
+          policy_name?: string
+          policy_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_policies_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
