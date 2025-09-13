@@ -12,7 +12,7 @@ import {
   Building2, 
   Clock, 
   Users, 
-   
+  MapPin,
   Shield, 
   Palette,
   Package,
@@ -315,6 +315,85 @@ const AdminSettings = () => {
                 >
                   {loading ? "Guardando..." : "Guardar Horarios"}
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm border-2">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
+                  Ubicaciones de los Centros
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base">
+                  Mapas de las dos ubicaciones de The Nook Madrid
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 sm:space-y-6">
+                <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+                  {/* Centro Zurbarán */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <h4 className="font-medium text-sm sm:text-base">Centro Zurbarán</h4>
+                    </div>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid
+                    </p>
+                    <div className="rounded-lg overflow-hidden border">
+                      <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.5489!2d-3.6917!3d40.4296!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd4228849b1e5263%3A0x7e1b9e3f8b3c1234!2sC.%20de%20Zurbar%C3%A1n%2C%2010%2C%20Chamber%C3%AD%2C%2028010%20Madrid!5e0!3m2!1sen!2ses!4v1234567890"
+                        width="100%"
+                        height="200"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      ></iframe>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full" asChild>
+                      <a 
+                        href="https://maps.google.com/?q=C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        <MapPin className="mr-2 h-3 w-3" />
+                        Abrir en Google Maps
+                      </a>
+                    </Button>
+                  </div>
+
+                  {/* Centro Concha Espina */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <h4 className="font-medium text-sm sm:text-base">Centro Concha Espina</h4>
+                    </div>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid
+                    </p>
+                    <div className="rounded-lg overflow-hidden border">
+                      <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.364!2d-3.6736659!3d40.4347875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDI2JzA1LjIiTiAzwrA0MCcyNS4yIlc!5e0!3m2!1sen!2ses!4v1646123456789!5m2!1sen!2ses&q=C.+del+Príncipe+de+Vergara,+204+duplicado+posterior,+local+10,+28002+Madrid"
+                        width="100%"
+                        height="200"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      ></iframe>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full" asChild>
+                      <a 
+                        href="https://maps.google.com/?q=Centro+de+masajes+Madrid+Concha+Espina+The+Nook,+C.+del+Príncipe+de+Vergara,+204+duplicado+posterior,+local+10,+28002+Madrid" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        <MapPin className="mr-2 h-3 w-3" />
+                        Abrir en Google Maps
+                      </a>
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
