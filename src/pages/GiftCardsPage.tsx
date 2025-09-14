@@ -788,7 +788,7 @@ const GiftCardsPage = () => {
               {groups.individuales.length > 0 && (
                 <AccordionItem value="tarjetas-individuales" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masajes Individuales</h2>
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje Individual</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -836,7 +836,7 @@ const GiftCardsPage = () => {
               {groups.paraDos.length > 0 && (
                 <AccordionItem value="tarjetas-dos-personas" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masajes para Dos</h2>
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje para Dos</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -880,7 +880,7 @@ const GiftCardsPage = () => {
               {groups.cuatro.length > 0 && (
                 <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masajes a Cuatro Manos</h2>
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje a Cuatro Manos</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
