@@ -788,7 +788,7 @@ const GiftCardsPage = () => {
               {groups.individuales.length > 0 && (
                 <AccordionItem value="tarjetas-individuales" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">{t('individual_massages_packages')}</h2>
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masajes Individuales</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -836,7 +836,7 @@ const GiftCardsPage = () => {
               {groups.paraDos.length > 0 && (
                 <AccordionItem value="tarjetas-dos-personas" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">{t('couples_packages')}</h2>
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masajes para Dos</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -880,7 +880,7 @@ const GiftCardsPage = () => {
               {groups.cuatro.length > 0 && (
                 <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">{t('four_hands_packages')}</h2>
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masajes a Cuatro Manos</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -924,7 +924,7 @@ const GiftCardsPage = () => {
               {groups.rituales.length > 0 && (
                 <AccordionItem value="tarjetas-rituales" className="border rounded-lg p-0">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">{t('rituals_packages')}</h2>
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Rituales Individuales</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -968,7 +968,7 @@ const GiftCardsPage = () => {
                {groups.ritualesParaDos.length > 0 && (
                  <AccordionItem value="tarjetas-rituales-dos" className="border rounded-lg p-0">
                    <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                      <h2 className="text-lg font-semibold">Tarjetas para Rituales para Dos</h2>
+                      <h2 className="text-lg font-semibold">Tarjeta Regalo - Rituales para Dos</h2>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
                       <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
