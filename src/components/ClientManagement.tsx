@@ -493,30 +493,37 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
                     Historial ({clientBookings.length} citas)
                   </h4>
                   <div className={`space-y-2 ${isMobile ? 'max-h-40' : 'max-h-48'} overflow-y-auto`}>
-                    {clientBookings.length > 0 ? (
+                     {clientBookings.length > 0 ? (
                       clientBookings.map((booking) => (
-                        <div key={booking.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <div className="flex-1 min-w-0">
-                            <div className={`font-medium truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                              {format(new Date(booking.booking_datetime), 'dd/MM/yyyy - HH:mm', { locale: es })}
+                        <div key={booking.id} className="p-2 bg-gray-50 rounded space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div className="flex-1 min-w-0">
+                              <div className={`font-medium truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                                {format(new Date(booking.booking_datetime), 'dd/MM/yyyy - HH:mm', { locale: es })}
+                              </div>
+                              <div className={`text-gray-600 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                                {booking.service_name}
+                              </div>
                             </div>
-                            <div className={`text-gray-600 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                              {booking.service_name}
+                            <div className="text-right ml-2">
+                              <div className={`font-bold text-green-600 ${isMobile ? 'text-sm' : ''}`}>
+                                {(booking.total_price_cents / 100).toFixed(2)}€
+                              </div>
+                              <Badge className={`text-xs ${
+                                booking.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                booking.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                                booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {booking.status}
+                              </Badge>
                             </div>
                           </div>
-                          <div className="text-right ml-2">
-                            <div className={`font-bold text-green-600 ${isMobile ? 'text-sm' : ''}`}>
-                              {(booking.total_price_cents / 100).toFixed(2)}€
+                          {booking.notes && (
+                            <div className={`text-gray-700 bg-blue-50 p-2 rounded ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                              <span className="font-medium">Notas:</span> {booking.notes}
                             </div>
-                            <Badge className={`text-xs ${
-                              booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                              booking.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                              booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {booking.status}
-                            </Badge>
-                          </div>
+                          )}
                         </div>
                       ))
                     ) : (
