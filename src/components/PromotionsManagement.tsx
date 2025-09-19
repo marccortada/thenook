@@ -34,7 +34,7 @@ const PromotionsManagement = () => {
     togglePromotionStatus 
   } = usePromotions();
   
-  const { centers } = useCenters();
+  const { centers, refetch: refetchCenters } = useCenters();
   const { services } = useServices();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -88,6 +88,7 @@ const PromotionsManagement = () => {
   };
 
   const handleEdit = (promotion: any) => {
+    refetchCenters(); // Refresh centers data to get updated names
     setFormData({
       name: promotion.name,
       description: promotion.description || '',
@@ -115,6 +116,12 @@ const PromotionsManagement = () => {
     }));
   };
 
+  const handleOpenDialog = () => {
+    resetForm();
+    refetchCenters(); // Refresh centers data to get updated names
+    setShowCreateDialog(true);
+  };
+
   const formatPromotionValue = (promotion: any) => {
     if (promotion.type === 'percentage') {
       return `${promotion.value}%`;
@@ -140,7 +147,7 @@ const PromotionsManagement = () => {
         
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button onClick={handleOpenDialog}>
               <Plus className="h-4 w-4 mr-2" />
               Nueva Promoción
             </Button>
