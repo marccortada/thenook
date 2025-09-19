@@ -90,7 +90,8 @@ const TreatmentGroupsManagement: React.FC = () => {
       'masajes-individuales': [] as any[],
       'masajes-pareja': [] as any[],
       'masajes-cuatro-manos': [] as any[],
-      'rituales': [] as any[]
+      'rituales': [] as any[],
+      'rituales-pareja': [] as any[]
     };
 
     services.forEach(service => {
@@ -98,9 +99,14 @@ const TreatmentGroupsManagement: React.FC = () => {
       
       if (name.includes('cuatro manos')) {
         classification['masajes-cuatro-manos'].push(service);
+      } else if (name.includes('ritual') && (name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas'))) {
+        // Rituales para dos personas van a rituales-pareja
+        classification['rituales-pareja'].push(service);
       } else if (name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas')) {
+        // Masajes para dos personas van a masajes-pareja
         classification['masajes-pareja'].push(service);
       } else if (service.type === 'package' || name.includes('ritual')) {
+        // Rituales individuales van a rituales
         classification['rituales'].push(service);
       } else {
         classification['masajes-individuales'].push(service);
