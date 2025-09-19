@@ -408,14 +408,6 @@ const PromotionsManagement = () => {
           <Card>
             <CardContent className="text-center py-8">
               <p className="text-muted-foreground">No hay promociones creadas</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => setShowCreateDialog(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Crear Primera Promoción
-              </Button>
             </CardContent>
           </Card>
         )}
