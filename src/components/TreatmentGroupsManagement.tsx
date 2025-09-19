@@ -544,9 +544,6 @@ const TreatmentGroupsManagement: React.FC = () => {
                                           currency: 'EUR' 
                                         })}
                                       </span>
-                                      <Badge variant="secondary" className="text-xs">
-                                        {service.type}
-                                      </Badge>
                                        {service.lane_ids && Array.isArray(service.lane_ids) && service.lane_ids.length > 0 && (
                                          <Badge variant="outline" className="text-xs">
                                            {service.lane_ids.length} carril{service.lane_ids.length !== 1 ? 'es' : ''}
