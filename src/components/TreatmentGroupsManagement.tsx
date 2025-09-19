@@ -25,19 +25,19 @@ const PRESET_COLORS = [
 const PREDEFINED_GROUPS = [
   {
     id: 'masajes-individuales',
-    name: 'Masajes Individuales',
+    name: 'Masaje Individual',
     color: '#3B82F6',
     description: 'Masajes para una persona'
   },
   {
     id: 'masajes-pareja',
-    name: 'Masajes en Pareja', 
+    name: 'Masaje para Dos', 
     color: '#10B981',
     description: 'Masajes para dos personas'
   },
   {
     id: 'masajes-cuatro-manos',
-    name: 'Masajes a Cuatro Manos',
+    name: 'Masaje a Cuatro Manos',
     color: '#F59E0B', 
     description: 'Masajes con cuatro manos'
   },
@@ -45,7 +45,13 @@ const PREDEFINED_GROUPS = [
     id: 'rituales',
     name: 'Rituales',
     color: '#8B5CF6',
-    description: 'Rituales y paquetes'
+    description: 'Rituales individuales'
+  },
+  {
+    id: 'rituales-pareja',
+    name: 'Rituales para Dos',
+    color: '#EC4899',
+    description: 'Rituales para dos personas'
   }
 ];
 
