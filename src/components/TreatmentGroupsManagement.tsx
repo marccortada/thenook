@@ -477,22 +477,6 @@ const TreatmentGroupsManagement: React.FC = () => {
         })}
       </Accordion>
 
-      <Card className="border-dashed border-2">
-        <CardContent className="pt-6">
-          <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
-              <Palette className="w-6 h-6 text-muted-foreground" />
-            </div>
-            <h3 className="font-medium">Clasificación Automática</h3>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Los servicios se organizan automáticamente según su nombre y tipo. 
-              Esta organización se mantiene sincronizada con el modal de reservas para los clientes.
-              Puedes asignar carriles específicos a cada grupo para optimizar la gestión.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Modal para editar grupo */}
       {isDialogOpen && (
         <>
