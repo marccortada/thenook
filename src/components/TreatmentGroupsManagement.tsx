@@ -406,7 +406,7 @@ const TreatmentGroupsManagement: React.FC = () => {
 
       <Accordion type="multiple" className="space-y-4">
         {combinedGroups.map((group) => {
-          const groupServices = classifyServices[group.id as keyof typeof classifyServices];
+          const groupServices = classifyServices[group.id as keyof typeof classifyServices] || [];
           const assignedLane = lanes.find(l => l.id === group.lane_id);
           const assignedCenter = centers.find(c => c.id === group.center_id);
           
@@ -525,11 +525,11 @@ const TreatmentGroupsManagement: React.FC = () => {
                                       <Badge variant="secondary" className="text-xs">
                                         {service.type}
                                       </Badge>
-                                      {service.lane_ids && service.lane_ids.length > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          {service.lane_ids.length} carril{service.lane_ids.length !== 1 ? 'es' : ''}
-                                        </Badge>
-                                      )}
+                                       {service.lane_ids && Array.isArray(service.lane_ids) && service.lane_ids.length > 0 && (
+                                         <Badge variant="outline" className="text-xs">
+                                           {service.lane_ids.length} carril{service.lane_ids.length !== 1 ? 'es' : ''}
+                                         </Badge>
+                                       )}
                                     </div>
                                   </div>
                                 </div>
@@ -883,7 +883,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                   <Label className="text-sm font-medium">Carriles Asignados (Múltiple selección)</Label>
                   <div className="mt-1 space-y-2">
                     <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[40px]">
-                      {serviceFormData.lane_ids.length === 0 ? (
+                      {!serviceFormData.lane_ids || serviceFormData.lane_ids.length === 0 ? (
                         <span className="text-muted-foreground text-sm">Sin carriles específicos</span>
                       ) : (
                         serviceFormData.lane_ids.map(laneId => {
