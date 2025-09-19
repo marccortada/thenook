@@ -13,12 +13,28 @@ import { useTreatmentGroups, CreateTreatmentGroupData } from '@/hooks/useTreatme
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-// Colores específicos solicitados: azul, verde, naranja, lila
+// Colores disponibles para el admin
 const PRESET_COLORS = [
   '#3B82F6', // Azul
   '#10B981', // Verde 
   '#F97316', // Naranja
   '#8B5CF6', // Lila
+  '#EF4444', // Rojo
+  '#F59E0B', // Amarillo
+  '#EC4899', // Rosa
+  '#06B6D4', // Cyan
+  '#84CC16', // Lima
+  '#6366F1', // Índigo
+  '#8B5A2B', // Marrón
+  '#6B7280', // Gris
+  '#DC2626', // Rojo oscuro
+  '#059669', // Verde oscuro
+  '#7C3AED', // Púrpura
+  '#0EA5E9', // Azul claro
+  '#F472B6', // Rosa claro
+  '#FCD34D', // Amarillo claro
+  '#34D399', // Verde claro
+  '#A78BFA', // Púrpura claro
 ];
 
 // Grupos predefinidos que coinciden con el modal de reservas
