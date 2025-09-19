@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePromotions, CreatePromotionData } from '@/hooks/usePromotions';
+import { useCenters, useServices } from '@/hooks/useDatabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -32,6 +33,9 @@ const PromotionsManagement = () => {
     deletePromotion, 
     togglePromotionStatus 
   } = usePromotions();
+  
+  const { centers } = useCenters();
+  const { services } = useServices();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingPromotion, setEditingPromotion] = useState<string | null>(null);
@@ -209,7 +213,7 @@ const PromotionsManagement = () => {
                   <Label htmlFor="applies_to">Se Aplica A *</Label>
                   <Select 
                     value={formData.applies_to} 
-                    onValueChange={(value: any) => setFormData(prev => ({ ...prev, applies_to: value }))}
+                    onValueChange={(value: any) => setFormData(prev => ({ ...prev, applies_to: value, target_id: '' }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar aplicación" />
@@ -222,6 +226,50 @@ const PromotionsManagement = () => {
                   </Select>
                 </div>
               </div>
+
+              {/* Campo condicional para seleccionar servicio específico */}
+              {formData.applies_to === 'specific_service' && (
+                <div className="space-y-2">
+                  <Label htmlFor="target_service">Servicio Específico *</Label>
+                  <Select 
+                    value={formData.target_id} 
+                    onValueChange={(value: string) => setFormData(prev => ({ ...prev, target_id: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar servicio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Campo condicional para seleccionar centro específico */}
+              {formData.applies_to === 'specific_center' && (
+                <div className="space-y-2">
+                  <Label htmlFor="target_center">Centro Específico *</Label>
+                  <Select 
+                    value={formData.target_id} 
+                    onValueChange={(value: string) => setFormData(prev => ({ ...prev, target_id: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar centro" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {centers.map((center) => (
+                        <SelectItem key={center.id} value={center.id}>
+                          {center.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
