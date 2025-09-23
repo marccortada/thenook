@@ -1092,21 +1092,27 @@ const AdvancedCalendarView = () => {
                                </div>
                            </div>
                          )}
-                         {isBlocked && !booking && (
-                           <div className="absolute top-1 left-1 right-1 bottom-1 rounded bg-gray-400/40 border border-gray-500/60 flex items-center justify-center">
-                             <div className="flex items-center gap-2">
-                               <span className="text-xs font-bold text-gray-700">BLOQUEADO</span>
-                               <Button
-                                 variant="ghost"
-                                 size="sm"
-                                 className="h-6 w-6 p-0 hover:bg-red-600 hover:text-white"
-                                 onClick={(e) => handleUnblockLane(isBlocked.id, e)}
-                               >
-                                 <X className="h-3 w-3" />
-                               </Button>
-                             </div>
-                           </div>
-                         )}
+                          {isBlocked && !booking && (
+                            <div 
+                              className="absolute top-1 left-1 right-1 bottom-1 rounded bg-gray-400/40 border border-gray-500/60 flex items-center justify-center"
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onMouseEnter={(e) => e.stopPropagation()}
+                              onMouseUp={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-gray-700">BLOQUEADO</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 hover:bg-red-600 hover:text-white"
+                                  onClick={(e) => handleUnblockLane(isBlocked.id, e)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                          {blockingMode && !booking && !isBlocked && (
                            <div className={cn(
                              "absolute top-1 left-1 right-1 bottom-1 rounded border-2 border-dashed transition-all",
