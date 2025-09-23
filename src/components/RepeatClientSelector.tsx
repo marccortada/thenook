@@ -39,13 +39,14 @@ const RepeatClientSelector: React.FC<RepeatClientSelectorProps> = ({
         try {
           setLoading(true);
           
-          // Fetch clients with more than one booking
+          // Fetch all clients that match the search query
           const { data, error } = await supabase
             .from("profiles")
             .select(`
               id, first_name, last_name, email, phone,
               bookings:bookings(count)
             `)
+            .eq('role', 'client')
             .or(
               `first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%`
             )
