@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -392,6 +392,9 @@ function BookingEditModal({ booking, isOpen, onClose, onBookingUpdated }: Bookin
       <DialogContent className="max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modificar Reserva</DialogTitle>
+          <DialogDescription>
+            Actualiza el estado de la cita y procesa el pago si es necesario.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
