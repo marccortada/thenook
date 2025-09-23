@@ -53,13 +53,12 @@ const RepeatClientSelector: React.FC<RepeatClientSelectorProps> = ({
 
           if (error) throw error;
 
-          // Filter clients with more than one booking and format data
+          // Format all clients as habitual clients (if they exist in DB, they are habitual)
           const repeatClients = (data || [])
             .map(client => ({
               ...client,
               booking_count: client.bookings[0]?.count || 0
             }))
-            .filter(client => client.booking_count > 1)
             .map(({ bookings, ...client }) => client as RepeatClient);
 
           setResults(repeatClients);
