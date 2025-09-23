@@ -264,21 +264,23 @@ export default function BookingManagement() {
                     isMobile ? '' : 'flex flex-wrap gap-3 space-y-0'
                   }`}>
                     <div className={`${isMobile ? 'grid grid-cols-1 gap-3' : 'flex items-center gap-3'}`}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 relative">
                         <Label className="text-xs sm:text-sm whitespace-nowrap">Estado:</Label>
                         <Select 
                           value={booking.status} 
                           onValueChange={(value) => updateBookingStatus(booking.id, value)}
                         >
-                          <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-32 sm:w-40'}`}>
+                          <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-32 sm:w-40'} relative`}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent 
                             position="popper" 
                             side="bottom" 
-                            align="start"
-                            sideOffset={4}
-                            className="z-[60] max-h-[300px] min-w-[var(--radix-select-trigger-width)]"
+                            align="center"
+                            sideOffset={8}
+                            avoidCollisions={true}
+                            collisionPadding={20}
+                            className="z-[100] max-h-[200px] min-w-[var(--radix-select-trigger-width)]"
                           >
                             {BOOKING_STATUSES.map((status) => (
                               <SelectItem key={status.value} value={status.value}>
@@ -289,21 +291,23 @@ export default function BookingManagement() {
                         </Select>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 relative">
                         <Label className="text-xs sm:text-sm whitespace-nowrap">Pago:</Label>
                         <Select 
                           value={booking.payment_status} 
                           onValueChange={(value) => updatePaymentStatus(booking.id, value)}
                         >
-                          <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-32 sm:w-40'}`}>
+                          <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-32 sm:w-40'} relative`}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent 
                             position="popper" 
                             side="bottom" 
-                            align="start"
-                            sideOffset={4}
-                            className="z-[60] max-h-[300px] min-w-[var(--radix-select-trigger-width)]"
+                            align="center"
+                            sideOffset={8}
+                            avoidCollisions={true}
+                            collisionPadding={20}
+                            className="z-[100] max-h-[200px] min-w-[var(--radix-select-trigger-width)]"
                           >
                             {PAYMENT_STATUSES.map((status) => (
                               <SelectItem key={status.value} value={status.value}>
