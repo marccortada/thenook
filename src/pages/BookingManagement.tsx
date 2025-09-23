@@ -389,7 +389,7 @@ function BookingEditModal({ booking, isOpen, onClose, onBookingUpdated }: Bookin
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modificar Reserva</DialogTitle>
           <DialogDescription>
