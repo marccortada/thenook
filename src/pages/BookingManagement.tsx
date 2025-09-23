@@ -273,7 +273,13 @@ export default function BookingManagement() {
                           <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-32 sm:w-40'}`}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent 
+                            position="popper" 
+                            side="bottom" 
+                            align="start"
+                            sideOffset={4}
+                            className="z-[60] max-h-[300px] min-w-[var(--radix-select-trigger-width)]"
+                          >
                             {BOOKING_STATUSES.map((status) => (
                               <SelectItem key={status.value} value={status.value}>
                                 {status.label}
@@ -292,7 +298,13 @@ export default function BookingManagement() {
                           <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-32 sm:w-40'}`}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent 
+                            position="popper" 
+                            side="bottom" 
+                            align="start"
+                            sideOffset={4}
+                            className="z-[60] max-h-[300px] min-w-[var(--radix-select-trigger-width)]"
+                          >
                             {PAYMENT_STATUSES.map((status) => (
                               <SelectItem key={status.value} value={status.value}>
                                 {status.label}
