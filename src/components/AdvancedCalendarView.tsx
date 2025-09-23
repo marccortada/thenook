@@ -78,6 +78,12 @@ const AdvancedCalendarView = () => {
   const [blockingMode, setBlockingMode] = useState(false);
   const [blockStartSlot, setBlockStartSlot] = useState<{ laneId: string; timeSlot: Date } | null>(null);
   const [blockEndSlot, setBlockEndSlot] = useState<{ laneId: string; timeSlot: Date } | null>(null);
+  
+  // Drag selection state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
+  const [dragEnd, setDragEnd] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
+  const [dragMode, setDragMode] = useState<'booking' | 'block'>('booking'); // Modo de arrastre
 
   const [createClientId, setCreateClientId] = useState<string | null>(null);
 
@@ -205,6 +211,30 @@ const AdvancedCalendarView = () => {
       console.log('🏢 Setting initial center:', firstCenter, centers[0].name);
     }
   }, [centers, selectedCenter]);
+
+  // Reset drag state when dragging stops globally
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        setDragStart(null);
+        setDragEnd(null);
+      }
+    };
+
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, [isDragging]);
+
+  // Check if a slot is in the drag selection
+  const isSlotInDragSelection = (laneId: string, timeSlot: Date) => {
+    if (!isDragging || !dragStart || !dragEnd || dragStart.laneId !== laneId) return false;
+    
+    const startTime = dragStart.timeSlot < dragEnd.timeSlot ? dragStart.timeSlot : dragEnd.timeSlot;
+    const endTime = dragStart.timeSlot < dragEnd.timeSlot ? dragEnd.timeSlot : dragStart.timeSlot;
+    
+    return timeSlot >= startTime && timeSlot <= endTime;
+  };
 
   // Generate time slots from 10:00 to 22:00 every 5 minutes
   const generateTimeSlots = (): TimeSlot[] => {
@@ -341,6 +371,123 @@ const AdvancedCalendarView = () => {
       available: Math.max(0, availableLanes),
       isFullyBooked: availableLanes <= 0
     };
+  };
+
+  // Handle mouse down for drag start
+  const handleSlotMouseDown = (centerId: string, laneId: string, date: Date, timeSlot: Date, event: React.MouseEvent) => {
+    event.preventDefault();
+    
+    // Si estamos en modo bloqueo tradicional
+    if (blockingMode) {
+      handleBlockingSlotClick(laneId, timeSlot);
+      return;
+    }
+
+    // Verificar si hay una reserva existente
+    const existingBooking = getBookingForSlot(centerId, laneId, date, timeSlot);
+    if (existingBooking) {
+      // Abrir modal de edición
+      handleSlotClick(centerId, laneId, date, timeSlot, event);
+      return;
+    }
+
+    // Iniciar drag selection
+    setIsDragging(true);
+    setDragStart({ centerId, laneId, timeSlot });
+    setDragEnd({ centerId, laneId, timeSlot });
+    
+    // Determinar modo de arrastre basado en las teclas modificadoras
+    setDragMode(event.shiftKey ? 'block' : 'booking');
+  };
+
+  // Handle mouse enter for drag
+  const handleSlotMouseEnter = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
+    if (isDragging && dragStart && dragStart.laneId === laneId) {
+      setDragEnd({ centerId, laneId, timeSlot });
+    }
+  };
+
+  // Handle mouse up for drag end
+  const handleSlotMouseUp = (centerId: string, laneId: string, date: Date, timeSlot: Date, event: React.MouseEvent) => {
+    if (!isDragging || !dragStart) return;
+    
+    setIsDragging(false);
+    
+    // Si solo se hizo click sin arrastrar
+    if (dragStart.timeSlot.getTime() === timeSlot.getTime()) {
+      handleSlotClick(centerId, laneId, date, timeSlot, event);
+      setDragStart(null);
+      setDragEnd(null);
+      return;
+    }
+
+    // Determinar rango de tiempo
+    const startTime = dragStart.timeSlot < timeSlot ? dragStart.timeSlot : timeSlot;
+    const endTime = dragStart.timeSlot < timeSlot ? timeSlot : dragStart.timeSlot;
+    
+    if (dragMode === 'block') {
+      // Crear bloqueo
+      const blockEndTime = new Date(endTime);
+      blockEndTime.setMinutes(blockEndTime.getMinutes() + 5); // Añadir 5 min para que sea un rango
+      createLaneBlock(selectedCenter, laneId, startTime, blockEndTime, 'Bloqueo por arrastre');
+    } else {
+      // Crear reserva con duración calculada
+      const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60) + 5; // +5 para incluir el slot final
+      
+      // Calcular posición del modal
+      if (event?.currentTarget) {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        const estimatedModalHeight = 600;
+        const viewportTop = scrollTop;
+        const viewportBottom = scrollTop + windowHeight;
+        const modalTop = Math.max(viewportTop + 20, Math.min(
+          viewportTop + (windowHeight - estimatedModalHeight) / 2,
+          viewportBottom - estimatedModalHeight - 20
+        ));
+        
+        if (windowWidth < 768) {
+          const modalWidth = windowWidth - 40;
+          setModalPosition({
+            top: modalTop,
+            left: (windowWidth - modalWidth) / 2
+          });
+        } else {
+          const slotRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+          const slotCenterX = slotRect.left + (slotRect.width / 2);
+          const modalWidth = Math.min(500, windowWidth - 40);
+          setModalPosition({
+            top: modalTop,
+            left: Math.max(20, Math.min(slotCenterX - (modalWidth / 2), windowWidth - modalWidth - 20))
+          });
+        }
+      }
+
+      // Configurar formulario de reserva
+      setSelectedSlot({ centerId, laneId, timeSlot: startTime });
+      setBookingForm({
+        ...bookingForm,
+        centerId,
+        laneId,
+        date,
+        timeSlot: startTime,
+      });
+      
+      // Preseleccionar duración basada en el arrastre
+      const suggestedService = services.find(s => 
+        Math.abs((s.duration_minutes || 60) - durationMinutes) <= 10
+      );
+      if (suggestedService) {
+        setBookingForm(prev => ({ ...prev, serviceId: suggestedService.id }));
+      }
+      
+      setShowBookingModal(true);
+    }
+    
+    setDragStart(null);
+    setDragEnd(null);
   };
 
   // Handle slot click
@@ -807,12 +954,18 @@ const AdvancedCalendarView = () => {
               Haz clic en una franja para empezar, luego en otra para definir el rango.
             </div>
           )}
+          {!blockingMode && (
+            <div className="text-xs text-muted-foreground">
+              💡 <strong>Click y arrastra</strong> para crear reservas o <strong>Shift + arrastra</strong> para bloquear intervalos
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[85vh]">
             {/* Responsive grid based on number of lanes */}
             <div className={cn(
-              "gap-0 min-w-fit",
+              "gap-0 min-w-fit select-none",
+              isDragging && "cursor-grabbing",
               centerLanes.length === 1 ? "grid grid-cols-[60px_1fr]" :
               centerLanes.length === 2 ? "grid grid-cols-[60px_repeat(2,1fr)]" :
               centerLanes.length === 3 ? "grid grid-cols-[60px_repeat(3,1fr)]" :
@@ -861,26 +1014,35 @@ const AdvancedCalendarView = () => {
                      const isFirstSlotOfBooking = booking &&
                       format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
-                     return (
-                         <div
-                           key={lane.id}
-                           className="relative h-6 border-r border-b hover:bg-muted/20 cursor-pointer transition-colors"
-                           onClick={(e) => handleSlotClick(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
-                           onDragOver={(e) => {
-                             e.preventDefault();
-                             e.dataTransfer.dropEffect = 'move';
-                           }}
-                            onDrop={(e) => {
+                       const isInDragSelection = isSlotInDragSelection(lane.id, timeSlot.time);
+                       
+                       return (
+                          <div
+                            key={lane.id}
+                            className={cn(
+                              "relative h-6 border-r border-b cursor-pointer transition-colors",
+                              !booking && !isBlocked && "hover:bg-muted/20",
+                              isInDragSelection && dragMode === 'booking' && "bg-blue-200/50 border-blue-400",
+                              isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400"
+                            )}
+                            onMouseDown={(e) => handleSlotMouseDown(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
+                            onMouseEnter={() => handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, timeSlot.time)}
+                            onMouseUp={(e) => handleSlotMouseUp(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
+                            onDragOver={(e) => {
                               e.preventDefault();
-                              const bookingData = e.dataTransfer.getData('booking');
-                              if (bookingData) {
-                                const draggedBooking = JSON.parse(bookingData);
-                                // Use the current timeSlot as the new position (where the drop occurred)
-                                // This ensures the booking moves to exactly where the user dropped it
-                                moveBooking(draggedBooking.id, selectedCenter, lane.id, selectedDate, timeSlot.time);
-                              }
+                              e.dataTransfer.dropEffect = 'move';
                             }}
-                         >
+                             onDrop={(e) => {
+                               e.preventDefault();
+                               const bookingData = e.dataTransfer.getData('booking');
+                               if (bookingData) {
+                                 const draggedBooking = JSON.parse(bookingData);
+                                 // Use the current timeSlot as the new position (where the drop occurred)
+                                 // This ensures the booking moves to exactly where the user dropped it
+                                 moveBooking(draggedBooking.id, selectedCenter, lane.id, selectedDate, timeSlot.time);
+                               }
+                             }}
+                          >
                            {booking && isFirstSlotOfBooking && (
                              <div
                                 className="absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md cursor-move"
