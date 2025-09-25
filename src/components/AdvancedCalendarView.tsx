@@ -1373,35 +1373,29 @@ const AdvancedCalendarView = () => {
           {/* Center Selection */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Centro</label>
-            <Select 
-              value={selectedCenter} 
-              onValueChange={(value) => {
-                console.log('🏢 Center changed:', value);
-                setSelectedCenter(value);
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecciona centro" />
-              </SelectTrigger>
-              <SelectContent 
-                position="popper" 
-                side="bottom" 
-                align="start" 
-                sideOffset={4}
-                avoidCollisions={false}
-                className="min-w-[var(--radix-select-trigger-width)] max-h-[300px]"
+            <div className="relative">
+              <Select 
+                value={selectedCenter} 
+                onValueChange={(value) => {
+                  console.log('🏢 Center changed:', value);
+                  setSelectedCenter(value);
+                }}
               >
-                {centers.map((center) => {
-                  console.log('🏢 Rendering center option:', center.id, center.name);
-                  return (
-                    <SelectItem key={center.id} value={center.id}>
-                      {center.name}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecciona centro" />
+                </SelectTrigger>
+                <SelectContent>
+                  {centers.map((center) => {
+                    console.log('🏢 Rendering center option:', center.id, center.name);
+                    return (
+                      <SelectItem key={center.id} value={center.id}>
+                        {center.name}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
 
           
           {/* View Mode Toggle - Better Mobile Layout */}
@@ -1809,6 +1803,7 @@ const AdvancedCalendarView = () => {
           </div>
         )}
       </div>
+    </div>
     );
   };
 
