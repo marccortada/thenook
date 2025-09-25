@@ -1372,16 +1372,25 @@ const AdvancedCalendarView = () => {
           {/* Center Selection */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Centro</label>
-            <Select value={selectedCenter} onValueChange={setSelectedCenter}>
+            <Select 
+              value={selectedCenter} 
+              onValueChange={(value) => {
+                console.log('🏢 Center changed:', value);
+                setSelectedCenter(value);
+              }}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecciona centro" />
               </SelectTrigger>
-              <SelectContent className="z-[9999]">
-                {centers.map((center) => (
-                  <SelectItem key={center.id} value={center.id}>
-                    {center.name}
-                  </SelectItem>
-                ))}
+              <SelectContent>
+                {centers.map((center) => {
+                  console.log('🏢 Rendering center option:', center.id, center.name);
+                  return (
+                    <SelectItem key={center.id} value={center.id}>
+                      {center.name}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
