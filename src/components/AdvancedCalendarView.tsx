@@ -1379,10 +1379,11 @@ const AdvancedCalendarView = () => {
                <SelectContent 
                  position="popper"
                  side="bottom"
-                 align="start"
-                 sideOffset={4}
+                 align="center"
+                 sideOffset={2}
                  avoidCollisions={true}
-                 collisionPadding={20}
+                 collisionPadding={8}
+                 sticky="always"
                >
                    {centers.map((center) => (
                      <SelectItem key={center.id} value={center.id}>
