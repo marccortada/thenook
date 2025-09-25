@@ -296,13 +296,10 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
               </Button>
             </PopoverTrigger>
             <PopoverContent 
-              className="w-80 p-4 space-y-4"
+              className="w-72 sm:w-80 p-4 space-y-4"
               side="bottom"
-              align="start"
-              sideOffset={4}
-              avoidCollisions={true}
-              collisionPadding={16}
-              sticky="always"
+              align="end"
+              sideOffset={8}
             >
               <div className="space-y-3">
                 <h3 className="font-semibold text-sm">Modificar Reserva</h3>
