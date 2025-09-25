@@ -1581,8 +1581,39 @@ const AdvancedCalendarView = () => {
                   </div>
                 </div>
 
+                
+      {/* Edit Booking Modal */}
+      {showEditModal && editingBooking && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-background w-full max-w-2xl max-h-[95vh] rounded-lg shadow-xl border overflow-hidden flex flex-col">
+            <div className="flex flex-col h-full max-h-[95vh]">
+              {/* Header */}
+              <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background">
+                <h3 className="text-xl font-semibold">Editar Reserva</h3>
+                <p className="text-sm text-gray-600">
+                  Editar reserva de {editName} para el {format(editTime, 'HH:mm')} del {format(editTime, "d 'de' MMMM", { locale: es })}
+                </p>
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Nombre</Label>
+                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Teléfono</Label>
+                    <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="serviceId" className="text-sm font-medium">Servicio *</Label>
+                   <Label htmlFor="serviceId" className="text-sm font-medium">Servicio *</Label>
                   <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="Seleccionar servicio" />
@@ -1596,11 +1627,11 @@ const AdvancedCalendarView = () => {
                        collisionPadding={8}
                        sticky="always"
                      >
-                        {services.filter(s => s.center_id === (editingBooking.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
-                          <SelectItem key={service.id} value={service.id}>
-                            {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
-                          </SelectItem>
-                        ))}
+                         {services.filter(s => s.center_id === (editingBooking?.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
+                           <SelectItem key={service.id} value={service.id}>
+                             {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
+                           </SelectItem>
+                         ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1732,7 +1763,7 @@ const AdvancedCalendarView = () => {
                         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                           <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
                           <AlertDialogAction 
-                            onClick={() => deleteBooking(editingBooking.id)}
+                            onClick={() => deleteBooking(editingBooking?.id)}
                             className="w-full sm:w-auto"
                           >
                             Sí, borrar
@@ -1762,7 +1793,8 @@ const AdvancedCalendarView = () => {
                   </div>
                 </div>
               </div>
-            )}
+              </div>
+            </div>
           </div>
         </div>
       )}

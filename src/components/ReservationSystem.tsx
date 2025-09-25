@@ -1113,14 +1113,14 @@ const ReservationSystem = () => {
                                    <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 opacity-50" />
                                  </Button>
                                </PopoverTrigger>
-                               <PopoverContent 
-                                 className="w-auto p-0 z-[60] bg-popover border shadow-md max-h-[80vh] overflow-y-auto" 
-                                 align="start"
-                                 side="bottom"
-                                 sideOffset={8}
-                                 avoidCollisions={true}
-                                 collisionPadding={16}
-                                 sticky="always"
+                                <PopoverContent 
+                                  className="w-auto p-0 z-[60] bg-popover border shadow-md max-h-[80vh] overflow-y-auto" 
+                                  align="center"
+                                  side="bottom"
+                                  sideOffset={2}
+                                  avoidCollisions={true}
+                                  collisionPadding={8}
+                                  sticky="always"
                                >
                                  <Calendar
                                    mode="single"
