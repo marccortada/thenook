@@ -64,6 +64,7 @@ interface BookingFormData {
 }
 
 const AdvancedCalendarView = () => {
+  console.log('🔍 AdvancedCalendarView RENDER - Location:', window.location.pathname);
   const { toast } = useToast();
   const { isAdmin, isEmployee } = useSimpleAuth();
   const isMobile = useIsMobile();
