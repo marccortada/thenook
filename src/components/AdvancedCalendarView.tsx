@@ -1580,8 +1580,14 @@ const AdvancedCalendarView = () => {
                     />
                   </div>
                 </div>
-
                 
+                {/* Aquí debería ir el resto del contenido del New Booking Modal */}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Booking Modal */}
       {showEditModal && editingBooking && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -1793,13 +1799,11 @@ const AdvancedCalendarView = () => {
                   </div>
                 </div>
               </div>
-              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  };
 
-export default AdvancedCalendarView;
+  export default AdvancedCalendarView;
