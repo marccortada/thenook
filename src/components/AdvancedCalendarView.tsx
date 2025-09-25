@@ -1382,7 +1382,7 @@ const AdvancedCalendarView = () => {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecciona centro" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="item-aligned" side="bottom" align="start">
                 {centers.map((center) => {
                   console.log('🏢 Rendering center option:', center.id, center.name);
                   return (
