@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -287,21 +288,44 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
 
         {/* Actions */}
         <div className="pt-3 sm:pt-4 border-t">
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button
-                className="w-full sm:w-auto"
-                variant="outline"
-              >
-                Modificar Reserva
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="w-[90vw] max-w-md">
-              <DialogHeader>
-                <DialogTitle>Modificar Reserva</DialogTitle>
-              </DialogHeader>
+          <Button
+            className="w-full sm:w-auto"
+            variant="outline"
+            onClick={() => {
+              console.log('Opening modal for booking:', booking.id);
+              setIsOpen(true);
+            }}
+          >
+            Modificar Reserva
+          </Button>
+        </div>
+
+        {/* Custom Portal Modal */}
+        {isOpen && createPortal(
+          <div 
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 p-4"
+            onClick={() => setIsOpen(false)}
+          >
+            <div 
+              className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-background rounded-lg border shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b">
+                <h2 className="text-lg font-semibold">Modificar Reserva</h2>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span className="sr-only">Close</span>
+                </button>
+              </div>
               
-              <div className="space-y-4">
+              {/* Content */}
+              <div className="p-6 space-y-4">
                 {/* Información de la reserva */}
                 <div className="space-y-2 text-sm text-muted-foreground border-b pb-3">
                   <p>Cliente: {booking.profiles?.first_name} {booking.profiles?.last_name}</p>
@@ -388,9 +412,10 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                   </div>
                 )}
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
     </MobileCard>
   );
