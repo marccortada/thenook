@@ -1373,28 +1373,35 @@ const AdvancedCalendarView = () => {
           {/* Center Selection */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Centro</label>
-            <div className="relative">
-              <Select 
-                value={selectedCenter} 
-                onValueChange={(value) => {
-                  console.log('🏢 Center changed:', value);
-                  setSelectedCenter(value);
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona centro" />
-                </SelectTrigger>
-                <SelectContent>
-                  {centers.map((center) => {
-                    console.log('🏢 Rendering center option:', center.id, center.name);
-                    return (
-                      <SelectItem key={center.id} value={center.id}>
-                        {center.name}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2">
+              {centers.map((center) => {
+                const isSelected = selectedCenter === center.id;
+                return (
+                  <div
+                    key={center.id}
+                    onClick={() => {
+                      console.log('🏢 Center changed:', center.id);
+                      setSelectedCenter(center.id);
+                    }}
+                    className={cn(
+                      "flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all duration-200",
+                      isSelected 
+                        ? "bg-primary/10 border-primary text-primary" 
+                        : "bg-background border-border hover:bg-accent/50"
+                    )}
+                  >
+                    <MapPin className="h-4 w-4 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{center.name}</p>
+                    </div>
+                    {isSelected && (
+                      <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                        <div className="h-2 w-2 rounded-full bg-white"></div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
           
