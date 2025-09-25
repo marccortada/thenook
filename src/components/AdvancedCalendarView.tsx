@@ -1384,6 +1384,7 @@ const AdvancedCalendarView = () => {
                  avoidCollisions={true}
                  collisionPadding={8}
                  sticky="always"
+                 className="z-[9999] bg-background border-border shadow-xl"
                >
                    {centers.map((center) => (
                      <SelectItem key={center.id} value={center.id}>
