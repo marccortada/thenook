@@ -1587,174 +1587,15 @@ const AdvancedCalendarView = () => {
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="Seleccionar servicio" />
                     </SelectTrigger>
-                    <SelectContent 
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      sideOffset={4}
-                      avoidCollisions={true}
-                      collisionPadding={20}
-                      className="max-h-[300px] z-[60]"
-                    >
-                      {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Fecha</Label>
-                    <Input
-                      type="date"
-                      value={format(bookingForm.date, 'yyyy-MM-dd')}
-                      onChange={(e) => {
-                        const date = new Date(e.target.value);
-                        setBookingForm({ ...bookingForm, date });
-                      }}
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Hora</Label>
-                    <Select value={format(bookingForm.timeSlot, 'HH:mm')} onValueChange={(val) => {
-                      const [h, m] = val.split(':').map(Number);
-                      const d = new Date(bookingForm.timeSlot);
-                      d.setHours(h, m, 0, 0);
-                      setBookingForm({ ...bookingForm, timeSlot: d });
-                    }}>
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Hora" />
-                      </SelectTrigger>
-                       <SelectContent 
-                        className="max-h-[300px] overflow-y-auto z-[60]"
-                        position="popper"
-                        side="bottom"
-                        align="center"
-                        sideOffset={4}
-                        avoidCollisions={true}
-                        collisionPadding={20}
-                      >
-                        {timeOptions5m.map((t) => (
-                          <SelectItem key={t} value={t}>{t}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="notes" className="text-sm font-medium">Notas (opcional)</Label>
-                    <Textarea
-                      id="notes"
-                      value={bookingForm.notes}
-                      onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
-                      placeholder="Notas adicionales..."
-                      rows={3}
-                      className="resize-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="border-t pt-4 space-y-4">
-                  <Label className="text-base font-medium">Canjear código (opcional)</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Código</Label>
-                      <Input value={redeemCode} onChange={(e) => setRedeemCode(e.target.value)} placeholder="ABCD1234" className="h-11" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Importe (€) solo si es tarjeta</Label>
-                      <Input type="number" step="0.01" min="0" value={redeemAmountEUR ?? ''} onChange={(e) => setRedeemAmountEUR(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="Ej. 50.00" className="h-11" />
-                    </div>
-                    <div className="flex items-end">
-                      <label className="inline-flex items-center gap-2 text-sm">
-                        <input type="checkbox" className="accent-current" checked={redeemOnCreate} onChange={(e) => setRedeemOnCreate(e.target.checked)} />
-                        Canjear al crear
-                      </label>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Notas de canje</Label>
-                    <Textarea rows={2} value={redeemNotes} onChange={(e) => setRedeemNotes(e.target.value)} placeholder="Observaciones del canje" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer - Fixed */}
-              <div className="px-6 py-4 border-t bg-background flex-shrink-0">
-                <div className="flex gap-3 justify-end">
-                  <Button variant="outline" onClick={() => setShowBookingModal(false)} className="text-sm">
-                    <X className="h-4 w-4 mr-2" />
-                    Cancelar
-                  </Button>
-                  <Button onClick={createBooking} className="text-sm">
-                    <Save className="h-4 w-4 mr-2" />
-                    Crear Reserva
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Booking Modal - Positioned above clicked slot */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 z-50">
-          <div 
-            className="absolute bg-background rounded-lg shadow-xl border overflow-y-auto animate-scale-in"
-            style={{
-              top: `${modalPosition.top}px`,
-              left: `${modalPosition.left}px`,
-              width: window.innerWidth < 768 ? `${window.innerWidth - 40}px` : 'min(600px, calc(100vw - 2rem))',
-              maxHeight: '80vh'
-            }}
-          >
-            <div className="px-4 pt-4 pb-2 border-b">
-              <h3 className="text-lg font-semibold">Editar Reserva</h3>
-              <p className="text-sm text-gray-600">Modifica notas, pago y cliente.</p>
-            </div>
-
-            {editingBooking && (
-              <div className="space-y-4 p-4">
-                <ClientSelector
-                  label="Cliente"
-                  selectedId={editingBooking.client_id || undefined}
-                  onSelect={(c) => setEditClientId(c.id)}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nombre</Label>
-                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nombre y apellidos" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Teléfono</Label>
-                    <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+34 600 000 000" />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Email</Label>
-                    <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="cliente@example.com" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Servicio</Label>
-                    <Select value={editServiceId} onValueChange={(v) => setEditServiceId(v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar servicio" />
-                      </SelectTrigger>
-                      <SelectContent 
-                        position="popper"
-                        side="bottom"
-                        align="start"
-                        sideOffset={4}
-                        avoidCollisions={true}
-                        collisionPadding={20}
-                      >
+                     <SelectContent 
+                       position="popper"
+                       side="bottom"
+                       align="center"
+                       sideOffset={2}
+                       avoidCollisions={true}
+                       collisionPadding={8}
+                       sticky="always"
+                     >
                         {services.filter(s => s.center_id === (editingBooking.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
                           <SelectItem key={service.id} value={service.id}>
                             {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
@@ -1774,14 +1615,15 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                     <SelectContent 
-                       position="popper"
-                       side="bottom"
-                       align="start"
-                       sideOffset={4}
-                       avoidCollisions={true}
-                       collisionPadding={20}
-                     >
+                         <SelectContent 
+                           position="popper"
+                           side="bottom"
+                           align="center"
+                           sideOffset={2}
+                           avoidCollisions={true}
+                           collisionPadding={8}
+                           sticky="always"
+                         >
                        {timeOptions5m.map((t) => (
                          <SelectItem key={t} value={t}>{t}</SelectItem>
                        ))}
@@ -1801,14 +1643,15 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                       <SelectContent 
-                         position="popper"
-                         side="bottom"
-                         align="start"
-                         sideOffset={4}
-                         avoidCollisions={true}
-                         collisionPadding={20}
-                       >
+                         <SelectContent 
+                           position="popper"
+                           side="bottom"
+                           align="center"
+                           sideOffset={2}
+                           avoidCollisions={true}
+                           collisionPadding={8}
+                           sticky="always"
+                         >
                          <SelectItem value="pending">Pendiente</SelectItem>
                          <SelectItem value="paid">Pagado</SelectItem>
                          <SelectItem value="failed">Fallido</SelectItem>
@@ -1824,14 +1667,15 @@ const AdvancedCalendarView = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                       <SelectContent 
-                         position="popper"
-                         side="bottom"
-                         align="start"
-                         sideOffset={4}
-                         avoidCollisions={true}
-                         collisionPadding={20}
-                       >
+                        <SelectContent 
+                          position="popper"
+                          side="bottom"
+                          align="center"
+                          sideOffset={2}
+                          avoidCollisions={true}
+                          collisionPadding={8}
+                          sticky="always"
+                        >
                          <SelectItem value="pending">Pendiente</SelectItem>
                          <SelectItem value="requested">Solicitada</SelectItem>
                          <SelectItem value="confirmed">Confirmada</SelectItem>
