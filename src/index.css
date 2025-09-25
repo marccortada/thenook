@@ -176,18 +176,6 @@ All colors MUST be HSL.
     box-shadow: var(--shadow-strong);
   }
 
-  /* Booking popover specific styles */
-  .booking-popover {
-    z-index: 9999 !important;
-    position: absolute !important;
-    transform: none !important;
-    max-width: calc(100vw - 32px) !important;
-  }
-
-  .booking-popover[data-radix-popper-content-wrapper] {
-    z-index: 9999 !important;
-    position: absolute !important;
-  }
 
   /* Fix for dropdown transparency issues */
   [data-radix-select-content] {
@@ -315,13 +303,6 @@ All colors MUST be HSL.
       -webkit-overflow-scrolling: touch !important;
     }
 
-    /* Exception for booking popovers */
-    .booking-popover[data-radix-popover-content] {
-      z-index: 9999 !important;
-      position: absolute !important;
-      transform: none !important;
-      max-width: calc(100vw - 32px) !important;
-    }
 
     /* Force dropdowns to appear below triggers */
     [data-radix-popover-content][data-side="bottom"],

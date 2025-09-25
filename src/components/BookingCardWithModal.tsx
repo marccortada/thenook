@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -286,26 +287,23 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
 
         {/* Actions */}
         <div className="pt-3 sm:pt-4 border-t">
-          <Popover open={isOpen} onOpenChange={setIsOpen}>
-            <PopoverTrigger asChild>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
               <Button
                 className="w-full sm:w-auto"
                 variant="outline"
               >
                 Modificar Reserva
               </Button>
-            </PopoverTrigger>
-            <PopoverContent 
-              className="booking-popover w-72 sm:w-80 p-4 space-y-4"
-              side="bottom"
-              align="start"
-              sideOffset={12}
-            >
-              <div className="space-y-3">
-                <h3 className="font-semibold text-sm">Modificar Reserva</h3>
-                
+            </DialogTrigger>
+            <DialogContent className="w-[90vw] max-w-md">
+              <DialogHeader>
+                <DialogTitle>Modificar Reserva</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4">
                 {/* Información de la reserva */}
-                <div className="space-y-2 text-xs text-muted-foreground border-b pb-3">
+                <div className="space-y-2 text-sm text-muted-foreground border-b pb-3">
                   <p>Cliente: {booking.profiles?.first_name} {booking.profiles?.last_name}</p>
                   <p>Fecha: {format(new Date(booking.booking_datetime), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
                   <p>Servicio: {booking.services?.name || 'Sin servicio'}</p>
@@ -314,9 +312,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
 
                 {/* Estado de la cita */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium">Estado de la Cita</Label>
+                  <Label className="text-sm font-medium">Estado de la Cita</Label>
                   <Select value={bookingStatus} onValueChange={updateBookingStatus}>
-                    <SelectTrigger className="h-8">
+                    <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -331,9 +329,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
 
                 {/* Estado del pago */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium">Estado del Pago</Label>
+                  <Label className="text-sm font-medium">Estado del Pago</Label>
                   <Select value={paymentStatus} onValueChange={updatePaymentStatus}>
-                    <SelectTrigger className="h-8">
+                    <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -348,14 +346,14 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
 
                 {/* Procesar pago */}
                 {paymentStatus === 'pending' && (
-                  <div className="space-y-2 border-t pt-3">
-                    <Label className="text-xs font-medium">Procesar Pago</Label>
+                  <div className="space-y-3 border-t pt-3">
+                    <Label className="text-sm font-medium">Procesar Pago</Label>
                     
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div>
-                        <Label className="text-xs">Método de Pago</Label>
+                        <Label className="text-sm">Método de Pago</Label>
                         <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                          <SelectTrigger className="h-8">
+                          <SelectTrigger>
                             <SelectValue placeholder="Seleccionar método..." />
                           </SelectTrigger>
                           <SelectContent>
@@ -369,29 +367,29 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                       </div>
 
                       <div>
-                        <Label className="text-xs">Notas del Pago (Opcional)</Label>
-                        <Input
-                          className="h-8"
+                        <Label className="text-sm">Notas del Pago (Opcional)</Label>
+                        <Textarea
                           placeholder="Notas adicionales..."
                           value={paymentNotes}
                           onChange={(e) => setPaymentNotes(e.target.value)}
+                          className="min-h-[60px] resize-none"
                         />
                       </div>
 
                       <Button
                         onClick={processPayment}
                         disabled={isProcessingPayment || !paymentMethod}
-                        className="w-full h-8"
+                        className="w-full"
                         size="sm"
                       >
-                        {isProcessingPayment ? "Procesando..." : "Procesar Pago"}
+                        {isProcessingPayment ? "Procesando..." : `Procesar Pago (${(booking.total_price_cents / 100).toFixed(2)}€)`}
                       </Button>
                     </div>
                   </div>
                 )}
               </div>
-            </PopoverContent>
-          </Popover>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </MobileCard>
