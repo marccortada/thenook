@@ -1376,23 +1376,13 @@ const AdvancedCalendarView = () => {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecciona centro" />
               </SelectTrigger>
-               <SelectContent 
-                 position="popper"
-                 side="bottom"
-                 align="start"
-                 sideOffset={4}
-                 avoidCollisions={false}
-                 className="z-[9999] bg-background border-border shadow-xl min-w-[200px]"
-               >
-                   {centers.map((center) => (
-                     <SelectItem key={center.id} value={center.id}>
-                       <div className="flex items-center gap-2">
-                         <MapPin className="w-4 h-4" />
-                         <div className="font-medium">{center.name}</div>
-                       </div>
-                     </SelectItem>
-                   ))}
-               </SelectContent>
+              <SelectContent className="z-[9999]">
+                {centers.map((center) => (
+                  <SelectItem key={center.id} value={center.id}>
+                    {center.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
 
