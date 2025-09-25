@@ -991,7 +991,7 @@ const AdvancedCalendarView = () => {
 
               {/* Time slots */}
               {timeSlots.map((timeSlot, timeIndex) => (
-                <React.Fragment key={timeIndex}>
+                <div key={timeIndex} className="contents">
                   {/* Time label */}
                   <div className="p-1 text-center text-xs border-r border-b bg-muted/30 font-medium h-6 flex items-center justify-center">
                     {timeSlot.hour}
@@ -1128,7 +1128,7 @@ const AdvancedCalendarView = () => {
                       </div>
                     );
                   })}
-                </React.Fragment>
+                </div>
               ))}
             </div>
           </ScrollArea>
@@ -1204,7 +1204,7 @@ const AdvancedCalendarView = () => {
 
               {/* Time slots for week view */}
               {timeSlots.map((timeSlot, timeIndex) => (
-                <React.Fragment key={timeIndex}>
+                <div key={timeIndex} className="contents">
                   {/* Time label */}
                   <div className="p-0.5 text-center text-[10px] border-r border-b bg-muted/30 font-medium h-6 flex items-center justify-center">
                     {timeSlot.hour}
@@ -1311,7 +1311,7 @@ const AdvancedCalendarView = () => {
                       );
                     })
                   )}
-                </React.Fragment>
+                </div>
               ))}
             </div>
           </ScrollArea>
