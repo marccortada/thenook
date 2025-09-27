@@ -13,9 +13,16 @@ interface Booking {
   status: string;
   payment_status: string;
   notes?: string;
+  booking_codes?: string[];
   services?: { name: string };
   centers?: { name: string };
-  profiles?: { first_name: string; last_name: string; email: string; phone: string };
+  profiles?: { 
+    id: string;
+    first_name: string; 
+    last_name: string; 
+    email: string; 
+    phone: string;
+  };
 }
 
 export default function BookingManagement() {
@@ -37,7 +44,7 @@ export default function BookingManagement() {
           *,
           services (name),
           centers (name),
-          profiles (first_name, last_name, email, phone)
+          profiles (id, first_name, last_name, email, phone)
         `)
         .order('booking_datetime', { ascending: false });
 

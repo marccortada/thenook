@@ -70,11 +70,13 @@ export interface Booking {
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
   channel: 'web' | 'whatsapp' | 'email' | 'phone';
   notes: string | null;
+  booking_codes?: string[];
   stripe_session_id: string | null;
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded' | 'partial_refund';
   created_at: string;
   updated_at: string;
   profiles?: {
+    id: string;
     first_name: string;
     last_name: string;
     email: string;
@@ -275,6 +277,7 @@ export const useBookings = () => {
         .select(`
           *,
           profiles!client_id (
+            id,
             first_name,
             last_name,
             email,

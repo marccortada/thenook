@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, User, X } from "lucide-react";
+import { Calendar, Clock, User, X, Tag } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import MobileCard from "@/components/MobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useInternalCodes } from "@/hooks/useInternalCodes";
 
 interface Booking {
   id: string;
@@ -23,9 +24,16 @@ interface Booking {
   status: string;
   payment_status: string;
   notes?: string;
+  booking_codes?: string[];
   services?: { name: string };
   centers?: { name: string };
-  profiles?: { first_name: string; last_name: string; email: string; phone: string };
+  profiles?: { 
+    id: string;
+    first_name: string; 
+    last_name: string; 
+    email: string; 
+    phone: string;
+  };
 }
 
 const BOOKING_STATUSES = [
@@ -63,8 +71,15 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [selectedBookingCodes, setSelectedBookingCodes] = useState<string[]>(booking.booking_codes || []);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  
+  // Fetch codes
+  const { codes, assignments, getAssignmentsByEntity } = useInternalCodes();
+  
+  // Get client codes
+  const clientCodes = booking.profiles?.id ? getAssignmentsByEntity('client', booking.profiles.id) : [];
 
   const getStatusBadge = (status: string) => {
     const statusConfig = BOOKING_STATUSES.find(s => s.value === status) || BOOKING_STATUSES[0];
@@ -134,6 +149,54 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         variant: "destructive"
       });
     }
+  };
+
+  const updateBookingCodes = async (newCodes: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ booking_codes: newCodes })
+        .eq('id', booking.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Códigos actualizados",
+        description: "Los códigos de la reserva han sido actualizados"
+      });
+
+      setSelectedBookingCodes(newCodes);
+      onBookingUpdated();
+    } catch (error) {
+      console.error('Error updating booking codes:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar los códigos",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleBookingCode = (codeValue: string) => {
+    const newCodes = selectedBookingCodes.includes(codeValue)
+      ? selectedBookingCodes.filter(c => c !== codeValue)
+      : [...selectedBookingCodes, codeValue];
+    updateBookingCodes(newCodes);
+  };
+
+  const getCodeBadgeColor = (code: string) => {
+    const codeData = codes.find(c => c.code === code);
+    return codeData?.color || '#3B82F6';
+  };
+
+  const isVipBooking = () => {
+    return clientCodes.some(assignment => assignment.code_name?.toLowerCase().includes('vip')) ||
+           selectedBookingCodes.some(code => code.toLowerCase().includes('vip'));
+  };
+
+  const isPriorityBooking = () => {
+    return clientCodes.some(assignment => assignment.code_name?.toLowerCase().includes('priority')) ||
+           selectedBookingCodes.some(code => code.toLowerCase().includes('priority'));
   };
 
   const handleOpenModal = async (event: React.MouseEvent) => {
@@ -257,7 +320,10 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   };
 
   return (
-    <MobileCard className="booking-card" padding="sm">
+    <MobileCard 
+      className={`booking-card ${isVipBooking() ? 'ring-2 ring-yellow-400' : isPriorityBooking() ? 'ring-2 ring-orange-400' : ''}`} 
+      padding="sm"
+    >
       <div className="space-y-3 sm:space-y-4">
         {/* Header Mobile/Desktop */}
         <div className={`${isMobile ? 'space-y-3' : 'flex justify-between items-start'}`}>
@@ -333,6 +399,48 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
             </p>
           </div>
         </div>
+
+        {/* Códigos Section */}
+        {(clientCodes.length > 0 || selectedBookingCodes.length > 0) && (
+          <div className="space-y-2">
+            <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1">
+              <Tag className="h-3 w-3" />
+              Códigos
+            </Label>
+            <div className="flex flex-wrap gap-1">
+              {/* Client codes */}
+              {clientCodes.map((assignment) => (
+                <Badge 
+                  key={assignment.id}
+                  variant="outline"
+                  className="text-xs"
+                  style={{ 
+                    borderColor: assignment.code_color,
+                    color: assignment.code_color,
+                    backgroundColor: `${assignment.code_color}10`
+                  }}
+                >
+                  Cliente: {assignment.code}
+                </Badge>
+              ))}
+              {/* Booking specific codes */}
+              {selectedBookingCodes.map((code) => (
+                <Badge 
+                  key={code}
+                  variant="secondary"
+                  className="text-xs"
+                  style={{ 
+                    borderColor: getCodeBadgeColor(code),
+                    color: getCodeBadgeColor(code),
+                    backgroundColor: `${getCodeBadgeColor(code)}20`
+                  }}
+                >
+                  Reserva: {code}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="pt-3 sm:pt-4 border-t">
@@ -423,6 +531,56 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  {/* Códigos de la reserva */}
+                  <div className="space-y-3 border-t pt-3">
+                    <Label className="text-sm font-medium flex items-center gap-1">
+                      <Tag className="h-4 w-4" />
+                      Códigos de la Reserva
+                    </Label>
+                    
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {codes.map((code) => (
+                          <Badge
+                            key={code.id}
+                            variant={selectedBookingCodes.includes(code.code) ? "default" : "outline"}
+                            className="cursor-pointer text-xs"
+                            style={{
+                              backgroundColor: selectedBookingCodes.includes(code.code) ? code.color : 'transparent',
+                              borderColor: code.color,
+                              color: selectedBookingCodes.includes(code.code) ? 'white' : code.color
+                            }}
+                            onClick={() => toggleBookingCode(code.code)}
+                          >
+                            {code.code} - {code.name}
+                          </Badge>
+                        ))}
+                      </div>
+                      
+                      {clientCodes.length > 0 && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Códigos del cliente:</Label>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {clientCodes.map((assignment) => (
+                              <Badge 
+                                key={assignment.id}
+                                variant="outline"
+                                className="text-xs"
+                                style={{ 
+                                  borderColor: assignment.code_color,
+                                  color: assignment.code_color,
+                                  backgroundColor: `${assignment.code_color}10`
+                                }}
+                              >
+                                {assignment.code}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Procesar pago */}

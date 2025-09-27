@@ -44,6 +44,7 @@ import RepeatClientSelector from './RepeatClientSelector';
 import ClientSelectionModal from './ClientSelectionModal';
 import { useLaneBlocks } from '@/hooks/useLaneBlocks';
 import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { useInternalCodes } from '@/hooks/useInternalCodes';
 
 interface TimeSlot {
   time: Date;
@@ -62,6 +63,30 @@ interface BookingFormData {
   notes: string;
   isWalkIn?: boolean;
   saveAsClient?: boolean;
+}
+
+interface Booking {
+  id: string;
+  booking_datetime: string;
+  duration_minutes: number;
+  total_price_cents: number;
+  status: string;
+  payment_status: string;
+  notes?: string;
+  booking_codes?: string[];
+  client_id?: string;
+  service_id?: string;
+  center_id?: string;
+  lane_id?: string;
+  services?: { name: string };
+  centers?: { name: string };
+  profiles?: { 
+    id: string;
+    first_name: string; 
+    last_name: string; 
+    email: string; 
+    phone: string;
+  };
 }
 
 const AdvancedCalendarView = () => {
@@ -101,6 +126,7 @@ const AdvancedCalendarView = () => {
   const [editServiceId, setEditServiceId] = useState<string>('');
   const [editDuration, setEditDuration] = useState<number>(60);
   const [editTime, setEditTime] = useState<Date>(new Date());
+  const [editBookingCodes, setEditBookingCodes] = useState<string[]>([]);
   
   // Form state
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
@@ -134,6 +160,7 @@ const AdvancedCalendarView = () => {
   const { updateClient } = useClients();
   const { laneBlocks, createLaneBlock, deleteLaneBlock, isLaneBlocked } = useLaneBlocks();
   const { treatmentGroups } = useTreatmentGroups();
+  const { codes, assignments, getAssignmentsByEntity } = useInternalCodes();
 
 
   // Function to get color for a lane based on its assigned treatment group (DEPRECATED - USE getServiceLaneColor instead)
@@ -551,6 +578,7 @@ const AdvancedCalendarView = () => {
       setEditName(`${existingBooking.profiles?.first_name || ''} ${existingBooking.profiles?.last_name || ''}`.trim());
       setEditEmail(existingBooking.profiles?.email || '');
       setEditPhone(existingBooking.profiles?.phone || '');
+      setEditBookingCodes(existingBooking.booking_codes || []);
       setShowEditModal(true);
       return;
     }
@@ -845,6 +873,7 @@ const AdvancedCalendarView = () => {
         service_id: editServiceId || editingBooking.service_id,
         duration_minutes: editDuration || editingBooking.duration_minutes,
         booking_datetime: newDateTime.toISOString(),
+        booking_codes: editBookingCodes,
       };
       if (editClientId) updates.client_id = editClientId;
 
@@ -1801,6 +1830,61 @@ const AdvancedCalendarView = () => {
                        </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                {/* Códigos de la reserva */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    Códigos de la Reserva
+                  </Label>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {codes.map((code) => (
+                      <Badge
+                        key={code.id}
+                        variant={editBookingCodes.includes(code.code) ? "default" : "outline"}
+                        className="cursor-pointer text-xs"
+                        style={{
+                          backgroundColor: editBookingCodes.includes(code.code) ? code.color : 'transparent',
+                          borderColor: code.color,
+                          color: editBookingCodes.includes(code.code) ? 'white' : code.color
+                        }}
+                        onClick={() => {
+                          const newCodes = editBookingCodes.includes(code.code)
+                            ? editBookingCodes.filter(c => c !== code.code)
+                            : [...editBookingCodes, code.code];
+                          setEditBookingCodes(newCodes);
+                        }}
+                      >
+                        {code.code} - {code.name}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  {editingBooking?.profiles?.id && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Códigos del cliente:</Label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {getAssignmentsByEntity('client', editingBooking.profiles.id).map((assignment) => (
+                          <Badge 
+                            key={assignment.id}
+                            variant="outline"
+                            className="text-xs"
+                            style={{ 
+                              borderColor: assignment.code_color,
+                              color: assignment.code_color,
+                              backgroundColor: `${assignment.code_color}10`
+                            }}
+                          >
+                            {assignment.code}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

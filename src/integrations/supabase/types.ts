@@ -174,6 +174,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          booking_codes: string[] | null
           booking_datetime: string
           center_id: string | null
           channel: Database["public"]["Enums"]["booking_channel"]
@@ -199,6 +200,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          booking_codes?: string[] | null
           booking_datetime: string
           center_id?: string | null
           channel: Database["public"]["Enums"]["booking_channel"]
@@ -224,6 +226,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          booking_codes?: string[] | null
           booking_datetime?: string
           center_id?: string | null
           channel?: Database["public"]["Enums"]["booking_channel"]
