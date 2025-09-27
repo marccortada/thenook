@@ -138,7 +138,7 @@ const InternalCodesManagement = () => {
               <span>Nuevo Código</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="internal-codes-modal">
+          <DialogContent className="internal-codes-modal fixed left-[50vw] top-[50vh] -translate-x-1/2 -translate-y-1/2 max-w-[425px] max-h-[85vh] z-[100]">
             <DialogHeader>
               <DialogTitle>Crear Nuevo Código</DialogTitle>
               <DialogDescription>
