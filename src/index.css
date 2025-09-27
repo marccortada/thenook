@@ -331,19 +331,14 @@ All colors MUST be HSL.
 
     /* Specific modal centering fix for internal codes management */
     .internal-codes-modal {
+      /* Override Tailwind classes with !important */
+      left: 50vw !important;
+      top: 50vh !important;
+      transform: translate(-50%, -50%) !important;
       position: fixed !important;
-      inset: 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      width: auto !important;
       max-width: min(425px, 90vw) !important;
       max-height: 85vh !important;
-      margin: auto !important;
       z-index: 100 !important;
-      transform: none !important;
-      top: auto !important;
-      left: auto !important;
     }
   }
 
