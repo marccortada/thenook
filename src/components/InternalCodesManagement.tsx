@@ -138,7 +138,7 @@ const InternalCodesManagement = () => {
               <span>Nuevo Código</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md mx-auto">
+          <DialogContent className="internal-codes-modal">
             <DialogHeader>
               <DialogTitle>Crear Nuevo Código</DialogTitle>
               <DialogDescription>
@@ -395,7 +395,7 @@ const InternalCodesManagement = () => {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md mx-auto">
+        <DialogContent className="internal-codes-modal">
           <DialogHeader>
             <DialogTitle>Editar Código</DialogTitle>
             <DialogDescription>
