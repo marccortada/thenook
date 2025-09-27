@@ -24,6 +24,7 @@ import {
   Mail,
   Save,
   X,
+  Check,
   CheckCircle2,
   Ban,
   Trash2
@@ -1450,11 +1451,23 @@ const AdvancedCalendarView = () => {
           >
             <div className="flex flex-col h-full max-h-[95vh]">
               {/* Header - Fixed */}
-              <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background">
+              <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background relative">
+                <button
+                  onClick={() => setShowBookingModal(false)}
+                  className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Cerrar</span>
+                </button>
                 <h3 className="text-xl font-semibold">Nueva Reserva</h3>
                 <p className="text-sm text-gray-600">
                   Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
                 </p>
+                {createClientId && (
+                  <p className="text-sm text-primary font-medium mt-2">
+                    Cliente seleccionado: {bookingForm.clientName}
+                  </p>
+                )}
               </div>
 
               {/* Content - Scrollable */}
@@ -1587,8 +1600,65 @@ const AdvancedCalendarView = () => {
                     />
                   </div>
                 </div>
-                
-                {/* Aquí debería ir el resto del contenido del New Booking Modal */}
+
+                {/* Service Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="serviceId" className="text-sm font-medium">Servicio *</Label>
+                  <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Seleccionar servicio" />
+                    </SelectTrigger>
+                    <SelectContent 
+                      position="popper"
+                      side="bottom"
+                      align="center"
+                      sideOffset={2}
+                      avoidCollisions={true}
+                      collisionPadding={8}
+                      sticky="always"
+                    >
+                      {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notas internas</Label>
+                  <Textarea
+                    id="notes"
+                    value={bookingForm.notes || ''}
+                    onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
+                    rows={3}
+                    placeholder="Añade notas internas..."
+                  />
+                </div>
+              </div>
+
+              {/* Footer with action buttons */}
+              <div className="px-6 py-4 border-t bg-background flex-shrink-0">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowBookingModal(false)}
+                    className="flex-1"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={createBooking}
+                    className="flex-1"
+                    disabled={!bookingForm.serviceId || (!bookingForm.isWalkIn && !bookingForm.clientName.trim())}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Crear Reserva
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
