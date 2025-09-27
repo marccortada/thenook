@@ -14,7 +14,9 @@ import {
   Mail,
   Phone,
   Plus,
-  Clock
+  Clock,
+  Tags,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -26,11 +28,15 @@ interface ClientDialogContentProps {
   editingClient: Partial<Client>;
   newNote: { title: string; content: string; category: string; priority: string };
   notes: any[];
+  codes: any[];
+  clientCodes: any[];
   onUpdateClient: () => void;
   onCreateNote: () => void;
   onUpdateEditingClient: (updates: Partial<Client>) => void;
   onUpdateNewNote: (updates: Partial<{ title: string; content: string; category: string; priority: string }>) => void;
   onOpenEmailModal: (client: any) => void;
+  onAssignCode: (codeId: string) => void;
+  onUnassignCode: (assignmentId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
 }
@@ -41,18 +47,23 @@ export const ClientDialogContent = ({
   editingClient,
   newNote,
   notes,
+  codes,
+  clientCodes,
   onUpdateClient,
   onCreateNote,
   onUpdateEditingClient,
   onUpdateNewNote,
   onOpenEmailModal,
+  onAssignCode,
+  onUnassignCode,
   getStatusColor,
   getStatusText
 }: ClientDialogContentProps) => {
   return (
     <Tabs defaultValue="info" className="w-full">
-      <TabsList className="grid w-full grid-cols-3 h-auto">
+      <TabsList className="grid w-full grid-cols-4 h-auto">
         <TabsTrigger value="info" className="text-xs sm:text-sm px-2 py-2">Info</TabsTrigger>
+        <TabsTrigger value="codes" className="text-xs sm:text-sm px-2 py-2">Códigos</TabsTrigger>
         <TabsTrigger value="bookings" className="text-xs sm:text-sm px-2 py-2">Reservas</TabsTrigger>
         <TabsTrigger value="notes" className="text-xs sm:text-sm px-2 py-2">Notas</TabsTrigger>
       </TabsList>
@@ -169,6 +180,87 @@ export const ClientDialogContent = ({
                 </p>
                 <p className="text-xs sm:text-sm text-muted-foreground">Última Visita</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="codes" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Tags className="h-5 w-5" />
+              Códigos Asignados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {clientCodes.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                No hay códigos asignados
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {clientCodes.map((assignment) => {
+                  const code = codes.find(c => c.id === assignment.code_id);
+                  if (!code) return null;
+                  return (
+                    <div key={assignment.id} className="flex items-center gap-1">
+                      <Badge
+                        variant="outline"
+                        className="text-sm"
+                        style={{
+                          borderColor: code.color,
+                          color: code.color,
+                          backgroundColor: `${code.color}15`
+                        }}
+                      >
+                        {code.name}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => onUnassignCode(assignment.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Asignar Códigos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <Label className="text-sm">Códigos disponibles</Label>
+              <div className="flex flex-wrap gap-2">
+                {codes.filter(code => !clientCodes.some(assignment => assignment.code_id === code.id)).map((code) => (
+                  <Badge
+                    key={code.id}
+                    variant="outline"
+                    className="cursor-pointer transition-colors hover:shadow-sm text-sm"
+                    style={{
+                      borderColor: code.color,
+                      color: code.color,
+                      backgroundColor: 'transparent'
+                    }}
+                    onClick={() => onAssignCode(code.id)}
+                  >
+                    + {code.name}
+                  </Badge>
+                ))}
+              </div>
+              {codes.filter(code => !clientCodes.some(assignment => assignment.code_id === code.id)).length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Todos los códigos disponibles ya están asignados
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -6,29 +6,46 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useClients, Client, ClientBooking } from "@/hooks/useClients";
-import { Calendar, Clock, DollarSign, Edit, Eye, User, Phone, Mail, Tags, X, Search } from "lucide-react";
+import { useInternalCodes } from "@/hooks/useInternalCodes";
+import { Calendar, Clock, DollarSign, Edit, Eye, User, Phone, Mail, Tags, X, Search, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import MobileResponsiveLayout from "@/components/MobileResponsiveLayout";
 import MobileCard from "@/components/MobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ClientDialogContent } from "@/components/ClientDialogContent";
+import { useClientNotes } from "@/hooks/useClientNotes";
 
 export default function ClientManagement() {
   const { clients, loading, error, updateClient, fetchClientBookings } = useClients();
+  const { codes, assignments, getAssignmentsByEntity } = useInternalCodes();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
 
-  // Filter clients based on search term
+  // Get client codes
+  const getClientCodes = (clientId: string) => {
+    return getAssignmentsByEntity('client', clientId);
+  };
+
+  // Filter clients based on search term and codes
   const filteredClients = clients.filter(client => {
     const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
     const email = client.email?.toLowerCase() || '';
     const phone = client.phone?.toLowerCase() || '';
     const search = searchTerm.toLowerCase();
     
-    return fullName.includes(search) || 
-           email.includes(search) || 
-           phone.includes(search);
+    const matchesSearch = fullName.includes(search) || 
+                         email.includes(search) || 
+                         phone.includes(search);
+    
+    if (selectedCodes.length === 0) return matchesSearch;
+    
+    const clientCodes = getClientCodes(client.id);
+    const clientCodeNames = clientCodes.map(assignment => assignment.code);
+    
+    return matchesSearch && selectedCodes.some(code => clientCodeNames.includes(code));
   });
 
   useEffect(() => {
@@ -61,15 +78,15 @@ export default function ClientManagement() {
       <main className="py-4 sm:py-8">
         <MobileResponsiveLayout maxWidth="7xl" padding="md">
           <div className="space-y-4 sm:space-y-6">
-            {/* Search Section */}
+            {/* Search and Filter Section */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Search className="h-5 w-5" />
-                  Buscar Cliente
+                  Buscar y Filtrar Clientes
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -90,8 +107,51 @@ export default function ClientManagement() {
                     </Button>
                   )}
                 </div>
-                {searchTerm && (
-                  <p className="text-sm text-muted-foreground mt-2">
+
+                {/* Code Filters */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filtrar por códigos
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {codes.map((code) => (
+                      <Badge
+                        key={code.id}
+                        variant={selectedCodes.includes(code.code) ? "default" : "outline"}
+                        className="cursor-pointer transition-colors"
+                        style={{
+                          backgroundColor: selectedCodes.includes(code.code) ? code.color : 'transparent',
+                          borderColor: code.color,
+                          color: selectedCodes.includes(code.code) ? 'white' : code.color
+                        }}
+                        onClick={() => {
+                          setSelectedCodes(prev => 
+                            prev.includes(code.code) 
+                              ? prev.filter(c => c !== code.code)
+                              : [...prev, code.code]
+                          );
+                        }}
+                      >
+                        {code.name}
+                      </Badge>
+                    ))}
+                  </div>
+                  {selectedCodes.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedCodes([])}
+                      className="text-xs"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Limpiar filtros
+                    </Button>
+                  )}
+                </div>
+
+                {(searchTerm || selectedCodes.length > 0) && (
+                  <p className="text-sm text-muted-foreground">
                     {filteredClients.length} cliente(s) encontrado(s)
                   </p>
                 )}
@@ -137,6 +197,37 @@ export default function ClientManagement() {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Client Codes */}
+                      {(() => {
+                        const clientCodes = getClientCodes(client.id);
+                        if (clientCodes.length > 0) {
+                          return (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <Tags className="h-3 w-3 text-muted-foreground" />
+                              {clientCodes.map((assignment) => {
+                                const code = codes.find(c => c.id === assignment.code_id);
+                                if (!code) return null;
+                                return (
+                                  <Badge
+                                    key={assignment.id}
+                                    variant="outline"
+                                    className="text-xs"
+                                    style={{
+                                      borderColor: code.color,
+                                      color: code.color,
+                                      backgroundColor: `${code.color}10`
+                                    }}
+                                  >
+                                    {code.name}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                     <div className={`${isMobile ? 'flex justify-between items-center' : 'text-right'} space-y-2`}>
                       <div className="space-y-1">
@@ -220,6 +311,14 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { updateClient, fetchClientBookings } = useClients();
+  const { codes, assignCode, unassignCode, getAssignmentsByEntity } = useInternalCodes();
+  const { notes, createNote } = useClientNotes();
+  const [newNote, setNewNote] = useState({
+    title: '',
+    content: '',
+    category: 'general' as 'general' | 'preferences' | 'medical' | 'allergies' | 'behavior' | 'payment' | 'complaints' | 'compliments' | 'follow_up',
+    priority: 'normal' as 'low' | 'normal' | 'high' | 'urgent'
+  });
 
   const handleOpenModal = async (event: React.MouseEvent) => {
     event.preventDefault();
@@ -313,6 +412,89 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
     setEditingClient(null);
   };
 
+  const handleAssignCode = async (codeId: string) => {
+    try {
+      await assignCode({
+        code_id: codeId,
+        entity_type: 'client',
+        entity_id: client.id,
+        notes: ''
+      });
+      toast({
+        title: "Código asignado",
+        description: "El código se ha asignado correctamente al cliente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo asignar el código",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUnassignCode = async (assignmentId: string) => {
+    try {
+      await unassignCode(assignmentId);
+      toast({
+        title: "Código removido",
+        description: "El código se ha removido correctamente del cliente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo remover el código",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateNote = async () => {
+    try {
+      await createNote({
+        ...newNote,
+        client_id: client.id
+      });
+      setNewNote({
+        title: '',
+        content: '',
+        category: 'general',
+        priority: 'normal'
+      });
+      toast({
+        title: "Nota creada",
+        description: "La nota se ha creado correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo crear la nota",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'confirmed': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'no_show': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Completada';
+      case 'confirmed': return 'Confirmada';
+      case 'cancelled': return 'Cancelada';
+      case 'no_show': return 'No vino';
+      case 'pending': return 'Pendiente';
+      default: return status;
+    }
+  };
+
   return (
     <>
       <Button
@@ -363,177 +545,29 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
               </div>
               
               {/* Content */}
-              <div className="space-y-3 sm:space-y-4">
-                {/* Información Personal */}
-                <div className={`bg-gray-50 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
-                  <h4 className={`font-semibold ${isMobile ? 'mb-2 text-sm' : 'mb-3'} flex items-center gap-2`}>
-                    <User className="h-4 w-4" />
-                    Información Personal
-                  </h4>
-                  <div className={`gap-3 text-sm ${
-                    isMobile ? 'grid grid-cols-1 space-y-2' : 'grid grid-cols-2'
-                  }`}>
-                    <div>
-                      <Label className="text-xs font-medium text-gray-500">Nombre</Label>
-                      <Input
-                        value={editingClient ? editData.first_name : client.first_name}
-                        onChange={editingClient ? 
-                          (e) => setEditData({...editData, first_name: e.target.value}) : 
-                          undefined
-                        }
-                        disabled={!editingClient}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs font-medium text-gray-500">Apellidos</Label>
-                      <Input
-                        value={editingClient ? editData.last_name : client.last_name}
-                        onChange={editingClient ? 
-                          (e) => setEditData({...editData, last_name: e.target.value}) : 
-                          undefined
-                        }
-                        disabled={!editingClient}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs font-medium text-gray-500">Email</Label>
-                      <Input
-                        value={editingClient ? editData.email : client.email}
-                        onChange={editingClient ? 
-                          (e) => setEditData({...editData, email: e.target.value}) : 
-                          undefined
-                        }
-                        disabled={!editingClient}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs font-medium text-gray-500">Teléfono</Label>
-                      <Input
-                        value={editingClient ? editData.phone : (client.phone || '')}
-                        onChange={editingClient ? 
-                          (e) => setEditData({...editData, phone: e.target.value}) : 
-                          undefined
-                        }
-                        disabled={!editingClient}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Botones de acción */}
-                  <div className="flex gap-2 mt-3">
-                    {editingClient ? (
-                      <>
-                        <Button
-                          onClick={handleSaveClient}
-                          className="flex items-center gap-2"
-                          size={isMobile ? "sm" : "default"}
-                        >
-                          Guardar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={handleCancelEdit}
-                          size={isMobile ? "sm" : "default"}
-                        >
-                          Cancelar
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        onClick={handleEditClient}
-                        variant="outline"
-                        className="flex items-center gap-2"
-                        size={isMobile ? "sm" : "default"}
-                      >
-                        <Edit className="h-4 w-4" />
-                        Editar
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Estadísticas */}
-                <div className={`gap-3 ${
-                  isMobile ? 'grid grid-cols-1' : 'grid grid-cols-3'
-                }`}>
-                  <div className="bg-blue-50 p-3 rounded-lg text-center">
-                    <Calendar className={`text-blue-600 mx-auto mb-1 ${isMobile ? 'h-6 w-6' : 'h-8 w-8'}`} />
-                    <div className={`font-bold text-blue-600 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
-                      {client.total_bookings || 0}
-                    </div>
-                    <div className="text-xs text-blue-700">Total Citas</div>
-                  </div>
-                  <div className="bg-green-50 p-3 rounded-lg text-center">
-                    <DollarSign className={`text-green-600 mx-auto mb-1 ${isMobile ? 'h-6 w-6' : 'h-8 w-8'}`} />
-                    <div className={`font-bold text-green-600 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
-                      {((client.total_spent || 0) / 100).toFixed(2)}€
-                    </div>
-                    <div className="text-xs text-green-700">Total Gastado</div>
-                  </div>
-                  <div className="bg-purple-50 p-3 rounded-lg text-center">
-                    <Clock className={`text-purple-600 mx-auto mb-1 ${isMobile ? 'h-6 w-6' : 'h-8 w-8'}`} />
-                    <div className={`font-bold text-purple-600 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
-                      {client.last_booking ? 
-                        format(new Date(client.last_booking), 'dd/MM', { locale: es }) : 
-                        'N/A'
-                      }
-                    </div>
-                    <div className="text-xs text-purple-700">Última Cita</div>
-                  </div>
-                </div>
-
-                {/* Historial de Citas */}
-                <div className="bg-white border rounded-lg p-3">
-                  <h4 className={`font-semibold ${isMobile ? 'mb-2 text-sm' : 'mb-3'} flex items-center gap-2`}>
-                    <Calendar className="h-4 w-4" />
-                    Historial ({clientBookings.length} citas)
-                  </h4>
-                  <div className={`space-y-2 ${isMobile ? 'max-h-40' : 'max-h-48'} overflow-y-auto`}>
-                     {clientBookings.length > 0 ? (
-                      clientBookings.map((booking) => (
-                        <div key={booking.id} className="p-2 bg-gray-50 rounded space-y-2">
-                          <div className="flex justify-between items-center">
-                            <div className="flex-1 min-w-0">
-                              <div className={`font-medium truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                                {format(new Date(booking.booking_datetime), 'dd/MM/yyyy - HH:mm', { locale: es })}
-                              </div>
-                              <div className={`text-gray-600 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                                {booking.service_name}
-                              </div>
-                            </div>
-                            <div className="text-right ml-2">
-                              <div className={`font-bold text-green-600 ${isMobile ? 'text-sm' : ''}`}>
-                                {(booking.total_price_cents / 100).toFixed(2)}€
-                              </div>
-                              <Badge className={`text-xs ${
-                                booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                booking.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                                booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {booking.status}
-                              </Badge>
-                            </div>
-                          </div>
-                          {booking.notes && (
-                            <div className={`text-gray-700 bg-blue-50 p-2 rounded ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                              <span className="font-medium">Notas:</span> {booking.notes}
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center text-gray-500 py-4 text-sm">
-                        No hay citas registradas
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <ClientDialogContent
+                client={client}
+                bookings={clientBookings}
+                editingClient={editingClient ? editData : client}
+                newNote={newNote}
+                notes={notes.filter(note => note.client_id === client.id)}
+                codes={codes}
+                clientCodes={getAssignmentsByEntity('client', client.id)}
+                onUpdateClient={editingClient ? handleSaveClient : handleEditClient}
+                onCreateNote={handleCreateNote}
+                onUpdateEditingClient={(updates) => setEditData(prev => ({ ...prev, ...updates }))}
+                onUpdateNewNote={(updates) => setNewNote(prev => ({ 
+                  ...prev, 
+                  ...updates,
+                  category: (updates.category as any) || prev.category,
+                  priority: (updates.priority as any) || prev.priority
+                }))}
+                onOpenEmailModal={() => {}}
+                onAssignCode={handleAssignCode}
+                onUnassignCode={handleUnassignCode}
+                getStatusColor={getStatusColor}
+                getStatusText={getStatusText}
+              />
             </div>
           </div>
         </>
