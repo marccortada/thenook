@@ -383,6 +383,7 @@ const EmployeeManagement = () => {
         {filteredEmployees.map((employee) => {
           const employeeDetails: EmployeeDetails = {
             ...employee,
+            employee_codes: employee.employee_codes || [],
             working_hours: defaultWorkingHours, // Por ahora usamos horarios por defecto
             hire_date: employee.created_at || new Date().toISOString(),
             notes: "" // Por ahora sin notas

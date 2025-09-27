@@ -35,6 +35,7 @@ export interface Employee {
   profile_id: string;
   center_id: string;
   specialties: string[];
+  employee_codes: string[];
   active: boolean;
   created_at: string;
   updated_at: string;

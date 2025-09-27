@@ -839,6 +839,7 @@ export type Database = {
           active: boolean | null
           center_id: string | null
           created_at: string
+          employee_codes: string[] | null
           id: string
           profile_id: string | null
           specialties: string[] | null
@@ -848,6 +849,7 @@ export type Database = {
           active?: boolean | null
           center_id?: string | null
           created_at?: string
+          employee_codes?: string[] | null
           id?: string
           profile_id?: string | null
           specialties?: string[] | null
@@ -857,6 +859,7 @@ export type Database = {
           active?: boolean | null
           center_id?: string | null
           created_at?: string
+          employee_codes?: string[] | null
           id?: string
           profile_id?: string | null
           specialties?: string[] | null

@@ -24,6 +24,7 @@ export interface EmployeeDetails {
   profile_id: string;
   center_id: string;
   specialties: string[];
+  employee_codes: string[];
   active: boolean;
   working_hours: WorkingHours;
   hire_date: string;
@@ -162,6 +163,39 @@ export const useEmployeeManagement = () => {
     }
   };
 
+  const updateEmployeeCodes = async (employeeId: string, employeeCodes: string[]) => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('employees')
+        .update({ employee_codes: employeeCodes })
+        .eq('id', employeeId);
+
+      if (error) throw error;
+
+      if (selectedEmployee) {
+        setSelectedEmployee({
+          ...selectedEmployee,
+          employee_codes: employeeCodes
+        });
+      }
+
+      toast({
+        title: "Códigos actualizados",
+        description: "Los códigos del empleado han sido actualizados exitosamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar los códigos del empleado.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getEmployeeMetrics = (employeeId: string): EmployeeMetrics => {
     if (!employeeMetrics[employeeId]) {
       const metrics = generateMockMetrics(employeeId);
@@ -213,6 +247,7 @@ export const useEmployeeManagement = () => {
     updateEmployeeWorkingHours,
     updateEmployeeStatus,
     updateEmployeeSpecialties,
+    updateEmployeeCodes,
     getEmployeeMetrics,
     isEmployeeAvailable,
     getEmployeeStatusText,
