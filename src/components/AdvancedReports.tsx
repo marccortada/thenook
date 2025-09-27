@@ -9,19 +9,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { BarChart, LineChart, PieChart, FileText, Download, Plus, Calendar, Filter } from 'lucide-react';
+import { BarChart, LineChart, PieChart, FileText, Download, Plus, Calendar, Filter, Code, Users, Briefcase, TrendingUp, AlertTriangle, Info } from 'lucide-react';
 import { useAdvancedReports } from '@/hooks/useAdvancedReports';
+import { useInternalCodes } from '@/hooks/useInternalCodes';
 
 const AdvancedReports = () => {
   const {
     reports,
     templates,
     loading,
+    codeAnalytics,
     generateReport,
     createTemplate,
     executeCustomQuery,
-    exportReport
+    exportReport,
+    loadCodeAnalytics
   } = useAdvancedReports();
+  
+  const { codes } = useInternalCodes();
 
   const [activeTab, setActiveTab] = useState('reports');
   const [showReportDialog, setShowReportDialog] = useState(false);
@@ -40,7 +45,9 @@ const AdvancedReports = () => {
       centerId: 'all',
       serviceId: 'all',
       status: 'all',
-      employeeId: 'all'
+      employeeId: 'all',
+      codeCategory: 'all',
+      specificCodes: []
     }
   });
 
@@ -60,8 +67,18 @@ const AdvancedReports = () => {
     { value: 'revenue', label: 'Ingresos' },
     { value: 'clients', label: 'Clientes' },
     { value: 'services', label: 'Servicios' },
-    { value: 'employees', label: 'Empleados' }
+    { value: 'employees', label: 'Empleados' },
+    { value: 'codes', label: 'Códigos Internos' },
+    { value: 'client_codes', label: 'Clientes por Código' },
+    { value: 'employee_codes', label: 'Empleados por Código' }
   ];
+
+  // Load code analytics when component mounts
+  useEffect(() => {
+    if (codes.length > 0) {
+      loadCodeAnalytics();
+    }
+  }, [codes, loadCodeAnalytics]);
 
   const handleGenerateReport = async () => {
     const filters = {
@@ -106,7 +123,7 @@ const AdvancedReports = () => {
       name: '',
       description: '',
       dateRange: { start: '', end: '' },
-      filters: { centerId: 'all', serviceId: 'all', status: 'all', employeeId: 'all' }
+      filters: { centerId: 'all', serviceId: 'all', status: 'all', employeeId: 'all', codeCategory: 'all', specificCodes: [] }
     });
   };
 
@@ -125,6 +142,9 @@ const AdvancedReports = () => {
       case 'bookings': return <Calendar className="w-4 h-4" />;
       case 'revenue': return <BarChart className="w-4 h-4" />;
       case 'clients': return <PieChart className="w-4 h-4" />;
+      case 'codes': return <Code className="w-4 h-4" />;
+      case 'client_codes': return <Users className="w-4 h-4" />;
+      case 'employee_codes': return <Briefcase className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
     }
   };
@@ -244,6 +264,31 @@ const AdvancedReports = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {(reportForm.type.includes('codes') || reportForm.type === 'bookings') && (
+                    <div>
+                      <Label htmlFor="codeCategory">Categoría de Código</Label>
+                      <Select 
+                        value={reportForm.filters.codeCategory} 
+                        onValueChange={(value) => setReportForm({ 
+                          ...reportForm, 
+                          filters: { ...reportForm.filters, codeCategory: value }
+                        })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todas las categorías" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas</SelectItem>
+                          {[...new Set(codes.map(c => c.category))].map(category => (
+                            <SelectItem key={category} value={category} className="capitalize">
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
                 <Button onClick={handleGenerateReport} className="w-full" disabled={loading}>
@@ -322,11 +367,12 @@ const AdvancedReports = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="reports">Reportes</TabsTrigger>
           <TabsTrigger value="templates">Plantillas</TabsTrigger>
           <TabsTrigger value="custom">Consulta SQL</TabsTrigger>
           <TabsTrigger value="analytics">Análisis</TabsTrigger>
+          <TabsTrigger value="codes">Códigos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="reports">
@@ -360,14 +406,23 @@ const AdvancedReports = () => {
                       >
                         Ver Detalles
                       </Button>
-                      <Button 
-                        size="sm"
-                        onClick={() => exportReport(report)}
-                        className="flex-1 sm:flex-none"
-                      >
-                        <Download className="w-4 h-4 mr-1" />
-                        Exportar
-                      </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => exportReport(report, 'json')}
+                          className="flex-1 sm:flex-none"
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          JSON
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => exportReport(report, 'csv')}
+                          className="flex-1 sm:flex-none"
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          CSV
+                        </Button>
                     </div>
                   </div>
                 ))}
@@ -543,6 +598,171 @@ const AdvancedReports = () => {
                     <span className="font-medium">12%</span>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="codes">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Code Analytics Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Resumen de Códigos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {codeAnalytics ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Total de códigos</span>
+                      <span className="font-medium">{codeAnalytics.totalCodes}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Categorías</span>
+                      <span className="font-medium">{codeAnalytics.codesByCategory.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Asignaciones totales</span>
+                      <span className="font-medium">{codeAnalytics.recentAssignments.length}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <p className="text-muted-foreground">Cargando análisis de códigos...</p>
+                      <Button 
+                        onClick={loadCodeAnalytics} 
+                        variant="outline" 
+                        className="mt-2"
+                        disabled={loading}
+                      >
+                        {loading ? 'Cargando...' : 'Cargar Analytics'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Most Used Codes */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Code className="w-5 h-5" />
+                  Códigos Más Utilizados
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {codeAnalytics?.mostUsedCodes.length ? (
+                  <div className="space-y-3">
+                    {codeAnalytics.mostUsedCodes.map((code, index) => (
+                      <div key={code.code} className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-mono">{code.code}</span>
+                          <Badge variant="outline">{code.category}</Badge>
+                        </div>
+                        <span className="text-sm font-medium">{code.usageCount} usos</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">
+                    No hay datos de uso disponibles
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Codes by Category */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Códigos por Categoría</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {codeAnalytics?.codesByCategory.length ? (
+                  <div className="space-y-3">
+                    {codeAnalytics.codesByCategory.map((category) => (
+                      <div key={category.category} className="flex justify-between items-center">
+                        <span className="text-sm capitalize">{category.category}</span>
+                        <Badge variant="secondary">{category.count}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">
+                    No hay categorías disponibles
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Recent Assignments */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Asignaciones Recientes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {codeAnalytics?.recentAssignments.length ? (
+                  <div className="space-y-3">
+                    {codeAnalytics.recentAssignments.slice(0, 5).map((assignment, index) => (
+                      <div key={index} className="text-sm">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="font-mono font-medium">{assignment.code}</span>
+                            <p className="text-xs text-muted-foreground">{assignment.entity}</p>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(assignment.assignedAt).toLocaleDateString('es-ES')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">
+                    No hay asignaciones recientes
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Critical Alerts */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  Alertas y Notificaciones
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {codeAnalytics?.criticalAlerts.length ? (
+                  <div className="space-y-3">
+                    {codeAnalytics.criticalAlerts.map((alert, index) => (
+                      <div key={index} className="flex items-start gap-3 p-3 rounded-lg border">
+                        {alert.type === 'warning' ? (
+                          <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5" />
+                        ) : (
+                          <Info className="w-4 h-4 text-blue-500 mt-0.5" />
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm">{alert.message}</p>
+                          {alert.code && (
+                            <Badge variant="outline" className="mt-1">
+                              {alert.code}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">
+                    No hay alertas activas
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
