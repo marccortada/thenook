@@ -328,6 +328,17 @@ All colors MUST be HSL.
     * {
       touch-action: manipulation;
     }
+
+    /* Fix dialog positioning to ensure proper centering on mobile */
+    [role="dialog"] {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      max-width: 90vw !important;
+      max-height: 90vh !important;
+      z-index: 50 !important;
+    }
   }
 
   /* Mobile responsive improvements */

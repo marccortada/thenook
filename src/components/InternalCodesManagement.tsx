@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInternalCodes, InternalCode } from '@/hooks/useInternalCodes';
 import { Plus, Edit, Trash2, Hash, Tag, Calendar, User, Search, Filter } from 'lucide-react';
@@ -138,9 +138,12 @@ const InternalCodesManagement = () => {
               <span>Nuevo Código</span>
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md mx-auto">
             <DialogHeader>
               <DialogTitle>Crear Nuevo Código</DialogTitle>
+              <DialogDescription>
+                Crea un nuevo código interno para organizar y categorizar información.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -392,9 +395,12 @@ const InternalCodesManagement = () => {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>Editar Código</DialogTitle>
+            <DialogDescription>
+              Modifica los detalles del código seleccionado. El código no se puede cambiar.
+            </DialogDescription>
           </DialogHeader>
           {selectedCode && (
             <div className="space-y-4">
