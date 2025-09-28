@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import MobileResponsiveLayout from "@/components/MobileResponsiveLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import BookingCardWithModal from "@/components/BookingCardWithModal";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface Booking {
   id: string;
@@ -28,6 +31,8 @@ interface Booking {
 export default function BookingManagement() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -46,7 +51,7 @@ export default function BookingManagement() {
           centers (name),
           profiles (id, first_name, last_name, email, phone)
         `)
-        .order('booking_datetime', { ascending: false });
+        .order('booking_datetime', { ascending: sortOrder === 'newest' ? false : true });
 
       if (error) throw error;
       setBookings(data || []);
@@ -61,6 +66,53 @@ export default function BookingManagement() {
       setLoading(false);
     }
   };
+
+  const groupedBookings = useMemo(() => {
+    const groups: { [key: string]: Booking[] } = {};
+    
+    bookings.forEach((booking) => {
+      const bookingDate = parseISO(booking.booking_datetime);
+      let groupKey = '';
+      
+      switch (groupBy) {
+        case 'day':
+          groupKey = format(bookingDate, 'yyyy-MM-dd', { locale: es });
+          break;
+        case 'week':
+          const weekStart = startOfWeek(bookingDate, { weekStartsOn: 1 });
+          const weekEnd = endOfWeek(bookingDate, { weekStartsOn: 1 });
+          groupKey = `${format(weekStart, 'dd MMM', { locale: es })} - ${format(weekEnd, 'dd MMM yyyy', { locale: es })}`;
+          break;
+        case 'month':
+          groupKey = format(bookingDate, 'MMMM yyyy', { locale: es });
+          break;
+      }
+      
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(booking);
+    });
+    
+    // Sort groups by date
+    const sortedGroups: { [key: string]: Booking[] } = {};
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      if (sortOrder === 'newest') {
+        return b.localeCompare(a);
+      }
+      return a.localeCompare(b);
+    });
+    
+    sortedKeys.forEach(key => {
+      sortedGroups[key] = groups[key];
+    });
+    
+    return sortedGroups;
+  }, [bookings, groupBy, sortOrder]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [sortOrder]);
 
   if (loading) {
     return (
@@ -88,13 +140,62 @@ export default function BookingManagement() {
       <main className="py-4 sm:py-8">
         <MobileResponsiveLayout maxWidth="7xl" padding="md">
           <div className="space-y-4 sm:space-y-6">
-            {bookings.map((booking) => (
-              <BookingCardWithModal
-                key={booking.id}
-                booking={booking}
-                onBookingUpdated={fetchBookings}
-              />
+            {/* Controls */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                  Agrupar por:
+                </label>
+                <Select value={groupBy} onValueChange={(value: 'day' | 'week' | 'month') => setGroupBy(value)}>
+                  <SelectTrigger className="w-full sm:w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">Día</SelectItem>
+                    <SelectItem value="week">Semana</SelectItem>
+                    <SelectItem value="month">Mes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                  Ordenar por:
+                </label>
+                <Select value={sortOrder} onValueChange={(value: 'newest' | 'oldest') => setSortOrder(value)}>
+                  <SelectTrigger className="w-full sm:w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Más recientes</SelectItem>
+                    <SelectItem value="oldest">Más antiguos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Grouped Bookings */}
+            {Object.entries(groupedBookings).map(([groupKey, groupBookings]) => (
+              <div key={groupKey} className="space-y-4">
+                <h2 className="text-lg font-semibold text-foreground border-b pb-2">
+                  {groupKey} ({groupBookings.length} citas)
+                </h2>
+                <div className="space-y-3">
+                  {groupBookings.map((booking) => (
+                    <BookingCardWithModal
+                      key={booking.id}
+                      booking={booking}
+                      onBookingUpdated={fetchBookings}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
+            
+            {Object.keys(groupedBookings).length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No se encontraron citas</p>
+              </div>
+            )}
           </div>
         </MobileResponsiveLayout>
       </main>
