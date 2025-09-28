@@ -4,8 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import MobileResponsiveLayout from "@/components/MobileResponsiveLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import BookingCardWithModal from "@/components/BookingCardWithModal";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface Booking {
@@ -31,8 +30,6 @@ interface Booking {
 export default function BookingManagement() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -51,7 +48,7 @@ export default function BookingManagement() {
           centers (name),
           profiles (id, first_name, last_name, email, phone)
         `)
-        .order('booking_datetime', { ascending: sortOrder === 'newest' ? false : true });
+        .order('booking_datetime', { ascending: false });
 
       if (error) throw error;
       setBookings(data || []);
@@ -72,21 +69,7 @@ export default function BookingManagement() {
     
     bookings.forEach((booking) => {
       const bookingDate = parseISO(booking.booking_datetime);
-      let groupKey = '';
-      
-      switch (groupBy) {
-        case 'day':
-          groupKey = format(bookingDate, 'yyyy-MM-dd', { locale: es });
-          break;
-        case 'week':
-          const weekStart = startOfWeek(bookingDate, { weekStartsOn: 1 });
-          const weekEnd = endOfWeek(bookingDate, { weekStartsOn: 1 });
-          groupKey = `${format(weekStart, 'dd MMM', { locale: es })} - ${format(weekEnd, 'dd MMM yyyy', { locale: es })}`;
-          break;
-        case 'month':
-          groupKey = format(bookingDate, 'MMMM yyyy', { locale: es });
-          break;
-      }
+      const groupKey = format(bookingDate, 'yyyy-MM-dd', { locale: es });
       
       if (!groups[groupKey]) {
         groups[groupKey] = [];
@@ -94,25 +77,16 @@ export default function BookingManagement() {
       groups[groupKey].push(booking);
     });
     
-    // Sort groups by date
+    // Sort groups by date (most recent first)
     const sortedGroups: { [key: string]: Booking[] } = {};
-    const sortedKeys = Object.keys(groups).sort((a, b) => {
-      if (sortOrder === 'newest') {
-        return b.localeCompare(a);
-      }
-      return a.localeCompare(b);
-    });
+    const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
     
     sortedKeys.forEach(key => {
       sortedGroups[key] = groups[key];
     });
     
     return sortedGroups;
-  }, [bookings, groupBy, sortOrder]);
-
-  useEffect(() => {
-    fetchBookings();
-  }, [sortOrder]);
+  }, [bookings]);
 
   if (loading) {
     return (
@@ -140,38 +114,6 @@ export default function BookingManagement() {
       <main className="py-4 sm:py-8">
         <MobileResponsiveLayout maxWidth="7xl" padding="md">
           <div className="space-y-4 sm:space-y-6">
-            {/* Controls */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                  Agrupar por:
-                </label>
-                <Select value={groupBy} onValueChange={(value: 'day' | 'week' | 'month') => setGroupBy(value)}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border shadow-lg z-50">
-                    <SelectItem value="day">Día</SelectItem>
-                    <SelectItem value="week">Semana</SelectItem>
-                    <SelectItem value="month">Mes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1">
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                  Ordenar por:
-                </label>
-                <Select value={sortOrder} onValueChange={(value: 'newest' | 'oldest') => setSortOrder(value)}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border shadow-lg z-50">
-                    <SelectItem value="newest">Más recientes</SelectItem>
-                    <SelectItem value="oldest">Más antiguos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
             {/* Grouped Bookings */}
             {Object.entries(groupedBookings).map(([groupKey, groupBookings]) => (
