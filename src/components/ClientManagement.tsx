@@ -67,7 +67,7 @@ export default function ClientManagement() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <MobileResponsiveLayout padding="md">
-          <h1 className={`font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent ${
+          <h1 className={`font-bold text-foreground ${
             isMobile ? 'text-lg' : 'text-2xl'
           }`}>
             Gestión de Clientes - The Nook Madrid
