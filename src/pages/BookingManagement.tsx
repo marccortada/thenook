@@ -119,7 +119,7 @@ export default function BookingManagement() {
             {Object.entries(groupedBookings).map(([groupKey, groupBookings]) => (
               <div key={groupKey} className="space-y-4">
                 <h2 className="text-lg font-semibold text-foreground border-b pb-2">
-                  {groupKey} ({groupBookings.length} citas)
+                  {groupKey} ({groupBookings.length} {groupBookings.length === 1 ? 'cita' : 'citas'})
                 </h2>
                 <div className="space-y-3">
                   {groupBookings.map((booking) => (
