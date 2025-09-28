@@ -150,7 +150,7 @@ export default function BookingManagement() {
                   <SelectTrigger className="w-full sm:w-[200px]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent position="popper" sideOffset={4}>
+                  <SelectContent position="popper" side="bottom" align="center" sideOffset={2} collisionPadding={8} sticky="always" className="z-[9999] bg-popover border shadow-md min-w-[var(--radix-select-trigger-width)]">
                     <SelectItem value="day">Día</SelectItem>
                     <SelectItem value="week">Semana</SelectItem>
                     <SelectItem value="month">Mes</SelectItem>
@@ -165,7 +165,7 @@ export default function BookingManagement() {
                   <SelectTrigger className="w-full sm:w-[200px]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent position="popper" sideOffset={4}>
+                  <SelectContent position="popper" side="bottom" align="center" sideOffset={2} collisionPadding={8} sticky="always" className="z-[9999] bg-popover border shadow-md min-w-[var(--radix-select-trigger-width)]">
                     <SelectItem value="newest">Más recientes</SelectItem>
                     <SelectItem value="oldest">Más antiguos</SelectItem>
                   </SelectContent>
