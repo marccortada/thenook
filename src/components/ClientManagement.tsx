@@ -18,7 +18,7 @@ import { useClientNotes } from "@/hooks/useClientNotes";
 
 export default function ClientManagement() {
   const { clients, loading, error, updateClient, fetchClientBookings } = useClients();
-  const { codes, assignments, getAssignmentsByEntity } = useInternalCodes();
+  const { codes, assignments, getAssignmentsByEntity, createCode, assignCode, unassignCode } = useInternalCodes();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
@@ -311,7 +311,7 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { updateClient, fetchClientBookings } = useClients();
-  const { codes, assignCode, unassignCode, getAssignmentsByEntity } = useInternalCodes();
+  const { codes, assignCode, unassignCode, getAssignmentsByEntity, createCode } = useInternalCodes();
   const { notes, createNote } = useClientNotes();
   const [newNote, setNewNote] = useState({
     title: '',
@@ -474,6 +474,34 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
     }
   };
 
+  const handleCreateCode = async (codeData: { code: string; name: string; description?: string; category: string; color: string }) => {
+    try {
+      const newCode = await createCode(codeData);
+      if (newCode) {
+        // Asignar automáticamente el código recién creado al cliente
+        await assignCode({
+          code_id: newCode.id,
+          entity_type: 'client',
+          entity_id: client.id,
+          notes: 'Código creado y asignado desde gestión de cliente'
+        });
+        
+        toast({
+          title: "Código creado y asignado",
+          description: `El código "${codeData.name}" se ha creado y asignado al cliente`,
+        });
+      }
+    } catch (error) {
+      console.error('Error creating and assigning code:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el código",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
@@ -565,6 +593,7 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
                 onOpenEmailModal={() => {}}
                 onAssignCode={handleAssignCode}
                 onUnassignCode={handleUnassignCode}
+                onCreateCode={handleCreateCode}
                 getStatusColor={getStatusColor}
                 getStatusText={getStatusText}
               />

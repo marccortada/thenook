@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { 
   Calendar,
   Edit,
@@ -37,6 +39,7 @@ interface ClientDialogContentProps {
   onOpenEmailModal: (client: any) => void;
   onAssignCode: (codeId: string) => void;
   onUnassignCode: (assignmentId: string) => void;
+  onCreateCode?: (codeData: { code: string; name: string; description?: string; category: string; color: string }) => Promise<void>;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
 }
@@ -56,9 +59,36 @@ export const ClientDialogContent = ({
   onOpenEmailModal,
   onAssignCode,
   onUnassignCode,
+  onCreateCode,
   getStatusColor,
   getStatusText
 }: ClientDialogContentProps) => {
+  const [showCreateCode, setShowCreateCode] = useState(false);
+  const [newCodeData, setNewCodeData] = useState({
+    code: '',
+    name: '',
+    description: '',
+    category: 'general',
+    color: '#3B82F6'
+  });
+
+  const handleCreateCode = async () => {
+    if (!onCreateCode || !newCodeData.code.trim() || !newCodeData.name.trim()) return;
+    
+    try {
+      await onCreateCode(newCodeData);
+      setNewCodeData({
+        code: '',
+        name: '',
+        description: '',
+        category: 'general',
+        color: '#3B82F6'
+      });
+      setShowCreateCode(false);
+    } catch (error) {
+      console.error('Error creating code:', error);
+    }
+  };
   return (
     <Tabs defaultValue="info" className="w-full">
       <TabsList className="grid w-full grid-cols-4 h-auto">
@@ -234,9 +264,119 @@ export const ClientDialogContent = ({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Asignar Códigos</CardTitle>
+            <CardTitle className="text-lg flex items-center justify-between">
+              <span>Asignar Códigos</span>
+              {onCreateCode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCreateCode(!showCreateCode)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Crear Código
+                </Button>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
+            {showCreateCode && onCreateCode && (
+              <div className="space-y-3 p-4 border rounded-lg bg-muted/20 mb-4">
+                <h4 className="font-medium text-sm">Crear Nuevo Código</h4>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="new_code" className="text-xs">Código</Label>
+                    <Input
+                      id="new_code"
+                      value={newCodeData.code}
+                      onChange={(e) => setNewCodeData({ ...newCodeData, code: e.target.value.toUpperCase() })}
+                      placeholder="ej. VIP"
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="new_name" className="text-xs">Nombre</Label>
+                    <Input
+                      id="new_name"
+                      value={newCodeData.name}
+                      onChange={(e) => setNewCodeData({ ...newCodeData, name: e.target.value })}
+                      placeholder="ej. Cliente VIP"
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="new_category" className="text-xs">Categoría</Label>
+                    <Select 
+                      value={newCodeData.category} 
+                      onValueChange={(value) => setNewCodeData({ ...newCodeData, category: value })}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="vip">VIP</SelectItem>
+                        <SelectItem value="behavior">Comportamiento</SelectItem>
+                        <SelectItem value="preferences">Preferencias</SelectItem>
+                        <SelectItem value="medical">Médico</SelectItem>
+                        <SelectItem value="payment">Pago</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="new_color" className="text-xs">Color</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="new_color"
+                        type="color"
+                        value={newCodeData.color}
+                        onChange={(e) => setNewCodeData({ ...newCodeData, color: e.target.value })}
+                        className="w-12 h-8 p-1"
+                      />
+                      <div 
+                        className="flex-1 border rounded px-3 flex items-center text-sm"
+                        style={{ backgroundColor: newCodeData.color + '20', borderColor: newCodeData.color }}
+                      >
+                        {newCodeData.color}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="new_description" className="text-xs">Descripción (opcional)</Label>
+                  <Textarea
+                    id="new_description"
+                    value={newCodeData.description}
+                    onChange={(e) => setNewCodeData({ ...newCodeData, description: e.target.value })}
+                    placeholder="Descripción del código..."
+                    rows={2}
+                    className="text-sm"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleCreateCode}
+                    disabled={!newCodeData.code.trim() || !newCodeData.name.trim()}
+                  >
+                    Crear y Asignar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCreateCode(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3">
               <Label className="text-sm">Códigos disponibles</Label>
               <div className="flex flex-wrap gap-2">
