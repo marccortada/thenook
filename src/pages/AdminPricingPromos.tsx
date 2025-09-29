@@ -594,7 +594,6 @@ export default function AdminPricingPromos() {
       </header>
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Precios y Promos</h1>
         <Tabs defaultValue="services">
           <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1">
             <TabsTrigger value="services" className="text-xs sm:text-sm px-2 py-2">Servicios</TabsTrigger>
