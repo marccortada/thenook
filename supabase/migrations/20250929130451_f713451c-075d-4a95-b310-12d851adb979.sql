@@ -1,0 +1,1 @@
+UPDATE centers SET phone = '911 481 474' WHERE active = true;
