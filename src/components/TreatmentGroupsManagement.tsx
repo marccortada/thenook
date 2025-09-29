@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Palette, Edit, Save, X } from 'lucide-react';
+import { Palette, Edit, Save, X, Plus, Sparkles } from 'lucide-react';
 import { useServices, useLanes, useCenters } from '@/hooks/useDatabase';
 import { useTreatmentGroups, CreateTreatmentGroupData } from '@/hooks/useTreatmentGroups';
 import { useToast } from '@/hooks/use-toast';
@@ -81,6 +82,8 @@ const TreatmentGroupsManagement: React.FC = () => {
 
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+  const [selectedGroupForService, setSelectedGroupForService] = useState<string | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [formData, setFormData] = useState<CreateTreatmentGroupData>({
     name: '',
@@ -89,6 +92,29 @@ const TreatmentGroupsManagement: React.FC = () => {
     lane_ids: [] as string[], // Nuevo array para múltiples carriles
     center_id: '',
     active: true,
+  });
+  const [serviceFormData, setServiceFormData] = useState<{
+    name: string;
+    description: string;
+    type: 'massage' | 'treatment' | 'package';
+    duration_minutes: number;
+    price_cents: number;
+    active: boolean;
+    center_id: string;
+    has_discount: boolean;
+    discount_price_cents: number;
+    show_online: boolean;
+  }>({
+    name: '',
+    description: '',
+    type: 'massage',
+    duration_minutes: 60,
+    price_cents: 5000,
+    active: true,
+    center_id: '',
+    has_discount: false,
+    discount_price_cents: 0,
+    show_online: true
   });
 
   // Clasificar servicios automáticamente usando la misma lógica del modal
@@ -320,6 +346,100 @@ const TreatmentGroupsManagement: React.FC = () => {
     resetForm();
   };
 
+  const handleAddService = (groupId: string) => {
+    setSelectedGroupForService(groupId);
+    setIsServiceDialogOpen(true);
+  };
+
+  const handleCreateService = async () => {
+    try {
+      if (!serviceFormData.name || !serviceFormData.duration_minutes || !serviceFormData.price_cents) {
+        toast({ 
+          title: 'Campos requeridos', 
+          description: 'Nombre, duración y precio son obligatorios', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      const group = combinedGroups.find(g => g.id === selectedGroupForService);
+      if (!group?.dbGroup) {
+        toast({ 
+          title: 'Error', 
+          description: 'Grupo no encontrado o no inicializado', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      const { error } = await supabase.from('services').insert({
+        name: serviceFormData.name,
+        description: serviceFormData.description || null,
+        type: serviceFormData.type,
+        duration_minutes: serviceFormData.duration_minutes,
+        price_cents: serviceFormData.price_cents,
+        active: serviceFormData.active,
+        has_discount: serviceFormData.has_discount,
+        discount_price_cents: serviceFormData.discount_price_cents,
+        show_online: serviceFormData.show_online,
+        center_id: serviceFormData.center_id || null,
+        group_id: group.dbGroup.id
+      });
+
+      if (error) {
+        toast({ 
+          title: 'Error', 
+          description: `No se pudo crear el servicio: ${error.message}`, 
+          variant: 'destructive' 
+        });
+      } else {
+        toast({ 
+          title: 'Creado', 
+          description: 'Servicio creado exitosamente' 
+        });
+        setServiceFormData({
+          name: '',
+          description: '',
+          type: 'massage',
+          duration_minutes: 60,
+          price_cents: 5000,
+          active: true,
+          center_id: '',
+          has_discount: false,
+          discount_price_cents: 0,
+          show_online: true
+        });
+        setIsServiceDialogOpen(false);
+        setSelectedGroupForService(null);
+        refetchServices();
+      }
+    } catch (err) {
+      console.error('Error creating service:', err);
+      toast({ 
+        title: 'Error', 
+        description: 'Error inesperado al crear el servicio', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  const closeServiceDialog = () => {
+    setIsServiceDialogOpen(false);
+    setSelectedGroupForService(null);
+    setServiceFormData({
+      name: '',
+      description: '',
+      type: 'massage',
+      duration_minutes: 60,
+      price_cents: 5000,
+      active: true,
+      center_id: '',
+      has_discount: false,
+      discount_price_cents: 0,
+      show_online: true
+    });
+  };
+
 
   return (
     <div className="space-y-6">
@@ -423,9 +543,20 @@ const TreatmentGroupsManagement: React.FC = () => {
                   {groupServices.length > 0 ? (
                     <CardContent className="pt-0 pb-4">
                       <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                          Servicios incluidos:
-                        </h4>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Servicios incluidos:
+                          </h4>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAddService(group.id)}
+                            className="gap-2 text-xs"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Agregar Masaje
+                          </Button>
+                        </div>
                          <div className="grid gap-2">
                            {groupServices.map((service) => (
                              <div 
@@ -466,7 +597,16 @@ const TreatmentGroupsManagement: React.FC = () => {
                   ) : (
                     <CardContent className="pt-0 pb-4">
                       <div className="text-center py-6 text-muted-foreground">
-                        <p className="text-sm">No hay servicios en esta categoría</p>
+                        <p className="text-sm mb-3">No hay servicios en esta categoría</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddService(group.id)}
+                          className="gap-2"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          Agregar Primer Masaje
+                        </Button>
                       </div>
                     </CardContent>
                   )}
@@ -651,6 +791,160 @@ const TreatmentGroupsManagement: React.FC = () => {
                   >
                     <Save className="w-4 h-4 mr-2" />
                     Guardar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Modal para agregar nuevo servicio */}
+      {isServiceDialogOpen && (
+        <>
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={closeServiceDialog}
+          />
+          
+          {/* Modal */}
+          <div 
+            className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+            style={{
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: `${Math.min(500, window.innerWidth - 40)}px`,
+              maxHeight: `${Math.min(600, window.innerHeight - 80)}px`,
+              overflowY: 'auto'
+            }}
+          >
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold">Agregar Nuevo Masaje</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={closeServiceDialog}
+                  className="h-8 w-8 p-0"
+                >
+                  ✕
+                </Button>
+              </div>
+              
+              {/* Content */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="service-name" className="text-sm font-medium">Nombre del Masaje</Label>
+                  <Input
+                    id="service-name"
+                    value={serviceFormData.name}
+                    onChange={(e) => setServiceFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Ej: Masaje Relajante"
+                    className="mt-1"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="service-description" className="text-sm font-medium">Descripción</Label>
+                  <Textarea
+                    id="service-description"
+                    value={serviceFormData.description}
+                    onChange={(e) => setServiceFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Descripción del masaje..."
+                    className="mt-1"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="service-duration" className="text-sm font-medium">Duración (minutos)</Label>
+                    <Input
+                      id="service-duration"
+                      type="number"
+                      value={serviceFormData.duration_minutes}
+                      onChange={(e) => setServiceFormData(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) || 60 }))}
+                      placeholder="60"
+                      className="mt-1"
+                      min="15"
+                      max="300"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="service-price" className="text-sm font-medium">Precio (€)</Label>
+                    <Input
+                      id="service-price"
+                      type="number"
+                      step="0.01"
+                      value={serviceFormData.price_cents / 100}
+                      onChange={(e) => setServiceFormData(prev => ({ ...prev, price_cents: Math.round((parseFloat(e.target.value) || 0) * 100) }))}
+                      placeholder="50.00"
+                      className="mt-1"
+                      min="0"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Tipo de Servicio</Label>
+                  <Select
+                    value={serviceFormData.type}
+                    onValueChange={(value) => setServiceFormData(prev => ({ ...prev, type: value as 'massage' | 'treatment' | 'package' }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="massage">Masaje</SelectItem>
+                      <SelectItem value="treatment">Tratamiento</SelectItem>
+                      <SelectItem value="package">Paquete</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Centro (Opcional)</Label>
+                  <Select
+                    value={serviceFormData.center_id}
+                    onValueChange={(value) => setServiceFormData(prev => ({ ...prev, center_id: value }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Todos los centros" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todos los centros</SelectItem>
+                      {centers.map((center) => (
+                        <SelectItem key={center.id} value={center.id}>
+                          {center.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Botones */}
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={closeServiceDialog}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleCreateService}
+                    className="flex-1"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Crear Masaje
                   </Button>
                 </div>
               </div>
