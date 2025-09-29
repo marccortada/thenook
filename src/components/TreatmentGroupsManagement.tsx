@@ -12,6 +12,7 @@ import { Palette, Edit, Save, X, Plus, Sparkles } from 'lucide-react';
 import { useServices, useLanes, useCenters } from '@/hooks/useDatabase';
 import { useTreatmentGroups, CreateTreatmentGroupData } from '@/hooks/useTreatmentGroups';
 import { useToast } from '@/hooks/use-toast';
+import { useViewportPositioning } from '@/hooks/useViewportPositioning';
 import { supabase } from '@/integrations/supabase/client';
 
 // Colores disponibles para el admin
@@ -85,6 +86,9 @@ const TreatmentGroupsManagement: React.FC = () => {
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [selectedGroupForService, setSelectedGroupForService] = useState<string | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  
+  // Hook para posicionamiento del modal
+  const serviceModalRef = useViewportPositioning(isServiceDialogOpen, 150);
   const [formData, setFormData] = useState<CreateTreatmentGroupData>({
     name: '',
     color: PRESET_COLORS[0],
@@ -828,6 +832,7 @@ const TreatmentGroupsManagement: React.FC = () => {
           
           {/* Modal */}
           <div 
+            ref={serviceModalRef as React.RefObject<HTMLDivElement>}
             className="fixed z-50 bg-white rounded-lg shadow-2xl border"
             style={{
               top: '50%',
