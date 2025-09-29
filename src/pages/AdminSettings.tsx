@@ -226,14 +226,6 @@ const AdminSettings = () => {
       </header>
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 lg:px-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Configuración del Sistema</h1>
-            <p className="text-muted-foreground text-xs sm:text-sm lg:text-base mt-1">
-              Gestiona todos los aspectos de tu negocio desde un solo lugar
-            </p>
-          </div>
-        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Mobile Tab Selector */}
