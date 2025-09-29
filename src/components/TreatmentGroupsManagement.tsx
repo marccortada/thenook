@@ -719,7 +719,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                       collisionPadding={20}
                     >
                       <SelectItem value="all">Todos los centros</SelectItem>
-                      {centers.map((center) => (
+                      {centers.filter(center => center.id && center.id.trim() !== '').map((center) => (
                         <SelectItem key={center.id} value={center.id}>
                           {center.name}
                         </SelectItem>
@@ -783,7 +783,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                         collisionPadding={20}
                       >
                         <SelectItem value="none">Limpiar todos los carriles</SelectItem>
-                        {lanes.filter(lane => !formData.lane_ids?.includes(lane.id)).map((lane) => (
+                        {lanes.filter(lane => lane.id && lane.id.trim() !== '' && !formData.lane_ids?.includes(lane.id)).map((lane) => (
                           <SelectItem key={lane.id} value={lane.id}>
                             {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
                           </SelectItem>
@@ -931,14 +931,14 @@ const TreatmentGroupsManagement: React.FC = () => {
                   <Label className="text-sm font-medium">Centro (Opcional)</Label>
                   <Select
                     value={serviceFormData.center_id}
-                    onValueChange={(value) => setServiceFormData(prev => ({ ...prev, center_id: value }))}
+                    onValueChange={(value) => setServiceFormData(prev => ({ ...prev, center_id: value === 'all_centers' ? '' : value }))}
                   >
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Todos los centros" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos los centros</SelectItem>
-                      {centers.map((center) => (
+                      <SelectItem value="all_centers">Todos los centros</SelectItem>
+                      {centers.filter(center => center.id && center.id.trim() !== '').map((center) => (
                         <SelectItem key={center.id} value={center.id}>
                           {center.name}
                         </SelectItem>
