@@ -450,6 +450,24 @@ const TreatmentGroupsManagement: React.FC = () => {
             Organización automática de servicios por categorías con asignación de carriles
           </p>
         </div>
+        <Button 
+          onClick={() => {
+            setEditingGroup(null);
+            setFormData({
+              name: '',
+              color: PRESET_COLORS[0],
+              lane_id: '',
+              lane_ids: [],
+              center_id: '',
+              active: true,
+            });
+            setIsDialogOpen(true);
+          }}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Nuevo Grupo
+        </Button>
       </div>
 
       <Accordion type="multiple" className="space-y-4">
