@@ -65,11 +65,20 @@ serve(async (req) => {
 
     if (body.intent === "gift_cards") {
       const items = body.gift_cards?.items || [];
+      console.log("🎁 Gift cards intent - Items recibidos:", JSON.stringify(items, null, 2));
       if (!items.length) throw new Error("Sin tarjetas en la petición");
       
       // Validar datos del comprador
+      console.log("🔍 Validando comprador para cada item...");
+      for (const it of items) {
+        console.log(`  - Item: name=${it.purchased_by_name}, email=${it.purchased_by_email}`);
+      }
       const hasValidBuyer = items.every(it => it.purchased_by_name?.trim() && it.purchased_by_email?.trim());
-      if (!hasValidBuyer) throw new Error("Datos del comprador requeridos");
+      console.log("✅ hasValidBuyer:", hasValidBuyer);
+      if (!hasValidBuyer) {
+        console.error("❌ Validación falló - Datos del comprador requeridos");
+        throw new Error("Datos del comprador requeridos");
+      }
       
       // Validar datos del beneficiario si es regalo
       const hasGifts = items.some(it => it.is_gift);
