@@ -528,9 +528,18 @@ const GiftCardsPage = () => {
                   </div>
 
                   {/* Total */}
-                  <div className="flex items-center justify-between border-t pt-3">
-                    <span className="text-sm text-muted-foreground">{t('total')}</span>
-                    <span className="font-semibold">{euro(totalCents)}</span>
+                  <div className="space-y-2 border-t pt-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">{t('total')}</span>
+                      <span className="font-semibold">{euro(totalCents)}</span>
+                    </div>
+                    {totalCents < 50 && (
+                      <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2">
+                        <p className="text-xs text-destructive">
+                          ⚠️ Mínimo requerido: €0.50. Faltan {euro(50 - totalCents)}.
+                        </p>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Campos de comprador */}
@@ -687,10 +696,18 @@ const GiftCardsPage = () => {
                       isGift,
                       recipientName,
                       recipientEmail,
-                      itemsCount: items.length
+                      itemsCount: items.length,
+                      totalCents
                     });
 
                     if (items.length === 0) return;
+                    
+                    // Validar monto mínimo de Stripe (€0.50)
+                    if (totalCents < 50) {
+                      toast.error(`El monto mínimo es €0.50. Por favor añade más productos.`);
+                      return;
+                    }
+                    
                     if (isGift && !recipientName.trim()) {
                       toast.error(t('recipient_name_error'));
                       return;
@@ -756,7 +773,7 @@ const GiftCardsPage = () => {
                       toast.error("Error en el checkout");
                     }
                   }}
-                  disabled={!purchasedByName || !purchasedByEmail || (isGift && (!recipientName || !recipientEmail))}
+                  disabled={!purchasedByName || !purchasedByEmail || (isGift && (!recipientName || !recipientEmail)) || totalCents < 50}
                 >
                   {t('buy_button')} - {euro(totalCents)}
                 </Button>

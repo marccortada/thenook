@@ -150,16 +150,21 @@ serve(async (req) => {
 
     if (!line_items.length) throw new Error("No se han generado artículos para el pago");
 
-const session = await stripe.checkout.sessions.create({
-  line_items,
-  mode: "payment",
-  ui_mode: "embedded",
-  return_url: `${origin}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`,
-  metadata,
-  payment_intent_data: {
-    metadata,
-  },
-});
+    const session = await stripe.checkout.sessions.create({
+      line_items,
+      mode: "payment",
+      ui_mode: "embedded",
+      return_url: `${origin}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`,
+      metadata,
+      payment_intent_data: {
+        metadata,
+      },
+    }).catch((err) => {
+      if (err.code === 'amount_too_small') {
+        throw new Error('El monto mínimo para pagos con Stripe es €0.50. Por favor aumenta el valor de tu compra.');
+      }
+      throw err;
+    });
 
     return new Response(JSON.stringify({ 
       client_secret: session.client_secret,
