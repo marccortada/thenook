@@ -37,7 +37,7 @@ export const StripeCheckoutModal = ({ clientSecret, sessionId, onClose }: Stripe
   }, []);
 
   return (
-    <div className="min-h-[400px] max-h-[70vh] overflow-y-auto">
+    <div className="w-full h-full min-h-[400px]">
       {loading ? (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center space-y-4">
