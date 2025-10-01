@@ -768,12 +768,12 @@ const GiftCardsPage = () => {
 
           {/* Modal de Stripe Checkout */}
           <Dialog open={showStripeModal} onOpenChange={setShowStripeModal}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
+            <DialogContent className="max-w-2xl top-[5vh] translate-y-0 max-h-[90vh] overflow-hidden flex flex-col">
               <DialogHeader className="flex-shrink-0">
                 <DialogTitle>{t('complete_payment')}</DialogTitle>
                 <DialogDescription>{t('secure_payment_info')}</DialogDescription>
               </DialogHeader>
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto min-h-0">
                 {stripeClientSecret && (
                   <StripeCheckoutModal 
                     clientSecret={stripeClientSecret}
