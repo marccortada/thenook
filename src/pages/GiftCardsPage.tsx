@@ -713,25 +713,19 @@ const GiftCardsPage = () => {
                             amount_cents: i.priceCents, 
                             quantity: i.quantity,
                             name: i.name,
-                            id: i.id
-                          })),
-                          purchased_by: {
-                            name: purchasedByName.trim(),
-                            email: purchasedByEmail.trim(),
-                          },
-                          ...(isGift && {
-                            recipient: {
-                              name: recipientName.trim(),
-                              email: recipientEmail.trim(),
-                            }
-                          }),
-                          options: {
+                            id: i.id,
+                            purchased_by_name: purchasedByName.trim(),
+                            purchased_by_email: purchasedByEmail.trim(),
                             is_gift: isGift,
+                            ...(isGift && {
+                              recipient_name: recipientName.trim(),
+                              recipient_email: recipientEmail.trim(),
+                            }),
                             gift_message: giftMessage.trim(),
-                            show_price_on_card: showPrice,
+                            show_price: showPrice,
                             show_buyer_data: showBuyerData,
                             send_to_buyer: sendToBuyer,
-                          }
+                          }))
                         }
                       };
 
