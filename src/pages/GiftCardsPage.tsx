@@ -681,6 +681,15 @@ const GiftCardsPage = () => {
                 <Button 
                   className="h-12 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-sm font-semibold"
                   onClick={async () => {
+                    console.log("🛒 Botón Comprar clickeado", {
+                      purchasedByName,
+                      purchasedByEmail,
+                      isGift,
+                      recipientName,
+                      recipientEmail,
+                      itemsCount: items.length
+                    });
+
                     if (items.length === 0) return;
                     if (isGift && !recipientName.trim()) {
                       toast.error(t('recipient_name_error'));
@@ -696,6 +705,7 @@ const GiftCardsPage = () => {
                     }
                     
                     try {
+                      console.log("📦 Creando checkout...");
                       const payload = {
                         intent: "gift_cards",
                         gift_cards: {
@@ -729,6 +739,8 @@ const GiftCardsPage = () => {
                         body: payload
                       });
 
+                      console.log("✅ Respuesta create-checkout:", { data, error });
+
                       if (error) {
                         console.error("❌ Error en create-checkout:", error);
                         toast.error("Error en el checkout");
@@ -736,11 +748,13 @@ const GiftCardsPage = () => {
                       }
 
                       if (data?.client_secret) {
+                        console.log("💳 Abriendo modal de Stripe");
                         setStripeClientSecret(data.client_secret);
                         setStripeSessionId(data.session_id);
                         setShowStripeModal(true);
                         setIsCartOpen(false);
                       } else {
+                        console.error("❌ No se recibió client_secret");
                         toast.error("Error en el checkout");
                       }
                     } catch (error) {
