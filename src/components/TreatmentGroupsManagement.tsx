@@ -254,11 +254,78 @@ const TreatmentGroupsManagement: React.FC = () => {
     return combined;
   }, [treatmentGroups]);
 
-  const handleEditGroup = (group: any) => {
+  const handleEditGroup = (group: any, event: React.MouseEvent) => {
     console.log('=== handleEditGroup ===');
     console.log('Group received:', group);
     console.log('Group.dbGroup:', group.dbGroup);
     console.log('Current treatmentGroups:', treatmentGroups);
+    
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Obtener el elemento padre (card o botón)
+    const cardElement = event.currentTarget.closest('.group-card, .treatment-group-item') as HTMLElement;
+    if (!cardElement) {
+      // Si no encuentra la card, usar el botón como referencia
+      const buttonElement = event.currentTarget as HTMLElement;
+      const buttonRect = buttonElement.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const windowWidth = window.innerWidth;
+      
+      // Dimensiones del modal
+      const modalWidth = Math.min(600, windowWidth - 40);
+      const modalHeight = Math.min(500, windowHeight - 80);
+      
+      // Calcular posición
+      let top = buttonRect.top + scrollTop - 50;
+      let left = (windowWidth - modalWidth) / 2;
+      
+      // Ajustar verticalmente para que esté siempre visible
+      const viewportTop = scrollTop + 20;
+      const viewportBottom = scrollTop + windowHeight - 20;
+      
+      if (top < viewportTop) {
+        top = viewportTop;
+      } else if (top + modalHeight > viewportBottom) {
+        top = viewportBottom - modalHeight;
+      }
+      
+      // Asegurar que no se salga horizontalmente
+      if (left < 20) left = 20;
+      if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
+      
+      setModalPosition({ top, left });
+    } else {
+      const cardRect = cardElement.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const windowWidth = window.innerWidth;
+      
+      // Dimensiones del modal
+      const modalWidth = Math.min(600, windowWidth - 40);
+      const modalHeight = Math.min(500, windowHeight - 80);
+      
+      // Calcular posición
+      let top = cardRect.top + scrollTop - 50;
+      let left = (windowWidth - modalWidth) / 2;
+      
+      // Ajustar verticalmente para que esté siempre visible
+      const viewportTop = scrollTop + 20;
+      const viewportBottom = scrollTop + windowHeight - 20;
+      
+      if (top < viewportTop) {
+        top = viewportTop;
+      } else if (top + modalHeight > viewportBottom) {
+        top = viewportBottom - modalHeight;
+      }
+      
+      // Asegurar que no se salga horizontalmente
+      if (left < 20) left = 20;
+      if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
+      
+      setModalPosition({ top, left });
+    }
     
     setEditingGroup(group.id);
     setFormData({
@@ -512,46 +579,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          
-                          // Obtener el elemento del grupo
-                          const button = e.currentTarget;
-                          const groupCard = button.closest('.treatment-group-item');
-                          if (!groupCard) return;
-                          
-                          const cardRect = groupCard.getBoundingClientRect();
-                          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                          const windowHeight = window.innerHeight;
-                          const windowWidth = window.innerWidth;
-                          
-                          // Dimensiones del modal
-                          const modalWidth = Math.min(600, windowWidth - 40);
-                          const modalHeight = Math.min(500, windowHeight - 80);
-                          
-                          // Centrar horizontalmente
-                          let left = (windowWidth - modalWidth) / 2;
-                          
-                          // Posicionar verticalmente cerca del elemento clickeado pero visible
-                          let top = cardRect.top + scrollTop - 50;
-                          
-                          // Ajustar si se sale de la pantalla verticalmente
-                          const minTop = scrollTop + 20;
-                          const maxTop = scrollTop + windowHeight - modalHeight - 20;
-                          
-                          if (top < minTop) {
-                            top = minTop;
-                          } else if (top > maxTop) {
-                            top = maxTop;
-                          }
-                          
-                          // Asegurar que no se salga horizontalmente
-                          if (left < 20) left = 20;
-                          if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-                          
-                          setModalPosition({ top, left });
-                          handleEditGroup(group);
-                        }}
+                        onClick={(e) => handleEditGroup(group, e)}
                         className="gap-2 text-xs sm:text-sm"
                       >
                         <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
