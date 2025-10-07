@@ -24,127 +24,56 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      console.log('Intentando login con:', formData.email);
-      
-      // Intentar login primero
+      // Intentar login
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
-      
-      console.log('Resultado del login:', { authData, authError });
 
-      if (authError) {
-        // Si el usuario no existe y es work@thenookmadrid.com, crearlo usando edge function
-        if (formData.email === 'work@thenookmadrid.com') {
-          console.log('Intentando crear usuario admin...');
-          const { data: createResponse, error: createError } = await supabase.functions.invoke('create-admin-user', {
-            body: {
-              email: formData.email,
-              password: formData.password
-            }
-          });
-
-          if (createError || !createResponse?.success) {
-            toast({
-              title: "Error creando usuario",
-              description: createError?.message || createResponse?.error || "No se pudo crear el usuario",
-              variant: "destructive",
-            });
-            return;
-          }
-
-          // Intentar login de nuevo después de crear el usuario
-          const { data: retryAuthData, error: retryAuthError } = await supabase.auth.signInWithPassword({
-            email: formData.email,
-            password: formData.password,
-          });
-
-          if (retryAuthError || !retryAuthData?.user) {
-            toast({
-              title: "Error de autenticación",
-              description: retryAuthError?.message || "No se pudo iniciar sesión después de crear el usuario",
-              variant: "destructive",
-            });
-            return;
-          }
-        } else {
-          toast({
-            title: "Error de autenticación",
-            description: authError.message || "Credenciales incorrectas",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
-      if (!authData?.user) {
+      if (authError || !authData?.user) {
         toast({
           title: "Error de autenticación",
-          description: "No se pudo obtener información del usuario",
+          description: authError?.message || "Credenciales incorrectas",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
-      console.log('Usuario autenticado, obteniendo sesión actual...');
-      
-      // Esperar un momento para que la sesión se propague
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Verificar que tenemos sesión activa
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Sesión actual:', session ? 'Existe' : 'No existe');
-      
-      if (!session) {
-        toast({
-          title: "Error de sesión",
-          description: "No se pudo establecer la sesión",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Esperar brevemente para que la sesión se propague
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       // Buscar el perfil del usuario
-      console.log('Buscando perfil para user_id:', authData.user.id);
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', authData.user.id)
         .maybeSingle();
 
-      console.log('Resultado perfil:', { profile, profileError });
-
-      if (profileError) {
-        console.error('Error al buscar perfil:', profileError);
+      if (profileError || !profile) {
+        await supabase.auth.signOut();
         toast({
-          title: "Error de autenticación",
-          description: "Error al buscar perfil: " + profileError.message,
+          title: "Error",
+          description: "No se encontró el perfil del usuario",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
-      if (!profile) {
-        toast({
-          title: "Error de autenticación",
-          description: "Perfil de usuario no encontrado",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Verificar que tenga permisos (admin o employee)
-      if (profile.role !== 'admin' && profile.role !== 'employee') {
+      // Verificar que sea staff activo
+      if (!profile.is_staff || !profile.is_active) {
+        await supabase.auth.signOut();
         toast({
           title: "Acceso denegado",
           description: "No tienes permisos para acceder al panel",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
-      // Guardar sesión en localStorage
+      // Guardar sesión en localStorage para compatibilidad
       const userSession = {
         id: profile.id,
         email: profile.email,
@@ -170,7 +99,6 @@ const AdminLogin = () => {
         description: "Ocurrió un error. Intenta de nuevo.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
