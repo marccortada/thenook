@@ -25,57 +25,92 @@ const AdminLogin = () => {
 
     try {
       console.log('Intentando login con:', formData.email);
+      
       // Intentar login primero
-      let { data, error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
       
-      console.log('Resultado del login:', { data, error });
+      console.log('Resultado del login:', { authData, authError });
 
-      // Si el usuario no existe y es work@thenookmadrid.com, crearlo usando edge function
-      if (error && formData.email === 'work@thenookmadrid.com') {
-        const { data: createResponse, error: createError } = await supabase.functions.invoke('create-admin-user', {
-          body: {
-            email: formData.email,
-            password: formData.password
+      if (authError) {
+        // Si el usuario no existe y es work@thenookmadrid.com, crearlo usando edge function
+        if (formData.email === 'work@thenookmadrid.com') {
+          console.log('Intentando crear usuario admin...');
+          const { data: createResponse, error: createError } = await supabase.functions.invoke('create-admin-user', {
+            body: {
+              email: formData.email,
+              password: formData.password
+            }
+          });
+
+          if (createError || !createResponse?.success) {
+            toast({
+              title: "Error creando usuario",
+              description: createError?.message || createResponse?.error || "No se pudo crear el usuario",
+              variant: "destructive",
+            });
+            return;
           }
-        });
 
-        if (createError || !createResponse?.success) {
+          // Intentar login de nuevo después de crear el usuario
+          const { data: retryAuthData, error: retryAuthError } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+          });
+
+          if (retryAuthError || !retryAuthData?.user) {
+            toast({
+              title: "Error de autenticación",
+              description: retryAuthError?.message || "No se pudo iniciar sesión después de crear el usuario",
+              variant: "destructive",
+            });
+            return;
+          }
+        } else {
           toast({
-            title: "Error creando usuario",
-            description: createError?.message || createResponse?.error || "No se pudo crear el usuario",
+            title: "Error de autenticación",
+            description: authError.message || "Credenciales incorrectas",
             variant: "destructive",
           });
           return;
         }
-
-        // Intentar login de nuevo después de crear el usuario
-        const loginResult = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        data = loginResult.data;
-        error = loginResult.error;
       }
 
-      if (error || !data.user) {
+      if (!authData?.user) {
         toast({
           title: "Error de autenticación",
-          description: error?.message || "Credenciales incorrectas",
+          description: "No se pudo obtener información del usuario",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Usuario autenticado, obteniendo sesión actual...');
+      
+      // Esperar un momento para que la sesión se propague
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Verificar que tenemos sesión activa
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Sesión actual:', session ? 'Existe' : 'No existe');
+      
+      if (!session) {
+        toast({
+          title: "Error de sesión",
+          description: "No se pudo establecer la sesión",
           variant: "destructive",
         });
         return;
       }
 
       // Buscar el perfil del usuario
-      console.log('Buscando perfil para user_id:', data.user.id);
+      console.log('Buscando perfil para user_id:', authData.user.id);
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', data.user.id)
+        .eq('user_id', authData.user.id)
         .maybeSingle();
 
       console.log('Resultado perfil:', { profile, profileError });
