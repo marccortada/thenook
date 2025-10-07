@@ -263,69 +263,37 @@ const TreatmentGroupsManagement: React.FC = () => {
     event.preventDefault();
     event.stopPropagation();
     
-    // Obtener el elemento padre (card o botón)
-    const cardElement = event.currentTarget.closest('.group-card, .treatment-group-item') as HTMLElement;
-    if (!cardElement) {
-      // Si no encuentra la card, usar el botón como referencia
-      const buttonElement = event.currentTarget as HTMLElement;
-      const buttonRect = buttonElement.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const windowHeight = window.innerHeight;
-      const windowWidth = window.innerWidth;
-      
-      // Dimensiones del modal
-      const modalWidth = Math.min(600, windowWidth - 40);
-      const modalHeight = Math.min(500, windowHeight - 80);
-      
-      // Calcular posición
-      let top = buttonRect.top + scrollTop - 50;
-      let left = (windowWidth - modalWidth) / 2;
-      
-      // Ajustar verticalmente para que esté siempre visible
-      const viewportTop = scrollTop + 20;
-      const viewportBottom = scrollTop + windowHeight - 20;
-      
-      if (top < viewportTop) {
-        top = viewportTop;
-      } else if (top + modalHeight > viewportBottom) {
-        top = viewportBottom - modalHeight;
-      }
-      
-      // Asegurar que no se salga horizontalmente
-      if (left < 20) left = 20;
-      if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-      
-      setModalPosition({ top, left });
-    } else {
-      const cardRect = cardElement.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const windowHeight = window.innerHeight;
-      const windowWidth = window.innerWidth;
-      
-      // Dimensiones del modal
-      const modalWidth = Math.min(600, windowWidth - 40);
-      const modalHeight = Math.min(500, windowHeight - 80);
-      
-      // Calcular posición
-      let top = cardRect.top + scrollTop - 50;
-      let left = (windowWidth - modalWidth) / 2;
-      
-      // Ajustar verticalmente para que esté siempre visible
-      const viewportTop = scrollTop + 20;
-      const viewportBottom = scrollTop + windowHeight - 20;
-      
-      if (top < viewportTop) {
-        top = viewportTop;
-      } else if (top + modalHeight > viewportBottom) {
-        top = viewportBottom - modalHeight;
-      }
-      
-      // Asegurar que no se salga horizontalmente
-      if (left < 20) left = 20;
-      if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-      
-      setModalPosition({ top, left });
+    // Usar el botón como referencia para el posicionamiento
+    const buttonElement = event.currentTarget as HTMLElement;
+    const buttonRect = buttonElement.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    
+    // Dimensiones del modal
+    const modalWidth = Math.min(600, windowWidth - 40);
+    const modalHeight = Math.min(500, windowHeight - 80);
+    
+    // Calcular posición
+    let top = buttonRect.top + scrollTop - 50;
+    let left = (windowWidth - modalWidth) / 2;
+    
+    // Ajustar verticalmente para que esté siempre visible
+    const viewportTop = scrollTop + 20;
+    const viewportBottom = scrollTop + windowHeight - 20;
+    
+    if (top < viewportTop) {
+      top = viewportTop;
+    } else if (top + modalHeight > viewportBottom) {
+      top = viewportBottom - modalHeight;
     }
+    
+    // Asegurar que no se salga horizontalmente
+    if (left < 20) left = 20;
+    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
+    
+    console.log('Modal position calculated:', { top, left, buttonRect });
+    setModalPosition({ top, left });
     
     setEditingGroup(group.id);
     setFormData({
@@ -678,7 +646,7 @@ const TreatmentGroupsManagement: React.FC = () => {
           
           {/* Modal */}
           <div 
-            className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+            className="fixed z-[100] bg-white rounded-lg shadow-2xl border-4 border-red-500"
             style={{
               top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
@@ -687,6 +655,11 @@ const TreatmentGroupsManagement: React.FC = () => {
               overflowY: 'auto'
             }}
           >
+            {/* Debug info */}
+            {console.log('Modal rendering with position:', modalPosition)}
+            <div className="bg-yellow-200 p-2 text-xs">
+              DEBUG: Position: {modalPosition.top}, {modalPosition.left}
+            </div>
             <div className={`p-4 sm:p-6`}>
               {/* Header */}
               <div className={`flex items-center justify-between mb-4 sm:mb-6`}>
