@@ -1050,24 +1050,26 @@ export default function AdminPricingPromos() {
                   }}
                 >
                   <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
-                  <Card className="border-none shadow-none">
-                    <CardHeader className={isMobile ? 'pb-3' : ''}>
-                      <CardTitle className={`flex items-center justify-between ${isMobile ? 'text-lg' : ''}`}>
-                        <span className="flex items-center gap-2">
-                          <Edit className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
-                          <span className={isMobile ? 'text-base' : ''}>Editando: {editingService.name}</span>
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingService(null)}
-                          className={isMobile ? 'h-8 w-8 p-0' : ''}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className={isMobile ? 'px-0' : ''}>
+                    {/* Header */}
+                    <div className={`flex items-center justify-between ${isMobile ? 'mb-4' : 'mb-6'}`}>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <Edit className={`text-primary ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`} />
+                        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>
+                          Editando: {editingService.name}
+                        </h3>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingService(null)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="space-y-3 sm:space-y-4">
                       <div className={`gap-3 ${isMobile ? 'grid grid-cols-1 space-y-3' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
                         <div>
                           <Label htmlFor="edit-service-name" className={isMobile ? 'text-xs' : ''}>Nombre *</Label>
@@ -1222,8 +1224,7 @@ export default function AdminPricingPromos() {
                           <span className={isMobile ? 'text-xs' : ''}>Actualizar Servicio</span>
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
                   </div>
                 </div>
               </>
