@@ -83,6 +83,7 @@ const TreatmentGroupsManagement: React.FC = () => {
 
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPositionCalculated, setIsPositionCalculated] = useState(false);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [selectedGroupForService, setSelectedGroupForService] = useState<string | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
@@ -293,7 +294,10 @@ const TreatmentGroupsManagement: React.FC = () => {
     if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
     
     console.log('Modal position calculated:', { top, left, buttonRect });
+    
+    // Establecer la posición calculada
     setModalPosition({ top, left });
+    setIsPositionCalculated(true);
     
     setEditingGroup(group.id);
     setFormData({
@@ -314,6 +318,7 @@ const TreatmentGroupsManagement: React.FC = () => {
       active: true,
     });
     
+    // Abrir el modal solo después de calcular la posición
     setIsDialogOpen(true);
   };
 
@@ -382,12 +387,66 @@ const TreatmentGroupsManagement: React.FC = () => {
 
   const closeDialog = () => {
     setIsDialogOpen(false);
+    setIsPositionCalculated(false);
     resetForm();
   };
 
   const handleAddService = (groupId: string) => {
     setSelectedGroupForService(groupId);
     setIsServiceDialogOpen(true);
+  };
+
+  const handleNewGroup = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Usar el botón como referencia para el posicionamiento
+    const buttonElement = event.currentTarget as HTMLElement;
+    const buttonRect = buttonElement.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    
+    // Dimensiones del modal
+    const modalWidth = Math.min(600, windowWidth - 40);
+    const modalHeight = Math.min(500, windowHeight - 80);
+    
+    // Calcular posición
+    let top = buttonRect.top + scrollTop - 50;
+    let left = (windowWidth - modalWidth) / 2;
+    
+    // Ajustar verticalmente para que esté siempre visible
+    const viewportTop = scrollTop + 20;
+    const viewportBottom = scrollTop + windowHeight - 20;
+    
+    if (top < viewportTop) {
+      top = viewportTop;
+    } else if (top + modalHeight > viewportBottom) {
+      top = viewportBottom - modalHeight;
+    }
+    
+    // Asegurar que no se salga horizontalmente
+    if (left < 20) left = 20;
+    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
+    
+    console.log('New group modal position calculated:', { top, left, buttonRect });
+    
+    // Establecer la posición calculada
+    setModalPosition({ top, left });
+    setIsPositionCalculated(true);
+    
+    setEditingGroup(null);
+    setFormData({
+      name: '',
+      color: PRESET_COLORS[0],
+      lane_id: '',
+      lane_ids: [],
+      center_id: '',
+      active: true,
+    });
+    
+    // Abrir el modal solo después de calcular la posición
+    setIsDialogOpen(true);
   };
 
   const handleCreateService = async () => {
@@ -490,18 +549,7 @@ const TreatmentGroupsManagement: React.FC = () => {
           </p>
         </div>
         <Button 
-          onClick={() => {
-            setEditingGroup(null);
-            setFormData({
-              name: '',
-              color: PRESET_COLORS[0],
-              lane_id: '',
-              lane_ids: [],
-              center_id: '',
-              active: true,
-            });
-            setIsDialogOpen(true);
-          }}
+          onClick={handleNewGroup}
           className="flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
@@ -636,7 +684,7 @@ const TreatmentGroupsManagement: React.FC = () => {
       </Accordion>
 
       {/* Modal para editar grupo */}
-      {isDialogOpen && (
+      {isDialogOpen && isPositionCalculated && (
         <>
           {/* Overlay */}
           <div 
@@ -656,7 +704,7 @@ const TreatmentGroupsManagement: React.FC = () => {
             }}
           >
             {/* Debug info */}
-            {console.log('Modal rendering with position:', modalPosition)}
+            {(() => { console.log('Modal rendering with position:', modalPosition); return null; })()}
             <div className="bg-yellow-200 p-2 text-xs">
               DEBUG: Position: {modalPosition.top}, {modalPosition.left}
             </div>
