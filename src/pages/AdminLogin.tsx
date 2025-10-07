@@ -71,13 +71,26 @@ const AdminLogin = () => {
       }
 
       // Buscar el perfil del usuario
+      console.log('Buscando perfil para user_id:', data.user.id);
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', data.user.id)
-        .single();
+        .maybeSingle();
 
-      if (profileError || !profile) {
+      console.log('Resultado perfil:', { profile, profileError });
+
+      if (profileError) {
+        console.error('Error al buscar perfil:', profileError);
+        toast({
+          title: "Error de autenticación",
+          description: "Error al buscar perfil: " + profileError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!profile) {
         toast({
           title: "Error de autenticación",
           description: "Perfil de usuario no encontrado",
