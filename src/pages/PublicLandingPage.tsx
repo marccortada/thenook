@@ -213,7 +213,7 @@ export default function PublicLandingPage() {
             </a>
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 flex-shrink-0" />
-              <span className="text-sm break-all sm:break-normal">reservas@thenookmadrid.com</span>
+              <span className="text-sm break-all sm:break-normal">reservas@gnerai.com</span>
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-4">

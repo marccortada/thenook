@@ -104,7 +104,7 @@ serve(async (req) => {
 
         // Send email using Resend
         const emailResponse = await resend.emails.send({
-          from: 'The Nook Madrid <reservas@thenookmadrid.com>',
+          from: 'The Nook Madrid <reservas@gnerai.com>',
           to: [client.email],
           subject: notification.subject || (notification.type === 'booking_reminder' ? 'Recordatorio de tu cita' : 'Confirmación de tu reserva'),
           html: `
