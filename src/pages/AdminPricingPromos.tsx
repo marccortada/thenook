@@ -772,8 +772,8 @@ export default function AdminPricingPromos() {
               <CardContent>
                 <Accordion type="multiple" className="w-full space-y-4">
                   {groupedServices.map((group) => (
-                    <AccordionItem key={group.id} value={group.id} className="border rounded-lg px-4">
-                      <AccordionTrigger className="hover:no-underline">
+                    <AccordionItem key={group.id} value={group.id} className="border rounded-lg">
+                      <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline">
                         <div className="flex items-center gap-3">
                           <div 
                             className="w-4 h-4 rounded-full"

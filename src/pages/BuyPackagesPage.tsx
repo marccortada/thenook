@@ -388,8 +388,8 @@ const BuyPackagesPage = () => {
           <section className="grid gap-6">
             <Accordion type="multiple" defaultValue={[]} className="space-y-4">
               {groups.individuales.length > 0 && (
-                <AccordionItem value="bonos-individuales" className="border rounded-lg p-0">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                <AccordionItem value="bonos-individuales" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                     <h2 className="text-lg font-semibold">{t('individual_massages_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
@@ -424,8 +424,8 @@ const BuyPackagesPage = () => {
               )}
 
               {groups.paraDos.length > 0 && (
-                <AccordionItem value="bonos-dos-personas" className="border rounded-lg p-0">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                <AccordionItem value="bonos-dos-personas" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                     <h2 className="text-lg font-semibold">{t('couples_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
@@ -460,8 +460,8 @@ const BuyPackagesPage = () => {
               )}
 
               {groups.cuatro.length > 0 && (
-                <AccordionItem value="bonos-cuatro-manos" className="border rounded-lg p-0">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                <AccordionItem value="bonos-cuatro-manos" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                     <h2 className="text-lg font-semibold">{t('four_hands_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
@@ -496,8 +496,8 @@ const BuyPackagesPage = () => {
               )}
 
               {groups.rituales.length > 0 && (
-                <AccordionItem value="bonos-rituales" className="border rounded-lg p-0">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                <AccordionItem value="bonos-rituales" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                     <h2 className="text-lg font-semibold">{t('rituals_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">

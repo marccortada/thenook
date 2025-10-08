@@ -813,8 +813,8 @@ const GiftCardsPage = () => {
           <section className="grid gap-6">
             <Accordion type="multiple" defaultValue={[]} className="space-y-4">
               {groups.individuales.length > 0 && (
-                <AccordionItem value="tarjetas-individuales" className="border rounded-lg p-0">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                <AccordionItem value="tarjetas-individuales" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                      <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje Individual</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
@@ -861,8 +861,8 @@ const GiftCardsPage = () => {
               )}
 
               {groups.paraDos.length > 0 && (
-                <AccordionItem value="tarjetas-dos-personas" className="border rounded-lg p-0">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                <AccordionItem value="tarjetas-dos-personas" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                      <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje para Dos</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
@@ -905,8 +905,8 @@ const GiftCardsPage = () => {
               )}
 
               {groups.cuatro.length > 0 && (
-                <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg p-0">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                      <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje a Cuatro Manos</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
@@ -949,8 +949,8 @@ const GiftCardsPage = () => {
               )}
 
               {groups.rituales.length > 0 && (
-                <AccordionItem value="tarjetas-rituales" className="border rounded-lg p-0">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                <AccordionItem value="tarjetas-rituales" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                      <h2 className="text-lg font-semibold">Tarjeta Regalo - Rituales Individuales</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
@@ -993,8 +993,8 @@ const GiftCardsPage = () => {
                )}
 
                {groups.ritualesParaDos.length > 0 && (
-                 <AccordionItem value="tarjetas-rituales-dos" className="border rounded-lg p-0">
-                   <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                 <AccordionItem value="tarjetas-rituales-dos" className="border rounded-lg">
+                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                       <h2 className="text-lg font-semibold">Tarjeta Regalo - Rituales para Dos</h2>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">

@@ -256,10 +256,6 @@ const TreatmentGroupsManagement: React.FC = () => {
   }, [treatmentGroups]);
 
   const handleEditGroup = (group: any, event: React.MouseEvent) => {
-    console.log('=== handleEditGroup ===');
-    console.log('Group received:', group);
-    console.log('Group.dbGroup:', group.dbGroup);
-    console.log('Current treatmentGroups:', treatmentGroups);
     
     event.preventDefault();
     event.stopPropagation();
@@ -293,7 +289,6 @@ const TreatmentGroupsManagement: React.FC = () => {
     if (left < 20) left = 20;
     if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
     
-    console.log('Modal position calculated:', { top, left, buttonRect });
     
     // Establecer la posición calculada
     setModalPosition({ top, left });
@@ -309,14 +304,6 @@ const TreatmentGroupsManagement: React.FC = () => {
       active: true,
     });
     
-    console.log('FormData set to:', {
-      name: group.name,
-      color: group.dbGroup?.color || group.color,
-      lane_id: group.lane_id || '',
-      lane_ids: group.lane_ids || [],
-      center_id: group.center_id || '',
-      active: true,
-    });
     
     // Abrir el modal solo después de calcular la posición
     setIsDialogOpen(true);
@@ -429,7 +416,6 @@ const TreatmentGroupsManagement: React.FC = () => {
     if (left < 20) left = 20;
     if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
     
-    console.log('New group modal position calculated:', { top, left, buttonRect });
     
     // Establecer la posición calculada
     setModalPosition({ top, left });
@@ -564,9 +550,9 @@ const TreatmentGroupsManagement: React.FC = () => {
           const assignedCenter = centers.find(c => c.id === group.center_id);
           
           return (
-            <AccordionItem key={group.id} value={group.id} className="border rounded-lg overflow-hidden treatment-group-item">
+            <AccordionItem key={group.id} value={group.id} className="border rounded-lg treatment-group-item">
               <Card className="border-0 shadow-none">
-                <AccordionTrigger className="hover:no-underline px-6 py-4">
+                <AccordionTrigger className="hover:no-underline px-4 py-3 sm:px-6 sm:py-4">
                   <div className="flex items-center gap-3 w-full">
                     <div 
                       className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
@@ -694,7 +680,7 @@ const TreatmentGroupsManagement: React.FC = () => {
           
           {/* Modal */}
           <div 
-            className="fixed z-[100] bg-white rounded-lg shadow-2xl border-4 border-red-500"
+            className="fixed z-50 bg-white rounded-lg shadow-2xl border"
             style={{
               top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
@@ -703,11 +689,6 @@ const TreatmentGroupsManagement: React.FC = () => {
               overflowY: 'auto'
             }}
           >
-            {/* Debug info */}
-            {(() => { console.log('Modal rendering with position:', modalPosition); return null; })()}
-            <div className="bg-yellow-200 p-2 text-xs">
-              DEBUG: Position: {modalPosition.top}, {modalPosition.left}
-            </div>
             <div className={`p-4 sm:p-6`}>
               {/* Header */}
               <div className={`flex items-center justify-between mb-4 sm:mb-6`}>
