@@ -38,7 +38,7 @@ export function LanguageSelector() {
           sideOffset={4}
           avoidCollisions={true}
           collisionPadding={20}
-          className="z-50 bg-background border border-border shadow-lg"
+          className="z-[100] bg-background border border-border shadow-lg"
         >
           {languages.map((lang) => (
             <SelectItem key={lang.code} value={lang.code} className="text-xs">
