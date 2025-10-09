@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -13,7 +12,8 @@ import {
   Euro,
   Calendar,
   Settings,
-  Lock
+  Lock,
+  Move
 } from 'lucide-react';
 import { format, addDays, subDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -28,12 +28,20 @@ interface MobileCalendarViewProps {
   selectedDate: Date;
   selectedCenter?: string;
   onCenterChange?: (centerId: string) => void;
+  onSlotSelect?: (
+    centerId: string,
+    laneId: string,
+    date: Date,
+    timeSlot: Date,
+    event?: React.MouseEvent<HTMLDivElement>
+  ) => void;
 }
 
 const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({ 
   selectedDate, 
   selectedCenter,
-  onCenterChange 
+  onCenterChange,
+  onSlotSelect
 }) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -42,12 +50,21 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [activeCenter, setActiveCenter] = useState(selectedCenter || '');
   const [blockingMode, setBlockingMode] = useState(false);
+  const [moveMode, setMoveMode] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [draggedBooking, setDraggedBooking] = useState<any>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [touchStartTime, setTouchStartTime] = useState<number>(0);
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!moveMode) {
+      setDraggedBooking(null);
+      setIsDragging(false);
+    }
+  }, [moveMode]);
+
 
   console.log('🚀 MOBILE CALENDAR VIEW LOADING!');
 
@@ -243,7 +260,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const handleTouchStart = (booking: any, event: React.TouchEvent) => {
-    if (blockingMode) return;
+    if (blockingMode || !moveMode) return;
     
     console.log('🖐️ Touch start:', booking.id);
     
@@ -284,6 +301,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   };
 
   const handleTouchMove = (event: React.TouchEvent) => {
+    if (!moveMode) return;
     console.log('✋ Touch move triggered');
     
     const touch = event.touches[0];
@@ -311,6 +329,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   };
 
   const handleTouchEnd = (event: React.TouchEvent) => {
+    if (!moveMode) return;
     console.log('🎯 Touch end triggered');
     
     // Reset visual feedback
@@ -380,6 +399,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
 
   // Función para mover la reserva
   const handleMoveBooking = async (booking: any, newLaneId: string, newTimeStr: string) => {
+    if (!moveMode) return;
     try {
       // Calcular nueva fecha/hora
       const currentDate = parseISO(booking.booking_datetime);
@@ -543,6 +563,17 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   };
 
   const currentCenter = centers.find(c => c.id === activeCenter);
+  const validCenters = centers.filter(center => center.id && center.id.trim() !== '');
+
+  const handleCenterSelect = React.useCallback((centerId: string) => {
+    setActiveCenter(centerId);
+    onCenterChange?.(centerId);
+    const center = centers.find((c) => c.id === centerId);
+    toast({
+      title: "Centro cambiado",
+      description: `Mostrando calendario de ${center?.name}`,
+    });
+  }, [centers, onCenterChange, toast]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -553,29 +584,54 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
             <Calendar className="h-5 w-5 text-blue-600" />
             <div>
               <h1 className="text-sm font-semibold">The Nook Madrid</h1>
-              <Select
-                value={activeCenter}
-                onValueChange={(value) => {
-                  setActiveCenter(value);
-                  onCenterChange?.(value);
-                  const center = centers.find(c => c.id === value);
-                  toast({
-                    title: "Centro cambiado",
-                    description: `Mostrando calendario de ${center?.name}`,
-                  });
-                }}
-              >
-                <SelectTrigger className="w-auto border-0 p-0 h-auto text-xs text-blue-600 bg-transparent shadow-none">
-                  <SelectValue placeholder="Seleccionar centro" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                  {centers.map((center) => (
-                    <SelectItem key={center.id} value={center.id} className="text-sm">
-                      {center.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="mt-2 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Centro
+                </p>
+                {validCenters.map((center) => {
+                  const isSelected = center.id === activeCenter;
+                  return (
+                    <button
+                      key={center.id}
+                      type="button"
+                      onClick={() => handleCenterSelect(center.id!)}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition shadow-sm",
+                        isSelected
+                          ? "border-blue-400 bg-blue-50 text-blue-600"
+                          : "border-border bg-white text-foreground hover:bg-blue-50/40"
+                      )}
+                    >
+                      <span className="flex flex-col gap-1 text-sm">
+                        <span className="flex items-center gap-2 font-semibold">
+                          <MapPin
+                            className={cn(
+                              "h-4 w-4",
+                              isSelected ? "text-blue-500" : "text-muted-foreground"
+                            )}
+                          />
+                          {center.name}
+                        </span>
+                        {center.address && (
+                          <span className="text-xs font-normal text-muted-foreground">
+                            {center.address}
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        className={cn(
+                          "flex h-5 w-5 items-center justify-center rounded-full border-2",
+                          isSelected ? "border-blue-500" : "border-muted-foreground/40"
+                        )}
+                      >
+                        {isSelected ? (
+                          <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                        ) : null}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
           <div className="text-right">
@@ -612,9 +668,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         </div>
       </div>
 
-      {/* Botón de bloqueo - arriba y solo este */}
+      {/* Botones de modo - bloqueo / mover */}
       <div className="bg-white p-3 border-b shadow-sm sticky top-[120px] z-30">
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-2">
           <Button
             size="sm"
             variant={blockingMode ? "default" : "outline"}
@@ -623,17 +679,57 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
               blockingMode ? "bg-red-600 text-white" : "bg-white"
             )}
             onClick={() => {
-              setBlockingMode(!blockingMode);
+              const next = !blockingMode;
+              setBlockingMode(next);
+              if (next) {
+                setMoveMode(false);
+              }
               toast({
-                title: blockingMode ? "Modo normal" : "Modo bloqueo activado",
-                description: blockingMode ? "Toca las reservas para editarlas" : "Toca los espacios vacíos para bloquear",
+                title: next ? "Modo bloqueo activado" : "Modo normal",
+                description: next
+                  ? "Toca los espacios vacíos para bloquearlos."
+                  : "Puedes tocar reservas para editarlas.",
               });
             }}
           >
             <Lock className="h-4 w-4 mr-1" />
             {blockingMode ? "Desbloquear" : "Bloquear"}
           </Button>
+          <Button
+            size="sm"
+            variant={moveMode ? "default" : "outline"}
+            className={cn(
+              "shadow-sm",
+              moveMode ? "bg-blue-600 text-white" : "bg-white"
+            )}
+            onClick={() => {
+              const next = !moveMode;
+              setMoveMode(next);
+              if (next) {
+                setBlockingMode(false);
+              } else {
+                setDraggedBooking(null);
+                setIsDragging(false);
+              }
+              toast({
+                title: next ? "Modo mover activado" : "Modo mover desactivado",
+                description: next
+                  ? "Mantén pulsada una reserva y arrástrala a otro carril u hora."
+                  : "Las reservas vuelven a editarse al tocarlas.",
+              });
+            }}
+          >
+            <Move className="h-4 w-4 mr-1" />
+            {moveMode ? "Mover (on)" : "Mover"}
+          </Button>
         </div>
+        {(blockingMode || moveMode) && (
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            {blockingMode
+              ? "Pulsa los huecos libres para establecer bloqueos."
+              : "Mantén pulsada una reserva y arrástrala hasta otra posición."}
+          </p>
+        )}
       </div>
 
       {/* Headers de carriles - sticky pero debajo del botón */}
@@ -687,9 +783,26 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                           draggedBooking && "transition-colors duration-200"
                         )}
                         onClick={(e) => {
-                          console.log('📱 CELL CLICKED:', { blockingMode, hasBooking: !!booking });
+                          console.log('📱 CELL CLICKED:', { blockingMode, hasBooking: !!booking, moveMode });
+                          if (moveMode) {
+                            return;
+                          }
                           if (blockingMode && !booking) {
                             handleBlockSlot(lane.id, timeStr, e);
+                            return;
+                          }
+
+                          if (!blockingMode && !booking && onSlotSelect) {
+                            if (!activeCenter) {
+                              toast({
+                                title: "Selecciona un centro",
+                                description: "Elige un centro antes de crear una reserva.",
+                              });
+                              return;
+                            }
+                            const slotDate = new Date(currentDate);
+                            slotDate.setHours(hour, minute, 0, 0);
+                            onSlotSelect(activeCenter, lane.id, new Date(currentDate), slotDate, e);
                           }
                         }}
                       >
@@ -716,6 +829,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                             onTouchEnd={handleTouchEnd}
                             onClick={(e) => {
                               // Only handle click if it wasn't a drag operation
+                              if (moveMode) {
+                                return;
+                              }
                               if (!isDragging && !draggedBooking) {
                                 e.stopPropagation();
                                 console.log('📱 BOOKING CLICKED ON MOBILE:', booking);

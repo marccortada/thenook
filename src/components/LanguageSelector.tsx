@@ -24,12 +24,17 @@ export function LanguageSelector() {
     setLanguage(langCode as Language);
   };
 
+  const selectedLanguage = languages.find((lang) => lang.code === language);
+
   return (
     <div className="flex items-center gap-2">
       <Globe className="h-4 w-4 text-muted-foreground" />
       <Select value={language} onValueChange={handleLanguageChange}>
-        <SelectTrigger className="w-[140px] h-8 text-xs bg-background/80 border-border/50">
-          <SelectValue />
+        <SelectTrigger className="min-w-[150px] h-9 rounded-full border border-border/60 bg-white/90 px-4 text-sm font-medium shadow-sm hover:bg-accent/40 focus:ring-2 focus:ring-primary/30 focus:ring-offset-0">
+          <span className="flex items-center gap-2">
+            <span className="text-base leading-none">{selectedLanguage?.flag}</span>
+            <SelectValue className="text-sm font-medium text-foreground" />
+          </span>
         </SelectTrigger>
         <SelectContent 
           position="popper"
@@ -38,12 +43,16 @@ export function LanguageSelector() {
           sideOffset={4}
           avoidCollisions={true}
           collisionPadding={20}
-          className="z-[100] bg-background border border-border shadow-lg"
+          className="z-[100] min-w-[170px] rounded-2xl border border-border/60 bg-white px-2 py-2 shadow-xl"
         >
           {languages.map((lang) => (
-            <SelectItem key={lang.code} value={lang.code} className="text-xs">
-              <span className="flex items-center gap-2">
-                <span>{lang.flag}</span>
+            <SelectItem
+              key={lang.code}
+              value={lang.code}
+              className="text-sm font-medium"
+            >
+              <span className="flex items-center gap-3">
+                <span className="text-base leading-none">{lang.flag}</span>
                 <span>{lang.name}</span>
               </span>
             </SelectItem>

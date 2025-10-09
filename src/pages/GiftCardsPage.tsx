@@ -89,6 +89,9 @@ const PREDEFINED_GIFTS: GiftCardItem[] = [
   { id: 'gift-43', name: 'BONO 5 masajes dos Personas 75 minutos', type: 'fixed', priceCents: 61500 },
 ];
 
+const DEFAULT_GIFT_IMAGE = '/lovable-uploads/a67f856f-f685-4134-9b22-730c400d6266.png';
+const GIFT_IMAGE_PROPS = { width: 360, height: 270, quality: 70 } as const;
+
 // Simple local cart (persisted to localStorage)
 // Heurísticas de categorías
 const isDuo = (name?: string) => {
@@ -296,7 +299,7 @@ const GiftCardsPage = () => {
       type: 'fixed' as GiftType,
       priceCents: option.amount_cents,
       description: option.description,
-      imageUrl: option.image_url || '/lovable-uploads/a67f856f-f685-4134-9b22-730c400d6266.png'
+      imageUrl: option.image_url || DEFAULT_GIFT_IMAGE
     }));
   }, [giftOptions]);
 
@@ -826,9 +829,9 @@ const GiftCardsPage = () => {
                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
                                alt={translatePackageName(item.name)}
                                className="aspect-[4/3]"
-                               width={400}
-                               height={300}
-                               quality={80}
+                               width={GIFT_IMAGE_PROPS.width}
+                               height={GIFT_IMAGE_PROPS.height}
+                               quality={GIFT_IMAGE_PROPS.quality}
                              />
                             <CardHeader className="pb-2">
                               <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
@@ -874,9 +877,9 @@ const GiftCardsPage = () => {
                                 src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
                                 alt={translatePackageName(item.name)}
                                 className="aspect-[4/3]"
-                                width={400}
-                                height={300}
-                                quality={80}
+                                width={GIFT_IMAGE_PROPS.width}
+                                height={GIFT_IMAGE_PROPS.height}
+                                quality={GIFT_IMAGE_PROPS.quality}
                               />
                              <CardHeader className="pb-2">
                                <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
@@ -915,12 +918,12 @@ const GiftCardsPage = () => {
                          {groups.cuatro.map((item) => (
                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                               <OptimizedImage
-                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                                src={item.imageUrl || DEFAULT_GIFT_IMAGE}
                                 alt={translatePackageName(item.name)}
                                 className="aspect-[4/3]"
-                                width={400}
-                                height={300}
-                                quality={80}
+                                width={GIFT_IMAGE_PROPS.width}
+                                height={GIFT_IMAGE_PROPS.height}
+                                quality={GIFT_IMAGE_PROPS.quality}
                               />
                              <CardHeader className="pb-2">
                                <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
@@ -962,9 +965,9 @@ const GiftCardsPage = () => {
                                 src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
                                 alt={translatePackageName(item.name)}
                                 className="aspect-[4/3]"
-                                width={400}
-                                height={300}
-                                quality={80}
+                                width={GIFT_IMAGE_PROPS.width}
+                                height={GIFT_IMAGE_PROPS.height}
+                                quality={GIFT_IMAGE_PROPS.quality}
                               />
                              <CardHeader className="pb-2 p-3">
                                <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
@@ -1006,9 +1009,9 @@ const GiftCardsPage = () => {
                                  src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
                                  alt={translatePackageName(item.name)}
                                  className="aspect-[4/3]"
-                                 width={400}
-                                 height={300}
-                                 quality={80}
+                                 width={GIFT_IMAGE_PROPS.width}
+                                 height={GIFT_IMAGE_PROPS.height}
+                                 quality={GIFT_IMAGE_PROPS.quality}
                                />
                               <CardHeader className="pb-2 p-3">
                                 <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>

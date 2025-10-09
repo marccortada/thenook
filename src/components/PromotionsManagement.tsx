@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { usePromotions, CreatePromotionData } from '@/hooks/usePromotions';
 import { useCenters, useServices } from '@/hooks/useDatabase';
 import { Button } from '@/components/ui/button';
@@ -53,21 +53,24 @@ const PromotionsManagement = () => {
     time_end: '',
     is_active: true
   });
+  const createTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const lastDialogTriggerRef = useRef<HTMLElement | null>(null);
+  const [dialogLayout, setDialogLayout] = useState({ top: 0, left: 0, width: 620, maxHeight: 720 });
 
   const resetForm = () => {
     setFormData({
-    name: '',
-    description: '',
-    type: 'percentage',
-    value: 0,
-    applies_to: 'all_services',
-    target_id: '',
-    start_at: '',
-    end_at: '',
-    days_of_week: [],
-    time_start: '',
-    time_end: '',
-    is_active: true
+      name: '',
+      description: '',
+      type: 'percentage',
+      value: 0,
+      applies_to: 'all_services',
+      target_id: '',
+      start_at: '',
+      end_at: '',
+      days_of_week: [],
+      time_start: '',
+      time_end: '',
+      is_active: true
     });
     setEditingPromotion(null);
   };
@@ -87,8 +90,11 @@ const PromotionsManagement = () => {
     }
   };
 
-  const handleEdit = (promotion: any) => {
+  const handleEdit = (promotion: any, trigger?: HTMLElement | null) => {
     refetchCenters(); // Refresh centers data to get updated names
+    const anchor = trigger || createTriggerRef.current;
+    lastDialogTriggerRef.current = anchor;
+    updateDialogLayout(anchor || undefined);
     setFormData({
       name: promotion.name,
       description: promotion.description || '',
@@ -116,9 +122,61 @@ const PromotionsManagement = () => {
     }));
   };
 
-  const handleOpenDialog = () => {
+  const updateDialogLayout = (trigger?: HTMLElement | null) => {
+    if (typeof window === 'undefined') return;
+
+    if (trigger) {
+      lastDialogTriggerRef.current = trigger;
+    }
+
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const width = Math.min(620, windowWidth - 32);
+    const maxHeight = Math.min(720, windowHeight - 32);
+
+    let top = window.scrollY + (windowHeight - maxHeight) / 2;
+    let left = (windowWidth - width) / 2;
+
+    if (trigger) {
+      const rect = trigger.getBoundingClientRect();
+      top = rect.top + window.scrollY - maxHeight / 2 + rect.height / 2;
+      left = rect.left + rect.width / 2 - width / 2;
+    }
+
+    const minTop = window.scrollY + 16;
+    const maxTop = Math.max(minTop, window.scrollY + windowHeight - maxHeight - 16);
+    const minLeft = 16;
+    const maxLeft = Math.max(minLeft, windowWidth - width - 16);
+
+    setDialogLayout({
+      top: Math.max(minTop, Math.min(top, maxTop)),
+      left: Math.max(minLeft, Math.min(left, maxLeft)),
+      width,
+      maxHeight,
+    });
+  };
+
+  useEffect(() => {
+    if (!showCreateDialog) return;
+    const trigger = lastDialogTriggerRef.current || createTriggerRef.current;
+    updateDialogLayout(trigger || undefined);
+
+    const handleReposition = () => updateDialogLayout(trigger || undefined);
+
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
+
+    return () => {
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
+    };
+  }, [showCreateDialog]);
+
+  const handleOpenDialog = (trigger?: HTMLElement | null) => {
     resetForm();
-    refetchCenters(); // Refresh centers data to get updated names
+    refetchCenters(); // Refresh centers data para obtener nombres actualizados
+    lastDialogTriggerRef.current = trigger || createTriggerRef.current;
+    updateDialogLayout(trigger || lastDialogTriggerRef.current || undefined);
     setShowCreateDialog(true);
   };
 
@@ -147,19 +205,34 @@ const PromotionsManagement = () => {
         
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button onClick={handleOpenDialog}>
+            <Button ref={createTriggerRef} onClick={(event) => {
+              handleOpenDialog(event.currentTarget);
+            }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Nueva Promoción
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent
+            className="max-w-none w-full overflow-hidden rounded-xl border bg-background shadow-2xl left-auto top-auto -translate-x-0 -translate-y-0 p-6"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            style={{
+              position: 'fixed',
+              top: dialogLayout.top,
+              left: dialogLayout.left,
+              width: dialogLayout.width,
+              maxHeight: dialogLayout.maxHeight,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
             <DialogHeader>
               <DialogTitle>
                 {editingPromotion ? 'Editar Promoción' : 'Nueva Promoción'}
               </DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="flex-1 space-y-6 overflow-y-auto pr-2">
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre *</Label>
@@ -388,7 +461,7 @@ const PromotionsManagement = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleEdit(promotion)}
+                    onClick={(event) => handleEdit(promotion, event.currentTarget)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>

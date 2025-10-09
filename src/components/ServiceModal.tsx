@@ -392,7 +392,7 @@ const ServiceModal: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl w-[95vw] max-h-[80vh] overflow-hidden flex flex-col bg-gradient-to-br from-background via-accent/5 to-background fixed top-[55%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999]">
+      <DialogContent className="max-w-3xl w-[95vw] max-h-[80vh] overflow-hidden flex flex-col bg-gradient-to-br from-background via-accent/5 to-background">
         <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-primary/5 via-accent/10 to-secondary/5 -mx-6 px-6 -mt-6 pt-6 rounded-t-lg">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-full bg-primary/10">

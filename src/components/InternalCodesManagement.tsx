@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,13 @@ const InternalCodesManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedCode, setSelectedCode] = useState<InternalCode | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const createTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const [createModalLayout, setCreateModalLayout] = useState({
+    top: 0,
+    left: 0,
+    width: 520,
+    maxHeight: 600,
+  });
 
   const [newCode, setNewCode] = useState({
     code: '',
@@ -122,6 +129,53 @@ const InternalCodesManagement = () => {
     return `Último uso: ${new Date(code.last_used).toLocaleDateString()}`;
   };
 
+  const updateCreateModalLayout = (trigger?: HTMLElement | null) => {
+    if (typeof window === 'undefined') return;
+
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const width = Math.min(520, windowWidth - 32);
+    const maxHeight = Math.min(600, windowHeight - 32);
+
+    let top = window.scrollY + (windowHeight - maxHeight) / 2;
+    let left = (windowWidth - width) / 2;
+
+    if (trigger) {
+      const rect = trigger.getBoundingClientRect();
+      top = rect.top + window.scrollY - maxHeight / 2 + rect.height / 2;
+      left = rect.left + rect.width / 2 - width / 2;
+    }
+
+    const minTop = window.scrollY + 16;
+    const maxTop = Math.max(minTop, window.scrollY + windowHeight - maxHeight - 16);
+    const minLeft = 16;
+    const maxLeft = Math.max(minLeft, windowWidth - width - 16);
+
+    setCreateModalLayout({
+      top: Math.max(minTop, Math.min(top, maxTop)),
+      left: Math.max(minLeft, Math.min(left, maxLeft)),
+      width,
+      maxHeight,
+    });
+  };
+
+  useEffect(() => {
+    if (!isCreateDialogOpen) return;
+
+    const trigger = createTriggerRef.current;
+    updateCreateModalLayout(trigger || undefined);
+
+    const handleReposition = () => updateCreateModalLayout(trigger || undefined);
+
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
+
+    return () => {
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
+    };
+  }, [isCreateDialogOpen]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -133,19 +187,36 @@ const InternalCodesManagement = () => {
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center space-x-2">
+            <Button
+              ref={createTriggerRef}
+              className="flex items-center space-x-2"
+              onClick={(event) => updateCreateModalLayout(event.currentTarget)}
+            >
               <Plus className="h-4 w-4" />
               <span>Nuevo Código</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="internal-codes-modal fixed left-[50vw] top-[50vh] -translate-x-1/2 -translate-y-1/2 max-w-[425px] max-h-[85vh] z-[100]">
+          <DialogContent
+            className="max-w-none w-full overflow-hidden rounded-xl border bg-background shadow-2xl left-auto top-auto -translate-x-0 -translate-y-0 p-6"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            style={{
+              position: 'fixed',
+              top: createModalLayout.top,
+              left: createModalLayout.left,
+              width: createModalLayout.width,
+              maxHeight: createModalLayout.maxHeight,
+              display: 'flex',
+              flexDirection: 'column',
+              transform: 'none',
+            }}
+          >
             <DialogHeader>
               <DialogTitle>Crear Nuevo Código</DialogTitle>
               <DialogDescription>
                 Crea un nuevo código interno para organizar y categorizar información.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="flex-1 space-y-4 overflow-y-auto pr-2">
               <div>
                 <Label htmlFor="code">Código *</Label>
                 <Input
@@ -395,7 +466,7 @@ const InternalCodesManagement = () => {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="internal-codes-modal">
+        <DialogContent className="max-w-[460px]">
           <DialogHeader>
             <DialogTitle>Editar Código</DialogTitle>
             <DialogDescription>

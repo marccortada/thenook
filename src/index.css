@@ -329,17 +329,6 @@ All colors MUST be HSL.
       touch-action: manipulation;
     }
 
-    /* Specific modal centering fix for internal codes management */
-    .internal-codes-modal {
-      /* Override Tailwind classes with !important */
-      left: 50vw !important;
-      top: 50vh !important;
-      transform: translate(-50%, -50%) !important;
-      position: fixed !important;
-      max-width: min(425px, 90vw) !important;
-      max-height: 85vh !important;
-      z-index: 100 !important;
-    }
   }
 
   /* Mobile responsive improvements */
@@ -384,8 +373,8 @@ All colors MUST be HSL.
       min-width: 44px;
     }
 
-    /* Better modal sizing on mobile - exclude internal codes modals */
-    [data-radix-dialog-content]:not(.internal-codes-modal) {
+    /* Better modal sizing on mobile */
+    [data-radix-dialog-content] {
       max-width: calc(100vw - 2rem) !important;
       max-height: calc(100vh - 2rem) !important;
     }

@@ -27,7 +27,8 @@ import {
   Check,
   CheckCircle2,
   Ban,
-  Trash2
+  Trash2,
+  Move
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -101,8 +102,9 @@ const AdvancedCalendarView = () => {
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
   
-  // Lane blocking state
+  // Lane blocking / move state
   const [blockingMode, setBlockingMode] = useState(false);
+  const [moveMode, setMoveMode] = useState(false);
   const [blockStartSlot, setBlockStartSlot] = useState<{ laneId: string; timeSlot: Date } | null>(null);
   const [blockEndSlot, setBlockEndSlot] = useState<{ laneId: string; timeSlot: Date } | null>(null);
   
@@ -404,6 +406,10 @@ const AdvancedCalendarView = () => {
 
   // Handle mouse down for drag start
   const handleSlotMouseDown = (centerId: string, laneId: string, date: Date, timeSlot: Date, event: React.MouseEvent) => {
+    if (moveMode) {
+      return;
+    }
+
     event.preventDefault();
     
     // Si estamos en modo bloqueo tradicional
@@ -431,13 +437,68 @@ const AdvancedCalendarView = () => {
 
   // Handle mouse enter for drag
   const handleSlotMouseEnter = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
+    if (moveMode) return;
     if (isDragging && dragStart && dragStart.laneId === laneId) {
       setDragEnd({ centerId, laneId, timeSlot });
     }
   };
 
+  const updateModalPosition = React.useCallback((target?: HTMLElement | null) => {
+    if (typeof window === 'undefined') {
+      setModalPosition({ top: 100, left: 100 });
+      return;
+    }
+
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const viewportTop = scrollTop;
+    const viewportBottom = scrollTop + windowHeight;
+
+    const modalWidth = windowWidth < 768 ? Math.max(280, windowWidth - 32) : Math.min(520, windowWidth - 48);
+    const modalHeight = Math.min(windowHeight - 40, windowWidth < 768 ? windowHeight - 32 : 720);
+
+    let top = scrollTop + (windowHeight - modalHeight) / 2;
+    let left = (windowWidth - modalWidth) / 2;
+
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      top = rect.top + scrollTop - modalHeight / 2;
+      left = rect.left + rect.width / 2 - modalWidth / 2;
+    }
+
+    top = Math.max(viewportTop + 16, Math.min(top, viewportBottom - modalHeight - 16));
+    left = Math.max(16, Math.min(left, windowWidth - modalWidth - 16));
+
+    setModalPosition({ top, left });
+  }, []);
+
+  const getModalStyle = React.useCallback((): React.CSSProperties => {
+    if (typeof window === 'undefined') {
+      return {
+        top: `${modalPosition.top}px`,
+        left: `${modalPosition.left}px`,
+        width: '520px',
+        maxHeight: '85vh'
+      };
+    }
+
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const width = windowWidth < 768 ? Math.max(280, windowWidth - 32) : Math.min(520, windowWidth - 48);
+    const maxHeight = Math.min(windowHeight - 40, windowWidth < 768 ? windowHeight - 32 : 720);
+
+    return {
+      top: `${modalPosition.top}px`,
+      left: `${modalPosition.left}px`,
+      width: `${width}px`,
+      maxHeight: `${maxHeight}px`
+    };
+  }, [modalPosition]);
+
   // Handle mouse up for drag end
   const handleSlotMouseUp = (centerId: string, laneId: string, date: Date, timeSlot: Date, event: React.MouseEvent) => {
+    if (moveMode) return;
     if (!isDragging || !dragStart) return;
     
     setIsDragging(false);
@@ -464,35 +525,7 @@ const AdvancedCalendarView = () => {
       const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60) + 5; // +5 para incluir el slot final
       
       // Calcular posición del modal
-      if (event?.currentTarget) {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        
-        const estimatedModalHeight = 600;
-        const viewportTop = scrollTop;
-        const viewportBottom = scrollTop + windowHeight;
-        const modalTop = Math.max(viewportTop + 20, Math.min(
-          viewportTop + (windowHeight - estimatedModalHeight) / 2,
-          viewportBottom - estimatedModalHeight - 20
-        ));
-        
-        if (windowWidth < 768) {
-          const modalWidth = windowWidth - 40;
-          setModalPosition({
-            top: modalTop,
-            left: (windowWidth - modalWidth) / 2
-          });
-        } else {
-          const slotRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-          const slotCenterX = slotRect.left + (slotRect.width / 2);
-          const modalWidth = Math.min(500, windowWidth - 40);
-          setModalPosition({
-            top: modalTop,
-            left: Math.max(20, Math.min(slotCenterX - (modalWidth / 2), windowWidth - modalWidth - 20))
-          });
-        }
-      }
+      updateModalPosition(event?.currentTarget as HTMLElement | null);
 
       // Configurar formulario de reserva
       setSelectedSlot({ centerId, laneId, timeSlot: startTime });
@@ -527,41 +560,12 @@ const AdvancedCalendarView = () => {
       return;
     }
 
-    // Calcular posición del modal basada en el elemento clickeado
-    if (event?.currentTarget) {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const windowWidth = window.innerWidth;
-      const windowHeight = window.innerHeight;
-      
-      // Altura estimada del modal
-      const estimatedModalHeight = 600;
-      
-      // Posición vertical: centrar en el viewport visible
-      const viewportTop = scrollTop;
-      const viewportBottom = scrollTop + windowHeight;
-      const modalTop = Math.max(viewportTop + 20, Math.min(
-        viewportTop + (windowHeight - estimatedModalHeight) / 2,
-        viewportBottom - estimatedModalHeight - 20
-      ));
-      
-      // En móvil, centrar perfectamente en la pantalla
-      if (windowWidth < 768) {
-        const modalWidth = windowWidth - 40; // 20px margin on each side
-        setModalPosition({
-          top: modalTop,
-          left: (windowWidth - modalWidth) / 2 // Centrar perfectamente
-        });
-      } else {
-        // En desktop, centrar basado en el slot clickeado
-        const slotRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-        const slotCenterX = slotRect.left + (slotRect.width / 2);
-        const modalWidth = Math.min(500, windowWidth - 40);
-        setModalPosition({
-          top: modalTop,
-          left: Math.max(20, Math.min(slotCenterX - (modalWidth / 2), windowWidth - modalWidth - 20))
-        });
-      }
+    if (moveMode) {
+      return;
     }
+
+    // Calcular posición del modal basada en el elemento clickeado
+    updateModalPosition(event?.currentTarget as HTMLElement | null);
 
     const existingBooking = getBookingForSlot(centerId, laneId, date, timeSlot);
     
@@ -966,26 +970,51 @@ const AdvancedCalendarView = () => {
               </Badge>
             </div>
             {(isAdmin || isEmployee) && (
-              <Button
-                variant={blockingMode ? "destructive" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setBlockingMode(!blockingMode);
-                  setBlockStartSlot(null);
-                  setBlockEndSlot(null);
-                }}
-              >
-                <Ban className="w-3 h-3 mr-1" />
-                {blockingMode ? 'Cancelar' : 'Bloquear'}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={blockingMode ? "destructive" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    const next = !blockingMode;
+                    setBlockingMode(next);
+                    if (next) {
+                      setMoveMode(false);
+                    }
+                    setBlockStartSlot(null);
+                    setBlockEndSlot(null);
+                  }}
+                >
+                  <Ban className="w-3 h-3 mr-1" />
+                  {blockingMode ? 'Cancelar' : 'Bloquear'}
+                </Button>
+                <Button
+                  variant={moveMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    const next = !moveMode;
+                    setMoveMode(next);
+                    if (next) {
+                      setBlockingMode(false);
+                      setIsDragging(false);
+                      setDragStart(null);
+                      setDragEnd(null);
+                    }
+                  }}
+                >
+                  <Move className="w-3 h-3 mr-1" />
+                  {moveMode ? 'Mover (on)' : 'Mover'}
+                </Button>
+              </div>
             )}
           </CardTitle>
-          {blockingMode && (
+          {(blockingMode || moveMode) && (
             <div className="text-xs text-muted-foreground">
-              Haz clic en una franja para empezar, luego en otra para definir el rango.
+              {blockingMode
+                ? 'Haz clic en una franja para empezar, luego en otra para definir el rango.'
+                : 'Modo mover activo: arrastra una reserva y suéltala en otro carril u horario.'}
             </div>
           )}
-          {!blockingMode && (
+          {!blockingMode && !moveMode && (
             <div className="text-xs text-muted-foreground">
               💡 <strong>Click y arrastra</strong> para crear reservas o <strong>Shift + arrastra</strong> para bloquear intervalos
             </div>
@@ -1063,20 +1092,37 @@ const AdvancedCalendarView = () => {
                               e.preventDefault();
                               e.dataTransfer.dropEffect = 'move';
                             }}
-                             onDrop={(e) => {
-                               e.preventDefault();
-                               const bookingData = e.dataTransfer.getData('booking');
-                               if (bookingData) {
-                                 const draggedBooking = JSON.parse(bookingData);
-                                 // Use the current timeSlot as the new position (where the drop occurred)
-                                 // This ensures the booking moves to exactly where the user dropped it
-                                 moveBooking(draggedBooking.id, selectedCenter, lane.id, selectedDate, timeSlot.time);
-                               }
-                             }}
+                            onDrop={(e) => {
+                              if (!moveMode) return;
+                              e.preventDefault();
+                              const bookingData = e.dataTransfer.getData('booking');
+                              if (bookingData) {
+                                const draggedBooking = JSON.parse(bookingData);
+                                const laneCenterId = lane.center_id || draggedBooking.center_id || selectedCenter;
+                                const dropDate = new Date(selectedDate);
+                                dropDate.setHours(timeSlot.time.getHours(), timeSlot.time.getMinutes(), 0, 0);
+                                console.log('🖱️ Drop detected (day view):', {
+                                  bookingId: draggedBooking.id,
+                                  targetLane: lane.id,
+                                  targetCenter: laneCenterId,
+                                  dropDate: dropDate.toISOString()
+                                });
+                                moveBooking(
+                                  draggedBooking.id,
+                                  laneCenterId,
+                                  lane.id,
+                                  dropDate,
+                                  timeSlot.time
+                                );
+                              }
+                            }}
                           >
                            {booking && isFirstSlotOfBooking && (
                              <div
-                                className="absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md cursor-move"
+                                className={cn(
+                                  "absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md",
+                                  moveMode ? "cursor-move" : "cursor-pointer"
+                                )}
                                  style={{ 
                                    backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
                                    borderLeftColor: getServiceLaneColor(booking.service_id),
@@ -1084,14 +1130,16 @@ const AdvancedCalendarView = () => {
                                    height: `${((booking.duration_minutes || 60) / 5) * 24}px`,
                                    zIndex: 2
                                  }}
-                                draggable={true}
+                                draggable={moveMode}
                                 onDragStart={(e) => {
+                                  if (!moveMode) return;
                                   // Store both booking data and the original time slot for reference
                                   const dragData = {
                                     ...booking,
                                     originalTimeSlot: timeSlot.time.toISOString()
                                   };
                                   e.dataTransfer.setData('booking', JSON.stringify(dragData));
+                                  e.dataTransfer.setData('text/plain', booking.id);
                                   e.dataTransfer.effectAllowed = 'move';
                                   // Set drag image to be the booking card itself for better visual feedback
                                   e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 10, 10);
@@ -1263,17 +1311,35 @@ const AdvancedCalendarView = () => {
                              e.dataTransfer.dropEffect = 'move';
                            }}
                            onDrop={(e) => {
+                             if (!moveMode) return;
                              e.preventDefault();
                              const bookingData = e.dataTransfer.getData('booking');
                              if (bookingData) {
-                               const booking = JSON.parse(bookingData);
-                               moveBooking(booking.id, selectedCenter, lane.id, date, slotDateTime);
+                               const droppedBooking = JSON.parse(bookingData);
+                               const laneCenterId = lane.center_id || droppedBooking.center_id || selectedCenter;
+                               console.log('🖱️ Drop detected (week view):', {
+                                 bookingId: droppedBooking.id,
+                                 targetLane: lane.id,
+                                 targetCenter: laneCenterId,
+                                 date: date.toISOString(),
+                                 time: slotDateTime.toISOString()
+                               });
+                               moveBooking(
+                                 droppedBooking.id,
+                                 laneCenterId,
+                                 lane.id,
+                                 date,
+                                 slotDateTime
+                               );
                              }
                            }}
                          >
                            {booking && isFirstSlotOfBooking && (
                               <div
-                                className="absolute inset-0 rounded-sm text-[8px] p-0.5 border-l-2 truncate z-10 cursor-move"
+                                className={cn(
+                                  "absolute inset-0 rounded-sm text-[8px] p-0.5 border-l-2 truncate z-10",
+                                  moveMode ? "cursor-move" : "cursor-pointer"
+                                )}
                                  style={{ 
                                    backgroundColor: `${getServiceLaneColor(booking.service_id)}40`,
                                    borderLeftColor: getServiceLaneColor(booking.service_id),
@@ -1281,9 +1347,11 @@ const AdvancedCalendarView = () => {
                                     height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
                                    minHeight: '24px'
                                  }}
-                               draggable={true}
+                               draggable={moveMode}
                                onDragStart={(e) => {
+                                 if (!moveMode) return;
                                  e.dataTransfer.setData('booking', JSON.stringify(booking));
+                                 e.dataTransfer.setData('text/plain', booking.id);
                                  e.dataTransfer.effectAllowed = 'move';
                                }}
                              >
@@ -1363,16 +1431,15 @@ const AdvancedCalendarView = () => {
   // Debug info
   console.log('📅 Calendar render - Mobile:', isMobile, 'Selected center:', selectedCenter, 'Centers:', centers.length);
 
-  // Mobile view redirect - after all hooks are called
-  if (isMobile) {
-    return <MobileCalendarView 
-      selectedDate={selectedDate} 
-      selectedCenter={selectedCenter} 
+  // Build main view depending on viewport so mobile reuses shared modals
+  const mainView = isMobile ? (
+    <MobileCalendarView
+      selectedDate={selectedDate}
+      selectedCenter={selectedCenter}
       onCenterChange={setSelectedCenter}
-    />;
-  }
-
-  return (
+      onSlotSelect={handleSlotClick}
+    />
+  ) : (
     <div className="space-y-4">
       {/* Header Controls - Mobile Optimized */}
       <div className="space-y-3">
@@ -1389,9 +1456,9 @@ const AdvancedCalendarView = () => {
               Hoy
             </Button>
           </div>
-          
+
           <div className="text-lg sm:text-xl font-semibold text-center sm:text-left">
-            {viewMode === 'day' 
+            {viewMode === 'day'
               ? format(selectedDate, "EEEE, d 'de' MMMM yyyy", { locale: es })
               : `${format(getWeekDates()[0], "d MMM", { locale: es })} - ${format(getWeekDates()[6], "d MMM yyyy", { locale: es })}`
             }
@@ -1415,8 +1482,8 @@ const AdvancedCalendarView = () => {
                     }}
                     className={cn(
                       "flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all duration-200",
-                      isSelected 
-                        ? "bg-primary/10 border-primary text-primary" 
+                      isSelected
+                        ? "bg-primary/10 border-primary text-primary"
                         : "bg-background border-border hover:bg-accent/50"
                     )}
                   >
@@ -1433,8 +1500,8 @@ const AdvancedCalendarView = () => {
                 );
               })}
             </div>
+          </div>
 
-          
           {/* View Mode Toggle - Better Mobile Layout */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Vista</label>
@@ -1458,7 +1525,7 @@ const AdvancedCalendarView = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Blocking Mode Info */}
         {blockingMode && (
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -1471,501 +1538,507 @@ const AdvancedCalendarView = () => {
 
       {/* Calendar View */}
       {viewMode === 'day' ? renderDayView() : renderWeekView()}
+    </div>
+  );
 
-      {/* New Booking Modal - Positioned above clicked slot */}
-      {showBookingModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-           <div 
-            className="bg-background w-full max-w-2xl max-h-[95vh] rounded-lg shadow-xl border overflow-hidden flex flex-col"
-          >
-            <div className="flex flex-col h-full max-h-[95vh]">
-              {/* Header - Fixed */}
-              <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background relative">
-                <button
-                  onClick={() => setShowBookingModal(false)}
-                  className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  <X className="h-4 w-4" />
-                  <span className="sr-only">Cerrar</span>
-                </button>
-                <h3 className="text-xl font-semibold">Nueva Reserva</h3>
-                <p className="text-sm text-gray-600">
-                  Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
-                </p>
-                {createClientId && (
-                  <p className="text-sm text-primary font-medium mt-2">
-                    Cliente seleccionado: {bookingForm.clientName}
-                  </p>
-                )}
+
+  const bookingModal = showBookingModal ? (
+    <>
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+        onClick={() => setShowBookingModal(false)}
+      />
+      <div
+        className="fixed z-50 bg-background rounded-lg shadow-2xl border overflow-hidden flex flex-col"
+        style={getModalStyle()}
+      >
+        <div className="flex flex-col h-full max-h-[95vh]">
+          <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background relative">
+            <button
+              onClick={() => setShowBookingModal(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-xl font-semibold">Nueva Reserva</h3>
+            <p className="text-sm text-gray-600">
+              Crear una nueva reserva para el {selectedSlot && format(selectedSlot.timeSlot, 'HH:mm')} del {selectedSlot && format(bookingForm.date, "d 'de' MMMM", { locale: es })}
+            </p>
+            {createClientId && (
+              <p className="text-sm text-primary font-medium mt-2">
+                Cliente seleccionado: {bookingForm.clientName}
+              </p>
+            )}
+          </div>
+
+          <div className="px-6 py-6 overflow-y-auto flex-1 space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="walkIn"
+                  checked={bookingForm.isWalkIn || false}
+                  onChange={(e) => {
+                    const isWalkIn = e.target.checked;
+                    setBookingForm((prev) => ({
+                      ...prev,
+                      isWalkIn,
+                      clientName: isWalkIn ? '' : prev.clientName,
+                      clientPhone: isWalkIn ? '' : prev.clientPhone,
+                      clientEmail: isWalkIn ? '' : prev.clientEmail,
+                    }));
+                    if (isWalkIn) {
+                      setCreateClientId(null);
+                    }
+                  }}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="walkIn" className="text-sm font-medium">
+                  WALK IN (cliente sin datos previos)
+                </Label>
               </div>
-
-              {/* Content - Scrollable */}
-              <div className="px-6 py-6 overflow-y-auto flex-1 space-y-6">
-                {/* Walk-in Toggle */}
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="walkIn"
-                      checked={bookingForm.isWalkIn || false}
-                      onChange={(e) => {
-                        const isWalkIn = e.target.checked;
-                        setBookingForm((prev) => ({
-                          ...prev,
-                          isWalkIn,
-                          clientName: isWalkIn ? '' : prev.clientName,
-                          clientPhone: isWalkIn ? '' : prev.clientPhone,
-                          clientEmail: isWalkIn ? '' : prev.clientEmail,
-                        }));
-                        if (isWalkIn) {
-                          setCreateClientId(null);
-                        }
-                      }}
-                      className="h-4 w-4"
-                    />
-                    <Label htmlFor="walkIn" className="text-sm font-medium">
-                      WALK IN (cliente sin datos previos)
-                    </Label>
-                  </div>
-                  
-                  {bookingForm.isWalkIn && (
-                    <div className="flex items-center space-x-2 pl-6">
-                      <input
-                        type="checkbox"
-                        id="saveAsClient"
-                        checked={bookingForm.saveAsClient || false}
-                        onChange={(e) => setBookingForm((prev) => ({
-                          ...prev,
-                          saveAsClient: e.target.checked
-                        }))}
-                        className="h-4 w-4"
-                      />
-                      <Label htmlFor="saveAsClient" className="text-sm text-muted-foreground">
-                        Guardar como cliente futuro
-                      </Label>
-                    </div>
-                  )}
+              
+              {bookingForm.isWalkIn && (
+                <div className="flex items-center space-x-2 pl-6">
+                  <input
+                    type="checkbox"
+                    id="saveAsClient"
+                    checked={bookingForm.saveAsClient || false}
+                    onChange={(e) => setBookingForm((prev) => ({
+                      ...prev,
+                      saveAsClient: e.target.checked
+                    }))}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="saveAsClient" className="text-sm text-muted-foreground">
+                    Guardar como cliente futuro
+                  </Label>
                 </div>
+              )}
+            </div>
 
-                {!bookingForm.isWalkIn && (
-                  <>
-                    <div className="space-y-2">
-                      <RepeatClientSelector
-                        label="Cliente habitual (opcional)"
-                        placeholder="Buscar cliente que haya venido más de una vez..."
-                        onSelect={(c) => {
-                          setCreateClientId(c.id);
-                          setBookingForm((prev) => ({
-                            ...prev,
-                            clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
-                            clientPhone: c.phone || '',
-                            clientEmail: c.email || '',
-                          }));
-                        }}
-                      />
-                    </div>
-
-                    <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
-                      <span>O crear nueva reserva para cliente nuevo:</span>
-                      <ClientSelectionModal
-                        onSelect={(c) => {
-                          console.log('Cliente seleccionado desde modal:', c);
-                          setCreateClientId(c.id);
-                          setBookingForm((prev) => ({
-                            ...prev,
-                            clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
-                            clientPhone: c.phone || '',
-                            clientEmail: c.email || '',
-                          }));
-                        }}
-                      >
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          type="button"
-                          onClick={() => console.log('Botón Ver todos los clientes clickeado')}
-                        >
-                          <User className="w-4 h-4 mr-2" />
-                          Ver todos los clientes
-                        </Button>
-                      </ClientSelectionModal>
-                    </div>
-                  </>
-                )}
-
-                {/* Client Information Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="clientName" className="text-sm font-medium">
-                      {bookingForm.isWalkIn ? 'Nombre Walk-In' : 'Nombre del cliente'} {!bookingForm.isWalkIn && '*'}
-                    </Label>
-                    <Input
-                      id="clientName"
-                      value={bookingForm.clientName}
-                      onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
-                      placeholder={bookingForm.isWalkIn ? "Nombre del cliente walk-in" : "Nombre y apellidos"}
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="clientPhone" className="text-sm font-medium">Teléfono</Label>
-                    <Input
-                      id="clientPhone"
-                      value={bookingForm.clientPhone}
-                      onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
-                      placeholder="+34 600 000 000"
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="clientEmail" className="text-sm font-medium">Email</Label>
-                    <Input
-                      id="clientEmail"
-                      type="email"
-                      value={bookingForm.clientEmail}
-                      onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
-                      placeholder="cliente@example.com"
-                      className="h-11"
-                    />
-                  </div>
-                </div>
-
-                {/* Service Selection */}
+            {!bookingForm.isWalkIn && (
+              <>
                 <div className="space-y-2">
-                  <Label htmlFor="serviceId" className="text-sm font-medium">Servicio *</Label>
-                  <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue placeholder="Seleccionar servicio" />
-                    </SelectTrigger>
-                    <SelectContent 
-                      position="popper"
-                      side="bottom"
-                      align="center"
-                      sideOffset={2}
-                      avoidCollisions={true}
-                      collisionPadding={8}
-                      sticky="always"
-                    >
-                      {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Notes */}
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notas internas</Label>
-                  <Textarea
-                    id="notes"
-                    value={bookingForm.notes || ''}
-                    onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
-                    rows={3}
-                    placeholder="Añade notas internas..."
+                  <RepeatClientSelector
+                    label="Cliente habitual (opcional)"
+                    placeholder="Buscar cliente que haya venido más de una vez..."
+                    onSelect={(c) => {
+                      setCreateClientId(c.id);
+                      setBookingForm((prev) => ({
+                        ...prev,
+                        clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                        clientPhone: c.phone || '',
+                        clientEmail: c.email || '',
+                      }));
+                    }}
                   />
                 </div>
-              </div>
 
-              {/* Footer with action buttons */}
-              <div className="px-6 py-4 border-t bg-background flex-shrink-0">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowBookingModal(false)}
-                    className="flex-1"
+                <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
+                  <span>O crear nueva reserva para cliente nuevo:</span>
+                  <ClientSelectionModal
+                    onSelect={(c) => {
+                      setCreateClientId(c.id);
+                      setBookingForm((prev) => ({
+                        ...prev,
+                        clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                        clientPhone: c.phone || '',
+                        clientEmail: c.email || '',
+                      }));
+                    }}
                   >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={createBooking}
-                    className="flex-1"
-                    disabled={!bookingForm.serviceId || (!bookingForm.isWalkIn && !bookingForm.clientName.trim())}
-                  >
-                    <Check className="h-4 w-4 mr-2" />
-                    Crear Reserva
-                  </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      type="button"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Ver todos los clientes
+                    </Button>
+                  </ClientSelectionModal>
                 </div>
+              </>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="clientName" className="text-sm font-medium">
+                  {bookingForm.isWalkIn ? 'Nombre Walk-In' : 'Nombre del cliente'} {!bookingForm.isWalkIn && '*'}
+                </Label>
+                <Input
+                  id="clientName"
+                  value={bookingForm.clientName}
+                  onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
+                  placeholder={bookingForm.isWalkIn ? "Nombre del cliente walk-in" : "Nombre y apellidos"}
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="clientPhone" className="text-sm font-medium">Teléfono</Label>
+                <Input
+                  id="clientPhone"
+                  value={bookingForm.clientPhone}
+                  onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
+                  placeholder="+34 600 000 000"
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="clientEmail" className="text-sm font-medium">Email</Label>
+                <Input
+                  id="clientEmail"
+                  type="email"
+                  value={bookingForm.clientEmail}
+                  onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
+                  placeholder="cliente@example.com"
+                  className="h-11"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="serviceId" className="text-sm font-medium">Servicio *</Label>
+              <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Seleccionar servicio" />
+                </SelectTrigger>
+                <SelectContent 
+                  position="popper"
+                  side="bottom"
+                  align="center"
+                  sideOffset={2}
+                  avoidCollisions={true}
+                  collisionPadding={8}
+                  sticky="always"
+                >
+                  {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notas internas</Label>
+              <Textarea
+                id="notes"
+                value={bookingForm.notes || ''}
+                onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
+                rows={3}
+                placeholder="Añade notas internas..."
+              />
+            </div>
+          </div>
+
+          <div className="px-6 py-4 border-t bg-background flex-shrink-0">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowBookingModal(false)}
+                className="flex-1"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancelar
+              </Button>
+              <Button 
+                onClick={createBooking}
+                className="flex-1"
+                disabled={!bookingForm.serviceId || (!bookingForm.isWalkIn && !bookingForm.clientName.trim())}
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Crear Reserva
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  ) : null;
+
+  const editBookingModal = showEditModal && editingBooking ? (
+    <>
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+        onClick={() => {
+          setShowEditModal(false);
+          setEditingBooking(null);
+        }}
+      />
+      <div
+        className="fixed z-50 bg-background rounded-lg shadow-2xl border overflow-hidden flex flex-col"
+        style={getModalStyle()}
+      >
+        <div className="flex flex-col h-full max-h-[95vh]">
+          <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background">
+            <h3 className="text-xl font-semibold">Editar Reserva</h3>
+            <p className="text-sm text-gray-600">
+              Editar reserva de {editName} para el {format(editTime, 'HH:mm')} del {format(editTime, "d 'de' MMMM", { locale: es })}
+            </p>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nombre</Label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Teléfono</Label>
+                <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="serviceId" className="text-sm font-medium">Servicio *</Label>
+              <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Seleccionar servicio" />
+                </SelectTrigger>
+                <SelectContent 
+                  position="popper"
+                  side="bottom"
+                  align="center"
+                  sideOffset={2}
+                  avoidCollisions={true}
+                  collisionPadding={8}
+                  sticky="always"
+                >
+                  {services.filter(s => s.center_id === (editingBooking?.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Hora</Label>
+              <Select value={format(editTime, 'HH:mm')} onValueChange={(val) => {
+                const [h, m] = val.split(':').map(Number);
+                const d = new Date(editTime);
+                d.setHours(h, m, 0, 0);
+                setEditTime(d);
+              }}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent 
+                  position="popper"
+                  side="bottom"
+                  align="center"
+                  sideOffset={2}
+                  avoidCollisions={true}
+                  collisionPadding={8}
+                  sticky="always"
+                >
+                  {timeOptions5m.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Duración (min)</Label>
+              <Input type="number" min={15} step={15} value={editDuration} onChange={(e) => setEditDuration(parseInt(e.target.value || '60', 10))} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="payment">Estado de pago</Label>
+                <Select value={editPaymentStatus} onValueChange={(v) => setEditPaymentStatus(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent 
+                    position="popper"
+                    side="bottom"
+                    align="center"
+                    sideOffset={2}
+                    avoidCollisions={true}
+                    collisionPadding={8}
+                    sticky="always"
+                  >
+                    <SelectItem value="pending">Pendiente</SelectItem>
+                    <SelectItem value="paid">Pagado</SelectItem>
+                    <SelectItem value="failed">Fallido</SelectItem>
+                    <SelectItem value="refunded">Reembolsado</SelectItem>
+                    <SelectItem value="partial_refund">Reembolso Parcial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="bookingStatus">Estado de reserva</Label>
+                <Select value={editBookingStatus} onValueChange={(v) => setEditBookingStatus(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent 
+                    position="popper"
+                    side="bottom"
+                    align="center"
+                    sideOffset={2}
+                    avoidCollisions={true}
+                    collisionPadding={8}
+                    sticky="always"
+                  >
+                    <SelectItem value="pending">Pendiente</SelectItem>
+                    <SelectItem value="requested">Solicitada</SelectItem>
+                    <SelectItem value="confirmed">Confirmada</SelectItem>
+                    <SelectItem value="new">Nueva</SelectItem>
+                    <SelectItem value="online">Online</SelectItem>
+                    <SelectItem value="completed">Completada</SelectItem>
+                    <SelectItem value="cancelled">Cancelada</SelectItem>
+                    <SelectItem value="no_show">No Show</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-1">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                Códigos de la Reserva
+              </Label>
+              
+              <div className="flex flex-wrap gap-2">
+                {codes.map((code) => (
+                  <Badge
+                    key={code.id}
+                    variant={editBookingCodes.includes(code.code) ? "default" : "outline"}
+                    className="cursor-pointer text-xs"
+                    style={{
+                      backgroundColor: editBookingCodes.includes(code.code) ? code.color : 'transparent',
+                      borderColor: code.color,
+                      color: editBookingCodes.includes(code.code) ? 'white' : code.color
+                    }}
+                    onClick={() => {
+                      const newCodes = editBookingCodes.includes(code.code)
+                        ? editBookingCodes.filter(c => c !== code.code)
+                        : [...editBookingCodes, code.code];
+                      setEditBookingCodes(newCodes);
+                    }}
+                  >
+                    {code.code} - {code.name}
+                  </Badge>
+                ))}
+              </div>
+              
+              {editingBooking?.profiles?.id && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Códigos del cliente:</Label>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {getAssignmentsByEntity('client', editingBooking.profiles.id).map((assignment) => (
+                      <Badge 
+                        key={assignment.id}
+                        variant="outline"
+                        className="text-xs"
+                        style={{ 
+                          borderColor: assignment.code_color,
+                          color: assignment.code_color,
+                          backgroundColor: `${assignment.code_color}10`
+                        }}
+                      >
+                        {assignment.code}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notesEdit">Notas internas</Label>
+              <Textarea
+                id="notesEdit"
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                rows={4}
+                placeholder="Añade notas internas..."
+              />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  size="sm" 
+                  variant="default"
+                  className="flex-1"
+                  onClick={() => {
+                    setEditPaymentStatus('paid');
+                    setEditBookingStatus('confirmed');
+                  }}
+                >
+                  💳 Cobrar
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="destructive" className="flex-1">
+                      <Trash2 className="h-4 w-4 mr-2" /> Borrar
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="mx-4 sm:mx-auto">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Borrar reserva?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción elimina la reserva definitivamente. No se puede deshacer.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => deleteBooking(editingBooking?.id)}
+                        className="w-full sm:w-auto"
+                      >
+                        Sí, borrar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => { setShowEditModal(false); setEditingBooking(null); }}
+                >
+                  <X className="h-4 w-4 mr-2" /> Cancelar
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={saveBookingEdits}
+                  className="flex-1"
+                >
+                  <Save className="h-4 w-4 mr-2" /> Guardar
+                </Button>
               </div>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Edit Booking Modal */}
-      {showEditModal && editingBooking && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-background w-full max-w-2xl max-h-[95vh] rounded-lg shadow-xl border overflow-hidden flex flex-col">
-            <div className="flex flex-col h-full max-h-[95vh]">
-              {/* Header */}
-              <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background">
-                <h3 className="text-xl font-semibold">Editar Reserva</h3>
-                <p className="text-sm text-gray-600">
-                  Editar reserva de {editName} para el {format(editTime, 'HH:mm')} del {format(editTime, "d 'de' MMMM", { locale: es })}
-                </p>
-              </div>
-              
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nombre</Label>
-                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Teléfono</Label>
-                    <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                   <Label htmlFor="serviceId" className="text-sm font-medium">Servicio *</Label>
-                  <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue placeholder="Seleccionar servicio" />
-                    </SelectTrigger>
-                     <SelectContent 
-                       position="popper"
-                       side="bottom"
-                       align="center"
-                       sideOffset={2}
-                       avoidCollisions={true}
-                       collisionPadding={8}
-                       sticky="always"
-                     >
-                         {services.filter(s => s.center_id === (editingBooking?.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
-                           <SelectItem key={service.id} value={service.id}>
-                             {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
-                           </SelectItem>
-                         ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Hora</Label>
-                    <Select value={format(editTime, 'HH:mm')} onValueChange={(val) => {
-                      const [h,m] = val.split(':').map(Number);
-                      const d = new Date(editTime);
-                      d.setHours(h, m, 0, 0);
-                      setEditTime(d);
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                         <SelectContent 
-                           position="popper"
-                           side="bottom"
-                           align="center"
-                           sideOffset={2}
-                           avoidCollisions={true}
-                           collisionPadding={8}
-                           sticky="always"
-                         >
-                       {timeOptions5m.map((t) => (
-                         <SelectItem key={t} value={t}>{t}</SelectItem>
-                       ))}
-                     </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Duración (min)</Label>
-                    <Input type="number" min={15} step={15} value={editDuration} onChange={(e) => setEditDuration(parseInt(e.target.value || '60', 10))} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="payment">Estado de pago</Label>
-                    <Select value={editPaymentStatus} onValueChange={(v) => setEditPaymentStatus(v as any)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                         <SelectContent 
-                           position="popper"
-                           side="bottom"
-                           align="center"
-                           sideOffset={2}
-                           avoidCollisions={true}
-                           collisionPadding={8}
-                           sticky="always"
-                         >
-                         <SelectItem value="pending">Pendiente</SelectItem>
-                         <SelectItem value="paid">Pagado</SelectItem>
-                         <SelectItem value="failed">Fallido</SelectItem>
-                         <SelectItem value="refunded">Reembolsado</SelectItem>
-                         <SelectItem value="partial_refund">Reembolso Parcial</SelectItem>
-                       </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="bookingStatus">Estado de reserva</Label>
-                    <Select value={editBookingStatus} onValueChange={(v) => setEditBookingStatus(v as any)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                        <SelectContent 
-                          position="popper"
-                          side="bottom"
-                          align="center"
-                          sideOffset={2}
-                          avoidCollisions={true}
-                          collisionPadding={8}
-                          sticky="always"
-                        >
-                         <SelectItem value="pending">Pendiente</SelectItem>
-                         <SelectItem value="requested">Solicitada</SelectItem>
-                         <SelectItem value="confirmed">Confirmada</SelectItem>
-                         <SelectItem value="new">Nueva</SelectItem>
-                         <SelectItem value="online">Online</SelectItem>
-                         <SelectItem value="completed">Completada</SelectItem>
-                         <SelectItem value="cancelled">Cancelada</SelectItem>
-                         <SelectItem value="no_show">No Show</SelectItem>
-                       </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Códigos de la reserva */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium flex items-center gap-1">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                    Códigos de la Reserva
-                  </Label>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {codes.map((code) => (
-                      <Badge
-                        key={code.id}
-                        variant={editBookingCodes.includes(code.code) ? "default" : "outline"}
-                        className="cursor-pointer text-xs"
-                        style={{
-                          backgroundColor: editBookingCodes.includes(code.code) ? code.color : 'transparent',
-                          borderColor: code.color,
-                          color: editBookingCodes.includes(code.code) ? 'white' : code.color
-                        }}
-                        onClick={() => {
-                          const newCodes = editBookingCodes.includes(code.code)
-                            ? editBookingCodes.filter(c => c !== code.code)
-                            : [...editBookingCodes, code.code];
-                          setEditBookingCodes(newCodes);
-                        }}
-                      >
-                        {code.code} - {code.name}
-                      </Badge>
-                    ))}
-                  </div>
-                  
-                  {editingBooking?.profiles?.id && (
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Códigos del cliente:</Label>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {getAssignmentsByEntity('client', editingBooking.profiles.id).map((assignment) => (
-                          <Badge 
-                            key={assignment.id}
-                            variant="outline"
-                            className="text-xs"
-                            style={{ 
-                              borderColor: assignment.code_color,
-                              color: assignment.code_color,
-                              backgroundColor: `${assignment.code_color}10`
-                            }}
-                          >
-                            {assignment.code}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notesEdit">Notas internas</Label>
-                  <Textarea
-                    id="notesEdit"
-                    value={editNotes}
-                    onChange={(e) => setEditNotes(e.target.value)}
-                    rows={4}
-                    placeholder="Añade notas internas..."
-                  />
-                </div>
-
-                {/* Action Buttons - Responsive Layout */}
-                <div className="space-y-3">
-                  {/* Primary Actions */}
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="default"
-                      className="flex-1"
-                      onClick={() => {
-                        setEditPaymentStatus('paid');
-                        setEditBookingStatus('confirmed');
-                      }}
-                    >
-                      💳 Cobrar
-                    </Button>
-                    
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive" className="flex-1">
-                          <Trash2 className="h-4 w-4 mr-2" /> Borrar
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="mx-4 sm:mx-auto">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Borrar reserva?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta acción elimina la reserva definitivamente. No se puede deshacer.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                          <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => deleteBooking(editingBooking?.id)}
-                            className="w-full sm:w-auto"
-                          >
-                            Sí, borrar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                  
-                  {/* Secondary Actions */}
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => { setShowEditModal(false); setEditingBooking(null); }}
-                    >
-                      <X className="h-4 w-4 mr-2" /> Cancelar
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      onClick={saveBookingEdits}
-                      className="flex-1"
-                    >
-                      <Save className="h-4 w-4 mr-2" /> Guardar
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    </div>
-    );
-  };
+    </>
+  ) : null;
 
-  export default AdvancedCalendarView;
+  return (
+    <>
+      {mainView}
+      {bookingModal}
+      {editBookingModal}
+    </>
+  );
+};
+
+export default AdvancedCalendarView;
