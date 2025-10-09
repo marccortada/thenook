@@ -30,10 +30,7 @@ export function LanguageSelector() {
     <div className="flex items-center">
       <Select value={language} onValueChange={handleLanguageChange}>
         <SelectTrigger className="min-w-[150px] h-9 rounded-full border border-border/60 bg-white/90 px-4 text-sm font-medium shadow-sm hover:bg-accent/40 focus:ring-2 focus:ring-primary/30 focus:ring-offset-0">
-          <span className="flex items-center gap-2">
-            <span className="text-base leading-none">{selectedLanguage?.flag}</span>
-            <SelectValue className="text-sm font-medium text-foreground" />
-          </span>
+          <SelectValue className="text-sm font-medium text-foreground" />
         </SelectTrigger>
         <SelectContent 
           position="popper"
