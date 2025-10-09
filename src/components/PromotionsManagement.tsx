@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Plus, Tag, Calendar, Clock } from 'lucide-react';
@@ -56,6 +55,9 @@ const PromotionsManagement = () => {
   const createTriggerRef = useRef<HTMLButtonElement | null>(null);
   const lastDialogTriggerRef = useRef<HTMLElement | null>(null);
   const [dialogLayout, setDialogLayout] = useState({ top: 0, left: 0, width: 620, maxHeight: 720 });
+
+  const baseSelectClass =
+    "flex h-12 w-full rounded-2xl border border-border/60 bg-gradient-to-b from-slate-100 via-slate-50 to-white px-4 text-sm font-semibold text-foreground shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60";
 
   const resetForm = () => {
     setFormData({
@@ -259,19 +261,18 @@ const PromotionsManagement = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo de Descuento *</Label>
-                  <Select 
-                    value={formData.type} 
-                    onValueChange={(value: any) => setFormData(prev => ({ ...prev, type: value }))}
+                  <select
+                    id="type"
+                    className={baseSelectClass}
+                    value={formData.type}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, type: e.target.value as CreatePromotionData['type'] }))
+                    }
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percentage">Porcentaje</SelectItem>
-                      <SelectItem value="fixed_amount">Cantidad Fija</SelectItem>
-                      <SelectItem value="happy_hour">Happy Hour</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <option value="percentage">Porcentaje</option>
+                    <option value="fixed_amount">Cantidad Fija</option>
+                    <option value="happy_hour">Happy Hour</option>
+                  </select>
                 </div>
                 
                 <div className="space-y-2">
@@ -291,19 +292,18 @@ const PromotionsManagement = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="applies_to">Se Aplica A *</Label>
-                  <Select 
-                    value={formData.applies_to} 
-                    onValueChange={(value: any) => setFormData(prev => ({ ...prev, applies_to: value, target_id: '' }))}
+                  <select
+                    id="applies_to"
+                    className={baseSelectClass}
+                    value={formData.applies_to}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, applies_to: e.target.value as CreatePromotionData['applies_to'], target_id: '' }))
+                    }
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar aplicación" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all_services">Todos los Servicios</SelectItem>
-                      <SelectItem value="specific_service">Servicio Específico</SelectItem>
-                      <SelectItem value="specific_center">Centro Específico</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <option value="all_services">Todos los Servicios</option>
+                    <option value="specific_service">Servicio Específico</option>
+                    <option value="specific_center">Centro Específico</option>
+                  </select>
                 </div>
               </div>
 
@@ -311,21 +311,23 @@ const PromotionsManagement = () => {
               {formData.applies_to === 'specific_service' && (
                 <div className="space-y-2">
                   <Label htmlFor="target_service">Servicio Específico *</Label>
-                  <Select 
-                    value={formData.target_id} 
-                    onValueChange={(value: string) => setFormData(prev => ({ ...prev, target_id: value }))}
+                  <select
+                    id="target_service"
+                    className={baseSelectClass}
+                    value={formData.target_id || ''}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, target_id: e.target.value }))
+                    }
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar servicio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {services.map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <option value="" disabled>
+                      Seleccionar servicio
+                    </option>
+                    {services.map(service => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
 
@@ -333,21 +335,23 @@ const PromotionsManagement = () => {
               {formData.applies_to === 'specific_center' && (
                 <div className="space-y-2">
                   <Label htmlFor="target_center">Centro Específico *</Label>
-                  <Select 
-                    value={formData.target_id} 
-                    onValueChange={(value: string) => setFormData(prev => ({ ...prev, target_id: value }))}
+                  <select
+                    id="target_center"
+                    className={baseSelectClass}
+                    value={formData.target_id || ''}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, target_id: e.target.value }))
+                    }
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar centro" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {centers.map((center) => (
-                        <SelectItem key={center.id} value={center.id}>
-                          {center.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <option value="" disabled>
+                      Seleccionar centro
+                    </option>
+                    {centers.map(center => (
+                      <option key={center.id} value={center.id}>
+                        {center.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
 

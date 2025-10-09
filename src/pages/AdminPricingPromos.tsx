@@ -43,6 +43,9 @@ export default function AdminPricingPromos() {
     className: "z-[120] min-w-[var(--radix-select-trigger-width)] rounded-2xl border border-border/60 bg-popover px-2 py-2 shadow-xl"
   };
 
+  const nativeSelectClass =
+    "flex h-12 w-full rounded-2xl border border-border/60 bg-gradient-to-b from-slate-100 via-slate-50 to-white px-4 text-sm font-semibold text-foreground shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60";
+
   useEffect(() => {
     document.title = "Precios y Promos | The Nook Madrid";
   }, []);
@@ -1121,27 +1124,21 @@ export default function AdminPricingPromos() {
                     </div>
                     <div>
                       <Label htmlFor="package-service">Servicio</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar servicio" />
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          side="bottom"
-                          align="start"
-                          sideOffset={4}
-                          avoidCollisions={true}
-                          collisionPadding={20}
-                          className="z-[100] min-w-[170px] rounded-2xl border border-border/60 bg-white px-2 py-2 shadow-xl"
-                        >
-                          <SelectItem value="all">Todos los servicios</SelectItem>
-                          {services.map((service: any) => (
-                            <SelectItem key={service.id} value={service.id}>
-                              {service.name}
-                            </SelectItem>
-                           ))}
-                         </SelectContent>
-                      </Select>
+                      <select
+                        id="package-service"
+                        className={nativeSelectClass}
+                        defaultValue=""
+                      >
+                        <option value="" disabled>
+                          Seleccionar servicio
+                        </option>
+                        <option value="all">Todos los servicios</option>
+                        {services.map((service: any) => (
+                          <option key={service.id} value={service.id}>
+                            {service.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <Label htmlFor="package-sessions">Sesiones *</Label>
@@ -1164,27 +1161,18 @@ export default function AdminPricingPromos() {
                     </div>
                     <div>
                       <Label htmlFor="package-center">Centro</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Todos los centros" />
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          side="bottom"
-                          align="start"
-                          sideOffset={4}
-                          avoidCollisions={true}
-                          collisionPadding={20}
-                          className="z-[100] min-w-[170px] rounded-2xl border border-border/60 bg-white px-2 py-2 shadow-xl"
-                        >
-                          <SelectItem value="all">Todos los centros</SelectItem>
-                          {centers.map((center) => (
-                            <SelectItem key={center.id} value={center.id}>
-                              {center.name}
-                            </SelectItem>
-                           ))}
-                         </SelectContent>
-                      </Select>
+                      <select
+                        id="package-center"
+                        className={nativeSelectClass}
+                        defaultValue="all"
+                      >
+                        <option value="all">Todos los centros</option>
+                        {centers.map((center) => (
+                          <option key={center.id} value={center.id}>
+                            {center.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <Label htmlFor="package-discount">Descuento (€)</Label>

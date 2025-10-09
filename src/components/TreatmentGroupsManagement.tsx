@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -87,7 +86,10 @@ const TreatmentGroupsManagement: React.FC = () => {
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [selectedGroupForService, setSelectedGroupForService] = useState<string | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
-  
+
+  const baseSelectClass =
+    "flex h-12 w-full rounded-2xl border border-border/60 bg-gradient-to-b from-slate-100 via-slate-50 to-white px-4 text-sm font-semibold text-foreground shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60";
+
   // Hook para posicionamiento del modal
   const serviceModalRef = useViewportPositioning(isServiceDialogOpen, 150);
   const [formData, setFormData] = useState<CreateTreatmentGroupData>({
@@ -736,30 +738,23 @@ const TreatmentGroupsManagement: React.FC = () => {
 
                 <div>
                   <Label className="text-sm font-medium">Centro (Opcional)</Label>
-                  <Select
+                  <select
+                    className={`${baseSelectClass} mt-1`}
                     value={formData.center_id}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, center_id: value }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, center_id: e.target.value }))}
                   >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Seleccionar centro" />
-                    </SelectTrigger>
-                    <SelectContent 
-                      className="z-[70] bg-background border shadow-lg" 
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      sideOffset={4}
-                      avoidCollisions={true}
-                      collisionPadding={20}
-                    >
-                      <SelectItem value="all">Todos los centros</SelectItem>
-                      {centers.filter(center => center.id && center.id.trim() !== '').map((center) => (
-                        <SelectItem key={center.id} value={center.id}>
+                    <option value="">
+                      Seleccionar centro
+                    </option>
+                    <option value="all">Todos los centros</option>
+                    {centers
+                      .filter(center => center.id && center.id.trim() !== '')
+                      .map(center => (
+                        <option key={center.id} value={center.id}>
                           {center.name}
-                        </SelectItem>
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
+                  </select>
                 </div>
 
                 <div>
@@ -791,9 +786,11 @@ const TreatmentGroupsManagement: React.FC = () => {
                         })
                       )}
                     </div>
-                    <Select
+                    <select
+                      className={baseSelectClass}
                       value=""
-                      onValueChange={(value) => {
+                      onChange={(e) => {
+                        const value = e.target.value;
                         if (value === 'none') {
                           setFormData(prev => ({ ...prev, lane_ids: [] }));
                         } else if (value && (!formData.lane_ids || !formData.lane_ids.includes(value))) {
@@ -804,26 +801,18 @@ const TreatmentGroupsManagement: React.FC = () => {
                         }
                       }}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Añadir carril" />
-                      </SelectTrigger>
-                      <SelectContent 
-                        className="z-[70] bg-background border shadow-lg" 
-                        position="popper"
-                        side="bottom"
-                        align="start"
-                        sideOffset={4}
-                        avoidCollisions={true}
-                        collisionPadding={20}
-                      >
-                        <SelectItem value="none">Limpiar todos los carriles</SelectItem>
-                        {lanes.filter(lane => lane.id && lane.id.trim() !== '' && !formData.lane_ids?.includes(lane.id)).map((lane) => (
-                          <SelectItem key={lane.id} value={lane.id}>
+                      <option value="" disabled>
+                        Añadir carril
+                      </option>
+                      <option value="none">Limpiar todos los carriles</option>
+                      {lanes
+                        .filter(lane => lane.id && lane.id.trim() !== '' && !formData.lane_ids?.includes(lane.id))
+                        .map(lane => (
+                          <option key={lane.id} value={lane.id}>
                             {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
+                    </select>
                   </div>
                 </div>
 
@@ -947,39 +936,49 @@ const TreatmentGroupsManagement: React.FC = () => {
 
                 <div>
                   <Label className="text-sm font-medium">Tipo de Servicio</Label>
-                  <Select
+                  <select
+                    className={`${baseSelectClass} mt-1`}
                     value={serviceFormData.type}
-                    onValueChange={(value) => setServiceFormData(prev => ({ ...prev, type: value as 'massage' | 'treatment' | 'package' }))}
+                    onChange={(e) =>
+                      setServiceFormData(prev => ({
+                        ...prev,
+                        type: e.target.value as 'massage' | 'treatment' | 'package',
+                      }))
+                    }
                   >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="massage">Masaje</SelectItem>
-                      <SelectItem value="treatment">Tratamiento</SelectItem>
-                      <SelectItem value="package">Paquete</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    {['massage', 'treatment', 'package'].map(option => (
+                      <option key={option} value={option}>
+                        {option === 'massage'
+                          ? 'Masaje'
+                          : option === 'treatment'
+                          ? 'Tratamiento'
+                          : 'Paquete'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <Label className="text-sm font-medium">Centro (Opcional)</Label>
-                  <Select
-                    value={serviceFormData.center_id}
-                    onValueChange={(value) => setServiceFormData(prev => ({ ...prev, center_id: value === 'all_centers' ? '' : value }))}
+                  <select
+                    className={`${baseSelectClass} mt-1`}
+                    value={serviceFormData.center_id || 'all_centers'}
+                    onChange={(e) =>
+                      setServiceFormData(prev => ({
+                        ...prev,
+                        center_id: e.target.value === 'all_centers' ? '' : e.target.value,
+                      }))
+                    }
                   >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Todos los centros" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all_centers">Todos los centros</SelectItem>
-                      {centers.filter(center => center.id && center.id.trim() !== '').map((center) => (
-                        <SelectItem key={center.id} value={center.id}>
+                    <option value="all_centers">Todos los centros</option>
+                    {centers
+                      .filter(center => center.id && center.id.trim() !== '')
+                      .map(center => (
+                        <option key={center.id} value={center.id}>
                           {center.name}
-                        </SelectItem>
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
+                  </select>
                 </div>
 
                 {/* Botones */}
