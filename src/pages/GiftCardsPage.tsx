@@ -815,60 +815,229 @@ const GiftCardsPage = () => {
 
           <section className="grid gap-6">
             <Accordion type="multiple" defaultValue={[]} className="space-y-4">
-              <AccordionItem value="tarjetas-individuales" className="border rounded-lg">
-                <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                   <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje Individual</h2>
-                 </AccordionTrigger>
-                 <AccordionContent className="px-4 pb-4">
-                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {renderCustomGiftCard('individuales', 'Masajes Individuales')}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="tarjetas-dos-personas" className="border rounded-lg">
-                <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                   <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje para Dos</h2>
-                 </AccordionTrigger>
-                 <AccordionContent className="px-4 pb-4">
-                   <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                       {renderCustomGiftCard('paraDos', 'Masajes para Dos Personas')}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg">
-                <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                   <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje a Cuatro Manos</h2>
-                 </AccordionTrigger>
-                 <AccordionContent className="px-4 pb-4">
-                   <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                       {renderCustomGiftCard('cuatro', 'Masajes a Cuatro Manos')}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="tarjetas-rituales" className="border rounded-lg">
-                <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                   <h2 className="text-lg font-semibold">Tarjeta Regalo - Rituales Individuales</h2>
-                 </AccordionTrigger>
-                 <AccordionContent className="px-4 pb-4">
-                   <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                       {renderCustomGiftCard('rituales', 'Rituales Individuales')}
-                  </div>
-                </AccordionContent>
-               </AccordionItem>
-
-               <AccordionItem value="tarjetas-rituales-dos" className="border rounded-lg">
-                 <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                    <h2 className="text-lg font-semibold">Tarjeta Regalo - Rituales para Dos</h2>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                        {renderCustomGiftCard('ritualesParaDos', 'Rituales para Dos Personas')}
+              {groups.individuales.length > 0 && (
+                <AccordionItem value="tarjetas-individuales" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje Individual</h2>
+                   </AccordionTrigger>
+                   <AccordionContent className="px-4 pb-4">
+                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {renderCustomGiftCard('individuales', 'Masajes Individuales')}
+                        {groups.individuales.map((item) => (
+                          <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                             <OptimizedImage
+                               src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                               alt={translatePackageName(item.name)}
+                               className="aspect-[4/3]"
+                               width={GIFT_IMAGE_PROPS.width}
+                               height={GIFT_IMAGE_PROPS.height}
+                               quality={GIFT_IMAGE_PROPS.quality}
+                             />
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
+                              <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
+                            </CardHeader>
+                              <CardContent className="pb-2">
+                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                              <CardFooter className="pt-2">
+                                <Button
+                                  size="sm"
+                                  className="w-full"
+                                 onClick={() => {
+                                   console.log("🛒 Botón Añadir al Carrito clickeado - Individual");
+                                   console.log("Estado actual isCartOpen:", isCartOpen);
+                                   add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                   console.log("Producto añadido, ahora abriendo carrito...");
+                                   setIsCartOpen(true);
+                                   console.log("setIsCartOpen(true) llamado - debería abrir el modal");
+                                 }}
+                                >
+                                  {t('add_to_cart')}
+                                </Button>
+                              </CardFooter>
+                         </Card>
+                       ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
+              )}
+
+              {groups.paraDos.length > 0 && (
+                <AccordionItem value="tarjetas-dos-personas" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje para Dos</h2>
+                   </AccordionTrigger>
+                   <AccordionContent className="px-4 pb-4">
+                     <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                         {renderCustomGiftCard('paraDos', 'Masajes para Dos Personas')}
+                         {groups.paraDos.map((item) => (
+                           <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                              <OptimizedImage
+                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                                alt={translatePackageName(item.name)}
+                                className="aspect-[4/3]"
+                                width={GIFT_IMAGE_PROPS.width}
+                                height={GIFT_IMAGE_PROPS.height}
+                                quality={GIFT_IMAGE_PROPS.quality}
+                              />
+                             <CardHeader className="pb-2">
+                               <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
+                               <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
+                             </CardHeader>
+                              <CardContent className="pb-2">
+                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                              <CardFooter className="pt-2">
+                                <Button
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={() => {
+                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                    setIsCartOpen(true);
+                                  }}
+                                >
+                                  {t('add_to_cart')}
+                                </Button>
+                             </CardFooter>
+                         </Card>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {groups.cuatro.length > 0 && (
+                <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje a Cuatro Manos</h2>
+                   </AccordionTrigger>
+                   <AccordionContent className="px-4 pb-4">
+                     <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                         {renderCustomGiftCard('cuatro', 'Masajes a Cuatro Manos')}
+                         {groups.cuatro.map((item) => (
+                           <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                              <OptimizedImage
+                                src={item.imageUrl || DEFAULT_GIFT_IMAGE}
+                                alt={translatePackageName(item.name)}
+                                className="aspect-[4/3]"
+                                width={GIFT_IMAGE_PROPS.width}
+                                height={GIFT_IMAGE_PROPS.height}
+                                quality={GIFT_IMAGE_PROPS.quality}
+                              />
+                             <CardHeader className="pb-2">
+                               <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
+                               <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
+                             </CardHeader>
+                              <CardContent className="pb-2">
+                                <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                              <CardFooter className="pt-2">
+                                <Button
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={() => {
+                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                    setIsCartOpen(true);
+                                  }}
+                                >
+                                  {t('add_to_cart')}
+                                </Button>
+                             </CardFooter>
+                         </Card>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {groups.rituales.length > 0 && (
+                <AccordionItem value="tarjetas-rituales" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Rituales Individuales</h2>
+                   </AccordionTrigger>
+                   <AccordionContent className="px-4 pb-4">
+                     <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                         {renderCustomGiftCard('rituales', 'Rituales Individuales')}
+                         {groups.rituales.map((item) => (
+                           <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
+                              <OptimizedImage
+                                src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                                alt={translatePackageName(item.name)}
+                                className="aspect-[4/3]"
+                                width={GIFT_IMAGE_PROPS.width}
+                                height={GIFT_IMAGE_PROPS.height}
+                                quality={GIFT_IMAGE_PROPS.quality}
+                              />
+                             <CardHeader className="pb-2 p-3">
+                               <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
+                               <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
+                             </CardHeader>
+                              <CardContent className="pb-2 p-3 pt-0">
+                                <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                              </CardContent>
+                              <CardFooter className="pt-2 p-3">
+                                <Button
+                                  size="sm"
+                                  className="w-full text-xs"
+                                  onClick={() => {
+                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                    setIsCartOpen(true);
+                                  }}
+                                >
+                                  {t('add_to_cart')}
+                                </Button>
+                              </CardFooter>
+                          </Card>
+                       ))}
+                    </div>
+                  </AccordionContent>
+                 </AccordionItem>
+               )}
+
+               {groups.ritualesParaDos.length > 0 && (
+                 <AccordionItem value="tarjetas-rituales-dos" className="border rounded-lg">
+                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                      <h2 className="text-lg font-semibold">Tarjeta Regalo - Rituales para Dos</h2>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                          {renderCustomGiftCard('ritualesParaDos', 'Rituales para Dos Personas')}
+                          {groups.ritualesParaDos.map((item) => (
+                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
+                               <OptimizedImage
+                                 src={item.imageUrl || '/lovable-uploads/93fd7781-d4ed-4ae8-ab36-5397b4b80598.png'}
+                                 alt={translatePackageName(item.name)}
+                                 className="aspect-[4/3]"
+                                 width={GIFT_IMAGE_PROPS.width}
+                                 height={GIFT_IMAGE_PROPS.height}
+                                 quality={GIFT_IMAGE_PROPS.quality}
+                               />
+                              <CardHeader className="pb-2 p-3">
+                                <CardTitle className="text-sm leading-tight">{translatePackageName(item.name)}</CardTitle>
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('gift_cards').toUpperCase()}</p>
+                              </CardHeader>
+                               <CardContent className="pb-2 p-3 pt-0">
+                                 <p className="text-lg font-bold text-primary">{euro(item.priceCents!)}</p>
+                               </CardContent>
+                               <CardFooter className="pt-2 p-3">
+                                 <Button
+                                   size="sm"
+                                   className="w-full text-xs"
+                                   onClick={() => {
+                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
+                                     setIsCartOpen(true);
+                                   }}
+                                 >
+                                   {t('add_to_cart')}
+                                 </Button>
+                               </CardFooter>
+                           </Card>
+                        ))}
+                     </div>
+                   </AccordionContent>
+                 </AccordionItem>
+               )}
 
              </Accordion>
           </section>
