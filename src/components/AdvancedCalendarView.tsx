@@ -850,7 +850,7 @@ const AdvancedCalendarView = () => {
 
 
   // Edit existing booking
-  const saveBookingEdits = async () => {
+  const saveBookingEdits = async (overrides?: { paymentStatus?: typeof editPaymentStatus; bookingStatus?: typeof editBookingStatus }) => {
     try {
       if (!editingBooking) return;
 
@@ -870,10 +870,18 @@ const AdvancedCalendarView = () => {
       const newDateTime = new Date(baseDate);
       newDateTime.setHours(editTime.getHours(), editTime.getMinutes(), 0, 0);
 
+      const paymentStatusToSave = overrides?.paymentStatus ?? editPaymentStatus;
+      const bookingStatusToSave = overrides?.bookingStatus ?? editBookingStatus;
+
+      if (editingBooking.payment_status === 'paid' && paymentStatusToSave === 'paid') {
+        toast({ title: 'Pago ya registrado', description: 'Esta reserva ya fue marcada como cobrada.', variant: 'destructive' });
+        return;
+      }
+
       const updates: any = {
         notes: editNotes || null,
-        payment_status: editPaymentStatus,
-        status: editBookingStatus,
+        payment_status: paymentStatusToSave,
+        status: bookingStatusToSave,
         service_id: editServiceId || editingBooking.service_id,
         duration_minutes: editDuration || editingBooking.duration_minutes,
         booking_datetime: newDateTime.toISOString(),
@@ -886,6 +894,9 @@ const AdvancedCalendarView = () => {
         .update(updates)
         .eq('id', editingBooking.id);
       if (error) throw error;
+
+      if (overrides?.paymentStatus) setEditPaymentStatus(overrides.paymentStatus);
+      if (overrides?.bookingStatus) setEditBookingStatus(overrides.bookingStatus);
 
       toast({ title: 'Reserva actualizada', description: 'Los cambios se han guardado correctamente.' });
       setShowEditModal(false);
@@ -1549,10 +1560,10 @@ const AdvancedCalendarView = () => {
         onClick={() => setShowBookingModal(false)}
       />
       <div
-        className="fixed z-50 bg-background rounded-lg shadow-2xl border overflow-hidden flex flex-col"
-        style={getModalStyle()}
+        className="fixed z-50 flex"
+        style={{ ...getModalStyle(), maxHeight: "95vh" }}
       >
-        <div className="flex flex-col h-full max-h-[95vh]">
+        <div className="bg-background rounded-xl shadow-2xl border border-border/60 overflow-hidden flex flex-col w-full max-h-full">
           <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background relative">
             <button
               onClick={() => setShowBookingModal(false)}
@@ -1780,7 +1791,7 @@ const AdvancedCalendarView = () => {
             </p>
           </div>
           
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          <div className="flex-1 overflow-y-auto px-6 py-4 pb-28 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Nombre</Label>
@@ -1975,8 +1986,7 @@ const AdvancedCalendarView = () => {
                   variant="default"
                   className="flex-1"
                   onClick={() => {
-                    setEditPaymentStatus('paid');
-                    setEditBookingStatus('confirmed');
+                    saveBookingEdits({ paymentStatus: 'paid', bookingStatus: 'confirmed' });
                   }}
                 >
                   💳 Cobrar
@@ -2019,7 +2029,7 @@ const AdvancedCalendarView = () => {
                 </Button>
                 <Button 
                   size="sm" 
-                  onClick={saveBookingEdits}
+                  onClick={() => saveBookingEdits()}
                   className="flex-1"
                 >
                   <Save className="h-4 w-4 mr-2" /> Guardar

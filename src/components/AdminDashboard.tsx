@@ -91,21 +91,21 @@ const AdminDashboard = () => {
       label: "Precios y Promos",
       icon: Percent,
       component: AdminPricingPromos,
-      roles: ["admin", "employee"]
+      roles: ["admin"]
     },
     {
       id: "grupos-tratamientos",
       label: "Grupos de Tratamientos",
       icon: Palette,
       component: TreatmentGroupsManagement,
-      roles: ["admin", "employee"]
+      roles: ["admin"]
     },
     {
       id: "gestion-citas",
       label: "Gestión de Citas",
       icon: Calendar,
       component: BookingManagement,
-      roles: ["admin", "employee"]
+      roles: ["admin"]
     },
     {
       id: "configuracion",

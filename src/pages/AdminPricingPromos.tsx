@@ -9,11 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useServices, usePackages, useCenters } from "@/hooks/useDatabase";
 import { useTreatmentGroups } from "@/hooks/useTreatmentGroups";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Plus, Edit, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, Plus, Edit, X, ChevronDown, ChevronUp, Settings } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 
@@ -32,6 +33,15 @@ export default function AdminPricingPromos() {
   const { treatmentGroups } = useTreatmentGroups();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  const selectPopoverProps = {
+    position: "popper" as const,
+    side: "bottom" as const,
+    align: "start" as const,
+    sideOffset: 8,
+    collisionPadding: 20,
+    className: "z-[120] min-w-[var(--radix-select-trigger-width)] rounded-2xl border border-border/60 bg-popover px-2 py-2 shadow-xl"
+  };
 
   useEffect(() => {
     document.title = "Precios y Promos | The Nook Madrid";
@@ -636,106 +646,165 @@ export default function AdminPricingPromos() {
                                show_online: service.show_online ?? true
                              };
                             return (
-                              <div key={service.id} className="border rounded-lg p-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div>
-                                    <div className="font-medium">{service.name}</div>
-                                    <div className="text-xs text-muted-foreground">{service.type} · {service.duration_minutes} min</div>
-                                  </div>
-                                  <PriceDisplay 
-                                    originalPrice={edit.price_euros * 100} 
-                                    className="text-sm font-semibold"
-                                  />
-                                </div>
-                                 <div className="grid grid-cols-3 gap-2 items-end">
-                                   <div>
-                                     <Label>Precio (€)</Label>
-                                     <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handleServiceChange(service.id, 'price_euros', parseFloat(e.target.value || '0'))} />
-                                   </div>
-                                   <div>
-                                     <Label>Estado</Label>
-                                     <Select value={String(edit.active)} onValueChange={(v) => handleServiceChange(service.id, 'active', v === 'true')}>
-                                       <SelectTrigger><SelectValue /></SelectTrigger>
-                                       <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
-                                         <SelectItem value="true">Activo</SelectItem>
-                                         <SelectItem value="false">Inactivo</SelectItem>
-                                       </SelectContent>
-                                     </Select>
-                                   </div>
-                                   <div>
-                                     <Label>Mostrar Online</Label>
-                                     <Select value={String(edit.show_online)} onValueChange={(v) => handleServiceChange(service.id, 'show_online', v === 'true')}>
-                                       <SelectTrigger><SelectValue /></SelectTrigger>
-                                       <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
-                                         <SelectItem value="true">Sí</SelectItem>
-                                         <SelectItem value="false">No</SelectItem>
-                                       </SelectContent>
-                                     </Select>
-                                   </div>
-                                   
-                                   {/* Acordeón de configuración online */}
-                                   {edit.show_online && (
-                                     <div className="col-span-3 mt-2">
-                                       <Accordion type="single" collapsible className="w-full">
-                                         <AccordionItem value="online-config" className="border rounded-lg">
-                                           <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
-                                             <span className="text-muted-foreground">⚙️ Configuración Online</span>
-                                           </AccordionTrigger>
-                                           <AccordionContent className="px-3 pb-3">
-                                             <div className="space-y-2 text-sm">
-                                               <div className="flex items-center justify-between">
-                                                 <span>Estado online:</span>
-                                                 <span className="text-green-600 font-medium">✓ Visible en web</span>
-                                               </div>
-                                               <div className="flex items-center justify-between">
-                                                 <span>Disponible para reserva:</span>
-                                                 <span className="text-blue-600 font-medium">✓ Sí</span>
-                                               </div>
-                                               <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
-                                                 Este servicio aparecerá en la web y estará disponible para reservar online.
-                                               </div>
-                                             </div>
-                                           </AccordionContent>
-                                         </AccordionItem>
-                                       </Accordion>
-                                     </div>
-                                   )}
-                                   <div className="col-span-3">
-                                    <div className="flex items-center space-x-2 mb-2">
-                                      <input 
-                                        type="checkbox" 
-                                        id={`discount-${service.id}`}
-                                        checked={edit.has_discount}
-                                        onChange={(e) => handleServiceChange(service.id, 'has_discount', e.target.checked)}
-                                        className="rounded"
-                                      />
-                                      <Label htmlFor={`discount-${service.id}`} className="text-sm">Aplicar descuento</Label>
+                              <div
+                                key={service.id}
+                                className="rounded-2xl border border-border/50 bg-background p-4 shadow-sm transition hover:shadow-md"
+                              >
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                  <div className="space-y-1">
+                                    <p className="text-base font-semibold text-foreground">{service.name}</p>
+                                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                      <span className="capitalize">{service.type}</span>
+                                      <span>•</span>
+                                      <span>{service.duration_minutes} min</span>
+                                      <span>•</span>
+                                      <span>{centers.find(c => c.id === service.center_id)?.name || 'Todos los centros'}</span>
                                     </div>
-                                    {edit.has_discount && (
-                                      <div className="mb-2">
-                                        <Label className="text-sm">Precio con descuento (€)</Label>
-                                        <Input 
-                                          type="text" 
-                                          placeholder="Escribe el precio: 85,50"
-                                          defaultValue=""
-                                          onBlur={(e) => {
-                                            if (e.target.value) {
-                                              const value = e.target.value.replace(',', '.');
-                                              const numValue = parseFloat(value);
-                                              if (!isNaN(numValue) && numValue > 0) {
-                                                handleServiceChange(service.id, 'discount_price_euros', numValue);
-                                              }
-                                            }
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-xs uppercase text-muted-foreground">Precio actual</p>
+                                    <PriceDisplay 
+                                      originalPrice={edit.price_euros * 100} 
+                                      className="text-xl font-semibold text-primary leading-tight"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                                  <div className="space-y-1.5">
+                                    <Label className="text-sm font-medium">Precio (€)</Label>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={Number.isFinite(edit.price_euros) ? edit.price_euros : 0}
+                                      onChange={(e) => {
+                                        const value = parseFloat(e.target.value);
+                                        handleServiceChange(
+                                          service.id,
+                                          'price_euros',
+                                          Number.isFinite(value) ? value : 0
+                                        );
+                                      }}
+                                      className="h-10 rounded-xl border-border/60"
+                                    />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <Label className="text-sm font-medium">Estado</Label>
+                                    <Select
+                                      value={String(edit.active)}
+                                      onValueChange={(value) => handleServiceChange(service.id, 'active', value === 'true')}
+                                    >
+                                      <SelectTrigger className="h-10 rounded-xl border border-border/60 bg-background px-3 text-sm font-medium">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent {...selectPopoverProps}>
+                                        <SelectItem value="true" className="text-sm">Activo</SelectItem>
+                                        <SelectItem value="false" className="text-sm">Inactivo</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <Label className="text-sm font-medium">Mostrar Online</Label>
+                                    <Select
+                                      value={String(edit.show_online)}
+                                      onValueChange={(value) => handleServiceChange(service.id, 'show_online', value === 'true')}
+                                    >
+                                      <SelectTrigger className="h-10 rounded-xl border border-border/60 bg-background px-3 text-sm font-medium">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent {...selectPopoverProps}>
+                                        <SelectItem value="true" className="text-sm">Sí</SelectItem>
+                                        <SelectItem value="false" className="text-sm">No</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+
+                                {edit.show_online && (
+                                  <div className="mt-4 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
+                                    <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                                      <Settings className="h-4 w-4" />
+                                      <span>Configuración Online</span>
+                                    </div>
+                                    <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                                      <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                                        <span>Estado online</span>
+                                        <span className="font-medium text-green-600">Visible</span>
+                                      </div>
+                                      <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                                        <span>Reservable</span>
+                                        <span className="font-medium text-blue-600">Habilitado</span>
+                                      </div>
+                                    </div>
+                                    <p className="mt-3 text-xs text-muted-foreground">
+                                      Este servicio aparecerá en la web y estará disponible para reservar online.
+                                    </p>
+                                  </div>
+                                )}
+
+                                <div className="mt-4 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      id={`discount-${service.id}`}
+                                      checked={edit.has_discount}
+                                      onCheckedChange={(checked) =>
+                                        handleServiceChange(service.id, 'has_discount', Boolean(checked))
+                                      }
+                                    />
+                                    <Label htmlFor={`discount-${service.id}`} className="text-sm">
+                                      Aplicar descuento
+                                    </Label>
+                                  </div>
+
+                                  {edit.has_discount && (
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                      <div className="space-y-1.5">
+                                        <Label className="text-sm font-medium">Precio con descuento (€)</Label>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          value={
+                                            Number.isFinite(edit.discount_price_euros)
+                                              ? edit.discount_price_euros
+                                              : ""
+                                          }
+                                          onChange={(e) => {
+                                            const value = parseFloat(e.target.value);
+                                            handleServiceChange(
+                                              service.id,
+                                              'discount_price_euros',
+                                              Number.isFinite(value) ? value : 0
+                                            );
                                           }}
-                                          className="text-sm"
+                                          className="h-10 rounded-xl border-border/60"
+                                          placeholder="85.50"
                                         />
                                       </div>
-                                    )}
-                                  </div>
-                                  <div className="col-span-3 flex items-center justify-between">
-                                    <div className="text-xs text-muted-foreground">Se actualizará en todos los centros</div>
-                                    <Button size="sm" onClick={() => saveService(service.id, [service.id])}>Guardar</Button>
-                                  </div>
+                                      <div className="space-y-1.5">
+                                        <Label className="text-sm font-medium text-muted-foreground">
+                                          Preview precio final
+                                        </Label>
+                                        <div className="flex h-10 items-center justify-between rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 text-sm font-medium text-primary">
+                                          <span>Cliente verá</span>
+                                          <span>
+                                            {currency(
+                                              edit.discount_price_euros || edit.price_euros
+                                            )}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-3">
+                                  <span className="text-xs text-muted-foreground">
+                                    Se actualizará en todos los centros
+                                  </span>
+                                  <Button size="sm" onClick={() => saveService(service.id, [service.id])}>
+                                    Guardar
+                                  </Button>
                                 </div>
                               </div>
                             );
@@ -959,7 +1028,15 @@ export default function AdminPricingPromos() {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                       <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
+                       <SelectContent
+                         position="popper"
+                         side="bottom"
+                         align="start"
+                         sideOffset={4}
+                         avoidCollisions={true}
+                         collisionPadding={20}
+                         className="z-[100] min-w-[170px] rounded-2xl border border-border/60 bg-white px-2 py-2 shadow-xl"
+                       >
                          <SelectItem value="all">Todos los centros</SelectItem>
                          {centers.map((center) => (
                            <SelectItem key={center.id} value={center.id}>
@@ -1089,7 +1166,15 @@ export default function AdminPricingPromos() {
                             <SelectTrigger className={isMobile ? 'text-sm' : ''}>
                               <SelectValue />
                             </SelectTrigger>
-                             <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
+                             <SelectContent
+                               position="popper"
+                               side="bottom"
+                               align="start"
+                               sideOffset={4}
+                               avoidCollisions={true}
+                               collisionPadding={20}
+                               className="z-[100] min-w-[170px] rounded-2xl border border-border/60 bg-white px-2 py-2 shadow-xl"
+                             >
                                {serviceTypes.map((type) => (
                                  <SelectItem key={type.value} value={type.value} className={isMobile ? 'text-sm' : ''}>
                                    {type.label}
@@ -1256,12 +1341,20 @@ export default function AdminPricingPromos() {
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar servicio" />
                         </SelectTrigger>
-                         <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
-                           <SelectItem value="all">Todos los servicios</SelectItem>
-                           {services.map((service: any) => (
-                             <SelectItem key={service.id} value={service.id}>
-                               {service.name}
-                             </SelectItem>
+                        <SelectContent
+                          position="popper"
+                          side="bottom"
+                          align="start"
+                          sideOffset={4}
+                          avoidCollisions={true}
+                          collisionPadding={20}
+                          className="z-[100] min-w-[170px] rounded-2xl border border-border/60 bg-white px-2 py-2 shadow-xl"
+                        >
+                          <SelectItem value="all">Todos los servicios</SelectItem>
+                          {services.map((service: any) => (
+                            <SelectItem key={service.id} value={service.id}>
+                              {service.name}
+                            </SelectItem>
                            ))}
                          </SelectContent>
                       </Select>
@@ -1291,12 +1384,20 @@ export default function AdminPricingPromos() {
                         <SelectTrigger>
                           <SelectValue placeholder="Todos los centros" />
                         </SelectTrigger>
-                         <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
-                           <SelectItem value="all">Todos los centros</SelectItem>
-                           {centers.map((center) => (
-                             <SelectItem key={center.id} value={center.id}>
-                               {center.name}
-                             </SelectItem>
+                        <SelectContent
+                          position="popper"
+                          side="bottom"
+                          align="start"
+                          sideOffset={4}
+                          avoidCollisions={true}
+                          collisionPadding={20}
+                          className="z-[100] min-w-[170px] rounded-2xl border border-border/60 bg-white px-2 py-2 shadow-xl"
+                        >
+                          <SelectItem value="all">Todos los centros</SelectItem>
+                          {centers.map((center) => (
+                            <SelectItem key={center.id} value={center.id}>
+                              {center.name}
+                            </SelectItem>
                            ))}
                          </SelectContent>
                       </Select>
@@ -1380,23 +1481,25 @@ export default function AdminPricingPromos() {
                              </div>
                              <div>
                                <Label>Estado</Label>
-                               <Select value={String(edit.active)} onValueChange={(v) => handlePackageChange(g.key, 'active', v === 'true')}>
-                                 <SelectTrigger><SelectValue /></SelectTrigger>
-                                 <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
-                                   <SelectItem value="true">Activo</SelectItem>
-                                   <SelectItem value="false">Inactivo</SelectItem>
-                                 </SelectContent>
-                               </Select>
+                               <InlineSelect
+                                 value={String(edit.active)}
+                                 onChange={(v) => handlePackageChange(g.key, 'active', v === 'true')}
+                                 options={[
+                                   { label: 'Activo', value: 'true' },
+                                   { label: 'Inactivo', value: 'false' }
+                                 ]}
+                               />
                              </div>
                              <div>
                                <Label>Mostrar Online</Label>
-                               <Select value={String(edit.show_online)} onValueChange={(v) => handlePackageChange(g.key, 'show_online', v === 'true')}>
-                                 <SelectTrigger><SelectValue /></SelectTrigger>
-                                 <SelectContent className="bg-background border z-50" align="start" side="bottom" sideOffset={4}>
-                                   <SelectItem value="true">Sí</SelectItem>
-                                   <SelectItem value="false">No</SelectItem>
-                                 </SelectContent>
-                               </Select>
+                               <InlineSelect
+                                 value={String(edit.show_online)}
+                                 onChange={(v) => handlePackageChange(g.key, 'show_online', v === 'true')}
+                                 options={[
+                                   { label: 'Sí', value: 'true' },
+                                   { label: 'No', value: 'false' }
+                                 ]}
+                               />
                              </div>
                              
                              {/* Acordeón de configuración online para paquetes */}
