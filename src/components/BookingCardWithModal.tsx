@@ -2,7 +2,6 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -74,7 +73,10 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   const [selectedBookingCodes, setSelectedBookingCodes] = useState<string[]>(booking.booking_codes || []);
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  
+
+  const baseSelectClass =
+    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+
   // Fetch codes
   const { codes, assignments, getAssignmentsByEntity } = useInternalCodes();
   
@@ -502,35 +504,33 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                   {/* Estado de la cita */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Estado de la Cita</Label>
-                    <Select value={bookingStatus} onValueChange={updateBookingStatus}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {BOOKING_STATUSES.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            {status.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <select
+                      value={bookingStatus}
+                      onChange={(e) => updateBookingStatus(e.target.value)}
+                      className={baseSelectClass}
+                    >
+                      {BOOKING_STATUSES.map((status) => (
+                        <option key={status.value} value={status.value}>
+                          {status.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Estado del pago */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Estado del Pago</Label>
-                    <Select value={paymentStatus} onValueChange={updatePaymentStatus}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PAYMENT_STATUSES.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            {status.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <select
+                      value={paymentStatus}
+                      onChange={(e) => updatePaymentStatus(e.target.value)}
+                      className={baseSelectClass}
+                    >
+                      {PAYMENT_STATUSES.map((status) => (
+                        <option key={status.value} value={status.value}>
+                          {status.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Códigos de la reserva */}
@@ -591,18 +591,20 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                       <div className="space-y-3">
                         <div>
                           <Label className="text-sm">Método de Pago</Label>
-                          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar método..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PAYMENT_METHODS.map((method) => (
-                                <SelectItem key={method.value} value={method.value}>
-                                  {method.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <select
+                            value={paymentMethod}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            className={baseSelectClass}
+                          >
+                            <option value="" disabled hidden>
+                              Seleccionar método...
+                            </option>
+                            {PAYMENT_METHODS.map((method) => (
+                              <option key={method.value} value={method.value}>
+                                {method.label}
+                              </option>
+                            ))}
+                          </select>
                         </div>
 
                         <div>

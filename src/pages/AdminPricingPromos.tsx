@@ -604,219 +604,14 @@ export default function AdminPricingPromos() {
       </header>
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-        <Tabs defaultValue="services">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1">
-            <TabsTrigger value="services" className="text-xs sm:text-sm px-2 py-2">Servicios</TabsTrigger>
+        <Tabs defaultValue="manage-services">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-4 gap-1 h-auto p-1">
             <TabsTrigger value="manage-services" className="text-xs sm:text-sm px-2 py-2">Gestión</TabsTrigger>
             <TabsTrigger value="packages" className="text-xs sm:text-sm px-2 py-2">Bonos</TabsTrigger>
             <TabsTrigger value="giftcards" className="text-xs sm:text-sm px-2 py-2">Tarjetas</TabsTrigger>
             <TabsTrigger value="promotions" className="text-xs sm:text-sm px-2 py-2">Promos</TabsTrigger>
             
           </TabsList>
-
-          <TabsContent value="services" className="mt-6 space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Servicios - Edición Rápida por Grupos</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Accordion type="multiple" defaultValue={groupedServices.map(g => g.id)} className="w-full">
-                  {groupedServices.map((group) => (
-                    <AccordionItem value={group.id} key={group.id}>
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded-full" 
-                            style={{ backgroundColor: group.color }}
-                          />
-                          <span className="font-medium">{group.name}</span>
-                          <Badge variant="secondary" className="ml-2">
-                            {group.services.length} servicios
-                          </Badge>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pt-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {group.services.map((service) => {
-                             const edit = serviceEdits[service.id] || { 
-                               price_euros: service.price_cents / 100, 
-                               active: service.active, 
-                               has_discount: service.has_discount,
-                               discount_price_euros: service.discount_price_cents / 100,
-                               show_online: service.show_online ?? true
-                             };
-                            return (
-                              <div
-                                key={service.id}
-                                className="rounded-2xl border border-border/50 bg-background p-4 shadow-sm transition hover:shadow-md"
-                              >
-                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                  <div className="space-y-1">
-                                    <p className="text-base font-semibold text-foreground">{service.name}</p>
-                                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                      <span className="capitalize">{service.type}</span>
-                                      <span>•</span>
-                                      <span>{service.duration_minutes} min</span>
-                                      <span>•</span>
-                                      <span>{centers.find(c => c.id === service.center_id)?.name || 'Todos los centros'}</span>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-xs uppercase text-muted-foreground">Precio actual</p>
-                                    <PriceDisplay 
-                                      originalPrice={edit.price_euros * 100} 
-                                      className="text-xl font-semibold text-primary leading-tight"
-                                    />
-                                  </div>
-                                </div>
-
-                                <div className="mt-4 grid gap-3 md:grid-cols-3">
-                                  <div className="space-y-1.5">
-                                    <Label className="text-sm font-medium">Precio (€)</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={Number.isFinite(edit.price_euros) ? edit.price_euros : 0}
-                                      onChange={(e) => {
-                                        const value = parseFloat(e.target.value);
-                                        handleServiceChange(
-                                          service.id,
-                                          'price_euros',
-                                          Number.isFinite(value) ? value : 0
-                                        );
-                                      }}
-                                      className="h-10 rounded-xl border-border/60"
-                                    />
-                                  </div>
-                                  <div className="space-y-1.5">
-                                    <Label className="text-sm font-medium">Estado</Label>
-                                    <Select
-                                      value={String(edit.active)}
-                                      onValueChange={(value) => handleServiceChange(service.id, 'active', value === 'true')}
-                                    >
-                                      <SelectTrigger className="h-10 rounded-xl border border-border/60 bg-background px-3 text-sm font-medium">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent {...selectPopoverProps}>
-                                        <SelectItem value="true" className="text-sm">Activo</SelectItem>
-                                        <SelectItem value="false" className="text-sm">Inactivo</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="space-y-1.5">
-                                    <Label className="text-sm font-medium">Mostrar Online</Label>
-                                    <Select
-                                      value={String(edit.show_online)}
-                                      onValueChange={(value) => handleServiceChange(service.id, 'show_online', value === 'true')}
-                                    >
-                                      <SelectTrigger className="h-10 rounded-xl border border-border/60 bg-background px-3 text-sm font-medium">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent {...selectPopoverProps}>
-                                        <SelectItem value="true" className="text-sm">Sí</SelectItem>
-                                        <SelectItem value="false" className="text-sm">No</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-
-                                {edit.show_online && (
-                                  <div className="mt-4 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
-                                    <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-                                      <Settings className="h-4 w-4" />
-                                      <span>Configuración Online</span>
-                                    </div>
-                                    <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-                                      <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
-                                        <span>Estado online</span>
-                                        <span className="font-medium text-green-600">Visible</span>
-                                      </div>
-                                      <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
-                                        <span>Reservable</span>
-                                        <span className="font-medium text-blue-600">Habilitado</span>
-                                      </div>
-                                    </div>
-                                    <p className="mt-3 text-xs text-muted-foreground">
-                                      Este servicio aparecerá en la web y estará disponible para reservar online.
-                                    </p>
-                                  </div>
-                                )}
-
-                                <div className="mt-4 space-y-3">
-                                  <div className="flex items-center gap-2">
-                                    <Checkbox
-                                      id={`discount-${service.id}`}
-                                      checked={edit.has_discount}
-                                      onCheckedChange={(checked) =>
-                                        handleServiceChange(service.id, 'has_discount', Boolean(checked))
-                                      }
-                                    />
-                                    <Label htmlFor={`discount-${service.id}`} className="text-sm">
-                                      Aplicar descuento
-                                    </Label>
-                                  </div>
-
-                                  {edit.has_discount && (
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                      <div className="space-y-1.5">
-                                        <Label className="text-sm font-medium">Precio con descuento (€)</Label>
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          min="0"
-                                          value={
-                                            Number.isFinite(edit.discount_price_euros)
-                                              ? edit.discount_price_euros
-                                              : ""
-                                          }
-                                          onChange={(e) => {
-                                            const value = parseFloat(e.target.value);
-                                            handleServiceChange(
-                                              service.id,
-                                              'discount_price_euros',
-                                              Number.isFinite(value) ? value : 0
-                                            );
-                                          }}
-                                          className="h-10 rounded-xl border-border/60"
-                                          placeholder="85.50"
-                                        />
-                                      </div>
-                                      <div className="space-y-1.5">
-                                        <Label className="text-sm font-medium text-muted-foreground">
-                                          Preview precio final
-                                        </Label>
-                                        <div className="flex h-10 items-center justify-between rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 text-sm font-medium text-primary">
-                                          <span>Cliente verá</span>
-                                          <span>
-                                            {currency(
-                                              edit.discount_price_euros || edit.price_euros
-                                            )}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-3">
-                                  <span className="text-xs text-muted-foreground">
-                                    Se actualizará en todos los centros
-                                  </span>
-                                  <Button size="sm" onClick={() => saveService(service.id, [service.id])}>
-                                    Guardar
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="manage-services" className="mt-6 space-y-4">
             {/* Todos los servicios en una sola vista */}
@@ -1159,29 +954,18 @@ export default function AdminPricingPromos() {
                         </div>
                         <div>
                           <Label htmlFor="edit-service-type" className={isMobile ? 'text-xs' : ''}>Tipo</Label>
-                          <Select
+                          <select
+                            id="edit-service-type"
                             value={editingService.type}
-                            onValueChange={(value: any) => setEditingService({ ...editingService, type: value })}
+                            onChange={(e) => setEditingService({ ...editingService, type: e.target.value })}
+                            className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 ring-offset-background file:border-0 file:bg-transparent file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isMobile ? 'text-sm' : 'text-sm'}`}
                           >
-                            <SelectTrigger className={isMobile ? 'text-sm' : ''}>
-                              <SelectValue />
-                            </SelectTrigger>
-                             <SelectContent
-                               position="popper"
-                               side="bottom"
-                               align="start"
-                               sideOffset={4}
-                               avoidCollisions={true}
-                               collisionPadding={20}
-                               className="z-[100] min-w-[170px] rounded-2xl border border-border/60 bg-white px-2 py-2 shadow-xl"
-                             >
-                               {serviceTypes.map((type) => (
-                                 <SelectItem key={type.value} value={type.value} className={isMobile ? 'text-sm' : ''}>
-                                   {type.label}
-                                 </SelectItem>
-                               ))}
-                             </SelectContent>
-                          </Select>
+                            {serviceTypes.map((type) => (
+                              <option key={type.value} value={type.value}>
+                                {type.label}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div>
                           <Label htmlFor="edit-service-duration" className={isMobile ? 'text-xs' : ''}>Duración (min) *</Label>
@@ -1501,32 +1285,26 @@ export default function AdminPricingPromos() {
                                  ]}
                                />
                              </div>
-                             
-                             {/* Acordeón de configuración online para paquetes */}
+                            
                              {edit.show_online && (
-                               <div className="col-span-3 mt-2">
-                                 <Accordion type="single" collapsible className="w-full">
-                                   <AccordionItem value="package-online-config" className="border rounded-lg">
-                                     <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
-                                       <span className="text-muted-foreground">⚙️ Configuración Online - Bono</span>
-                                     </AccordionTrigger>
-                                     <AccordionContent className="px-3 pb-3">
-                                       <div className="space-y-2 text-sm">
-                                         <div className="flex items-center justify-between">
-                                           <span>Estado online:</span>
-                                           <span className="text-green-600 font-medium">✓ Visible en tienda</span>
-                                         </div>
-                                         <div className="flex items-center justify-between">
-                                           <span>Disponible para compra:</span>
-                                           <span className="text-blue-600 font-medium">✓ Sí</span>
-                                         </div>
-                                         <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
-                                           Este bono aparecerá en la tienda online y estará disponible para comprar.
-                                         </div>
-                                       </div>
-                                     </AccordionContent>
-                                   </AccordionItem>
-                                 </Accordion>
+                               <div className="col-span-3 mt-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
+                                 <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                                   <Settings className="h-4 w-4" />
+                                   <span>Visibilidad online</span>
+                                 </div>
+                                 <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                                   <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                                     <span>Estado online</span>
+                                     <span className="font-medium text-green-600">Visible</span>
+                                   </div>
+                                   <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                                     <span>Disponible para compra</span>
+                                     <span className="font-medium text-blue-600">Habilitado</span>
+                                   </div>
+                                 </div>
+                                 <p className="mt-3 text-xs text-muted-foreground">
+                                   Este bono aparecerá en la tienda online y estará disponible para comprar.
+                                 </p>
                                </div>
                              )}
                              
@@ -1627,31 +1405,25 @@ export default function AdminPricingPromos() {
                       </div>
                     </div>
                     
-                    {/* Acordeón de configuración online para nueva tarjeta regalo */}
                     {newGiftCard.show_online && (
-                      <div className="mt-4">
-                        <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem value="new-giftcard-online-config" className="border rounded-lg">
-                            <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
-                              <span className="text-muted-foreground">🎁 Vista previa configuración online</span>
-                            </AccordionTrigger>
-                            <AccordionContent className="px-3 pb-3">
-                              <div className="space-y-2 text-sm">
-                                <div className="flex items-center justify-between">
-                                  <span>Estado online:</span>
-                                  <span className="text-green-600 font-medium">✓ Se mostrará en tienda</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span>Disponible para compra:</span>
-                                  <span className="text-blue-600 font-medium">✓ Sí</span>
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
-                                  Esta tarjeta regalo aparecerá en la tienda online después de crearla.
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
+                      <div className="mt-4 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                          <Settings className="h-4 w-4" />
+                          <span>Vista previa online</span>
+                        </div>
+                        <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                          <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                            <span>Estado online</span>
+                            <span className="font-medium text-green-600">Visible</span>
+                          </div>
+                          <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                            <span>Disponible para compra</span>
+                            <span className="font-medium text-blue-600">Habilitado</span>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-xs text-muted-foreground">
+                          Esta tarjeta regalo aparecerá en la tienda online inmediatamente después de crearla.
+                        </p>
                       </div>
                     )}
                   <div className="grid grid-cols-1 gap-4 mt-4">
@@ -1734,32 +1506,26 @@ export default function AdminPricingPromos() {
                                  options={[{ label: 'Sí', value: 'true' }, { label: 'No', value: 'false' }]}
                                />
                              </div>
-                             
-                             {/* Acordeón de configuración online para tarjetas regalo */}
+                            
                              {edit.show_online && (
-                               <div className="col-span-3 mt-2">
-                                 <Accordion type="single" collapsible className="w-full">
-                                   <AccordionItem value="giftcard-online-config" className="border rounded-lg">
-                                     <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
-                                       <span className="text-muted-foreground">🎁 Configuración Online - Tarjeta Regalo</span>
-                                     </AccordionTrigger>
-                                     <AccordionContent className="px-3 pb-3">
-                                       <div className="space-y-2 text-sm">
-                                         <div className="flex items-center justify-between">
-                                           <span>Estado online:</span>
-                                           <span className="text-green-600 font-medium">✓ Visible en tienda</span>
-                                         </div>
-                                         <div className="flex items-center justify-between">
-                                           <span>Disponible para compra:</span>
-                                           <span className="text-blue-600 font-medium">✓ Sí</span>
-                                         </div>
-                                         <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
-                                           Esta tarjeta regalo aparecerá en la tienda online y estará disponible para comprar.
-                                         </div>
-                                       </div>
-                                     </AccordionContent>
-                                   </AccordionItem>
-                                 </Accordion>
+                               <div className="col-span-3 mt-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
+                                 <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                                   <Settings className="h-4 w-4" />
+                                   <span>Visibilidad online</span>
+                                 </div>
+                                 <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                                   <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                                     <span>Estado online</span>
+                                     <span className="font-medium text-green-600">Visible</span>
+                                   </div>
+                                   <div className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+                                     <span>Disponible para compra</span>
+                                     <span className="font-medium text-blue-600">Habilitado</span>
+                                   </div>
+                                 </div>
+                                 <p className="mt-3 text-xs text-muted-foreground">
+                                   Esta tarjeta regalo aparece en la tienda online y puede comprarse desde la web.
+                                 </p>
                                </div>
                              )}
                              
