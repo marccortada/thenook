@@ -571,24 +571,7 @@ serve(async (req) => {
         if (error) throw error;
         results.booking_updated = true;
 
-        // Enviar emails de confirmación de pago de reserva
-        try {
-          const subject = "Pago de reserva confirmado";
-          const html = `
-            <div style=\"font-family: Arial, sans-serif;\"> 
-              <h3>Pago confirmado</h3>
-              <p>Tu pago de la reserva se ha confirmado correctamente.</p>
-              <p>ID de sesión Stripe: ${session.id}</p>
-            </div>`;
-          if (buyerEmail) {
-            await resend.emails.send({ from: fromEmail, to: [buyerEmail], subject, html });
-          }
-          if (adminEmail) {
-            await resend.emails.send({ from: fromEmail, to: [adminEmail], subject: `ADMIN · ${subject}`, html });
-          }
-        } catch (e) {
-          console.error("[verify-payment] error enviando emails booking_payment:", e);
-        }
+        // El webhook dedicado gestionará el envío del email de confirmación tras checkout.session.completed
       }
     }
 
