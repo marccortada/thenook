@@ -112,6 +112,7 @@ export interface Package {
   created_at: string;
   updated_at: string;
   services?: Service;
+  service_names?: string[];
 }
 
 export const useCenters = () => {
@@ -405,7 +406,44 @@ export const usePackages = (centerId?: string) => {
       const { data, error } = await query.order('sessions_count').order('name');
 
       if (error) throw error;
-      setPackages(data || []);
+
+      const packageList = data || [];
+      const packageIds = packageList.map((pkg: any) => pkg.id);
+      const serviceAssignments: Record<string, string[]> = {};
+
+      if (packageIds.length) {
+        const { data: packageServices, error: packageServicesError } = await (supabase as any)
+          .from('package_services')
+          .select(`
+            package_id,
+            service_id,
+            services ( name )
+          `)
+          .in('package_id', packageIds);
+
+        if (packageServicesError) {
+          console.error('Error fetching package services:', packageServicesError);
+        } else {
+          (packageServices || []).forEach((row: any) => {
+            const name = row.services?.name;
+            if (!serviceAssignments[row.package_id]) {
+              serviceAssignments[row.package_id] = [];
+            }
+            if (name && !serviceAssignments[row.package_id].includes(name)) {
+              serviceAssignments[row.package_id].push(name);
+            }
+          });
+        }
+      }
+
+      const enriched = packageList.map((pkg: any) => ({
+        ...pkg,
+        service_names: serviceAssignments[pkg.id]?.length
+          ? serviceAssignments[pkg.id]
+          : (pkg.services?.name ? [pkg.services.name] : []),
+      }));
+
+      setPackages(enriched);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching packages');
     } finally {

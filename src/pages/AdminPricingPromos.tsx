@@ -88,11 +88,10 @@ const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
 
 const [newPackage, setNewPackage] = useState({
   name: '',
-  service_id: '',
+  service_ids: [] as string[],
   sessions_count: 1,
   price_euros: 0,
   center_id: 'all',
-  discount_price_euros: 0,
   description: '',
 });
 const [isCreatingPackage, setIsCreatingPackage] = useState(false);
@@ -258,35 +257,84 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
 
   const deleteService = async (serviceId: string) => {
     console.log('Delete service called with ID:', serviceId);
-    
-    // First check what packages are using this service
-    const { data: relatedPackages, error: packagesError } = await supabase
+
+    const packagesToDelete = new Map<string, { id: string; name: string }>();
+
+    const { data: directPackages, error: packagesError } = await supabase
       .from('packages')
       .select('id, name')
       .eq('service_id', serviceId);
-    
+
     if (packagesError) {
       toast({ title: 'Error', description: 'Error verificando paquetes relacionados', variant: 'destructive' });
       return;
     }
-    
-    if (relatedPackages && relatedPackages.length > 0) {
-      const packageNames = relatedPackages.map(p => p.name).join(', ');
-      const confirmMessage = `Este servicio está siendo usado en ${relatedPackages.length} paquete(s): ${packageNames}.\n\n¿Quieres eliminar TODOS los paquetes y el servicio? Esta acción no se puede deshacer.`;
-      
+
+    directPackages?.forEach((pkg: any) => {
+      if (pkg?.id) packagesToDelete.set(pkg.id, { id: pkg.id, name: pkg.name });
+    });
+
+    const { data: linkedPackages, error: linkedError } = await supabase
+      .from('package_services')
+      .select('package_id')
+      .eq('service_id', serviceId);
+
+    if (linkedError) {
+      toast({ title: 'Error', description: 'Error verificando paquetes relacionados', variant: 'destructive' });
+      return;
+    }
+
+    const additionalPackageIds = (linkedPackages || [])
+      .map((row: any) => row.package_id)
+      .filter((id: string | null) => id && !packagesToDelete.has(id)) as string[];
+
+    if (additionalPackageIds.length) {
+      const { data: additionalPackages, error: additionalPackagesError } = await supabase
+        .from('packages')
+        .select('id, name')
+        .in('id', additionalPackageIds);
+
+      if (additionalPackagesError) {
+        toast({ title: 'Error', description: 'Error verificando paquetes relacionados', variant: 'destructive' });
+        return;
+      }
+
+      additionalPackages?.forEach((pkg: any) => {
+        if (pkg?.id) packagesToDelete.set(pkg.id, { id: pkg.id, name: pkg.name });
+      });
+    }
+
+    const packagesArray = Array.from(packagesToDelete.values());
+
+    if (packagesArray.length > 0) {
+      const packageNames = packagesArray.map(p => p.name).join(', ');
+      const confirmMessage = `Este servicio está siendo usado en ${packagesArray.length} paquete(s): ${packageNames}.\n\n¿Quieres eliminar TODOS los paquetes y el servicio? Esta acción no se puede deshacer.`;
+
       if (!confirm(confirmMessage)) {
         return;
       }
-      
-      // Delete packages first
-      const { error: deletePackagesError } = await supabase
-        .from('packages')
-        .delete()
-        .eq('service_id', serviceId);
-        
-      if (deletePackagesError) {
-        toast({ title: 'Error', description: 'Error eliminando paquetes relacionados', variant: 'destructive' });
-        return;
+
+      const packageIds = packagesArray.map(p => p.id);
+
+      if (packageIds.length) {
+        const { error: deleteAssignmentsError } = await supabase
+          .from('package_services')
+          .delete()
+          .in('package_id', packageIds);
+        if (deleteAssignmentsError) {
+          toast({ title: 'Error', description: 'Error eliminando servicios del paquete', variant: 'destructive' });
+          return;
+        }
+
+        const { error: deletePackagesError } = await supabase
+          .from('packages')
+          .delete()
+          .in('id', packageIds);
+
+        if (deletePackagesError) {
+          toast({ title: 'Error', description: 'Error eliminando paquetes relacionados', variant: 'destructive' });
+          return;
+        }
       }
     } else {
       if (!confirm('¿Estás seguro de que quieres eliminar este servicio? Esta acción no se puede deshacer.')) {
@@ -303,8 +351,8 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
         toast({ title: 'Error', description: `No se pudo eliminar el servicio: ${error.message}`, variant: 'destructive' });
       } else {
         console.log('Service deleted successfully');
-        const message = relatedPackages && relatedPackages.length > 0 
-          ? `Servicio y ${relatedPackages.length} paquete(s) eliminados exitosamente`
+        const message = packagesArray.length > 0
+          ? `Servicio y ${packagesArray.length} paquete(s) eliminados exitosamente`
           : 'Servicio eliminado exitosamente';
         toast({ title: 'Eliminado', description: message });
         refetchServices();
@@ -366,16 +414,14 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
   };
 
   // Bonos (paquetes) - edición de precio/sesiones/estado/visibilidad online + alta (agrupados sin duplicados entre centros)
-  const [packageEdits, setPackageEdits] = useState<Record<string, { price_euros: number; sessions_count: number; active: boolean; has_discount: boolean; discount_price_euros: number; show_online: boolean }>>({});
-  const handlePackageChange = (id: string, field: 'price_euros'|'sessions_count'|'active'|'has_discount'|'discount_price_euros'|'show_online', value: any) => {
+  const [packageEdits, setPackageEdits] = useState<Record<string, { price_euros: number; sessions_count: number; active: boolean; show_online: boolean }>>({});
+  const handlePackageChange = (id: string, field: 'price_euros'|'sessions_count'|'active'|'show_online', value: any) => {
     setPackageEdits((prev) => ({
       ...prev,
       [id]: { 
         price_euros: prev[id]?.price_euros ?? 0, 
         sessions_count: prev[id]?.sessions_count ?? 1, 
         active: prev[id]?.active ?? true, 
-        has_discount: prev[id]?.has_discount ?? false,
-        discount_price_euros: prev[id]?.discount_price_euros ?? 0,
         show_online: prev[id]?.show_online ?? true,
         [field]: value
       }
@@ -383,27 +429,29 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
   };
 
   const uniquePackages = useMemo(() => {
-    const map = new Map<string, { key: string; ids: string[]; name: string; service_name?: string; sessions_count: number; price_euros: number; allActive: boolean; hasDiscount: boolean; discountPriceEuros: number }>();
+    const map = new Map<string, { key: string; ids: string[]; name: string; service_names: string[]; sessions_count: number; price_euros: number; allActive: boolean }>();
     packages.forEach((p: any) => {
       const key = `${(p.name || '').trim().toLowerCase()}|${p.sessions_count}`;
       const existing = map.get(key);
+      const currentServiceNames = Array.from(new Set(p.service_names || (p.services?.name ? [p.services.name] : [])));
       if (!existing) {
         map.set(key, {
           key,
           ids: [p.id],
           name: p.name,
-          service_name: p.services?.name,
+          service_names: currentServiceNames,
           sessions_count: p.sessions_count,
           price_euros: p.price_cents / 100,
           allActive: !!p.active,
-          hasDiscount: !!p.has_discount,
-          discountPriceEuros: (p.discount_price_cents || 0) / 100,
         });
       } else {
         existing.ids.push(p.id);
         existing.allActive = existing.allActive && !!p.active;
-        existing.hasDiscount = existing.hasDiscount && !!p.has_discount;
-        existing.discountPriceEuros = (p.discount_price_cents || 0) / 100;
+        const names = new Set(existing.service_names);
+        currentServiceNames.forEach((name) => {
+          if (name) names.add(name);
+        });
+        existing.service_names = Array.from(names);
       }
     });
     return Array.from(map.values());
@@ -414,14 +462,13 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
     if (!edit) return;
 
     const priceCents = Math.round(edit.price_euros * 100);
-    const discountPriceCents = Math.round(edit.discount_price_euros * 100);
     for (const id of ids) {
       await supabase.from('packages').update({ 
         price_cents: priceCents, 
         sessions_count: edit.sessions_count,
         active: edit.active,
-        has_discount: edit.has_discount,
-        discount_price_cents: discountPriceCents,
+        has_discount: false,
+        discount_price_cents: 0,
         show_online: edit.show_online
       }).eq('id', id);
     }
@@ -434,44 +481,65 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
   const isPackageFormValid =
     newPackage.name.trim().length > 0 &&
     newPackage.sessions_count > 0 &&
-    newPackage.price_euros > 0;
+    newPackage.price_euros > 0 &&
+    newPackage.service_ids.length > 0;
 
   const handleCreatePackage = async () => {
     if (!isPackageFormValid || isCreatingPackage) return;
 
     setIsCreatingPackage(true);
+    let createdPackageId: string | null = null;
     try {
-      const hasDiscount = newPackage.discount_price_euros > 0;
-      const { error } = await supabase.from('packages').insert({
-        name: newPackage.name.trim(),
-        service_id: newPackage.service_id || null,
-        center_id: newPackage.center_id === 'all' ? null : newPackage.center_id,
-        sessions_count: newPackage.sessions_count,
-        price_cents: Math.round(newPackage.price_euros * 100),
-        description: newPackage.description ? newPackage.description.trim() : null,
-        active: true,
-        has_discount: hasDiscount,
-        discount_price_cents: hasDiscount ? Math.round(newPackage.discount_price_euros * 100) : 0,
-        show_online: true,
-      });
+      const { data: insertedPackage, error: insertError } = await supabase
+        .from('packages')
+        .insert({
+          name: newPackage.name.trim(),
+          service_id: newPackage.service_ids[0] || null,
+          center_id: newPackage.center_id === 'all' ? null : newPackage.center_id,
+          sessions_count: newPackage.sessions_count,
+          price_cents: Math.round(newPackage.price_euros * 100),
+          description: newPackage.description ? newPackage.description.trim() : null,
+          active: true,
+          has_discount: false,
+          discount_price_cents: 0,
+          show_online: true,
+        })
+        .select()
+        .single();
 
-      if (error) {
-        throw error;
+      if (insertError) throw insertError;
+      createdPackageId = insertedPackage?.id || null;
+
+      if (createdPackageId) {
+        const assignments = newPackage.service_ids.map((serviceId) => ({
+          package_id: createdPackageId,
+          service_id: serviceId,
+          quantity: 1,
+        }));
+
+        if (assignments.length) {
+          const { error: assignmentError } = await supabase
+            .from('package_services')
+            .insert(assignments);
+          if (assignmentError) throw assignmentError;
+        }
       }
 
       toast({ title: 'Bono creado', description: 'Se creó el nuevo bono correctamente.' });
       setNewPackage({
         name: '',
-        service_id: '',
+        service_ids: [],
         sessions_count: 1,
         price_euros: 0,
         center_id: 'all',
-        discount_price_euros: 0,
         description: '',
       });
       refetchPackages();
     } catch (err: any) {
-      console.error('Error creating package:', err);
+      console.error('Error creando package:', err);
+      if (createdPackageId) {
+        await supabase.from('packages').delete().eq('id', createdPackageId);
+      }
       toast({
         title: 'Error al crear bono',
         description: err?.message || 'No se pudo crear el bono. Inténtalo nuevamente.',
@@ -673,7 +741,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
           <TabsList className="grid w-full grid-cols-4 lg:grid-cols-4 gap-1 h-auto p-1">
             <TabsTrigger value="manage-services" className="text-xs sm:text-sm px-2 py-2">Gestión</TabsTrigger>
             <TabsTrigger value="packages" className="text-xs sm:text-sm px-2 py-2">Bonos</TabsTrigger>
-            <TabsTrigger value="giftcards" className="text-xs sm:text-sm px-2 py-2">Tarjetas</TabsTrigger>
+            <TabsTrigger value="giftcards" className="text-xs sm:text-sm px-2 py-2">Tarjeta Regalo</TabsTrigger>
             <TabsTrigger value="promotions" className="text-xs sm:text-sm px-2 py-2">Promos</TabsTrigger>
             
           </TabsList>
@@ -1188,23 +1256,72 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                         }
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="package-service">Servicio</Label>
-                      <select
-                        id="package-service"
-                        className={nativeSelectClass}
-                        value={newPackage.service_id}
-                        onChange={(e) =>
-                          setNewPackage(prev => ({ ...prev, service_id: e.target.value }))
-                        }
-                      >
-                        <option value="">Todos los servicios</option>
-                        {services.map((service: any) => (
-                          <option key={service.id} value={service.id}>
-                            {service.name}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="md:col-span-2">
+                      <Label>Tratamientos incluidos *</Label>
+                      <div className="flex flex-wrap gap-2 mt-2 min-h-[44px] rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
+                        {newPackage.service_ids.length === 0 ? (
+                          <span className="text-sm text-muted-foreground">Sin tratamientos seleccionados</span>
+                        ) : (
+                          newPackage.service_ids.map((serviceId) => {
+                            const service = services.find((s: any) => s.id === serviceId);
+                            return (
+                              <Badge key={serviceId} variant="secondary" className="flex items-center gap-2">
+                                {service?.name || 'Servicio'}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5 p-0"
+                                  onClick={() =>
+                                    setNewPackage(prev => ({
+                                      ...prev,
+                                      service_ids: prev.service_ids.filter(id => id !== serviceId),
+                                    }))
+                                  }
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            );
+                          })
+                        )}
+                      </div>
+                      {(() => {
+                        const availableServices = services.filter((service: any) => {
+                          const matchesCenter =
+                            newPackage.center_id === 'all' ||
+                            !service.center_id ||
+                            service.center_id === newPackage.center_id;
+                          return matchesCenter && !newPackage.service_ids.includes(service.id);
+                        });
+                        return (
+                          <select
+                            className={`${nativeSelectClass} mt-3`}
+                            value=""
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (!value) return;
+                              setNewPackage(prev => ({
+                                ...prev,
+                                service_ids: prev.service_ids.includes(value)
+                                  ? prev.service_ids
+                                  : [...prev.service_ids, value],
+                              }));
+                            }}
+                            disabled={availableServices.length === 0}
+                          >
+                            <option value="">
+                              {availableServices.length === 0
+                                ? 'Todos los tratamientos asignados'
+                                : 'Añadir tratamiento'}
+                            </option>
+                            {availableServices.map((service: any) => (
+                              <option key={service.id} value={service.id}>
+                                {service.name}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      })()}
                     </div>
                     <div>
                       <Label htmlFor="package-sessions">Sesiones *</Label>
@@ -1247,9 +1364,23 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                         id="package-center"
                         className={nativeSelectClass}
                         value={newPackage.center_id}
-                        onChange={(e) =>
-                          setNewPackage(prev => ({ ...prev, center_id: e.target.value }))
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setNewPackage(prev => {
+                            const filteredServiceIds =
+                              value === 'all'
+                                ? prev.service_ids
+                                : prev.service_ids.filter(id => {
+                                    const service = services.find((s: any) => s.id === id);
+                                    return !service?.center_id || service.center_id === value;
+                                  });
+                            return {
+                              ...prev,
+                              center_id: value,
+                              service_ids: filteredServiceIds,
+                            };
+                          });
+                        }}
                       >
                         <option value="all">Todos los centros</option>
                         {centers.map((center) => (
@@ -1258,26 +1389,6 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                           </option>
                         ))}
                       </select>
-                    </div>
-                    <div>
-                      <Label htmlFor="package-discount">Descuento (€)</Label>
-                      <Input
-                        id="package-discount"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={
-                          Number.isFinite(newPackage.discount_price_euros)
-                            ? newPackage.discount_price_euros
-                            : ''
-                        }
-                        onChange={(e) =>
-                          setNewPackage(prev => ({
-                            ...prev,
-                            discount_price_euros: Math.max(0, parseFloat(e.target.value || '0')),
-                          }))
-                        }
-                      />
                     </div>
                     <div className="md:col-span-2">
                       <Label htmlFor="package-description">Descripción</Label>
@@ -1319,27 +1430,26 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                          price_euros: g.price_euros, 
                          sessions_count: g.sessions_count, 
                          active: g.allActive,
-                         has_discount: g.hasDiscount,
-                         discount_price_euros: g.discountPriceEuros,
                          show_online: true  // Default value
                        };
-                      const finalPrice = edit.has_discount ? edit.discount_price_euros : edit.price_euros;
+                      const finalPrice = edit.price_euros;
                       return (
                         <div key={g.key} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
                             <div>
                               <div className="font-medium">{g.name}</div>
-                              <div className="text-xs text-muted-foreground">{g.service_name ? `Servicio: ${g.service_name} · ` : ''}{edit.sessions_count} sesiones</div>
+                              <div className="text-xs text-muted-foreground">
+                                {g.service_names && g.service_names.length > 0 ? (
+                                  <span>
+                                    Servicios: {g.service_names.join(', ')} · {edit.sessions_count} sesiones
+                                  </span>
+                                ) : (
+                                  <span>{edit.sessions_count} sesiones</span>
+                                )}
+                              </div>
                             </div>
                             <div className="text-right">
-                              {edit.has_discount ? (
-                                <div>
-                                  <div className="text-xs text-muted-foreground line-through">{currency(edit.price_euros)}</div>
-                                  <div className="text-sm font-semibold text-primary">{currency(finalPrice)}</div>
-                                </div>
-                              ) : (
-                                <div className="text-sm font-semibold">{currency(finalPrice)}</div>
-                              )}
+                              <div className="text-sm font-semibold">{currency(finalPrice)}</div>
                             </div>
                           </div>
                            <div className="grid grid-cols-3 gap-2 items-end">
@@ -1373,7 +1483,6 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                  ]}
                                />
                              </div>
-                            
                              {edit.show_online && (
                                <div className="col-span-3 mt-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
                                  <div className="flex items-center gap-2 text-sm font-semibold text-primary">
@@ -1395,30 +1504,6 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                  </p>
                                </div>
                              )}
-                             
-                             <div className="col-span-2 flex items-center space-x-2">
-                              <input 
-                                type="checkbox" 
-                                id={`discount-${g.key}`}
-                                checked={edit.has_discount}
-                                onChange={(e) => handlePackageChange(g.key, 'has_discount', e.target.checked)}
-                                className="rounded"
-                              />
-                              <Label htmlFor={`discount-${g.key}`} className="text-sm">Descuento</Label>
-                            </div>
-                            {edit.has_discount && (
-                               <div className="col-span-3">
-                                <Label className="text-sm">Precio con descuento (€)</Label>
-                                <Input 
-                                  type="number" 
-                                  step="0.01"
-                                  value={edit.discount_price_euros}
-                                  onChange={(e) => handlePackageChange(g.key, 'discount_price_euros', parseFloat(e.target.value || '0'))}
-                                  min="0"
-                                  className="text-sm"
-                                />
-                              </div>
-                            )}
                             <div className="col-span-3 flex justify-end">
                               <Button size="sm" onClick={() => savePackage(g.key, g.ids)}>Guardar</Button>
                             </div>
@@ -1443,7 +1528,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       <span className="text-lg font-semibold">Crear Nueva Opción de Tarjeta Regalo</span>
                     </div>
                     <div className="flex items-center gap-2 mr-4">
-                      <Button size="sm" variant="ghost" onClick={seedCatalogGiftOptions}>Añadir faltantes</Button>
+                      <Button size="sm" variant="ghost" onClick={seedCatalogGiftOptions}>Añadir Tarjeta Regalo</Button>
                       {giftOptions.length === 0 && (
                         giftDenoms.length > 0 ? (
                           <Button size="sm" onClick={seedCatalogGiftOptions}>Importar catálogo</Button>
@@ -1535,7 +1620,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                   <div className="flex justify-end mt-4">
                     <Button onClick={createGiftCardOption} className="flex items-center gap-2">
                       <Plus className="h-4 w-4" />
-                      Crear Opción
+                      Crear Tarjeta Regalo
                     </Button>
                   </div>
                 </AccordionContent>

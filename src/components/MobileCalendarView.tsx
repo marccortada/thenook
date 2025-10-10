@@ -226,19 +226,15 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     const modalWidth = Math.min(350, windowWidth - 20);
     const modalHeight = Math.min(400, windowHeight - 80);
     
-    // Calcular posición - centrado horizontalmente, cerca del elemento clickeado
-    let top = rect.top + scrollTop - 50;
+    // Calcular posición - centrado horizontalmente y dentro de la ventana visible
+    let top = scrollTop + (windowHeight - modalHeight) / 2;
     let left = (windowWidth - modalWidth) / 2;
     
     // Ajustar verticalmente para que esté siempre visible
     const viewportTop = scrollTop + 20;
     const viewportBottom = scrollTop + windowHeight - 20;
     
-    if (top < viewportTop) {
-      top = viewportTop;
-    } else if (top + modalHeight > viewportBottom) {
-      top = viewportBottom - modalHeight;
-    }
+    top = Math.max(viewportTop, Math.min(top, viewportBottom - modalHeight));
     
     // Asegurar que no se salga horizontalmente
     if (left < 10) left = 10;

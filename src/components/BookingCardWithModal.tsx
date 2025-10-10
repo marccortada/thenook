@@ -471,13 +471,14 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                 top: `${modalPosition.top}px`,
                 left: `${modalPosition.left}px`,
                 width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(500, window.innerWidth - 40)}px`,
-                maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(600, window.innerHeight - 80)}px`,
-                overflowY: 'auto'
+                maxHeight: `${Math.min(isMobile ? window.innerHeight - 24 : window.innerHeight - 80, 640)}px`,
+                display: 'flex',
+                flexDirection: 'column'
               }}
             >
-              <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
+              <div className={`${isMobile ? 'p-4' : 'p-6'} flex flex-col gap-4 h-full`}>                
                 {/* Header */}
-                <div className={`flex items-center justify-between ${isMobile ? 'mb-4' : 'mb-6'}`}>
+                <div className={`flex items-center justify-between ${isMobile ? '' : 'mb-2'}`}>
                   <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>
                     Modificar Reserva
                   </h3>
@@ -492,7 +493,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                 </div>
                 
                 {/* Content */}
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-3 sm:space-y-4 overflow-y-auto pr-1 flex-1">
                   {/* Información de la reserva */}
                   <div className="space-y-2 text-sm text-muted-foreground border-b pb-3">
                     <p>Cliente: {booking.profiles?.first_name} {booking.profiles?.last_name}</p>

@@ -461,12 +461,6 @@ const AdvancedCalendarView = () => {
     let top = scrollTop + (windowHeight - modalHeight) / 2;
     let left = (windowWidth - modalWidth) / 2;
 
-    if (target) {
-      const rect = target.getBoundingClientRect();
-      top = rect.top + scrollTop - modalHeight / 2;
-      left = rect.left + rect.width / 2 - modalWidth / 2;
-    }
-
     top = Math.max(viewportTop + 16, Math.min(top, viewportBottom - modalHeight - 16));
     left = Math.max(16, Math.min(left, windowWidth - modalWidth - 16));
 
