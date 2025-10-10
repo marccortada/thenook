@@ -1619,6 +1619,45 @@ export type Database = {
         }
         Relationships: []
       }
+      package_services: {
+        Row: {
+          created_at: string
+          id: string
+          package_id: string
+          quantity: number
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          package_id: string
+          quantity?: number
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          package_id?: string
+          quantity?: number
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_services_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       packages: {
         Row: {
           active: boolean | null
