@@ -605,7 +605,11 @@ serve(async (req) => {
 
   try {
     const bodyText = new TextDecoder().decode(new Uint8Array(rawBody));
-    event = stripe.webhooks.constructEvent(bodyText, signature, webhookSecret);
+    event = await stripe.webhooks.constructEventAsync(
+      bodyText,
+      signature,
+      webhookSecret,
+    );
   } catch (err: any) {
     console.error("[stripe-webhook] Signature verification failed:", err);
     return new Response(`Webhook Error: ${err.message}`, {
