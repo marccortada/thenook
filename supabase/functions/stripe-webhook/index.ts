@@ -26,11 +26,23 @@ const supabaseAdmin = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
 
-interface PackageVoucherPayload {
+interface PackageVoucherItemPayload {
   package_id: string;
-  mode?: "self" | "gift";
-  buyer?: { name: string; email: string; phone?: string };
-  recipient?: { name: string; email: string; phone?: string };
+  quantity?: number;
+  is_gift?: boolean;
+  recipient_name?: string;
+  recipient_email?: string;
+  gift_message?: string;
+}
+interface PackageVoucherPayload {
+  items: PackageVoucherItemPayload[];
+  purchaser_name?: string;
+  purchaser_email?: string;
+  purchaser_phone?: string;
+  is_gift?: boolean;
+  recipient_name?: string;
+  recipient_email?: string;
+  gift_message?: string;
   notes?: string;
 }
 
@@ -268,117 +280,193 @@ async function processPackageVoucher(args: {
 }) {
   const { session, payload } = args;
 
-  const packageId = payload.package_id;
-  if (!packageId) {
-    console.warn("[stripe-webhook] package_voucher without package_id");
+  const items = payload.items || [];
+  if (!items.length) {
+    console.warn("[stripe-webhook] package_voucher without items");
     return;
   }
 
-  const { data: pkg, error: pkgErr } = await supabaseAdmin
-    .from("packages")
-    .select("id,name,price_cents,sessions_count,center_id,centers(name,address_concha_espina,address_zurbaran)")
-    .eq("id", packageId)
-    .single();
-  if (pkgErr || !pkg) {
-    console.error("[stripe-webhook] package not found:", pkgErr);
-    throw pkgErr ?? new Error("Paquete no encontrado");
+  const packageIds = Array.from(new Set(items.map((it) => it.package_id).filter(Boolean)));
+  if (!packageIds.length) {
+    console.warn("[stripe-webhook] No valid package ids in payload");
+    return;
   }
 
   const { data: existingMatch } = await supabaseAdmin
     .from("client_packages")
-    .select("id,voucher_code,client_id,notes")
+    .select("id")
     .ilike("notes", `%${session.id}%`)
     .maybeSingle();
-
   if (existingMatch) {
-    console.log("[stripe-webhook] voucher already processed for session", session.id);
+    console.log("[stripe-webhook] vouchers already processed for session", session.id);
     return;
   }
 
-  const target = payload.mode === "gift" ? payload.recipient : payload.buyer;
-  if (!target?.email || !target?.name) {
-    throw new Error("Datos incompletos del destinatario del bono");
+  const { data: packagesData, error: packagesError } = await supabaseAdmin
+    .from("packages")
+    .select("id,name,price_cents,sessions_count,center_id,active,centers(name,address_concha_espina,address_zurbaran)")
+    .in("id", packageIds);
+  if (packagesError) {
+    console.error("[stripe-webhook] error fetching packages:", packagesError);
+    throw packagesError;
   }
 
-  const emailLower = target.email.toLowerCase();
-  const { data: existingProfile, error: existingProfileErr } = await supabaseAdmin
-    .from("profiles")
-    .select("id")
-    .eq("email", emailLower)
-    .maybeSingle();
-  if (existingProfileErr) throw existingProfileErr;
-
-  let clientId = existingProfile?.id as string | undefined;
-  if (!clientId) {
-    const [first, ...rest] = target.name.trim().split(" ");
-    const { data: createdProfile, error: createProfileErr } = await supabaseAdmin
-      .from("profiles")
-      .insert({
-        email: emailLower,
-        first_name: first,
-        last_name: rest.join(" ") || null,
-        phone: target.phone || null,
-        role: "client",
-      })
-      .select("id")
-      .single();
-    if (createProfileErr) throw createProfileErr;
-    clientId = createdProfile.id;
+  const packageMap = new Map<string, any>();
+  for (const pkg of packagesData || []) {
+    packageMap.set(pkg.id, pkg);
   }
 
-  const { data: voucherCode, error: codeErr } = await supabaseAdmin.rpc("generate_voucher_code");
-  if (codeErr) throw codeErr;
+  const sessionCustomer = session.customer_details;
+  const purchaserName = (payload.purchaser_name || sessionCustomer?.name || "Cliente").trim();
+  const purchaserEmail =
+    (payload.purchaser_email || sessionCustomer?.email || "").trim().toLowerCase();
 
-  const notesPieces: string[] = [];
-  if (payload.notes?.trim()) notesPieces.push(payload.notes.trim());
-  if (payload.mode === "gift") {
-    const buyer = payload.buyer;
-    const buyerDetail = buyer
-      ? `Regalo de: ${buyer.name} <${buyer.email}>${buyer.phone ? " · " + buyer.phone : ""}`
-      : "Regalo";
-    notesPieces.push(buyerDetail);
-  } else {
-    notesPieces.push("Comprado por el propio cliente");
+  if (!purchaserEmail) {
+    console.warn("[stripe-webhook] purchaser email missing, cannot create voucher");
+    return;
   }
-  notesPieces.push(`Stripe session: ${session.id}`);
 
-  const { data: createdPackage, error: createPkgErr } = await supabaseAdmin
-    .from("client_packages")
-    .insert({
-      client_id: clientId,
-      package_id: pkg.id,
-      purchase_price_cents: pkg.price_cents,
-      total_sessions: pkg.sessions_count,
-      voucher_code: voucherCode,
-      notes: notesPieces.join(" | "),
-      status: "active",
-    })
-    .select("id,voucher_code,client_id")
-    .single();
-  if (createPkgErr) throw createPkgErr;
-  console.log("[stripe-webhook] package voucher created", {
-    client_package_id: createdPackage.id,
-    voucher_code: createdPackage.voucher_code,
-    session: session.id,
-  });
+  const globalRecipientName = payload.recipient_name?.trim();
+  const globalRecipientEmail =
+    payload.recipient_email?.trim().toLowerCase() || undefined;
+  const globalGiftMessage = payload.gift_message?.trim();
+  const isGiftGlobal = payload.is_gift ?? items.some((it) => it.is_gift);
+  const noteBase = payload.notes?.trim();
 
-  const centerName = pkg.centers?.name || "";
-  const isZurbaran = centerName.toLowerCase().includes("zurbar");
-  const location = isZurbaran ? "ZURBARÁN" : "CONCHA ESPINA";
-  const mapLink = isZurbaran
-    ? "https://maps.app.goo.gl/fEWyBibeEFcQ3isN6"
-    : "https://goo.gl/maps/zHuPpdHATcJf6QWX8";
-  const address = isZurbaran
-    ? "C/ Zurbarán 10 (Metro Alonso Martínez / Rubén Darío)"
-    : "C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante 'La Ancha' (Metro Concha Espina salida Plaza de Cataluña)";
+  const createdVouchers: Array<{
+    code: string;
+    package: any;
+    recipientEmail: string;
+    recipientName: string;
+    giftMessage?: string;
+    purchaserEmail: string;
+    purchaserName: string;
+    isGift: boolean;
+  }> = [];
 
-  const clientName = target.name;
-  const voucherName = pkg.name;
-  const totalSessions = pkg.sessions_count;
-  const voucherCodeDisplay = voucherCode;
+  for (const item of items) {
+    const pkg = item.package_id ? packageMap.get(item.package_id) : null;
+    if (!pkg || !pkg.active) {
+      console.warn("[stripe-webhook] package not available:", item.package_id);
+      continue;
+    }
+
+    const quantity = Math.max(1, item.quantity ?? 1);
+    const itemIsGift = item.is_gift ?? isGiftGlobal;
+    const recipientName =
+      (item.recipient_name || globalRecipientName || (itemIsGift ? "" : purchaserName)).trim() ||
+      purchaserName;
+
+    const recipientEmail =
+      (item.recipient_email?.trim().toLowerCase() ||
+        globalRecipientEmail ||
+        (itemIsGift ? undefined : purchaserEmail)) ?? purchaserEmail;
+
+    const giftMessage = item.gift_message ?? globalGiftMessage ?? "";
+
+    let profileId: string | undefined;
+    try {
+      const { data: existingProfile, error: profileErr } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("email", recipientEmail)
+        .maybeSingle();
+      if (profileErr) throw profileErr;
+
+      if (existingProfile?.id) {
+        profileId = existingProfile.id;
+      } else {
+        const [first, ...rest] = recipientName.split(" ");
+        const { data: createdProfile, error: createProfileErr } = await supabaseAdmin
+          .from("profiles")
+          .insert({
+            email: recipientEmail,
+            first_name: first || recipientName,
+            last_name: rest.join(" ") || null,
+            phone: payload.purchaser_phone || null,
+            role: "client",
+          })
+          .select("id")
+          .single();
+        if (createProfileErr) throw createProfileErr;
+        profileId = createdProfile.id;
+      }
+    } catch (profileErr) {
+      console.error("[stripe-webhook] error ensuring profile:", profileErr);
+      continue;
+    }
+
+    for (let i = 0; i < quantity; i++) {
+      try {
+        const { data: code, error: codeErr } = await supabaseAdmin.rpc("generate_voucher_code");
+        if (codeErr) throw codeErr;
+
+        const notesPieces = [
+          noteBase,
+          giftMessage ? `Mensaje: ${giftMessage}` : "",
+          itemIsGift ? `Regalo para: ${recipientName} <${recipientEmail}>` : "Uso personal",
+          `Comprador: ${purchaserName} <${purchaserEmail}>`,
+          `Stripe session: ${session.id}`,
+        ].filter(Boolean);
+
+        const { data: createdPackage, error: createPkgErr } = await supabaseAdmin
+          .from("client_packages")
+          .insert({
+            client_id: profileId,
+            package_id: pkg.id,
+            purchase_price_cents: pkg.price_cents,
+            total_sessions: pkg.sessions_count,
+            voucher_code: code,
+            notes: notesPieces.join(" | "),
+            status: "active",
+          })
+          .select("id,voucher_code")
+          .single();
+        if (createPkgErr) throw createPkgErr;
+
+        createdVouchers.push({
+          code: createdPackage.voucher_code,
+          package: pkg,
+          recipientEmail,
+          recipientName,
+          giftMessage: giftMessage || undefined,
+          purchaserEmail,
+          purchaserName,
+          isGift: itemIsGift,
+        });
+      } catch (voucherErr) {
+        console.error("[stripe-webhook] error creating voucher:", voucherErr);
+      }
+    }
+  }
+
+  if (!createdVouchers.length) {
+    console.warn("[stripe-webhook] No vouchers created for session", session.id);
+    return;
+  }
+
   const year = new Date().getFullYear();
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
+  const fromEmail = "The Nook Madrid <reservas@gnerai.com>";
 
-  const emailHtml = `
+  for (const voucher of createdVouchers) {
+    const pkg = voucher.package;
+    const centerName = pkg.centers?.name || "";
+    const isZurbaran = centerName.toLowerCase().includes("zurbar");
+    const location = isZurbaran ? "ZURBARÁN" : "CONCHA ESPINA";
+    const mapLink = isZurbaran
+      ? "https://maps.app.goo.gl/fEWyBibeEFcQ3isN6"
+      : "https://goo.gl/maps/zHuPpdHATcJf6QWX8";
+    const address = isZurbaran
+      ? pkg.centers?.address_zurbaran || "C/ Zurbarán 10 (Metro Alonso Martínez / Rubén Darío)"
+      : pkg.centers?.address_concha_espina ||
+        "C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante 'La Ancha' (Metro Concha Espina salida Plaza de Cataluña)";
+
+    const giftBlock = voucher.giftMessage
+      ? `<p style="margin:0 0 16px 0; color:#0f172a;"><strong>Mensaje:</strong> ${voucher.giftMessage}</p>`
+      : "";
+
+    const emailHtml = `
 <!doctype html>
 <html lang="es">
   <head>
@@ -398,22 +486,24 @@ async function processPackageVoucher(args: {
 
         <tr>
           <td style="padding:24px;">
-            <p>Hola <strong>${clientName}</strong>!</p>
-            <p>Has adquirido correctamente tu <strong>${voucherName}</strong> en <strong>THE NOOK ${location}</strong>.</p>
+            <p>Hola <strong>${voucher.recipientName}</strong>!</p>
+            <p>Hemos registrado tu <strong>${pkg.name}</strong> en <strong>THE NOOK ${location}</strong>.</p>
 
             <p>Estos son los detalles de tu bono:</p>
             <ul style="list-style:none; padding-left:0;">
-              <li><strong>Bono:</strong> ${voucherName}</li>
-              <li><strong>Número de sesiones:</strong> ${totalSessions}</li>
-              <li><strong>Código único:</strong> <span style="font-size:16px; font-weight:bold; color:#1A6AFF;">${voucherCodeDisplay}</span></li>
+              <li><strong>Bono:</strong> ${pkg.name}</li>
+              <li><strong>Número de sesiones:</strong> ${pkg.sessions_count}</li>
+              <li><strong>Código único:</strong> <span style="font-size:16px; font-weight:bold; color:#1A6AFF;">${voucher.code}</span></li>
             </ul>
+
+            ${giftBlock}
 
             <div style="margin:18px 0; padding:12px 16px; background:#f3f6ff; border-radius:8px; border:1px solid #e2e8ff;">
               <p style="margin:0; font-size:14px; color:#0f172a;">
                 🪙 <strong>Cómo funciona:</strong><br>
                 Este código es personal e intransferible.<br>
                 Cada vez que vengas al centro y canjees tu bono, se actualizará automáticamente tu saldo restante (por ejemplo: 5/5 → 4/5 → 3/5…).<br>
-                Cuando llegues a 0/${totalSessions}, el bono quedará completado.
+                Cuando llegues a 0/${pkg.sessions_count}, el bono quedará completado.
               </p>
             </div>
 
@@ -446,33 +536,46 @@ async function processPackageVoucher(args: {
 </html>
 `;
 
-  const primaryEmail = target.email;
-  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
-  const fromEmail = "The Nook Madrid <reservas@gnerai.com>";
-
-  await resend.emails.send({
-    from: fromEmail,
-    to: [primaryEmail],
-    subject: `Tu bono ${voucherName} en THE NOOK`,
-    html: emailHtml,
-  });
-
-  const buyer = payload.buyer;
-  if (buyer?.email && buyer.email.toLowerCase() !== primaryEmail.toLowerCase()) {
     await resend.emails.send({
       from: fromEmail,
-      to: [buyer.email],
-      subject: `Confirmación de compra · ${voucherName}`,
+      to: [voucher.recipientEmail],
+      subject: `Tu bono ${pkg.name} en THE NOOK`,
       html: emailHtml,
     });
+
+    if (voucher.purchaserEmail && voucher.purchaserEmail !== voucher.recipientEmail) {
+      await resend.emails.send({
+        from: fromEmail,
+        to: [voucher.purchaserEmail],
+        subject: `Confirmación de compra · ${pkg.name}`,
+        html: emailHtml,
+      });
+    }
   }
 
   if (adminEmail) {
+    const summaryHtml = `
+      <div style="font-family: Arial, sans-serif;">
+        <h3>🎁 Nueva compra de bonos</h3>
+        <p><strong>Comprador:</strong> ${createdVouchers[0].purchaserName} &lt;${createdVouchers[0].purchaserEmail}&gt;</p>
+        <p><strong>Total:</strong> ${createdVouchers.length} bono(s)</p>
+        <ul>
+          ${createdVouchers
+            .map(
+              (v) =>
+                `<li>${v.package.name} — Código: <code>${v.code}</code> — Para: ${v.recipientName} (${v.recipientEmail})</li>`
+            )
+            .join("")}
+        </ul>
+        <p>Sesión Stripe: ${session.id}</p>
+      </div>
+    `;
+
     await resend.emails.send({
       from: fromEmail,
       to: [adminEmail],
-      subject: `Nueva compra de bono · ${voucherName}`,
-      html: emailHtml,
+      subject: `Nueva compra de bono · ${createdVouchers[0].package.name}`,
+      html: summaryHtml,
     });
   }
 }

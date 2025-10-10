@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { usePackages } from "@/hooks/useDatabase";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Gift } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -258,37 +257,71 @@ export default function BuyVoucherPage() {
                         <Button variant="secondary" onClick={clear} className="flex-1">
                           {t('empty_cart_button')}
                         </Button>
-                        <Button className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90" onClick={async () => {
-                          if (items.length === 0) return;
-                          if (isGift && !recipientName.trim()) {
-                            toast.error("Por favor, indica el nombre del beneficiario");
-                            return;
-                          }
-                          try {
-                            const payload = {
-                              intent: "package_voucher",
-                              package_voucher: {
-                                items: items.map(item => ({
-                                  package_id: item.packageId,
-                                  purchased_by_name: purchasedByName || undefined,
-                                  purchased_by_email: purchasedByEmail || undefined,
-                                  is_gift: isGift,
-                                  recipient_name: isGift ? recipientName : undefined,
-                                  recipient_email: isGift ? recipientEmail : undefined,
-                                  gift_message: isGift ? giftMessage : undefined
-                                }))
-                              },
-                              currency: "eur"
-                            };
-                            const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
-                            if (error) throw error;
-                            if (data?.url) {
-                              window.location.href = data.url;
+                        <Button
+                          className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+                          onClick={async () => {
+                            if (items.length === 0) return;
+                            if (!purchasedByName.trim()) {
+                              toast.error(t('buyer_name_error'));
+                              return;
                             }
-                          } catch (e: any) {
-                            toast.error(e.message || "No se pudo iniciar el pago");
-                          }
-                        }}>
+                            if (!purchasedByEmail.trim()) {
+                              toast.error(t('buyer_email_error'));
+                              return;
+                            }
+                            if (isGift && !recipientName.trim()) {
+                              toast.error("Por favor, indica el nombre del beneficiario");
+                              return;
+                            }
+                            try {
+                              const checkoutItems = items.map((item) => {
+                                if (!item.packageId) {
+                                  throw new Error("No se encontró el bono seleccionado. Actualiza la página e inténtalo nuevamente.");
+                                }
+                                return {
+                                  package_id: item.packageId,
+                                  quantity: 1,
+                                };
+                              });
+
+                              const payload = {
+                                intent: "package_voucher" as const,
+                                package_voucher: {
+                                  items: checkoutItems,
+                                  purchaser_name: purchasedByName.trim(),
+                                  purchaser_email: purchasedByEmail.trim(),
+                                  is_gift: isGift,
+                                  recipient_name: isGift ? recipientName.trim() : undefined,
+                                  recipient_email: isGift ? recipientEmail.trim() : undefined,
+                                  gift_message: isGift ? giftMessage.trim() : undefined,
+                                },
+                                currency: "eur" as const,
+                              };
+
+                              const { data, error } = await supabase.functions.invoke("create-checkout", { body: payload });
+                              if (error) throw error;
+
+                              const checkoutUrl =
+                                data?.url ||
+                                (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
+                              if (!checkoutUrl) throw new Error("No se pudo iniciar el pago.");
+
+                              window.location.href = checkoutUrl;
+                              toast.success('Redirigiendo a Stripe...');
+
+                              clear();
+                              setPurchasedByName("");
+                              setPurchasedByEmail("");
+                              setIsGift(false);
+                              setRecipientName("");
+                              setRecipientEmail("");
+                              setGiftMessage("");
+                            } catch (e: any) {
+                              console.error('Error al iniciar checkout:', e);
+                              toast.error(e?.message || "No se pudo iniciar el pago");
+                            }
+                          }}
+                        >
                           {t('proceed_to_payment')}
                         </Button>
                       </div>

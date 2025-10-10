@@ -23,12 +23,27 @@ interface GiftCardItemReq {
   send_to_buyer?: boolean;
   show_buyer_data?: boolean;
 }
-interface PackageVoucherReq {
+interface PackageVoucherItemReq {
   package_id: string;
-  mode?: "self" | "gift";
-  buyer?: { name: string; email: string; phone?: string };
-  recipient?: { name: string; email: string; phone?: string };
+  quantity?: number;
+  purchased_by_name?: string;
+  purchased_by_email?: string;
+  is_gift?: boolean;
+  recipient_name?: string;
+  recipient_email?: string;
+  gift_message?: string;
+}
+interface PackageVoucherReq {
+  items: PackageVoucherItemReq[];
+  purchaser_name?: string;
+  purchaser_email?: string;
+  purchaser_phone?: string;
+  is_gift?: boolean;
+  recipient_name?: string;
+  recipient_email?: string;
+  gift_message?: string;
   notes?: string;
+  total_cents?: number;
 }
 interface BookingPaymentReq { booking_id: string }
 
@@ -62,6 +77,7 @@ serve(async (req) => {
 
     let line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
     let metadata: Record<string, string> = {};
+    let customerEmail: string | undefined;
 
     if (body.intent === "gift_cards") {
       const items = body.gift_cards?.items || [];
@@ -106,24 +122,61 @@ serve(async (req) => {
 
     if (body.intent === "package_voucher") {
       const pv = body.package_voucher;
-      if (!pv?.package_id) throw new Error("Falta package_id");
-      const { data: pkg, error } = await supabaseAdmin
+      const items = pv?.items || [];
+      if (!items.length) throw new Error("No se han seleccionado bonos");
+
+      const packageIds = Array.from(new Set(items.map((it) => it.package_id).filter(Boolean)));
+      if (!packageIds.length) throw new Error("Faltan identificadores de bonos");
+
+      const { data: packagesData, error: packagesError } = await supabaseAdmin
         .from("packages")
         .select("id,name,price_cents,sessions_count,active")
-        .eq("id", pv.package_id)
-        .single();
-      if (error || !pkg || !pkg.active) throw new Error("Paquete no disponible");
+        .in("id", packageIds);
+      if (packagesError) throw packagesError;
 
-      line_items.push({
-        price_data: {
-          currency,
-          product_data: { name: `Bono ${pkg.name}` },
-          unit_amount: pkg.price_cents,
-        },
-        quantity: 1,
-      });
+      const packageMap = new Map<string, any>();
+      for (const pkg of packagesData || []) {
+        packageMap.set(pkg.id, pkg);
+      }
+
+      for (const item of items) {
+        const pkg = item.package_id ? packageMap.get(item.package_id) : null;
+        if (!pkg || !pkg.active) throw new Error("Paquete no disponible");
+        const quantity = Math.max(1, item.quantity ?? 1);
+        line_items.push({
+          price_data: {
+            currency,
+            product_data: { name: `Bono ${pkg.name}` },
+            unit_amount: pkg.price_cents,
+          },
+          quantity,
+        });
+      }
+
+      const purchaserEmail =
+        pv.purchaser_email?.trim().toLowerCase() ||
+        items.find((it) => it.purchased_by_email?.trim())?.purchased_by_email?.trim().toLowerCase();
+      if (purchaserEmail) customerEmail = purchaserEmail;
+
       metadata.intent = "package_voucher";
-      metadata.pv_payload = JSON.stringify(pv);
+      metadata.pv_payload = JSON.stringify({
+        items: items.map((it) => ({
+          package_id: it.package_id,
+          quantity: it.quantity ?? 1,
+          is_gift: it.is_gift ?? pv?.is_gift ?? false,
+          recipient_name: it.recipient_name,
+          recipient_email: it.recipient_email,
+          gift_message: it.gift_message,
+        })),
+        purchaser_name: pv.purchaser_name,
+        purchaser_email: pv.purchaser_email,
+        purchaser_phone: pv.purchaser_phone,
+        is_gift: pv.is_gift ?? items.some((it) => it.is_gift),
+        recipient_name: pv.recipient_name,
+        recipient_email: pv.recipient_email,
+        gift_message: pv.gift_message,
+        notes: pv.notes,
+      });
     }
 
     if (body.intent === "booking_payment") {
@@ -150,16 +203,29 @@ serve(async (req) => {
 
     if (!line_items.length) throw new Error("No se han generado artículos para el pago");
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       line_items,
       mode: "payment",
-      ui_mode: "embedded",
-      return_url: `${origin}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`,
       metadata,
       payment_intent_data: {
         metadata,
       },
-    }).catch((err) => {
+    };
+
+    if (customerEmail) {
+      sessionParams.customer_email = customerEmail;
+    }
+
+    const isEmbedded = metadata.intent === "gift_cards";
+    if (isEmbedded) {
+      sessionParams.ui_mode = "embedded";
+      sessionParams.return_url = `${origin}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`;
+    } else {
+      sessionParams.success_url = `${origin}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`;
+      sessionParams.cancel_url = origin;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams).catch((err) => {
       if (err.code === 'amount_too_small') {
         throw new Error('El monto mínimo para pagos con Stripe es €0.50. Por favor aumenta el valor de tu compra.');
       }
@@ -167,8 +233,9 @@ serve(async (req) => {
     });
 
     return new Response(JSON.stringify({ 
-      client_secret: session.client_secret,
-      session_id: session.id 
+      client_secret: session.client_secret ?? null,
+      session_id: session.id,
+      url: session.url ?? null,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
