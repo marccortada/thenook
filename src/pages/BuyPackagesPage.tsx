@@ -346,32 +346,43 @@ const BuyPackagesPage = () => {
                             }
 
                            try {
-                             const { data, error } = await supabase.functions.invoke('purchase-voucher', {
+                             // Preparar los items en el formato correcto para create-checkout
+                             const checkoutItems = items.map(item => {
+                               const pkg = packages.find(p => p.name === item.name && p.price_cents === item.priceCents);
+                               return {
+                                 package_id: pkg?.id || '',
+                                 quantity: item.quantity
+                               };
+                             });
+
+                             const { data, error } = await supabase.functions.invoke('create-checkout', {
                                body: {
-                                 purchaser_name: purchasedByName,
-                                 purchaser_email: purchasedByEmail,
-                                 items: items,
-                                 total_cents: totalCents,
-                                 type: 'package',
-                                 is_gift: isGift,
-                                 recipient_name: isGift ? recipientName : null,
-                                 recipient_email: isGift ? recipientEmail : null,
-                                 gift_message: isGift ? giftMessage : null,
+                                 intent: 'package_voucher',
+                                 package_voucher: {
+                                   items: checkoutItems,
+                                   total_cents: totalCents,
+                                   purchaser_name: purchasedByName,
+                                   purchaser_email: purchasedByEmail,
+                                   is_gift: isGift,
+                                   recipient_name: isGift ? recipientName : undefined,
+                                   recipient_email: isGift ? recipientEmail : undefined,
+                                   gift_message: isGift ? giftMessage : undefined,
+                                 }
                                }
                              });
 
                               if (error) throw error;
 
-                              toast.success(t('purchase_success'));
-                              clear();
-                              setPurchasedByName("");
-                              setPurchasedByEmail("");
-                              setIsGift(false);
-                              setRecipientName("");
-                              setRecipientEmail("");
-                              setGiftMessage("");
+                              // Abrir la sesión de Stripe Checkout en una nueva pestaña
+                              if (data?.clientSecret) {
+                                const checkoutUrl = `https://checkout.stripe.com/c/pay/${data.clientSecret}`;
+                                window.open(checkoutUrl, '_blank');
+                                toast.success('Abriendo página de pago...');
+                              } else {
+                                throw new Error('No se recibió URL de checkout');
+                              }
                             } catch (error) {
-                              console.error('Error purchasing packages:', error);
+                              console.error('Error al procesar la compra:', error);
                               toast.error(t('purchase_error'));
                             }
                          }}>

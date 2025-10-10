@@ -433,7 +433,8 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
     packages.forEach((p: any) => {
       const key = `${(p.name || '').trim().toLowerCase()}|${p.sessions_count}`;
       const existing = map.get(key);
-      const currentServiceNames = Array.from(new Set(p.service_names || (p.services?.name ? [p.services.name] : [])));
+      const serviceNamesArray = (p.service_names || (p.services?.name ? [p.services.name] : [])) as unknown[];
+      const currentServiceNames = Array.from(new Set(serviceNamesArray.filter((name): name is string => typeof name === 'string')));
       if (!existing) {
         map.set(key, {
           key,
@@ -449,7 +450,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
         existing.allActive = existing.allActive && !!p.active;
         const names = new Set(existing.service_names);
         currentServiceNames.forEach((name) => {
-          if (name) names.add(name);
+          if (typeof name === 'string' && name) names.add(name);
         });
         existing.service_names = Array.from(names);
       }
