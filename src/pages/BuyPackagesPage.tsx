@@ -355,26 +355,38 @@ const BuyPackagesPage = () => {
                               return;
                             }
 
-                           try {
-                             const checkoutItems = items.map((item) => {
-                               const pkg = packages.find((p: any) => {
-                                 if (item.packageId) {
-                                   return p.id === item.packageId;
-                                 }
-                                 const translated = translatePackageName(p.name);
-                                 return (
-                                   (translated === item.name || p.name === item.name) &&
-                                   p.price_cents === item.priceCents
-                                 );
-                               });
-                               if (!pkg?.id) {
-                                 throw new Error("No se encontró el bono seleccionado. Actualiza la página e inténtalo nuevamente.");
-                               }
-                               return {
-                                 package_id: pkg.id,
-                                 quantity: item.quantity,
-                               };
-                             });
+                            try {
+                              console.log('Items del carrito:', items);
+                              console.log('Paquetes disponibles:', packages);
+                              
+                              const checkoutItems = items.map((item) => {
+                                const pkg = packages.find((p: any) => {
+                                  if (item.packageId) {
+                                    return p.id === item.packageId;
+                                  }
+                                  const translated = translatePackageName(p.name);
+                                  return (
+                                    (translated === item.name || p.name === item.name) &&
+                                    p.price_cents === item.priceCents
+                                  );
+                                });
+                                console.log('Paquete encontrado para item:', item, 'pkg:', pkg);
+                                if (!pkg?.id) {
+                                  throw new Error("No se encontró el bono seleccionado. Actualiza la página e inténtalo nuevamente.");
+                                }
+                                return {
+                                  package_id: pkg.id,
+                                  quantity: item.quantity,
+                                  purchased_by_name: purchasedByName.trim(),
+                                  purchased_by_email: purchasedByEmail.trim(),
+                                  is_gift: isGift,
+                                  recipient_name: isGift ? recipientName.trim() : undefined,
+                                  recipient_email: isGift ? recipientEmail.trim() : undefined,
+                                  gift_message: isGift ? giftMessage.trim() : undefined,
+                                };
+                              });
+
+                              console.log('Checkout items preparados:', checkoutItems);
 
                              const payload = {
                                intent: "package_voucher" as const,
