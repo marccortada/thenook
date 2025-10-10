@@ -41,6 +41,17 @@ export default function RedeemCode() {
       if (error) throw error;
       const kind = data?.kind || ((amount && amount > 0) ? 'gift_card' : 'package');
       toast({ title: 'Canjeado', description: kind === 'gift_card' ? 'Saldo descontado de la tarjeta' : 'Sesión descontada del bono' });
+
+      if (kind === 'package' && data?.client_package_id) {
+        try {
+          await supabase.functions.invoke('send-voucher-remaining', {
+            body: { client_package_id: data.client_package_id },
+          });
+        } catch (notifyErr) {
+          console.warn('No se pudo notificar al cliente:', notifyErr);
+        }
+      }
+
       setCode(""); setAmount(undefined); setNotes("");
     } catch (e:any) {
       toast({ title: 'Error', description: e.message || 'No se pudo canjear', variant: 'destructive' });

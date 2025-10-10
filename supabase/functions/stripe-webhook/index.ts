@@ -26,6 +26,14 @@ const supabaseAdmin = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
 
+interface PackageVoucherPayload {
+  package_id: string;
+  mode?: "self" | "gift";
+  buyer?: { name: string; email: string; phone?: string };
+  recipient?: { name: string; email: string; phone?: string };
+  notes?: string;
+}
+
 async function sendBookingConfirmationEmail(args: {
   bookingId: string;
   session: Stripe.Checkout.Session;
@@ -254,6 +262,221 @@ async function sendBookingConfirmationEmail(args: {
   }
 }
 
+async function processPackageVoucher(args: {
+  session: Stripe.Checkout.Session;
+  payload: PackageVoucherPayload;
+}) {
+  const { session, payload } = args;
+
+  const packageId = payload.package_id;
+  if (!packageId) {
+    console.warn("[stripe-webhook] package_voucher without package_id");
+    return;
+  }
+
+  const { data: pkg, error: pkgErr } = await supabaseAdmin
+    .from("packages")
+    .select("id,name,price_cents,sessions_count,center_id,centers(name,address_concha_espina,address_zurbaran)")
+    .eq("id", packageId)
+    .single();
+  if (pkgErr || !pkg) {
+    console.error("[stripe-webhook] package not found:", pkgErr);
+    throw pkgErr ?? new Error("Paquete no encontrado");
+  }
+
+  const { data: existingMatch } = await supabaseAdmin
+    .from("client_packages")
+    .select("id,voucher_code,client_id,notes")
+    .ilike("notes", `%${session.id}%`)
+    .maybeSingle();
+
+  if (existingMatch) {
+    console.log("[stripe-webhook] voucher already processed for session", session.id);
+    return;
+  }
+
+  const target = payload.mode === "gift" ? payload.recipient : payload.buyer;
+  if (!target?.email || !target?.name) {
+    throw new Error("Datos incompletos del destinatario del bono");
+  }
+
+  const emailLower = target.email.toLowerCase();
+  const { data: existingProfile, error: existingProfileErr } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .eq("email", emailLower)
+    .maybeSingle();
+  if (existingProfileErr) throw existingProfileErr;
+
+  let clientId = existingProfile?.id as string | undefined;
+  if (!clientId) {
+    const [first, ...rest] = target.name.trim().split(" ");
+    const { data: createdProfile, error: createProfileErr } = await supabaseAdmin
+      .from("profiles")
+      .insert({
+        email: emailLower,
+        first_name: first,
+        last_name: rest.join(" ") || null,
+        phone: target.phone || null,
+        role: "client",
+      })
+      .select("id")
+      .single();
+    if (createProfileErr) throw createProfileErr;
+    clientId = createdProfile.id;
+  }
+
+  const { data: voucherCode, error: codeErr } = await supabaseAdmin.rpc("generate_voucher_code");
+  if (codeErr) throw codeErr;
+
+  const notesPieces: string[] = [];
+  if (payload.notes?.trim()) notesPieces.push(payload.notes.trim());
+  if (payload.mode === "gift") {
+    const buyer = payload.buyer;
+    const buyerDetail = buyer
+      ? `Regalo de: ${buyer.name} <${buyer.email}>${buyer.phone ? " · " + buyer.phone : ""}`
+      : "Regalo";
+    notesPieces.push(buyerDetail);
+  } else {
+    notesPieces.push("Comprado por el propio cliente");
+  }
+  notesPieces.push(`Stripe session: ${session.id}`);
+
+  const { data: createdPackage, error: createPkgErr } = await supabaseAdmin
+    .from("client_packages")
+    .insert({
+      client_id: clientId,
+      package_id: pkg.id,
+      purchase_price_cents: pkg.price_cents,
+      total_sessions: pkg.sessions_count,
+      voucher_code: voucherCode,
+      notes: notesPieces.join(" | "),
+      status: "active",
+    })
+    .select("id,voucher_code,client_id")
+    .single();
+  if (createPkgErr) throw createPkgErr;
+  console.log("[stripe-webhook] package voucher created", {
+    client_package_id: createdPackage.id,
+    voucher_code: createdPackage.voucher_code,
+    session: session.id,
+  });
+
+  const centerName = pkg.centers?.name || "";
+  const isZurbaran = centerName.toLowerCase().includes("zurbar");
+  const location = isZurbaran ? "ZURBARÁN" : "CONCHA ESPINA";
+  const mapLink = isZurbaran
+    ? "https://maps.app.goo.gl/fEWyBibeEFcQ3isN6"
+    : "https://goo.gl/maps/zHuPpdHATcJf6QWX8";
+  const address = isZurbaran
+    ? "C/ Zurbarán 10 (Metro Alonso Martínez / Rubén Darío)"
+    : "C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante 'La Ancha' (Metro Concha Espina salida Plaza de Cataluña)";
+
+  const clientName = target.name;
+  const voucherName = pkg.name;
+  const totalSessions = pkg.sessions_count;
+  const voucherCodeDisplay = voucherCode;
+  const year = new Date().getFullYear();
+
+  const emailHtml = `
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <title>Bono confirmado — THE NOOK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+
+  <body style="margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background:#f8f9fb; color:#111;">
+    <center style="width:100%; background:#f8f9fb;">
+      <table role="presentation" width="100%" style="max-width:600px; margin:auto; background:white; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#424CB8,#1A6AFF); color:#fff; text-align:center; padding:24px; border-radius:12px 12px 0 0;">
+            <h1 style="margin:0; font-size:22px;">🎟️ Bono asegurado en THE NOOK</h1>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px;">
+            <p>Hola <strong>${clientName}</strong>!</p>
+            <p>Has adquirido correctamente tu <strong>${voucherName}</strong> en <strong>THE NOOK ${location}</strong>.</p>
+
+            <p>Estos son los detalles de tu bono:</p>
+            <ul style="list-style:none; padding-left:0;">
+              <li><strong>Bono:</strong> ${voucherName}</li>
+              <li><strong>Número de sesiones:</strong> ${totalSessions}</li>
+              <li><strong>Código único:</strong> <span style="font-size:16px; font-weight:bold; color:#1A6AFF;">${voucherCodeDisplay}</span></li>
+            </ul>
+
+            <div style="margin:18px 0; padding:12px 16px; background:#f3f6ff; border-radius:8px; border:1px solid #e2e8ff;">
+              <p style="margin:0; font-size:14px; color:#0f172a;">
+                🪙 <strong>Cómo funciona:</strong><br>
+                Este código es personal e intransferible.<br>
+                Cada vez que vengas al centro y canjees tu bono, se actualizará automáticamente tu saldo restante (por ejemplo: 5/5 → 4/5 → 3/5…).<br>
+                Cuando llegues a 0/${totalSessions}, el bono quedará completado.
+              </p>
+            </div>
+
+            <p>Podrás usar tu bono en nuestro centro de <strong>${location}</strong>:</p>
+            <p>${address}</p>
+            <p>Estamos aquí 👉 <a href="${mapLink}" target="_blank" style="color:#1A6AFF;">Ver mapa</a></p>
+
+            <p>Este email es una confirmación de tu compra. Al adquirir este bono, aceptas nuestras condiciones de uso y nuestra <a href="https://www.thenookmadrid.com/politica-de-cancelaciones/" target="_blank" style="color:#1A6AFF;">Política de Cancelación</a>.</p>
+
+            <p>Te recomendamos leer la política completa aquí:<br>
+              <a href="https://www.thenookmadrid.com/politica-de-cancelaciones/" target="_blank" style="color:#1A6AFF;">https://www.thenookmadrid.com/politica-de-cancelaciones/</a>
+            </p>
+
+            <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
+            <p><strong>THE NOOK ${location}</strong><br>
+              911 481 474 / 622 360 922<br>
+              <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a>
+            </p>
+
+          </td>
+        </tr>
+      </table>
+
+      <p style="font-size:11px; color:#9ca3af; margin:20px auto; max-width:600px;">
+        © ${year} THE NOOK Madrid — Este correo se ha generado automáticamente.<br>
+        Si no realizaste esta compra, por favor contáctanos.
+      </p>
+    </center>
+  </body>
+</html>
+`;
+
+  const primaryEmail = target.email;
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
+  const fromEmail = "The Nook Madrid <reservas@gnerai.com>";
+
+  await resend.emails.send({
+    from: fromEmail,
+    to: [primaryEmail],
+    subject: `Tu bono ${voucherName} en THE NOOK`,
+    html: emailHtml,
+  });
+
+  const buyer = payload.buyer;
+  if (buyer?.email && buyer.email.toLowerCase() !== primaryEmail.toLowerCase()) {
+    await resend.emails.send({
+      from: fromEmail,
+      to: [buyer.email],
+      subject: `Confirmación de compra · ${voucherName}`,
+      html: emailHtml,
+    });
+  }
+
+  if (adminEmail) {
+    await resend.emails.send({
+      from: fromEmail,
+      to: [adminEmail],
+      subject: `Nueva compra de bono · ${voucherName}`,
+      html: emailHtml,
+    });
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -311,6 +534,16 @@ serve(async (req) => {
           } else {
             console.warn("[stripe-webhook] booking_id not found in payload");
           }
+        }
+      } else if (intent === "package_voucher") {
+        const payloadRaw = session.metadata?.pv_payload;
+        if (!payloadRaw) {
+          console.warn("[stripe-webhook] Missing package voucher payload in metadata");
+        } else {
+          await processPackageVoucher({
+            session,
+            payload: JSON.parse(payloadRaw) as PackageVoucherPayload,
+          });
         }
       } else {
         console.log("[stripe-webhook] checkout.session.completed ignored for intent:", intent);

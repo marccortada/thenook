@@ -438,123 +438,16 @@ serve(async (req) => {
           .single();
         if (pkgErr || !pkg || !pkg.active) throw new Error("Paquete no disponible");
 
-        const target = pv.mode === "gift" ? pv.recipient : pv.buyer;
-        if (!target?.email || !target?.name) throw new Error("Datos del destinatario incompletos");
-
-        const { data: existing, error: findErr } = await supabaseAdmin
-          .from("profiles")
-          .select("id")
-          .eq("email", target.email.toLowerCase())
-          .maybeSingle();
-        if (findErr) throw findErr;
-        let clientId = existing?.id as string | undefined;
-        if (!clientId) {
-          const [first, ...rest] = target.name.trim().split(" ");
-          const { data: created, error: createErr } = await supabaseAdmin
-            .from("profiles")
-            .insert({
-              email: target.email.toLowerCase(),
-              first_name: first,
-              last_name: rest.join(" ") || null,
-              phone: target.phone || null,
-              role: "client",
-            })
-            .select("id")
-            .single();
-          if (createErr) throw createErr;
-          clientId = created.id;
-        }
-
-        const { data: code, error: codeErr } = await supabaseAdmin.rpc("generate_voucher_code");
-        if (codeErr) throw codeErr;
-
-        const extraNotes = [
-          pv.notes?.trim() || "",
-          pv.mode === "gift"
-            ? `Regalo de: ${pv.buyer?.name} <${pv.buyer?.email}>${pv.buyer?.phone ? " · "+pv.buyer.phone : ""}`
-            : `Comprado por el propio cliente`,
-        ]
-          .filter(Boolean)
-          .join(" | ");
-
-        const { data: createdPkg, error: insertErr } = await supabaseAdmin
+        const { data: clientPackage } = await supabaseAdmin
           .from("client_packages")
-          .insert({
-            client_id: clientId,
-            package_id: pkg.id,
-            purchase_price_cents: pkg.price_cents,
-            total_sessions: pkg.sessions_count,
-            voucher_code: code,
-            notes: extraNotes || null,
-          })
-          .select("id, voucher_code")
-          .single();
-        if (insertErr) throw insertErr;
+          .select("id,voucher_code,total_sessions,used_sessions,notes,client_id,package_id")
+          .ilike("notes", `%${session.id}%`)
+          .maybeSingle();
 
-        results.client_package = createdPkg;
-
-        // Enviar emails (destinatario, comprador y admin)
-        try {
-          const recipientEmail = (pv.mode === "gift" ? pv.recipient?.email : pv.buyer?.email) || null;
-          const recipientName = (pv.mode === "gift" ? pv.recipient?.name : pv.buyer?.name) || "";
-          const buyerEmailFinal = pv.buyer?.email || buyerEmail;
-
-          const detailsHtml = `
-            <div style="font-family: Arial, sans-serif;">
-              <h2>Tu bono ${pkg.name}</h2>
-              <p>Hola ${recipientName || ""}, aquí tienes tu bono:</p>
-              <ul>
-                <li>Código del bono: <strong>${createdPkg.voucher_code}</strong></li>
-                <li>Sesiones incluidas: ${pkg.sessions_count}</li>
-              </ul>
-              <p>¡Gracias por tu compra!</p>
-            </div>`;
-
-          if (recipientEmail) {
-            await resend.emails.send({
-              from: fromEmail,
-              to: [recipientEmail],
-              subject: `Tu bono ${pkg.name} — Código ${createdPkg.voucher_code}`,
-              html: detailsHtml,
-            });
-          }
-
-          if (buyerEmailFinal && (!recipientEmail || buyerEmailFinal.toLowerCase() !== recipientEmail.toLowerCase())) {
-            await resend.emails.send({
-              from: fromEmail,
-              to: [buyerEmailFinal],
-              subject: `Confirmación: Bono ${pkg.name}`,
-              html: `
-                <div style="font-family: Arial, sans-serif;">
-                  <h3>Confirmación de compra</h3>
-                  <p>Se ha generado el bono <strong>${pkg.name}</strong> con código <strong>${createdPkg.voucher_code}</strong>.</p>
-                  <p>Destinatario: ${recipientName || buyerEmailFinal}</p>
-                </div>
-              `,
-            });
-          }
-
-          if (adminEmail) {
-            await resend.emails.send({
-              from: fromEmail,
-              to: [adminEmail],
-              subject: `Nueva compra de bono: ${pkg.name}`,
-              html: `
-                <div style="font-family: Arial, sans-serif;">
-                  <h3>Nueva compra de bono</h3>
-                  <ul>
-                    <li>Paquete: ${pkg.name}</li>
-                    <li>Código: ${createdPkg.voucher_code}</li>
-                    <li>Sesiones: ${pkg.sessions_count}</li>
-                    <li>Comprador: ${pv.buyer?.name || ""} &lt;${pv.buyer?.email || buyerEmail || ""}&gt;</li>
-                    <li>Modo: ${pv.mode || "self"}</li>
-                  </ul>
-                </div>
-              `,
-            });
-          }
-        } catch (e) {
-          console.error("[verify-payment] error enviando emails package_voucher:", e);
+        if (clientPackage) {
+          results.client_package = clientPackage;
+        } else {
+          results.client_package_missing = true;
         }
       }
     }

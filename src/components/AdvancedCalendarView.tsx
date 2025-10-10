@@ -762,7 +762,7 @@ const AdvancedCalendarView = () => {
       if (redeemOnCreate && redeemCode) {
         try {
           const amountCents = redeemAmountEUR && redeemAmountEUR > 0 ? Math.round(redeemAmountEUR * 100) : null;
-          const { error: redeemError } = await (supabase as any).rpc('redeem_voucher_code', {
+          const { data: redeemData, error: redeemError } = await (supabase as any).rpc('redeem_voucher_code', {
             p_code: redeemCode.trim(),
             p_booking_id: created?.id || null,
             p_amount_cents: amountCents,
@@ -770,6 +770,16 @@ const AdvancedCalendarView = () => {
           });
           if (redeemError) throw redeemError;
           toast({ title: '🎫 Canje aplicado', description: 'Se aplicó el bono/tarjeta a la reserva.' });
+
+          if (redeemData?.kind === 'package' && redeemData?.client_package_id) {
+            try {
+              await supabase.functions.invoke('send-voucher-remaining', {
+                body: { client_package_id: redeemData.client_package_id },
+              });
+            } catch (notifyErr) {
+              console.warn('No se pudo enviar email de saldo del bono:', notifyErr);
+            }
+          }
         } catch (e: any) {
           toast({ title: 'Canje no aplicado', description: e.message || 'Revisa el código o el importe', variant: 'destructive' });
         }
