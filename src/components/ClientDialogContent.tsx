@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { 
@@ -71,6 +70,8 @@ export const ClientDialogContent = ({
     category: 'general',
     color: '#3B82F6'
   });
+  const selectFieldClass =
+    "flex h-11 w-full rounded-2xl border border-border/60 bg-gradient-to-b from-slate-100 via-slate-50 to-white px-4 text-sm font-semibold text-foreground shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60";
 
   const handleCreateCode = async () => {
     if (!onCreateCode || !newCodeData.code.trim() || !newCodeData.name.trim()) return;
@@ -309,22 +310,19 @@ export const ClientDialogContent = ({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="new_category" className="text-xs">Categoría</Label>
-                    <Select 
-                      value={newCodeData.category} 
-                      onValueChange={(value) => setNewCodeData({ ...newCodeData, category: value })}
+                    <select
+                      id="new_category"
+                      className={selectFieldClass}
+                      value={newCodeData.category}
+                      onChange={(e) => setNewCodeData({ ...newCodeData, category: e.target.value })}
                     >
-                      <SelectTrigger className="text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="general">General</SelectItem>
-                        <SelectItem value="vip">VIP</SelectItem>
-                        <SelectItem value="behavior">Comportamiento</SelectItem>
-                        <SelectItem value="preferences">Preferencias</SelectItem>
-                        <SelectItem value="medical">Médico</SelectItem>
-                        <SelectItem value="payment">Pago</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <option value="general">General</option>
+                      <option value="vip">VIP</option>
+                      <option value="behavior">Comportamiento</option>
+                      <option value="preferences">Preferencias</option>
+                      <option value="medical">Médico</option>
+                      <option value="payment">Pago</option>
+                    </select>
                   </div>
                   <div>
                     <Label htmlFor="new_color" className="text-xs">Color</Label>
@@ -479,36 +477,36 @@ export const ClientDialogContent = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="note_category">Categoría</Label>
-                <Select value={newNote.category} onValueChange={(value) => onUpdateNewNote({ category: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General</SelectItem>
-                    <SelectItem value="preferences">Preferencias</SelectItem>
-                    <SelectItem value="medical">Médico</SelectItem>
-                    <SelectItem value="allergies">Alergias</SelectItem>
-                    <SelectItem value="behavior">Comportamiento</SelectItem>
-                    <SelectItem value="payment">Pago</SelectItem>
-                    <SelectItem value="complaints">Quejas</SelectItem>
-                    <SelectItem value="compliments">Cumplidos</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select
+                  id="note_category"
+                  className={selectFieldClass}
+                  value={newNote.category}
+                  onChange={(e) => onUpdateNewNote({ category: e.target.value })}
+                >
+                  <option value="general">General</option>
+                  <option value="preferences">Preferencias</option>
+                  <option value="medical">Médico</option>
+                  <option value="allergies">Alergias</option>
+                  <option value="behavior">Comportamiento</option>
+                  <option value="payment">Pago</option>
+                  <option value="complaints">Quejas</option>
+                  <option value="compliments">Cumplidos</option>
+                </select>
               </div>
               
               <div>
                 <Label htmlFor="note_priority">Prioridad</Label>
-                <Select value={newNote.priority} onValueChange={(value) => onUpdateNewNote({ priority: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Baja</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                    <SelectItem value="urgent">Urgente</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select
+                  id="note_priority"
+                  className={selectFieldClass}
+                  value={newNote.priority}
+                  onChange={(e) => onUpdateNewNote({ priority: e.target.value })}
+                >
+                  <option value="low">Baja</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">Alta</option>
+                  <option value="urgent">Urgente</option>
+                </select>
               </div>
             </div>
             

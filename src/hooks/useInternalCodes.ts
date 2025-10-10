@@ -200,36 +200,77 @@ export const useInternalCodes = () => {
   }) => {
     try {
       setLoading(true);
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      const userId = sessionData.session?.user?.id;
+      if (!userId) {
+        throw new Error("No se pudo obtener la sesión del usuario actual.");
+      }
       
-      // Obtener el perfil del usuario actual
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .select('id, first_name, last_name')
+        .eq('user_id', userId)
         .single();
 
-      const { error } = await supabase
+      if (profileError) throw profileError;
+      if (!profile?.id) {
+        throw new Error("El usuario actual no tiene un perfil asociado.");
+      }
+
+      const { data, error } = await supabase
         .from('code_assignments')
         .insert([{
           ...assignment,
-          assigned_by: profile?.id
-        }]);
+          assigned_by: profile.id
+        }])
+        .select(`
+          id,
+          code_id,
+          entity_type,
+          entity_id,
+          assigned_at,
+          assigned_by,
+          notes,
+          code:code_id ( code, name, color, category ),
+          assigner:assigned_by ( first_name, last_name )
+        `)
+        .single();
 
       if (error) throw error;
+
+      const normalizedAssignment: CodeAssignment = {
+        id: data.id,
+        code_id: data.code_id,
+        entity_type: data.entity_type,
+        entity_id: data.entity_id,
+        assigned_at: data.assigned_at,
+        assigned_by: data.assigned_by,
+        notes: data.notes,
+        code: data.code?.code ?? '',
+        code_name: data.code?.name ?? '',
+        code_color: data.code?.color ?? '#94A3B8',
+        code_category: data.code?.category ?? 'general',
+        assigner_name: data.assigner
+          ? `${data.assigner.first_name ?? ''} ${data.assigner.last_name ?? ''}`.trim() || 'Equipo'
+          : `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || 'Equipo',
+      };
+
+      setAssignments(prev => [normalizedAssignment, ...prev]);
 
       toast({
         title: "Código asignado",
         description: "El código ha sido asignado exitosamente",
       });
-
-      await fetchAssignments();
     } catch (error: any) {
       console.error('Error assigning code:', error);
       toast({
         title: "Error",
         description: error.message?.includes('duplicate') 
           ? "El código ya está asignado a esta entidad" 
-          : "No se pudo asignar el código",
+          : error.message || "No se pudo asignar el código",
         variant: "destructive",
       });
     } finally {
@@ -254,7 +295,7 @@ export const useInternalCodes = () => {
         description: "El código ha sido desasignado exitosamente",
       });
 
-      await fetchAssignments();
+      setAssignments(prev => prev.filter(assignment => assignment.id !== assignmentId));
     } catch (error) {
       console.error('Error unassigning code:', error);
       toast({

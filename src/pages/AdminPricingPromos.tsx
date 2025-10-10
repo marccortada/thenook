@@ -81,10 +81,21 @@ export default function AdminPricingPromos() {
     center_id: '',
     has_discount: false,
     discount_price_cents: 0,
-    show_online: true
-  });
-  const [editingService, setEditingService] = useState<any>(null);
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  show_online: true
+});
+const [editingService, setEditingService] = useState<any>(null);
+const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+
+const [newPackage, setNewPackage] = useState({
+  name: '',
+  service_id: '',
+  sessions_count: 1,
+  price_euros: 0,
+  center_id: 'all',
+  discount_price_euros: 0,
+  description: '',
+});
+const [isCreatingPackage, setIsCreatingPackage] = useState(false);
 
   const serviceTypes = [
     { value: 'massage' as const, label: 'Masaje' },
@@ -416,8 +427,59 @@ export default function AdminPricingPromos() {
     }
     toast({ title: 'Guardado', description: 'Bono actualizado en todos los centros' });
     delete packageEdits[key];
-    setPackageEdits({...packageEdits});
+    setPackageEdits({ ...packageEdits });
     refetchPackages();
+  };
+
+  const isPackageFormValid =
+    newPackage.name.trim().length > 0 &&
+    newPackage.sessions_count > 0 &&
+    newPackage.price_euros > 0;
+
+  const handleCreatePackage = async () => {
+    if (!isPackageFormValid || isCreatingPackage) return;
+
+    setIsCreatingPackage(true);
+    try {
+      const hasDiscount = newPackage.discount_price_euros > 0;
+      const { error } = await supabase.from('packages').insert({
+        name: newPackage.name.trim(),
+        service_id: newPackage.service_id || null,
+        center_id: newPackage.center_id === 'all' ? null : newPackage.center_id,
+        sessions_count: newPackage.sessions_count,
+        price_cents: Math.round(newPackage.price_euros * 100),
+        description: newPackage.description ? newPackage.description.trim() : null,
+        active: true,
+        has_discount: hasDiscount,
+        discount_price_cents: hasDiscount ? Math.round(newPackage.discount_price_euros * 100) : 0,
+        show_online: true,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({ title: 'Bono creado', description: 'Se creó el nuevo bono correctamente.' });
+      setNewPackage({
+        name: '',
+        service_id: '',
+        sessions_count: 1,
+        price_euros: 0,
+        center_id: 'all',
+        discount_price_euros: 0,
+        description: '',
+      });
+      refetchPackages();
+    } catch (err: any) {
+      console.error('Error creating package:', err);
+      toast({
+        title: 'Error al crear bono',
+        description: err?.message || 'No se pudo crear el bono. Inténtalo nuevamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingPackage(false);
+    }
   };
 
   // Tarjetas regalo - opciones de importes (sin duplicados) con visibilidad online
@@ -1120,6 +1182,10 @@ export default function AdminPricingPromos() {
                       <Input
                         id="package-name"
                         placeholder="Ej: Bono 5 Masajes"
+                        value={newPackage.name}
+                        onChange={(e) =>
+                          setNewPackage(prev => ({ ...prev, name: e.target.value }))
+                        }
                       />
                     </div>
                     <div>
@@ -1127,12 +1193,12 @@ export default function AdminPricingPromos() {
                       <select
                         id="package-service"
                         className={nativeSelectClass}
-                        defaultValue=""
+                        value={newPackage.service_id}
+                        onChange={(e) =>
+                          setNewPackage(prev => ({ ...prev, service_id: e.target.value }))
+                        }
                       >
-                        <option value="" disabled>
-                          Seleccionar servicio
-                        </option>
-                        <option value="all">Todos los servicios</option>
+                        <option value="">Todos los servicios</option>
                         {services.map((service: any) => (
                           <option key={service.id} value={service.id}>
                             {service.name}
@@ -1146,7 +1212,13 @@ export default function AdminPricingPromos() {
                         id="package-sessions"
                         type="number"
                         min="1"
-                        placeholder="5"
+                        value={newPackage.sessions_count}
+                        onChange={(e) =>
+                          setNewPackage(prev => ({
+                            ...prev,
+                            sessions_count: Math.max(1, parseInt(e.target.value || '1', 10)),
+                          }))
+                        }
                       />
                     </div>
                     <div>
@@ -1156,7 +1228,17 @@ export default function AdminPricingPromos() {
                         type="number"
                         step="0.01"
                         min="0"
-                        placeholder="150.00"
+                        value={
+                          Number.isFinite(newPackage.price_euros)
+                            ? newPackage.price_euros
+                            : ''
+                        }
+                        onChange={(e) =>
+                          setNewPackage(prev => ({
+                            ...prev,
+                            price_euros: Math.max(0, parseFloat(e.target.value || '0')),
+                          }))
+                        }
                       />
                     </div>
                     <div>
@@ -1164,7 +1246,10 @@ export default function AdminPricingPromos() {
                       <select
                         id="package-center"
                         className={nativeSelectClass}
-                        defaultValue="all"
+                        value={newPackage.center_id}
+                        onChange={(e) =>
+                          setNewPackage(prev => ({ ...prev, center_id: e.target.value }))
+                        }
                       >
                         <option value="all">Todos los centros</option>
                         {centers.map((center) => (
@@ -1181,7 +1266,17 @@ export default function AdminPricingPromos() {
                         type="number"
                         step="0.01"
                         min="0"
-                        placeholder="15.00"
+                        value={
+                          Number.isFinite(newPackage.discount_price_euros)
+                            ? newPackage.discount_price_euros
+                            : ''
+                        }
+                        onChange={(e) =>
+                          setNewPackage(prev => ({
+                            ...prev,
+                            discount_price_euros: Math.max(0, parseFloat(e.target.value || '0')),
+                          }))
+                        }
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -1189,16 +1284,21 @@ export default function AdminPricingPromos() {
                       <Input
                         id="package-description"
                         placeholder="Descripción opcional del bono..."
+                        value={newPackage.description}
+                        onChange={(e) =>
+                          setNewPackage(prev => ({ ...prev, description: e.target.value }))
+                        }
                       />
                     </div>
                   </div>
                   <div className="flex justify-end mt-4">
-                    <Button onClick={() => {
-                      // Aquí iría la lógica para crear el bono
-                      toast({ title: 'Funcionalidad pendiente', description: 'Crear bono estará disponible próximamente' });
-                    }} className="flex items-center gap-2">
+                    <Button
+                      onClick={handleCreatePackage}
+                      disabled={!isPackageFormValid || isCreatingPackage}
+                      className="flex items-center gap-2"
+                    >
                       <Plus className="h-4 w-4" />
-                      Crear Bono
+                      {isCreatingPackage ? 'Creando...' : 'Crear Bono'}
                     </Button>
                   </div>
                 </AccordionContent>
