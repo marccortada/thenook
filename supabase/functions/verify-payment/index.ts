@@ -25,18 +25,28 @@ serve(async (req) => {
   const fromEmail = "The Nook Madrid <onboarding@resend.dev>";
 
   // Try to get base64 of template from Supabase Storage bucket 'gift-cards/template.png'
-  async function getGiftCardTemplateBase64(client: ReturnType<typeof createClient>): Promise<string | null> {
-    try {
-      // @ts-ignore - storage types not imported here
-      const { data, error } = await (client as any).storage.from('gift-cards').download('template.png');
-      if (error || !data) return null;
-      const arrayBuffer = await data.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-      return `data:image/png;base64,${base64}`;
-    } catch (_e) {
-      return null;
-    }
+let giftCardTemplateCache: string | null | undefined;
+
+async function getGiftCardTemplateBase64(client: ReturnType<typeof createClient>): Promise<string | null> {
+  try {
+    // @ts-ignore - storage types not imported here
+    const { data, error } = await (client as any).storage.from('gift-cards').download('template.png');
+    if (error || !data) return null;
+    const arrayBuffer = await data.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    return `data:image/png;base64,${base64}`;
+  } catch (_e) {
+    return null;
   }
+}
+
+async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): Promise<string | null> {
+  if (giftCardTemplateCache !== undefined) {
+    return giftCardTemplateCache;
+  }
+  giftCardTemplateCache = await getGiftCardTemplateBase64(client);
+  return giftCardTemplateCache;
+}
 
   try {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -151,135 +161,105 @@ serve(async (req) => {
         }
         results.gift_cards = created;
 
+        const templateBase64 = await ensureGiftCardTemplate(supabaseAdmin);
+
+        const escapeSvgText = (value: string | null | undefined) =>
+          (value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\"/g, "&quot;")
+            .replace(/'/g, "&apos;");
+
         // Generar y guardar tarjeta regalo personalizada
         async function generateGiftCardImage(card: any, purchaseDate: string): Promise<string> {
           try {
-            // Crear imagen SVG con el diseño de la tarjeta
-            const svgContent = `
-              <svg width="670" height="473" viewBox="0 0 670 473" xmlns="http://www.w3.org/2000/svg">
-                <!-- Background base color matching the template -->
-                <rect width="670" height="473" fill="#D4B896"/>
-                
-                <!-- Decorative mandala elements -->
-                <g opacity="0.6" fill="#C4A776">
-                  <!-- Left mandala -->
-                  <g transform="translate(60, 60)">
-                    <circle cx="0" cy="0" r="40" fill="none" stroke="#C4A776" stroke-width="2"/>
-                    <circle cx="0" cy="0" r="25" fill="none" stroke="#C4A776" stroke-width="1"/>
-                    <path d="M-30,0 L-15,0 M30,0 L15,0 M0,-30 L0,-15 M0,30 L0,15" stroke="#C4A776" stroke-width="2"/>
-                    <path d="M-21,-21 L-10,-10 M21,-21 L10,-10 M-21,21 L-10,10 M21,21 L10,10" stroke="#C4A776" stroke-width="1"/>
-                  </g>
+            const templateImage = templateBase64 ?? (await ensureGiftCardTemplate(supabaseAdmin));
+
+            if (templateImage) {
+              const svgWidth = 1920;
+              const svgHeight = 1248;
+              const centerX = svgWidth / 2;
+
+              const recipientName =
+                card.recipient_name?.trim() ||
+                card.purchased_by_name?.trim() ||
+                "";
+              const showPrice = card.show_price !== false;
+              const formattedAmount = showPrice
+                ? ` - ${(card.amount_cents / 100).toFixed(2)}€`
+                : "";
+              const treatmentLabel =
+                (card.gift_card_name?.trim() || "Tarjeta regalo") + formattedAmount;
+
+              const svgContent = `
+                <svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">
+                  <image href="${templateImage}" x="0" y="0" width="${svgWidth}" height="${svgHeight}" preserveAspectRatio="xMidYMid slice"/>
                   
-                  <!-- Right mandala -->
-                  <g transform="translate(610, 60)">
-                    <circle cx="0" cy="0" r="40" fill="none" stroke="#C4A776" stroke-width="2"/>
-                    <circle cx="0" cy="0" r="25" fill="none" stroke="#C4A776" stroke-width="1"/>
-                    <path d="M-30,0 L-15,0 M30,0 L15,0 M0,-30 L0,-15 M0,30 L0,15" stroke="#C4A776" stroke-width="2"/>
-                    <path d="M-21,-21 L-10,-10 M21,-21 L10,-10 M-21,21 L-10,10 M21,21 L10,10" stroke="#C4A776" stroke-width="1"/>
-                  </g>
-                </g>
-                
-                <!-- Main title -->
-                <text x="335" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#8B6B47" letter-spacing="4px">
-                  TARJETA REGALO
-                </text>
-                
-                <!-- Upper rectangle for code -->
-                <rect x="180" y="150" width="310" height="60" rx="8" ry="8" fill="none" stroke="#8B6B47" stroke-width="3" stroke-dasharray="5,5"/>
-                <text x="335" y="185" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#5A4A3A">
-                  ${card.code}
-                </text>
-                
-                <!-- Lower rectangle for date -->
-                <rect x="180" y="230" width="310" height="40" rx="8" ry="8" fill="none" stroke="#8B6B47" stroke-width="3" stroke-dasharray="5,5"/>
-                <text x="335" y="255" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#5A4A3A">
-                  ${purchaseDate}
-                </text>
-                
-                <!-- Business hours and info -->
-                <text x="100" y="330" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
-                  Abrimos todos los días
-                </text>
-                <text x="100" y="350" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
-                  Lunes a Domingo 10:00 - 22:00
-                </text>
-                <text x="100" y="370" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
-                  Incluido festivos
-                </text>
-                <text x="100" y="390" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
-                  www.thenookmadrid.com
-                </text>
-                
-                <!-- Contact info -->
-                <text x="570" y="330" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
-                  Reservas
-                </text>
-                <text x="570" y="350" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
-                  reservas@thenookmadrid.com
-                </text>
-                <text x="570" y="370" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
-                  t. 911 481 474
-                </text>
-                <text x="570" y="390" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#6B5B4F">
-                  W. 622 36 09 22
-                </text>
-                
-                <!-- Address -->
-                <text x="335" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#5A4A3A">
-                  THE NOOK MADRID | Zurbarán 10 | Príncipe de Vergara 204
-                </text>
-                
-                <!-- Logo placeholder in bottom right -->
-                <g transform="translate(550, 410)">
-                  <text font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#8B6B47">the</text>
-                  <text y="25" font-family="Arial, sans-serif" font-size="24" fill="#8B6B47">nook</text>
-                </g>
-              </svg>
-            `;
-            
-            // Guardar en Supabase Storage
-            const fileName = `gift-card-${card.code}-${Date.now()}.svg`;
-            const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' });
-            
-            try {
-              const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-                .from('gift-cards')
-                .upload(fileName, svgBlob, {
-                  contentType: 'image/svg+xml',
-                  upsert: false
-                });
-              
-              if (uploadError) {
-                console.error('Error uploading gift card image:', uploadError);
-              } else {
-                console.log('Gift card image uploaded successfully:', uploadData.path);
+                  <text x="${centerX}" y="${svgHeight * 0.42}" text-anchor="middle" font-family="\"Source Sans Pro\", Arial, sans-serif" font-size="${svgWidth * 0.04}" font-weight="600" fill="#1f2937">${escapeSvgText(recipientName)}</text>
+                  <text x="${centerX}" y="${svgHeight * 0.53}" text-anchor="middle" font-family="\"Source Sans Pro\", Arial, sans-serif" font-size="${svgWidth * 0.032}" font-weight="500" fill="#374151">${escapeSvgText(treatmentLabel)}</text>
+                  <text x="${centerX}" y="${svgHeight * 0.64}" text-anchor="middle" font-family="\"Source Sans Pro\", Arial, sans-serif" font-size="${svgWidth * 0.055}" font-weight="700" fill="#111827" letter-spacing="6">${escapeSvgText(card.code)}</text>
+                  <text x="${centerX}" y="${svgHeight * 0.72}" text-anchor="middle" font-family="\"Source Sans Pro\", Arial, sans-serif" font-size="${svgWidth * 0.03}" font-weight="500" fill="#1f2937">${escapeSvgText(purchaseDate)}</text>
+                </svg>
+              `;
+
+              // Guardar en Supabase Storage
+              const fileName = `gift-card-${card.code}-${Date.now()}.svg`;
+              const svgBlob = new Blob([svgContent], { type: "image/svg+xml" });
+
+              try {
+                const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+                  .from("gift-cards")
+                  .upload(fileName, svgBlob, {
+                    contentType: "image/svg+xml",
+                    upsert: false,
+                  });
+
+                if (uploadError) {
+                  console.error("Error uploading gift card image:", uploadError);
+                } else {
+                  console.log("Gift card image uploaded successfully:", uploadData.path);
+                }
+              } catch (uploadErr) {
+                console.error("Exception uploading gift card image:", uploadErr);
               }
-            } catch (uploadErr) {
-              console.error('Exception uploading gift card image:', uploadErr);
+
+              return `data:image/svg+xml;base64,${btoa(svgContent)}`;
             }
-            
-            // Retornar imagen como data URL para el email
-            return `data:image/svg+xml;base64,${btoa(svgContent)}`;
-          } catch (error) {
-            console.error('Error generating gift card image:', error);
-            // Fallback a imagen simple
-            return `data:image/svg+xml;base64,${btoa(`
+
+            // Fallback si no se pudo descargar la plantilla
+            const fallbackSvg = `
               <svg width="400" height="250" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
                 <rect width="400" height="250" fill="#D4B896"/>
                 <text x="200" y="50" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold" fill="#8B6B47">
                   TARJETA REGALO
                 </text>
                 <text x="200" y="120" text-anchor="middle" font-family="monospace" font-size="20" font-weight="bold" fill="#5A4A3A">
-                  ${card.code}
+                  ${escapeSvgText(card.code)}
                 </text>
                 <text x="200" y="150" text-anchor="middle" font-family="Arial" font-size="16" fill="#5A4A3A">
-                  ${purchaseDate}
+                  ${escapeSvgText(purchaseDate)}
                 </text>
                 <text x="200" y="200" text-anchor="middle" font-family="Arial" font-size="16" fill="#6B5B4F">
                   THE NOOK MADRID
                 </text>
               </svg>
-            `)}`;
+            `;
+            return `data:image/svg+xml;base64,${btoa(fallbackSvg)}`;
+          } catch (error) {
+            console.error("Error generating gift card image:", error);
+            const errorSvg = `
+              <svg width="400" height="250" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
+                <rect width="400" height="250" fill="#FEE2E2"/>
+                <text x="200" y="120" text-anchor="middle" font-family="Arial" font-size="18" font-weight="bold" fill="#B91C1C">
+                  Error al generar tarjeta
+                </text>
+                <text x="200" y="160" text-anchor="middle" font-family="Arial" font-size="14" fill="#7F1D1D">
+                  Código: ${escapeSvgText(card.code)}
+                </text>
+              </svg>
+            `;
+            return `data:image/svg+xml;base64,${btoa(errorSvg)}`;
           }
         }
 

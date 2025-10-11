@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -10,10 +10,23 @@ interface StripeCheckoutModalProps {
   onClose: () => void;
 }
 
-const stripePromise = loadStripe("pk_live_51QUQJnAyNEkKfkLVcBfb7jqNpOvW3ksW8d7xvRzTK9ZTqYrJnCzXcVbNmOpAsQwErTyUiOpLkJhGfDsAzXcVbNm00kEY5L8ZT");
+const publishableKey =
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
+  import.meta.env.VITE_STRIPE_PUBLIC_KEY ||
+  import.meta.env.VITE_STRIPE_PK;
+
+const stripePromise: Promise<Stripe | null> | null = publishableKey
+  ? loadStripe(publishableKey)
+  : null;
 
 export const StripeCheckoutModal = ({ clientSecret, sessionId, onClose }: StripeCheckoutModalProps) => {
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!publishableKey) {
+      console.error("Falta la clave pública de Stripe. Define VITE_STRIPE_PUBLISHABLE_KEY en el entorno.");
+    }
+  }, []);
 
   const options = {
     clientSecret,
@@ -38,7 +51,17 @@ export const StripeCheckoutModal = ({ clientSecret, sessionId, onClose }: Stripe
 
   return (
     <div className="w-full min-h-[500px]">
-      {loading ? (
+      {!stripePromise ? (
+        <div className="flex flex-col items-center justify-center min-h-[500px] text-center space-y-4">
+          <Loader2 className="h-8 w-8 text-destructive" />
+          <p className="text-sm text-muted-foreground">
+            No se pudo inicializar Stripe. Revisa la configuración de la clave pública.
+          </p>
+          <Button variant="outline" onClick={onClose}>
+            Cerrar
+          </Button>
+        </div>
+      ) : loading ? (
         <div className="flex items-center justify-center min-h-[500px]">
           <div className="text-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />

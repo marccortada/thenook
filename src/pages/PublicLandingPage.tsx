@@ -43,8 +43,8 @@ export default function PublicLandingPage() {
       <section className="container mx-auto px-4 py-8 sm:py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto">
           {/* Reservar Cita */}
-          <Card className="glass-effect border-primary/20 shadow-lg">
-            <CardHeader className="text-center p-4 sm:p-6">
+          <Card className="glass-effect border-primary/20 shadow-lg flex flex-col">
+            <CardHeader className="text-center p-4 sm:p-6 flex-1 flex flex-col gap-2">
               <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
                 <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 <span className="text-sm sm:text-base">{t('book_appointment')}</span>
@@ -53,7 +53,7 @@ export default function PublicLandingPage() {
                 {t('book_description')}
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center p-4 sm:p-6 pt-0">
+            <CardContent className="text-center p-4 sm:p-6 pt-0 mt-auto">
               <Button 
                 size="lg" 
                 className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground text-sm sm:text-base py-3"
@@ -66,8 +66,8 @@ export default function PublicLandingPage() {
           </Card>
 
           {/* Bonos */}
-          <Card className="glass-effect border-primary/20 shadow-lg">
-            <CardHeader className="text-center p-4 sm:p-6">
+          <Card className="glass-effect border-primary/20 shadow-lg flex flex-col">
+            <CardHeader className="text-center p-4 sm:p-6 flex-1 flex flex-col gap-2">
               <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
                 <Gift className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 <span className="text-sm sm:text-base">{t('vouchers')}</span>
@@ -76,7 +76,7 @@ export default function PublicLandingPage() {
                 {t('vouchers_description')}
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center p-4 sm:p-6 pt-0">
+            <CardContent className="text-center p-4 sm:p-6 pt-0 mt-auto">
               <Button 
                 size="lg" 
                 variant="outline" 
@@ -90,8 +90,8 @@ export default function PublicLandingPage() {
           </Card>
 
           {/* Tarjetas de Regalo */}
-          <Card className="glass-effect border-primary/20 shadow-lg sm:col-span-2 lg:col-span-1">
-            <CardHeader className="text-center p-4 sm:p-6">
+          <Card className="glass-effect border-primary/20 shadow-lg flex flex-col">
+            <CardHeader className="text-center p-4 sm:p-6 flex-1 flex flex-col gap-2">
               <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
                 <Star className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 <span className="text-sm sm:text-base">{t('gift_cards')}</span>
@@ -100,11 +100,11 @@ export default function PublicLandingPage() {
                 {t('gift_description')}
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center">
+            <CardContent className="text-center p-4 sm:p-6 pt-0 mt-auto">
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="w-full"
+                className="w-full text-sm sm:text-base py-3"
                 onClick={() => navigate('/gift-cards')}
               >
                 <Star className="mr-2 h-5 w-5" />
