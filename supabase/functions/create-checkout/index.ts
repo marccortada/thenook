@@ -102,6 +102,13 @@ serve(async (req) => {
         const hasValidRecipient = items.every(it => !it.is_gift || (it.recipient_name?.trim()));
         if (!hasValidRecipient) throw new Error("Datos del beneficiario requeridos");
       }
+
+      if (!customerEmail) {
+        const purchaserEmail = items.find((it) => it.purchased_by_email?.trim())?.purchased_by_email?.trim();
+        if (purchaserEmail) {
+          customerEmail = purchaserEmail.toLowerCase();
+        }
+      }
       
       // Construir line items
       for (const it of items) {

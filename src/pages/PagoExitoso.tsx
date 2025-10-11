@@ -11,6 +11,9 @@ const PagoExitoso = () => {
   const sessionId = search.get("session_id");
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<any>(null);
+  const intent = result?.intent;
+  const isGiftCard = intent === "gift_cards";
+  const isPackageVoucher = intent === "package_voucher";
 
   useEffect(() => {
     document.title = "Pago Exitoso | The Nook Madrid";
@@ -76,16 +79,20 @@ const PagoExitoso = () => {
                   {result?.paid ? (
                     <>
                       <p className="text-muted-foreground">
-                        {result?.intent === "package_voucher"
-                          ? "Tu bono se ha emitido correctamente."
-                          : "Tu pago se ha procesado correctamente."}
+                        {isGiftCard
+                          ? "Tu tarjeta regalo se ha emitido correctamente."
+                          : isPackageVoucher
+                            ? "Tu bono se ha emitido correctamente."
+                            : "Tu pago se ha procesado correctamente."}
                       </p>
 
                       <div className="bg-green-50 border border-green-200 p-4 rounded-lg text-left">
                         <p className="text-sm text-green-800">
-                          {result?.intent === "package_voucher"
-                            ? "En unos minutos recibirás un correo con el código del bono y las instrucciones para canjearlo."
-                            : "Recibirás un correo electrónico con los detalles de tu compra en los próximos minutos."}
+                          {isGiftCard
+                            ? "En unos minutos recibirás un correo con la tarjeta personalizada y todas las instrucciones."
+                            : isPackageVoucher
+                              ? "En unos minutos recibirás un correo con el código del bono y las instrucciones para canjearlo."
+                              : "Recibirás un correo electrónico con los detalles de tu compra en los próximos minutos."}
                         </p>
                       </div>
                     </>
@@ -99,9 +106,9 @@ const PagoExitoso = () => {
 
                   <div className="space-y-3 pt-4">
                     <Button asChild className="w-full">
-                      <Link to="/packages">
+                      <Link to={isGiftCard ? "/gift-cards" : "/packages"}>
                         <Download className="w-4 h-4 mr-2" />
-                        Comprar otro bono
+                        {isGiftCard ? "Comprar otra tarjeta regalo" : "Comprar otro bono"}
                       </Link>
                     </Button>
                     
