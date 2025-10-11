@@ -76,15 +76,16 @@ const PagoExitoso = () => {
                   {result?.paid ? (
                     <>
                       <p className="text-muted-foreground">
-                        Tu pago se ha procesado correctamente. 
-                        {result?.intent === "gift_cards" && result?.gift_cards?.length > 0 && (
-                          <> Se han generado {result.gift_cards.length} tarjeta(s) regalo.</>
-                        )}
+                        {result?.intent === "package_voucher"
+                          ? "Tu bono se ha emitido correctamente."
+                          : "Tu pago se ha procesado correctamente."}
                       </p>
-                      
-                      <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+
+                      <div className="bg-green-50 border border-green-200 p-4 rounded-lg text-left">
                         <p className="text-sm text-green-800">
-                          Recibirás un correo electrónico con los detalles de tu compra en los próximos minutos.
+                          {result?.intent === "package_voucher"
+                            ? "En unos minutos recibirás un correo con el código del bono y las instrucciones para canjearlo."
+                            : "Recibirás un correo electrónico con los detalles de tu compra en los próximos minutos."}
                         </p>
                       </div>
                     </>
@@ -95,20 +96,12 @@ const PagoExitoso = () => {
                       </p>
                     </div>
                   )}
-                  
-                  {sessionId && (
-                    <div className="bg-muted/50 p-3 rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        ID de sesión: <span className="font-mono text-xs">{sessionId}</span>
-                      </p>
-                    </div>
-                  )}
 
                   <div className="space-y-3 pt-4">
                     <Button asChild className="w-full">
-                      <Link to="/gift-cards">
+                      <Link to="/packages">
                         <Download className="w-4 h-4 mr-2" />
-                        Comprar más tarjetas regalo
+                        Comprar otro bono
                       </Link>
                     </Button>
                     
