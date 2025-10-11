@@ -120,6 +120,15 @@ const ClientReservation = () => {
         return;
       }
 
+      // Get selected service duration
+      let serviceDuration = 60; // default duration in minutes
+      if (currentSelection.kind === "service") {
+        const selectedService = services.find((s) => s.id === currentSelection.id);
+        if (selectedService?.duration_minutes) {
+          serviceDuration = selectedService.duration_minutes;
+        }
+      }
+
       let laneIdsToCheck: string[] = [];
 
       if (currentSelection.kind === "service") {
@@ -160,7 +169,7 @@ const ClientReservation = () => {
 
       const { data, error } = await supabase
         .from("bookings")
-        .select("lane_id, booking_datetime, status")
+        .select("lane_id, booking_datetime, duration_minutes, status")
         .eq("center_id", selectedCenter)
         .gte("booking_datetime", startOfDay.toISOString())
         .lt("booking_datetime", endOfDay.toISOString())
@@ -178,25 +187,37 @@ const ClientReservation = () => {
 
       const bookingsForDay = data || [];
       const now = new Date();
-      const isToday =
-        selectedDate.toDateString() === now.toDateString();
+      const isToday = selectedDate.toDateString() === now.toDateString();
 
       const options = timeSlots.map<TimeSlotOption>((time) => {
         const slotDate = new Date(selectedDate);
         const [hours, minutes] = time.split(":").map(Number);
         slotDate.setHours(hours, minutes, 0, 0);
-        const slotIso = slotDate.toISOString();
+        
+        // Calculate when this slot would end based on service duration
+        const slotEndDate = new Date(slotDate);
+        slotEndDate.setMinutes(slotEndDate.getMinutes() + serviceDuration);
 
         let disabled = false;
         let reason: string | undefined;
 
-        if (isToday && slotDate <= now) {
-          disabled = true;
-          reason = "Horario pasado";
-        } else {
+        // Check if slot time has already passed (for today) 
+        // Add buffer: if service is 60 min and it's 12:00 now, block slots before 13:00
+        if (isToday) {
+          const bufferTime = new Date(now);
+          bufferTime.setMinutes(bufferTime.getMinutes() + 30); // 30 min buffer for preparation
+          
+          if (slotDate <= bufferTime) {
+            disabled = true;
+            reason = "Horario pasado";
+          }
+        }
+
+        if (!disabled) {
           let laneAvailable = false;
 
           for (const lane of lanesToUse) {
+            // Check if lane is blocked
             if (lane.blocked_until) {
               const blockedUntil = new Date(lane.blocked_until);
               if (slotDate < blockedUntil) {
@@ -205,13 +226,24 @@ const ClientReservation = () => {
             }
 
             const laneCapacity = lane.capacity || 1;
-            const bookingsInLane = bookingsForDay.filter(
-              (booking) =>
-                booking.lane_id === lane.id &&
-                booking.booking_datetime === slotIso
-            );
+            
+            // Check if there's a conflict with existing bookings
+            // A conflict exists if the new booking overlaps with any existing booking
+            const conflictingBookings = bookingsForDay.filter((booking) => {
+              if (booking.lane_id !== lane.id) return false;
+              
+              const bookingStart = new Date(booking.booking_datetime);
+              const bookingEnd = new Date(bookingStart);
+              bookingEnd.setMinutes(bookingEnd.getMinutes() + (booking.duration_minutes || 60));
+              
+              // Check if there's overlap:
+              // New slot starts before existing ends AND new slot ends after existing starts
+              const hasOverlap = slotDate < bookingEnd && slotEndDate > bookingStart;
+              
+              return hasOverlap;
+            });
 
-            if (bookingsInLane.length < laneCapacity) {
+            if (conflictingBookings.length < laneCapacity) {
               laneAvailable = true;
               break;
             }
