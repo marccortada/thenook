@@ -518,8 +518,6 @@ const BuyPackagesPage = () => {
                       return {
                         package_id: pkg.id,
                         quantity: item.quantity,
-                        purchased_by_name: purchasedByName.trim(),
-                        purchased_by_email: purchasedByEmail.trim(),
                       };
                     });
 
