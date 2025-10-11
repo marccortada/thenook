@@ -364,7 +364,7 @@ onClick={handlePaymentSetup}
         <div className="text-center text-sm text-muted-foreground space-y-2">
           <div>
             <p>Si tienes alguna pregunta, contáctanos en</p>
-            <p className="font-medium">reservas@gnerai.com</p>
+            <p className="font-medium">reservas@thenookmadrid.com</p>
           </div>
           <p className="text-xs border-t pt-2">
             © GnerAI 2025 · Todos los derechos reservados

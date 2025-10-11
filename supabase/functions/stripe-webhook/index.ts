@@ -224,8 +224,8 @@ async function sendBookingConfirmationEmail(args: {
 </html>
 `;
 
-  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
-  const fromEmail = "The Nook Madrid <reservas@gnerai.com>";
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+  const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
 
   const alreadyProcessed =
     booking.email_status === "sent" &&
@@ -446,8 +446,8 @@ async function processPackageVoucher(args: {
   }
 
   const year = new Date().getFullYear();
-  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
-  const fromEmail = "The Nook Madrid <reservas@gnerai.com>";
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+  const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
 
   for (const voucher of createdVouchers) {
     const pkg = voucher.package;

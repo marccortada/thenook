@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,12 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { DatePickerModal } from "@/components/DatePickerModal";
 import { TimePickerModal } from "@/components/TimePickerModal";
+
+type TimeSlotOption = {
+  time: string;
+  disabled: boolean;
+  reason?: string;
+};
 
 const ClientReservation = () => {
   const { toast } = useToast();
@@ -55,7 +61,7 @@ const ClientReservation = () => {
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const [showExistingBookings, setShowExistingBookings] = useState(false);
 
-  // Genera horarios de 10:00 a 22:00 cada 5 min
+  // Genera horarios de 10:00 a 20:35 cada 5 min
   const generateTimeSlots = (start: string, end: string, stepMin = 5) => {
     const [sh, sm] = start.split(":").map(Number);
     const [eh, em] = end.split(":").map(Number);
@@ -73,7 +79,183 @@ const ClientReservation = () => {
     return slots;
   };
 
-  const timeSlots = generateTimeSlots("10:00", "22:00", 5);
+  const timeSlots = useMemo(() => generateTimeSlots("10:00", "20:35", 5), []);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlotOption[]>(() =>
+    timeSlots.map((time) => ({ time, disabled: true }))
+  );
+
+  useEffect(() => {
+    let isActive = true;
+
+    const computeAvailability = async () => {
+      const baseOptions = timeSlots.map<TimeSlotOption>((time) => ({
+        time,
+        disabled: true,
+      }));
+
+      const selectedCenter = formData.center;
+      const selectedDate = formData.date;
+      const currentSelection = selection;
+
+      if (!selectedCenter || !selectedDate || !currentSelection) {
+        if (isActive) {
+          setAvailableTimeSlots(baseOptions);
+        }
+        return;
+      }
+
+      const centerLanes = lanes.filter(
+        (lane) => lane.center_id === selectedCenter && lane.active
+      );
+
+      if (centerLanes.length === 0) {
+        if (isActive) {
+          setAvailableTimeSlots(
+            baseOptions.map((slot) => ({
+              ...slot,
+              reason: "Sin carriles disponibles",
+            }))
+          );
+        }
+        return;
+      }
+
+      let laneIdsToCheck: string[] = [];
+
+      if (currentSelection.kind === "service") {
+        const selectedService = services.find((s) => s.id === currentSelection.id);
+        if (selectedService?.lane_ids?.length) {
+          laneIdsToCheck = selectedService.lane_ids.filter((id) =>
+            centerLanes.some((lane) => lane.id === id)
+          );
+        } else {
+          const serviceGroup = getTreatmentGroupByService(currentSelection.id, services);
+          const groupLaneIds =
+            serviceGroup?.lane_ids?.filter((id) =>
+              centerLanes.some((lane) => lane.id === id)
+            ) ?? [];
+
+          if (groupLaneIds.length > 0) {
+            laneIdsToCheck = groupLaneIds;
+          } else if (serviceGroup?.lane_id) {
+            laneIdsToCheck = centerLanes
+              .filter((lane) => lane.id === serviceGroup.lane_id)
+              .map((lane) => lane.id);
+          }
+        }
+      }
+
+      let lanesToUse = centerLanes;
+      if (laneIdsToCheck.length > 0) {
+        const specificLanes = centerLanes.filter((lane) =>
+          laneIdsToCheck.includes(lane.id)
+        );
+        lanesToUse = specificLanes.length > 0 ? specificLanes : centerLanes;
+      }
+
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(startOfDay);
+      endOfDay.setDate(endOfDay.getDate() + 1);
+
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("lane_id, booking_datetime, status")
+        .eq("center_id", selectedCenter)
+        .gte("booking_datetime", startOfDay.toISOString())
+        .lt("booking_datetime", endOfDay.toISOString())
+        .neq("status", "cancelled");
+
+      if (error) {
+        console.error("Error al cargar disponibilidad de horarios:", error);
+        if (isActive) {
+          setAvailableTimeSlots(
+            timeSlots.map((time) => ({ time, disabled: false }))
+          );
+        }
+        return;
+      }
+
+      const bookingsForDay = data || [];
+      const now = new Date();
+      const isToday =
+        selectedDate.toDateString() === now.toDateString();
+
+      const options = timeSlots.map<TimeSlotOption>((time) => {
+        const slotDate = new Date(selectedDate);
+        const [hours, minutes] = time.split(":").map(Number);
+        slotDate.setHours(hours, minutes, 0, 0);
+        const slotIso = slotDate.toISOString();
+
+        let disabled = false;
+        let reason: string | undefined;
+
+        if (isToday && slotDate <= now) {
+          disabled = true;
+          reason = "Horario pasado";
+        } else {
+          let laneAvailable = false;
+
+          for (const lane of lanesToUse) {
+            if (lane.blocked_until) {
+              const blockedUntil = new Date(lane.blocked_until);
+              if (slotDate < blockedUntil) {
+                continue;
+              }
+            }
+
+            const laneCapacity = lane.capacity || 1;
+            const bookingsInLane = bookingsForDay.filter(
+              (booking) =>
+                booking.lane_id === lane.id &&
+                booking.booking_datetime === slotIso
+            );
+
+            if (bookingsInLane.length < laneCapacity) {
+              laneAvailable = true;
+              break;
+            }
+          }
+
+          if (!laneAvailable) {
+            disabled = true;
+            reason = "Sin disponibilidad";
+          }
+        }
+
+        return { time, disabled, reason };
+      });
+
+      if (isActive) {
+        setAvailableTimeSlots(options);
+      }
+    };
+
+    computeAvailability();
+
+    return () => {
+      isActive = false;
+    };
+  }, [
+    formData.center,
+    formData.date,
+    selection?.id,
+    selection?.kind,
+    lanes,
+    services,
+    timeSlots,
+    getTreatmentGroupByService,
+  ]);
+
+  useEffect(() => {
+    if (!formData.time) return;
+    const selectedSlot = availableTimeSlots.find(
+      (slot) => slot.time === formData.time
+    );
+    if (!selectedSlot || selectedSlot.disabled) {
+      setFormData((prev) => ({ ...prev, time: "" }));
+    }
+  }, [availableTimeSlots, formData.time]);
 
   // Check for existing bookings and packages when email/phone changes
   const checkExistingBookings = async () => {
@@ -699,7 +881,7 @@ const ClientReservation = () => {
                          onOpenChange={setShowTimeDropdown}
                          selected={formData.time}
                          onSelect={(time) => setFormData({ ...formData, time })}
-                         timeSlots={timeSlots}
+                         timeSlots={availableTimeSlots}
                          placeholder={t('select_time')}
                        />
                      </div>

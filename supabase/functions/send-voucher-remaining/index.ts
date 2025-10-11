@@ -136,8 +136,8 @@ serve(async (req) => {
       : packageInfo?.centers?.address_concha_espina ||
         "C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante 'La Ancha' (Metro Concha Espina salida Plaza de Cataluña)";
 
-    const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
-    const fromEmail = "The Nook Madrid <reservas@gnerai.com>";
+    const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+    const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
     const year = new Date().getFullYear();
 
     const emailHtml = `

@@ -27,8 +27,8 @@ serve(async (req) => {
     );
 
     const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
-    const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
-    const fromEmail = "The Nook Madrid <reservas@gnerai.com>";
+    const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+    const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
 
     // Obtener info del paquete
     const { data: pkg, error: pkgErr } = await supabaseAdmin

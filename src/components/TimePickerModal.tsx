@@ -3,12 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface TimeSlot {
+  time: string;
+  disabled?: boolean;
+  reason?: string;
+}
+
 interface TimePickerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selected: string | undefined;
   onSelect: (time: string) => void;
-  timeSlots: string[];
+  timeSlots: TimeSlot[];
   placeholder?: string;
 }
 
@@ -54,16 +60,20 @@ export const TimePickerModal = ({
           
           <div className="flex-1 overflow-y-auto py-6">
             <div className="grid grid-cols-3 gap-3 px-4">
-              {timeSlots.map((time) => (
+              {timeSlots.map(({ time, disabled, reason }) => (
                 <Button
                   key={time}
                   variant={selected === time ? "default" : "outline"}
                   className={cn(
                     "h-12 text-sm font-medium transition-all duration-200",
-                    selected === time 
-                      ? "bg-primary text-primary-foreground shadow-md scale-105" 
-                      : "hover:bg-accent hover:text-accent-foreground hover:scale-105"
+                    disabled
+                      ? "bg-muted text-muted-foreground opacity-70 cursor-not-allowed"
+                      : selected === time
+                        ? "bg-primary text-primary-foreground shadow-md scale-105"
+                        : "hover:bg-accent hover:text-accent-foreground hover:scale-105"
                   )}
+                  disabled={disabled}
+                  title={reason}
                   onClick={() => {
                     onSelect(time);
                     onOpenChange(false);

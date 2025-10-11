@@ -63,6 +63,7 @@ const ServiceCard: React.FC<{
 
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "w-full p-4 rounded-xl border text-left transition-all duration-300",
@@ -149,6 +150,7 @@ const PackageCard: React.FC<{
 }> = ({ package: pkg, active, onClick }) => {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "w-full p-4 rounded-xl border text-left transition-all duration-300",
@@ -333,9 +335,10 @@ const ServiceModal: React.FC<Props> = ({
     // Always show all groups, even if empty
     // if (totalItems === 0) return null;
 
-    return (
+  return (
       <div className="space-y-3">
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           className={cn(
             "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group",
