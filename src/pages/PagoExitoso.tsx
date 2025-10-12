@@ -12,7 +12,8 @@ const PagoExitoso = () => {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<any>(null);
   const intent = result?.intent;
-  const isGiftCard = intent === "gift_cards";
+  const giftCards = Array.isArray(result?.gift_cards) ? result.gift_cards : [];
+  const isGiftCard = intent === "gift_cards" || giftCards.length > 0;
   const isPackageVoucher = intent === "package_voucher";
 
   useEffect(() => {
@@ -89,7 +90,7 @@ const PagoExitoso = () => {
                       <div className="bg-green-50 border border-green-200 p-4 rounded-lg text-left">
                         <p className="text-sm text-green-800">
                           {isGiftCard
-                            ? "En unos minutos recibirás un correo con la tarjeta personalizada y todas las instrucciones."
+                            ? "En unos minutos recibirás un correo con la tarjeta regalo personalizada, lista para descargar y compartir."
                             : isPackageVoucher
                               ? "En unos minutos recibirás un correo con el código del bono y las instrucciones para canjearlo."
                               : "Recibirás un correo electrónico con los detalles de tu compra en los próximos minutos."}

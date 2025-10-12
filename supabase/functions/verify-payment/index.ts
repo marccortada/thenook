@@ -22,7 +22,9 @@ serve(async (req) => {
 
   const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-  const fromEmail = "The Nook Madrid <onboarding@resend.dev>";
+  const fromEmail =
+    Deno.env.get("RESEND_FROM_EMAIL") ||
+    "The Nook Madrid <reservas@thenookmadrid.com>";
 
   // Try to get base64 of template from Supabase Storage bucket 'gift-cards/template.png'
 let giftCardTemplateCache: string | null | undefined;
@@ -171,8 +173,17 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
             .replace(/\"/g, "&quot;")
             .replace(/'/g, "&apos;");
 
+        type GiftCardImageResult = {
+          dataUrl: string;
+          attachment: {
+            filename: string;
+            content: string;
+            contentType: string;
+          } | null;
+        };
+
         // Generar y guardar tarjeta regalo personalizada
-        async function generateGiftCardImage(card: any, purchaseDate: string): Promise<string> {
+        async function generateGiftCardImage(card: any, purchaseDate: string): Promise<GiftCardImageResult> {
           try {
             const templateImage = templateBase64 ?? (await ensureGiftCardTemplate(supabaseAdmin));
 
@@ -206,6 +217,8 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
               // Guardar en Supabase Storage
               const fileName = `gift-card-${card.code}-${Date.now()}.svg`;
               const svgBlob = new Blob([svgContent], { type: "image/svg+xml" });
+              const base64Content = btoa(svgContent);
+              const dataUrl = `data:image/svg+xml;base64,${base64Content}`;
 
               try {
                 const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
@@ -224,7 +237,14 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 console.error("Exception uploading gift card image:", uploadErr);
               }
 
-              return `data:image/svg+xml;base64,${btoa(svgContent)}`;
+              return {
+                dataUrl,
+                attachment: {
+                  filename: fileName,
+                  content: base64Content,
+                  contentType: "image/svg+xml",
+                },
+              };
             }
 
             // Fallback si no se pudo descargar la plantilla
@@ -245,7 +265,15 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 </text>
               </svg>
             `;
-            return `data:image/svg+xml;base64,${btoa(fallbackSvg)}`;
+            const fallbackBase64 = btoa(fallbackSvg);
+            return {
+              dataUrl: `data:image/svg+xml;base64,${fallbackBase64}`,
+              attachment: {
+                filename: `gift-card-${card.code}-${Date.now()}.svg`,
+                content: fallbackBase64,
+                contentType: "image/svg+xml",
+              },
+            };
           } catch (error) {
             console.error("Error generating gift card image:", error);
             const errorSvg = `
@@ -259,7 +287,15 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 </text>
               </svg>
             `;
-            return `data:image/svg+xml;base64,${btoa(errorSvg)}`;
+            const errorBase64 = btoa(errorSvg);
+            return {
+              dataUrl: `data:image/svg+xml;base64,${errorBase64}`,
+              attachment: {
+                filename: `gift-card-${card.code}-${Date.now()}.svg`,
+                content: errorBase64,
+                contentType: "image/svg+xml",
+              },
+            };
           }
         }
 
@@ -301,7 +337,7 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                     ${giftMessage ? `<div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; font-style: italic; color: #666;">"${giftMessage}"</div>` : ''}
                     
                     <div style="margin: 30px 0;">
-                      <img src="${giftCardImage}" alt="${card.gift_card_name}" style="max-width: 100%; height: auto; border-radius: 15px;"/>
+                      <img src="${giftCardImage.dataUrl}" alt="${card.gift_card_name}" style="max-width: 100%; height: auto; border-radius: 15px;"/>
                     </div>
                     
                     <div style="background: #f0f9ff; padding: 20px; border-radius: 10px; margin: 20px 0;">
@@ -321,12 +357,22 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 </div>
               `;
               
-              await resend.emails.send({
+              const recipientEmailPayload: any = {
                 from: fromEmail,
                 to: [finalRecipientEmail],
                 subject: recipientSubject,
                 html: recipientHtml,
-              });
+              };
+
+              if (giftCardImage.attachment) {
+                recipientEmailPayload.attachments = [{
+                  filename: giftCardImage.attachment.filename,
+                  content: giftCardImage.attachment.content,
+                  contentType: giftCardImage.attachment.contentType,
+                }];
+              }
+
+              await resend.emails.send(recipientEmailPayload);
             }
 
             // Email al comprador (si es regalo y es diferente del destinatario)
@@ -338,7 +384,7 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                     <p>Tu tarjeta regalo ha sido enviada exitosamente a <strong>${recipientName}</strong> (${recipientEmail})</p>
                     
                     <div style="margin: 30px 0;">
-                      <img src="${giftCardImage}" alt="Tarjeta Regalo" style="max-width: 100%; height: auto; border-radius: 15px;"/>
+                      <img src="${giftCardImage.dataUrl}" alt="Tarjeta Regalo" style="max-width: 100%; height: auto; border-radius: 15px;"/>
                     </div>
                     
                     <div style="background: #f0fdf4; padding: 20px; border-radius: 10px; margin: 20px 0;">
@@ -356,12 +402,22 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 </div>
               `;
               
-              await resend.emails.send({
+              const purchaserEmailPayload: any = {
                 from: fromEmail,
                 to: [purchaserEmail],
                 subject: "Confirmación: Tarjeta regalo enviada",
                 html: purchaserHtml,
-              });
+              };
+
+              if (giftCardImage.attachment) {
+                purchaserEmailPayload.attachments = [{
+                  filename: giftCardImage.attachment.filename,
+                  content: giftCardImage.attachment.content,
+                  contentType: giftCardImage.attachment.contentType,
+                }];
+              }
+
+              await resend.emails.send(purchaserEmailPayload);
             }
           }
 
