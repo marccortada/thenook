@@ -580,6 +580,265 @@ async function processPackageVoucher(args: {
   }
 }
 
+// Procesar tarjetas de regalo
+async function processGiftCards(args: {
+  session: Stripe.Checkout.Session;
+  items: any[];
+}) {
+  const { session, items } = args;
+
+  if (!items || !items.length) {
+    console.warn("[stripe-webhook] gift_cards without items");
+    return;
+  }
+
+  // Verificar si ya se procesó esta sesión
+  const { data: existingMatch } = await supabaseAdmin
+    .from("gift_cards")
+    .select("id")
+    .ilike("purchased_by_email", `%${session.customer_details?.email || ""}%`)
+    .eq("initial_balance_cents", items[0].amount_cents)
+    .gte("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString()) // últimos 5 minutos
+    .maybeSingle();
+
+  if (existingMatch) {
+    console.log("[stripe-webhook] gift cards already processed for session", session.id);
+    return;
+  }
+
+  const sessionCustomer = session.customer_details;
+  const createdGiftCards: Array<{
+    code: string;
+    amount_cents: number;
+    recipientEmail: string;
+    recipientName: string;
+    giftMessage?: string;
+    purchaserEmail: string;
+    purchaserName: string;
+    isGift: boolean;
+    showPrice: boolean;
+    sendToBuyer: boolean;
+    showBuyerData: boolean;
+  }> = [];
+
+  for (const item of items) {
+    const purchaserName = (item.purchased_by_name || sessionCustomer?.name || "Cliente").trim();
+    const purchaserEmail = (item.purchased_by_email || sessionCustomer?.email || "").trim().toLowerCase();
+
+    if (!purchaserEmail) {
+      console.warn("[stripe-webhook] purchaser email missing for gift card");
+      continue;
+    }
+
+    const isGift = item.is_gift || false;
+    const recipientName = (item.recipient_name || purchaserName).trim();
+    const recipientEmail = (item.recipient_email || purchaserEmail).trim().toLowerCase();
+    const giftMessage = item.gift_message?.trim() || "";
+    const showPrice = item.show_price ?? true;
+    const sendToBuyer = item.send_to_buyer ?? true;
+    const showBuyerData = item.show_buyer_data ?? true;
+
+    // Obtener o crear perfil del beneficiario
+    let profileId: string | undefined;
+    try {
+      const { data: existingProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("email", recipientEmail)
+        .maybeSingle();
+
+      if (existingProfile?.id) {
+        profileId = existingProfile.id;
+      } else {
+        const [first, ...rest] = recipientName.split(" ");
+        const { data: createdProfile, error: createProfileErr } = await supabaseAdmin
+          .from("profiles")
+          .insert({
+            email: recipientEmail,
+            first_name: first || recipientName,
+            last_name: rest.join(" ") || null,
+            role: "client",
+          })
+          .select("id")
+          .single();
+        if (createProfileErr) throw createProfileErr;
+        profileId = createdProfile.id;
+      }
+    } catch (profileErr) {
+      console.error("[stripe-webhook] error ensuring profile for gift card:", profileErr);
+      continue;
+    }
+
+    const quantity = item.quantity ?? 1;
+    for (let i = 0; i < quantity; i++) {
+      try {
+        const { data: code, error: codeErr } = await supabaseAdmin.rpc("generate_voucher_code");
+        if (codeErr) throw codeErr;
+
+        const notes = [
+          isGift ? `Regalo de: ${purchaserName} <${purchaserEmail}>` : "Compra personal",
+          isGift && giftMessage ? `Mensaje: ${giftMessage}` : "",
+          `Stripe session: ${session.id}`,
+        ]
+          .filter(Boolean)
+          .join(" | ");
+
+        const { data: createdCard, error: createErr } = await supabaseAdmin
+          .from("gift_cards")
+          .insert({
+            code,
+            initial_balance_cents: item.amount_cents,
+            remaining_balance_cents: item.amount_cents,
+            assigned_client_id: profileId,
+            purchased_by_name: purchaserName,
+            purchased_by_email: purchaserEmail,
+            status: "active",
+          })
+          .select("id,code")
+          .single();
+
+        if (createErr) throw createErr;
+
+        createdGiftCards.push({
+          code: createdCard.code,
+          amount_cents: item.amount_cents,
+          recipientEmail,
+          recipientName,
+          giftMessage: giftMessage || undefined,
+          purchaserEmail,
+          purchaserName,
+          isGift,
+          showPrice,
+          sendToBuyer,
+          showBuyerData,
+        });
+      } catch (cardErr) {
+        console.error("[stripe-webhook] error creating gift card:", cardErr);
+      }
+    }
+  }
+
+  if (!createdGiftCards.length) {
+    console.warn("[stripe-webhook] No gift cards created for session", session.id);
+    return;
+  }
+
+  // Enviar emails
+  const year = new Date().getFullYear();
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+  const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
+
+  for (const card of createdGiftCards) {
+    const emailTo = card.sendToBuyer ? card.purchaserEmail : card.recipientEmail;
+    const emailName = card.sendToBuyer ? card.purchaserName : card.recipientName;
+
+    const amountFormatted = new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
+    }).format(card.amount_cents / 100);
+
+    const giftBlock = card.giftMessage
+      ? `
+        <div style="background:#f0fdf4;border-left:4px solid #10b981;padding:16px;margin:16px 0;">
+          <p style="margin:0;font-style:italic;color:#065f46;">"${card.giftMessage}"</p>
+        </div>
+      `
+      : "";
+
+    const buyerInfoBlock =
+      card.isGift && card.showBuyerData
+        ? `<p style="font-size:14px;color:#6b7280;margin:8px 0;">De parte de: ${card.purchaserName}</p>`
+        : "";
+
+    const priceInfo = card.showPrice
+      ? `<p style="font-size:16px;color:#059669;font-weight:600;margin:8px 0;">Valor: ${amountFormatted}</p>`
+      : "";
+
+    const emailHtml = `
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <title>Tarjeta Regalo - The Nook Madrid</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#f8f9fb;color:#111;">
+    <center style="width:100%;background:#f8f9fb;">
+      <table role="presentation" width="100%" style="max-width:600px;margin:auto;background:#ffffff;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,0.08);border-collapse:separate;">
+        <tr>
+          <td style="background:linear-gradient(135deg,#424CB8,#1A6AFF);color:#fff;text-align:center;padding:24px;border-radius:12px 12px 0 0;">
+            <h1 style="margin:0;font-size:22px;">🎁 Tarjeta Regalo The Nook Madrid</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px;">
+            <p>Hola <strong>${emailName}</strong>!</p>
+            ${card.isGift ? `<p>Has recibido una tarjeta regalo de <strong>${card.purchaserName}</strong>.</p>` : `<p>Gracias por tu compra de tarjeta regalo.</p>`}
+            ${giftBlock}
+            ${buyerInfoBlock}
+            <div style="background:#f3f4f6;border-radius:8px;padding:20px;margin:20px 0;text-align:center;">
+              <p style="margin:0 0 8px 0;font-size:14px;color:#6b7280;">Tu código de tarjeta regalo:</p>
+              <p style="margin:0;font-size:28px;font-weight:bold;color:#424CB8;letter-spacing:2px;">${card.code}</p>
+              ${priceInfo}
+            </div>
+            <p>Para usar tu tarjeta regalo, simplemente menciona este código al reservar o pagar en The Nook Madrid.</p>
+            <p style="font-size:12px;color:#6b7280;margin-top:20px;">Reservas: 911 481 474 / 622 360 922<br>Email: <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a></p>
+            <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+            <p style="font-size:11px;color:#9ca3af;">
+              © ${year} THE NOOK Madrid<br>
+              Este correo se ha generado automáticamente.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </center>
+  </body>
+</html>
+    `;
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: [emailTo],
+      subject: card.isGift
+        ? `🎁 Has recibido una Tarjeta Regalo de The Nook Madrid`
+        : `Tu Tarjeta Regalo de The Nook Madrid`,
+      html: emailHtml,
+    });
+  }
+
+  // Email de resumen al admin
+  if (adminEmail) {
+    const summaryHtml = `
+      <div style="font-family: Arial, sans-serif;">
+        <h3>🎁 Nueva compra de Tarjeta(s) Regalo</h3>
+        <p><strong>Comprador:</strong> ${createdGiftCards[0].purchaserName} &lt;${createdGiftCards[0].purchaserEmail}&gt;</p>
+        <p><strong>Total:</strong> ${createdGiftCards.length} tarjeta(s)</p>
+        <ul>
+          ${createdGiftCards
+            .map(
+              (c) => {
+                const amt = new Intl.NumberFormat("es-ES", {
+                  style: "currency",
+                  currency: "EUR",
+                }).format(c.amount_cents / 100);
+                return `<li>${amt} — Código: <code>${c.code}</code> — Para: ${c.recipientName} (${c.recipientEmail})${c.isGift ? " [ES REGALO]" : ""}</li>`;
+              }
+            )
+            .join("")}
+        </ul>
+        <p>Sesión Stripe: ${session.id}</p>
+      </div>
+    `;
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: [adminEmail],
+      subject: `Nueva compra Tarjeta Regalo · ${createdGiftCards[0].purchaserName}`,
+      html: summaryHtml,
+    });
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -650,6 +909,17 @@ serve(async (req) => {
           await processPackageVoucher({
             session,
             payload: JSON.parse(payloadRaw) as PackageVoucherPayload,
+          });
+        }
+      } else if (intent === "gift_cards") {
+        const payloadRaw = session.metadata?.gc_payload;
+        if (!payloadRaw) {
+          console.warn("[stripe-webhook] Missing gift cards payload in metadata");
+        } else {
+          const parsed = JSON.parse(payloadRaw);
+          await processGiftCards({
+            session,
+            items: parsed.items || [],
           });
         }
       } else {

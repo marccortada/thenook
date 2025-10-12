@@ -49,7 +49,19 @@ const PaymentSuccess = () => {
                 <>
                   <p className="text-sm text-muted-foreground">¡Gracias! Tu pago se ha completado correctamente.</p>
                   {result?.intent === "gift_cards" && (
-                    <p className="text-sm">Se han generado {result?.gift_cards?.length || 0} tarjetas.</p>
+                    <>
+                      <p className="text-sm font-medium">Se han generado {result?.gift_cards?.length || 0} tarjeta(s) de regalo.</p>
+                      <p className="text-sm text-muted-foreground">Recibirás un email con los detalles y códigos de tus tarjetas regalo.</p>
+                    </>
+                  )}
+                  {result?.intent === "package_voucher" && (
+                    <>
+                      <p className="text-sm font-medium">Se han generado {result?.vouchers?.length || 0} bono(s).</p>
+                      <p className="text-sm text-muted-foreground">Recibirás un email con los detalles y códigos de tus bonos.</p>
+                    </>
+                  )}
+                  {result?.intent === "booking_payment" && (
+                    <p className="text-sm text-muted-foreground">Tu reserva ha sido confirmada. Recibirás un email de confirmación.</p>
                   )}
                 </>
               ) : (
