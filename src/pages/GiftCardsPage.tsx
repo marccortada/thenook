@@ -762,6 +762,17 @@ const GiftCardsPage = () => {
                       }
 
                       if (data?.client_secret) {
+                        if (typeof window !== "undefined") {
+                          try {
+                            sessionStorage.setItem("lastCheckoutIntent", "gift_cards");
+                            sessionStorage.setItem(
+                              "lastGiftCardSummary",
+                              JSON.stringify(payload.gift_cards?.items || [])
+                            );
+                          } catch (storageError) {
+                            console.warn("No se pudo guardar el resumen del checkout en sessionStorage", storageError);
+                          }
+                        }
                         console.log("💳 Abriendo modal de Stripe");
                         setStripeClientSecret(data.client_secret);
                         setStripeSessionId(data.session_id);
