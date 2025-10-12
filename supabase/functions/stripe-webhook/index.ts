@@ -724,6 +724,7 @@ async function processGiftCards(args: {
   }
 
   // Enviar emails
+  console.log(`[stripe-webhook] 📧 Sending ${createdGiftCards.length} gift card emails...`);
   const year = new Date().getFullYear();
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
   const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
@@ -796,7 +797,8 @@ async function processGiftCards(args: {
 </html>
     `;
 
-    await resend.emails.send({
+    console.log(`[stripe-webhook] Sending email to: ${emailTo}`);
+    const emailResult = await resend.emails.send({
       from: fromEmail,
       to: [emailTo],
       subject: card.isGift
@@ -804,10 +806,12 @@ async function processGiftCards(args: {
         : `Tu Tarjeta Regalo de The Nook Madrid`,
       html: emailHtml,
     });
+    console.log(`[stripe-webhook] ✅ Email sent successfully to ${emailTo}:`, emailResult);
   }
 
   // Email de resumen al admin
   if (adminEmail) {
+    console.log(`[stripe-webhook] Sending admin summary to: ${adminEmail}`);
     const summaryHtml = `
       <div style="font-family: Arial, sans-serif;">
         <h3>🎁 Nueva compra de Tarjeta(s) Regalo</h3>
@@ -830,12 +834,13 @@ async function processGiftCards(args: {
       </div>
     `;
 
-    await resend.emails.send({
+    const adminEmailResult = await resend.emails.send({
       from: fromEmail,
       to: [adminEmail],
       subject: `Nueva compra Tarjeta Regalo · ${createdGiftCards[0].purchaserName}`,
       html: summaryHtml,
     });
+    console.log(`[stripe-webhook] ✅ Admin email sent successfully:`, adminEmailResult);
   }
 }
 
@@ -878,13 +883,20 @@ serve(async (req) => {
   }
 
   try {
+    console.log(`[stripe-webhook] Received event: ${event.type}`);
+    
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
+      console.log(`[stripe-webhook] Session ID: ${session.id}`);
+      console.log(`[stripe-webhook] Session metadata:`, JSON.stringify(session.metadata, null, 2));
+      
       const intent =
         session.metadata?.intent ||
         (typeof session.payment_intent !== "string"
           ? (session.payment_intent as Stripe.PaymentIntent).metadata?.intent
           : undefined);
+
+      console.log(`[stripe-webhook] Detected intent: ${intent}`);
 
       if (intent === "booking_payment") {
         const payload = session.metadata?.bp_payload;
@@ -912,15 +924,19 @@ serve(async (req) => {
           });
         }
       } else if (intent === "gift_cards") {
+        console.log("[stripe-webhook] 🎁 Processing gift cards...");
         const payloadRaw = session.metadata?.gc_payload;
         if (!payloadRaw) {
           console.warn("[stripe-webhook] Missing gift cards payload in metadata");
         } else {
+          console.log("[stripe-webhook] Gift cards payload:", payloadRaw);
           const parsed = JSON.parse(payloadRaw);
+          console.log("[stripe-webhook] Parsed items:", JSON.stringify(parsed.items, null, 2));
           await processGiftCards({
             session,
             items: parsed.items || [],
           });
+          console.log("[stripe-webhook] ✅ Gift cards processed successfully");
         }
       } else {
         console.log("[stripe-webhook] checkout.session.completed ignored for intent:", intent);
