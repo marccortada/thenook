@@ -59,6 +59,10 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
     if (!session_id) throw new Error("Falta session_id");
 
     const session = await stripe.checkout.sessions.retrieve(session_id);
+    console.log("[verify-payment] Retrieved Stripe session", {
+      sessionId: session.id,
+      paymentStatus: session.payment_status,
+    });
     const paymentStatus = session.payment_status;
     const buyerEmail = (session.customer_details?.email || (session as any).customer_email || null) as string | null;
 
@@ -70,6 +74,10 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
     }
 
     const intent = (session.metadata?.intent || session.payment_intent && typeof session.payment_intent !== 'string' ? (session.payment_intent as any).metadata?.intent : undefined) as string | undefined;
+    console.log("[verify-payment] Processing session intent", {
+      sessionId: session.id,
+      intent,
+    });
 
     const results: Record<string, unknown> = { intent };
 
@@ -162,6 +170,11 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
           }
         }
         results.gift_cards = created;
+        console.log("[verify-payment] Gift cards inserted", {
+          sessionId: session.id,
+          count: created.length,
+          codes: created.map((c) => c.code),
+        });
 
         const templateBase64 = await ensureGiftCardTemplate(supabaseAdmin);
 
@@ -301,6 +314,10 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
 
         // Enviar emails con imagen de tarjeta regalo
         try {
+          console.log("[verify-payment] Starting email dispatch loop", {
+            sessionId: session.id,
+            total: created.length,
+          });
           for (const card of created) {
             // Generar fecha de compra en formato DD/MM/AAAA
             const purchaseDate = new Date().toLocaleDateString('es-ES', {
@@ -372,6 +389,12 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 }];
               }
 
+              console.log("[verify-payment] Sending recipient email", {
+                sessionId: session.id,
+                to: finalRecipientEmail,
+                code: card.code,
+                isGift,
+              });
               await resend.emails.send(recipientEmailPayload);
             }
 
@@ -417,6 +440,11 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 }];
               }
 
+              console.log("[verify-payment] Sending purchaser email", {
+                sessionId: session.id,
+                to: purchaserEmail,
+                code: card.code,
+              });
               await resend.emails.send(purchaserEmailPayload);
             }
           }
@@ -442,6 +470,11 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
               </div>
             `;
             
+            console.log("[verify-payment] Sending admin email", {
+              sessionId: session.id,
+              to: adminEmail,
+              total: created.length,
+            });
             await resend.emails.send({
               from: fromEmail,
               to: [adminEmail],
