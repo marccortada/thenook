@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -129,6 +129,7 @@ const GiftCardsPage = () => {
   // Estados para tarjetas regalo personalizadas
   const [customGiftDialogs, setCustomGiftDialogs] = useState<Record<string, boolean>>({});
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
   
   const { t } = useTranslation();
 
@@ -314,6 +315,16 @@ const GiftCardsPage = () => {
 
   const { items, add, remove, clear, totalCents } = useLocalCart();
 
+  const handleAddToCart = (item: { name: string; priceCents: number; quantity?: number }) => {
+    add(item);
+    setOpenAccordionItems([]);
+    setTimeout(() => setIsCartOpen(true), 0);
+  };
+
+  const handleCheckoutSuccess = useCallback(() => {
+    clear();
+  }, [clear]);
+
   const handleCustomGiftToggle = (groupKey: string) => {
     setCustomGiftDialogs(prev => ({
       ...prev,
@@ -335,7 +346,7 @@ const GiftCardsPage = () => {
     };
     
     const handleCustomAmountAdd = (amount: number) => {
-      add({
+      handleAddToCart({
         name: `Tarjeta Regalo Personalizada - ${amount}€`,
         priceCents: amount * 100
       });
@@ -818,6 +829,7 @@ const GiftCardsPage = () => {
                     clientSecret={stripeClientSecret}
                     sessionId={stripeSessionId}
                     onClose={() => setShowStripeModal(false)}
+                    onSuccess={handleCheckoutSuccess}
                   />
                 )}
               </div>
@@ -825,7 +837,14 @@ const GiftCardsPage = () => {
           </Dialog>
 
           <section className="grid gap-6">
-            <Accordion type="multiple" defaultValue={[]} className="space-y-4">
+            <Accordion
+              type="multiple"
+              value={openAccordionItems}
+              onValueChange={(value) =>
+                setOpenAccordionItems(Array.isArray(value) ? value : [value])
+              }
+              className="space-y-4"
+            >
               {groups.individuales.length > 0 && (
                 <AccordionItem value="tarjetas-individuales" className="border rounded-lg">
                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
@@ -855,14 +874,12 @@ const GiftCardsPage = () => {
                                 <Button
                                   size="sm"
                                   className="w-full"
-                                 onClick={() => {
-                                   console.log("🛒 Botón Añadir al Carrito clickeado - Individual");
-                                   console.log("Estado actual isCartOpen:", isCartOpen);
-                                   add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                   console.log("Producto añadido, ahora abriendo carrito...");
-                                   setIsCartOpen(true);
-                                   console.log("setIsCartOpen(true) llamado - debería abrir el modal");
-                                 }}
+                                  onClick={() =>
+                                    handleAddToCart({
+                                      name: translatePackageName(item.name),
+                                      priceCents: item.priceCents!
+                                    })
+                                  }
                                 >
                                   {t('add_to_cart')}
                                 </Button>
@@ -903,10 +920,12 @@ const GiftCardsPage = () => {
                                 <Button
                                   size="sm"
                                   className="w-full"
-                                  onClick={() => {
-                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                    setIsCartOpen(true);
-                                  }}
+                                  onClick={() =>
+                                    handleAddToCart({
+                                      name: translatePackageName(item.name),
+                                      priceCents: item.priceCents!
+                                    })
+                                  }
                                 >
                                   {t('add_to_cart')}
                                 </Button>
@@ -947,10 +966,12 @@ const GiftCardsPage = () => {
                                 <Button
                                   size="sm"
                                   className="w-full"
-                                  onClick={() => {
-                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                    setIsCartOpen(true);
-                                  }}
+                                  onClick={() =>
+                                    handleAddToCart({
+                                      name: translatePackageName(item.name),
+                                      priceCents: item.priceCents!
+                                    })
+                                  }
                                 >
                                   {t('add_to_cart')}
                                 </Button>
@@ -991,10 +1012,12 @@ const GiftCardsPage = () => {
                                 <Button
                                   size="sm"
                                   className="w-full text-xs"
-                                  onClick={() => {
-                                    add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                    setIsCartOpen(true);
-                                  }}
+                                  onClick={() =>
+                                    handleAddToCart({
+                                      name: translatePackageName(item.name),
+                                      priceCents: item.priceCents!
+                                    })
+                                  }
                                 >
                                   {t('add_to_cart')}
                                 </Button>
@@ -1035,10 +1058,12 @@ const GiftCardsPage = () => {
                                  <Button
                                    size="sm"
                                    className="w-full text-xs"
-                                   onClick={() => {
-                                     add({ name: translatePackageName(item.name), priceCents: item.priceCents! });
-                                     setIsCartOpen(true);
-                                   }}
+                                   onClick={() =>
+                                     handleAddToCart({
+                                       name: translatePackageName(item.name),
+                                       priceCents: item.priceCents!
+                                     })
+                                   }
                                  >
                                    {t('add_to_cart')}
                                  </Button>

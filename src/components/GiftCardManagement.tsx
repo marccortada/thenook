@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,12 +37,46 @@ import { ImageUploadCropper } from '@/components/ImageUploadCropper';
 const GiftCardManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCard, setEditingCard] = useState<GiftCard | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const scrollLockRef = useRef<number>(0);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [giftCardImage, setGiftCardImage] = useState<File | null>(null);
   const [giftCardImageCrop, setGiftCardImageCrop] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   
   const { giftCards, loading, error, refetch, createGiftCard, updateGiftCard, deactivateGiftCard } = useGiftCards(searchTerm);
   const [createClientId, setCreateClientId] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const body = document.body;
+
+    if (isEditDialogOpen) {
+      scrollLockRef.current = window.scrollY;
+      body.style.position = 'fixed';
+      body.style.top = `-${scrollLockRef.current}px`;
+      body.style.left = '0';
+      body.style.right = '0';
+      body.style.width = '100%';
+    } else if (body.style.position === 'fixed') {
+      body.style.position = '';
+      body.style.top = '';
+      body.style.left = '';
+      body.style.right = '';
+      body.style.width = '';
+      window.scrollTo(0, scrollLockRef.current);
+    }
+
+    return () => {
+      if (body.style.position === 'fixed') {
+        body.style.position = '';
+        body.style.top = '';
+        body.style.left = '';
+        body.style.right = '';
+        body.style.width = '';
+        window.scrollTo(0, scrollLockRef.current);
+      }
+    };
+  }, [isEditDialogOpen]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -78,6 +112,7 @@ const GiftCardManagement = () => {
     const success = await updateGiftCard(id, updates);
     if (success) {
       setEditingCard(null);
+      setIsEditDialogOpen(false);
       refetch();
     }
   };
@@ -235,7 +270,10 @@ const GiftCardManagement = () => {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => setEditingCard(card)}
+                            onClick={() => {
+                              setEditingCard({ ...card });
+                              setIsEditDialogOpen(true);
+                            }}
                             className="h-8 w-8 p-0"
                           >
                             <Edit3 className="h-3 w-3" />
@@ -356,13 +394,22 @@ const GiftCardManagement = () => {
       </Tabs>
 
       {/* Edit Dialog */}
-      {editingCard && (
-        <Dialog open={!!editingCard} onOpenChange={() => setEditingCard(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar Tarjeta Regalo</DialogTitle>
-              <DialogDescription>Modifica los datos de la tarjeta regalo</DialogDescription>
-            </DialogHeader>
+      <Dialog
+        modal
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) {
+            setEditingCard(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg w-[calc(100vw-3rem)] sm:w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Editar Tarjeta Regalo</DialogTitle>
+            <DialogDescription>Modifica los datos de la tarjeta regalo</DialogDescription>
+          </DialogHeader>
+          {editingCard && (
             <div className="space-y-4">
               <div>
                 <Label>Código</Label>
@@ -374,24 +421,32 @@ const GiftCardManagement = () => {
                   type="number"
                   step="0.01"
                   value={(editingCard.remaining_balance_cents / 100).toString()}
-                  onChange={(e) => setEditingCard({
-                    ...editingCard,
-                    remaining_balance_cents: Math.round(parseFloat(e.target.value) * 100)
-                  })}
+                  onChange={(e) =>
+                    setEditingCard({
+                      ...editingCard,
+                      remaining_balance_cents: Math.round(parseFloat(e.target.value || "0") * 100),
+                    })
+                  }
                 />
               </div>
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setEditingCard(null)}>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={() => handleUpdateGiftCard(editingCard.id, { remaining_balance_cents: editingCard.remaining_balance_cents })}>
+                <Button
+                  onClick={() =>
+                    handleUpdateGiftCard(editingCard.id, {
+                      remaining_balance_cents: editingCard.remaining_balance_cents,
+                    })
+                  }
+                >
                   Guardar
                 </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

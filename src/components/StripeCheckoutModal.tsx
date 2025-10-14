@@ -8,6 +8,7 @@ interface StripeCheckoutModalProps {
   clientSecret: string;
   sessionId?: string;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 const publishableKey =
@@ -19,7 +20,7 @@ const stripePromise: Promise<Stripe | null> | null = publishableKey
   ? loadStripe(publishableKey)
   : null;
 
-export const StripeCheckoutModal = ({ clientSecret, sessionId, onClose }: StripeCheckoutModalProps) => {
+export const StripeCheckoutModal = ({ clientSecret, sessionId, onClose, onSuccess }: StripeCheckoutModalProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export const StripeCheckoutModal = ({ clientSecret, sessionId, onClose }: Stripe
     clientSecret,
     onComplete: () => {
       // El pago se completó exitosamente
+      onSuccess?.();
       setTimeout(() => {
         onClose();
         // Redireccionar con session_id para verificación
