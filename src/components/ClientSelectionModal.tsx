@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, User, Phone, Mail } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 
@@ -29,8 +29,73 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { clients, loading } = useClients();
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const [modalStyle, setModalStyle] = useState<React.CSSProperties>({
+    width: "min(480px, calc(100vw - 32px))",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+  });
 
-  // Filter clients based on search query
+  useLayoutEffect(() => {
+    if (!open) {
+      setModalStyle({
+        width: "min(480px, calc(100vw - 32px))",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+      });
+      return;
+    }
+
+    const padding = 16;
+
+    const calculatePosition = () => {
+      const modalEl = modalRef.current;
+      if (!modalEl) return;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      const parentModal = document.querySelector('[data-new-booking-modal]') as HTMLElement | null;
+      const parentRect = parentModal?.getBoundingClientRect();
+
+      const baseWidth = modalEl.scrollWidth || modalEl.getBoundingClientRect().width || 360;
+      const maxWidth = viewportWidth - padding * 2;
+      const width = Math.min(parentRect ? parentRect.width : baseWidth, maxWidth);
+
+      const contentHeight = modalEl.scrollHeight || modalEl.getBoundingClientRect().height;
+      const maxHeight = Math.min(parentRect ? parentRect.height : viewportHeight, viewportHeight - padding * 2);
+      const height = Math.min(contentHeight, maxHeight - padding);
+
+      const centerX = parentRect ? parentRect.left + parentRect.width / 2 : viewportWidth / 2;
+      const centerY = parentRect ? parentRect.top + parentRect.height / 2 : viewportHeight / 2;
+
+      const halfWidth = width / 2;
+      const halfHeight = height / 2;
+
+      const clampedCenterX = Math.max(padding + halfWidth, Math.min(centerX, viewportWidth - padding - halfWidth));
+      const clampedCenterY = Math.max(padding + halfHeight, Math.min(centerY, viewportHeight - padding - halfHeight));
+
+      setModalStyle({
+        width: `${width}px`,
+        maxHeight: `${maxHeight - padding}px`,
+        transform: "translate(-50%, -50%)",
+        left: `${clampedCenterX}px`,
+        top: `${clampedCenterY}px`,
+      });
+    };
+
+    const frame = requestAnimationFrame(calculatePosition);
+    window.addEventListener('resize', calculatePosition);
+    window.addEventListener('scroll', calculatePosition, true);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', calculatePosition);
+      window.removeEventListener('scroll', calculatePosition, true);
+    };
+  }, [open, clients.length, searchQuery]);
+
   const filteredClients = clients.filter(client => {
     if (!searchQuery) return true;
     
@@ -59,7 +124,11 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="w-screen h-screen sm:w-full sm:h-auto max-w-2xl sm:max-h-[85vh] m-0 sm:mx-auto p-3 sm:p-6 flex flex-col rounded-none sm:rounded-lg">
+      <DialogContent
+        ref={modalRef}
+        className="fixed z-[120] flex max-h-[calc(100vh-3rem)] sm:max-h-[85vh] p-4 sm:p-6 flex-col rounded-xl overflow-hidden border bg-background shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+        style={modalStyle}
+      >
         <DialogHeader className="pb-4 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <User className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -79,8 +148,8 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
         </div>
 
         {/* Client List */}
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full max-h-[calc(90vh-200px)] sm:max-h-[calc(85vh-200px)]">
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full">
             <div className="px-1">
               {loading ? (
                 <div className="flex items-center justify-center py-8">

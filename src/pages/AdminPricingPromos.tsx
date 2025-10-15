@@ -570,7 +570,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
     const { data } = await supabase.from('gift_card_options').select('*').order('amount_cents');
     setGiftOptions((data || []).map((opt: any) => ({
       ...opt,
-      sessions_count: opt.sessions_count ?? 0,
+      sessions_count: typeof opt.sessions_count === 'number' ? opt.sessions_count : parseInt(opt.sessions_count || '0', 10) || 0,
     })));
   };
 
@@ -603,7 +603,26 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
     if (!edit) return;
 
     const amountCents = Math.round(edit.amount_euros * 100);
-    await supabase.from('gift_card_options').update({ amount_cents: amountCents, is_active: edit.active, show_online: edit.show_online, sessions_count: edit.sessions_count }).eq('id', id);
+    const { error } = await supabase
+      .from('gift_card_options')
+      .update({
+        amount_cents: amountCents,
+        is_active: edit.active,
+        show_online: edit.show_online,
+        sessions_count: edit.sessions_count,
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating gift card option:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo guardar la tarjeta regalo. Revisa que la columna sessions_count exista.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     toast({ title: 'Guardado', description: 'Opción de tarjeta regalo actualizada' });
     delete giftEdits[id];
     setGiftEdits({...giftEdits});
@@ -920,8 +939,8 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                   Crear Nuevo Servicio
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <Label htmlFor="service-name">Nombre *</Label>
                     <Input
@@ -937,7 +956,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       value={newService.type}
                       onValueChange={(value: any) => setNewService({ ...newService, type: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                        <SelectContent position="popper" side="bottom" align="center" sideOffset={2} collisionPadding={8} sticky="always" className="z-[9999] bg-popover border shadow-md min-w-[var(--radix-select-trigger-width)]">
@@ -977,7 +996,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       value={newService.center_id || 'all'}
                       onValueChange={(value) => setNewService({ ...newService, center_id: value === 'all' ? '' : value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                        <SelectContent
@@ -1004,7 +1023,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       value={String(newService.active)}
                       onValueChange={(value) => setNewService({ ...newService, active: value === 'true' })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent position="item-aligned">
@@ -1013,8 +1032,8 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="col-span-2">
-                    <div className="flex items-center space-x-2 mb-2">
+                  <div className="sm:col-span-2 lg:col-span-3">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
                       <input 
                         type="checkbox" 
                         id="new-has-discount"
@@ -1038,7 +1057,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       </div>
                     )}
                   </div>
-                  <div className="md:col-span-2 lg:col-span-3">
+                  <div className="sm:col-span-2 lg:col-span-3">
                     <Label htmlFor="service-description">Descripción</Label>
                     <Textarea
                       id="service-description"
@@ -1049,7 +1068,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                     />
                   </div>
                 </div>
-                <div className="flex gap-2 justify-end mt-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                   <Button onClick={createService} className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
                     Crear Servicio
@@ -1267,8 +1286,8 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                     <span className="text-lg font-semibold">Crear Nuevo Bono</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <AccordionContent className="px-6 pb-4 space-y-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <div>
                       <Label htmlFor="package-name">Nombre del Bono *</Label>
                       <Input
@@ -1280,7 +1299,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                         }
                       />
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="sm:col-span-2 xl:col-span-3">
                       <Label>Tratamientos incluidos *</Label>
                       <div className="flex flex-wrap gap-2 mt-2 min-h-[44px] rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
                         {newPackage.service_ids.length === 0 ? (
@@ -1414,7 +1433,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                         ))}
                       </select>
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="sm:col-span-2 xl:col-span-3">
                       <Label htmlFor="package-description">Descripción</Label>
                       <Input
                         id="package-description"
@@ -1426,7 +1445,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       />
                     </div>
                   </div>
-                  <div className="flex justify-end mt-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                     <Button
                       onClick={handleCreatePackage}
                       disabled={!isPackageFormValid || isCreatingPackage}
@@ -1442,13 +1461,13 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
               {/* Bonos existentes */}
               <AccordionItem value="manage-packages" className="border rounded-lg">
                 <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-lg font-semibold">Gestionar Bonos Existentes</span>
                     <span className="text-sm text-muted-foreground mr-4">{uniquePackages.length} bonos</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <AccordionContent className="px-6 pb-4 space-y-6">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {uniquePackages.map((g) => {
                        const edit = packageEdits[g.key] || { 
                          price_euros: g.price_euros, 
@@ -1476,7 +1495,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                               <div className="text-sm font-semibold">{currency(finalPrice)}</div>
                             </div>
                           </div>
-                           <div className="grid grid-cols-3 gap-2 items-end">
+                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4 items-end">
                              <div>
                                <Label>Precio (€)</Label>
                                <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handlePackageChange(g.key, 'price_euros', parseFloat(e.target.value || '0'))} />
@@ -1508,7 +1527,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                />
                              </div>
                              {edit.show_online && (
-                               <div className="col-span-3 mt-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
+                               <div className="sm:col-span-2 xl:col-span-4 mt-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
                                  <div className="flex items-center gap-2 text-sm font-semibold text-primary">
                                    <Settings className="h-4 w-4" />
                                    <span>Visibilidad online</span>
@@ -1528,7 +1547,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                  </p>
                                </div>
                              )}
-                            <div className="col-span-3 flex justify-end">
+                            <div className="sm:col-span-2 md:col-span-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
                               <Button size="sm" onClick={() => savePackage(g.key, g.ids)}>Guardar</Button>
                             </div>
                           </div>
@@ -1546,12 +1565,12 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
               {/* Crear nuevas opciones de tarjetas regalo */}
               <AccordionItem value="create-giftcard" className="border rounded-lg">
                 <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
                       <Plus className="h-5 w-5" />
                       <span className="text-lg font-semibold">Crear Nueva Opción de Tarjeta Regalo</span>
                     </div>
-                    <div className="flex items-center gap-2 mr-4">
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                       <Button size="sm" variant="ghost" onClick={seedCatalogGiftOptions}>Añadir Tarjeta Regalo</Button>
                       {giftOptions.length === 0 && (
                         giftDenoms.length > 0 ? (
@@ -1561,8 +1580,8 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                     </div>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-4">
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <AccordionContent className="px-6 pb-4 space-y-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
                     <div>
                       <Label htmlFor="giftcard-name">Nombre *</Label>
                       <Input
@@ -1656,7 +1675,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       />
                     </div>
                   </div>
-                  <div className="flex justify-end mt-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-end mt-4">
                     <Button onClick={createGiftCardOption} className="flex items-center gap-2">
                       <Plus className="h-4 w-4" />
                       Crear Tarjeta Regalo
@@ -1668,13 +1687,13 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
               {/* Gestionar tarjetas regalo existentes */}
               <AccordionItem value="manage-giftcards" className="border rounded-lg">
                 <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-lg font-semibold">Gestionar Tarjetas Regalo Existentes</span>
                     <span className="text-sm text-muted-foreground">{giftOptions.length} opciones</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-4">
-                  <div className="flex justify-end mb-4">
+                <AccordionContent className="px-6 pb-4 space-y-6">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                     <Button
                       variant="destructive"
                       size="sm"
@@ -1683,7 +1702,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       Eliminar todas
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {giftOptions.map((opt) => {
                       const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active, show_online: opt.show_online ?? true, sessions_count: opt.sessions_count ?? 0 };
                       return (
@@ -1700,7 +1719,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                               <img src={opt.image_url} alt={opt.name} className="w-full h-20 object-cover rounded" />
                             </div>
                           )}
-                           <div className="grid grid-cols-3 gap-2 items-end">
+                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 items-end">
                              <div>
                                <Label>Importe (€)</Label>
                                <Input type="number" step="0.01" value={edit.amount_euros} onChange={(e) => handleGiftChange(opt.id, 'amount_euros', parseFloat(e.target.value || '0'))} />
@@ -1721,7 +1740,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                  options={[{ label: 'Sí', value: 'true' }, { label: 'No', value: 'false' }]}
                                />
                              </div>
-                            <div className="col-span-3">
+                            <div className="sm:col-span-2 md:col-span-3">
                               <Accordion type="single" collapsible>
                                 <AccordionItem value="sessions">
                                   <AccordionTrigger className="rounded-md border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-left text-sm font-medium hover:bg-primary/10">
@@ -1750,7 +1769,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                             </div>
                             
                              {edit.show_online && (
-                               <div className="col-span-3 mt-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
+                               <div className="sm:col-span-2 md:col-span-3 mt-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
                                  <div className="flex items-center gap-2 text-sm font-semibold text-primary">
                                    <Settings className="h-4 w-4" />
                                    <span>Visibilidad online</span>
@@ -1771,7 +1790,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                </div>
                              )}
                              
-                             <div className="col-span-3 mb-2">
+                             <div className="sm:col-span-2 md:col-span-3 mb-2">
                               <input 
                                 type="file" 
                                 accept="image/*" 
@@ -1831,10 +1850,10 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                 {opt.image_url ? 'Cambiar imagen' : 'Subir imagen'}
                               </Button>
                             </div>
-                            <div className="flex justify-end">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                               <Button size="sm" onClick={() => saveGiftOption(opt.id)}>Guardar</Button>
                             </div>
-                            <div className="flex justify-end">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                               <Button size="sm" variant="destructive" onClick={() => deleteGiftOption(opt.id)}>Eliminar</Button>
                             </div>
                           </div>

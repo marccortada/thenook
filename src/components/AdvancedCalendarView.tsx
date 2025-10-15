@@ -1565,6 +1565,7 @@ const AdvancedCalendarView = () => {
       />
       <div
         className="fixed z-50 flex"
+        data-new-booking-modal
         style={{ ...getModalStyle(), maxHeight: "95vh" }}
       >
         <div className="bg-background rounded-xl shadow-2xl border border-border/60 overflow-hidden flex flex-col w-full max-h-full">
