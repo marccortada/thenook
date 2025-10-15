@@ -13,6 +13,7 @@ import { es } from "date-fns/locale";
 import MobileResponsiveLayout from "@/components/MobileResponsiveLayout";
 import MobileCard from "@/components/MobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import usePositionedModal from "@/hooks/use-positioned-modal";
 import { ClientDialogContent } from "@/components/ClientDialogContent";
 import { useClientNotes } from "@/hooks/useClientNotes";
 
@@ -298,8 +299,14 @@ interface ClientModalProps {
 }
 
 function ClientModal({ client, onClientUpdated }: ClientModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  const {
+    isOpen,
+    handleOpenModal: openClientModal,
+    closeModal: closePositionedModal,
+    modalStyle,
+  } = usePositionedModal({
+    anchorSelector: ".client-card",
+  });
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientBookings, setClientBookings] = useState<ClientBooking[]>([]);
   const [editData, setEditData] = useState({
@@ -320,50 +327,11 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
     priority: 'normal' as 'low' | 'normal' | 'high' | 'urgent'
   });
 
-  const handleOpenModal = async (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    // Obtener la tarjeta completa (parent del botón)
-    const cardElement = event.currentTarget.closest('.client-card') as HTMLElement;
-    if (!cardElement) return;
-    
-    const cardRect = cardElement.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const windowWidth = window.innerWidth;
-    
-    // Dimensiones del modal
-    const modalWidth = Math.min(500, windowWidth - 40);
-    const modalHeight = Math.min(600, windowHeight - 80);
-    
-    // Calcular posición
-    let top = cardRect.top + scrollTop - 50; // Un poco arriba de la tarjeta
-    let left = (windowWidth - modalWidth) / 2; // Centrado horizontalmente
-    
-    // Ajustar verticalmente para que esté siempre visible
-    const viewportTop = scrollTop + 20;
-    const viewportBottom = scrollTop + windowHeight - 20;
-    
-    if (top < viewportTop) {
-      top = viewportTop;
-    } else if (top + modalHeight > viewportBottom) {
-      top = viewportBottom - modalHeight;
-    }
-    
-    // Asegurar que no se salga horizontalmente
-    if (left < 20) left = 20;
-    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-    
-    console.log('Modal position:', { top, left, cardTop: cardRect.top, scrollTop });
-    
-    setModalPosition({ top, left });
-    
-    // Fetch client bookings
+  const handleOpenModal = async (event: React.MouseEvent<HTMLElement>) => {
+    openClientModal(event);
     const bookings = await fetchClientBookings(client.id);
     setClientBookings(bookings);
-    
-    setIsOpen(true);
+    setEditingClient(null);
   };
 
   const handleEditClient = () => {
@@ -408,7 +376,7 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
   };
 
   const closeModal = () => {
-    setIsOpen(false);
+    closePositionedModal();
     setEditingClient(null);
   };
 
@@ -545,13 +513,7 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
           {/* Modal */}
           <div 
             className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
-            style={{
-              top: `${modalPosition.top}px`,
-              left: `${modalPosition.left}px`,
-              width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(500, window.innerWidth - 40)}px`,
-              maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(600, window.innerHeight - 80)}px`,
-              overflowY: 'auto'
-            }}
+            style={modalStyle}
           >
             <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
               {/* Header */}

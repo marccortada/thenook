@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { createClient } from '@supabase/supabase-js';
 import { cn } from '@/lib/utils';
+import usePositionedModal from "@/hooks/use-positioned-modal";
 
 interface MobileCalendarViewProps {
   selectedDate: Date;
@@ -46,12 +47,18 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(selectedDate);
-  const [showBookingDetails, setShowBookingDetails] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [activeCenter, setActiveCenter] = useState(selectedCenter || '');
   const [blockingMode, setBlockingMode] = useState(false);
   const [moveMode, setMoveMode] = useState(false);
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  const {
+    isOpen: showBookingDetails,
+    handleOpenModal: openBookingModal,
+    closeModal: closeBookingModal,
+    modalStyle: bookingModalStyle,
+  } = usePositionedModal({
+    anchorSelector: ".booking-card",
+  });
   const [draggedBooking, setDraggedBooking] = useState<any>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -211,44 +218,17 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     return 'bg-gray-50'; // Sin colores, solo fondo gris neutro
   };
 
-  const handleBookingClick = (booking: any, event: React.MouseEvent | React.TouchEvent) => {
-    event?.stopPropagation();
+  const handleBookingClick = (
+    booking: any,
+    event: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>
+  ) => {
     console.log('🔥 BOOKING CLICKED:', booking.id, 'Mobile:', isMobile);
-    
-    // Calcular posición del modal basada en el elemento clicado
-    const target = event.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const windowWidth = window.innerWidth;
-    
-    // Dimensiones del modal para móvil
-    const modalWidth = Math.min(350, windowWidth - 20);
-    const modalHeight = Math.min(400, windowHeight - 80);
-    
-    // Calcular posición - centrado horizontalmente y dentro de la ventana visible
-    let top = scrollTop + (windowHeight - modalHeight) / 2;
-    let left = (windowWidth - modalWidth) / 2;
-    
-    // Ajustar verticalmente para que esté siempre visible
-    const viewportTop = scrollTop + 20;
-    const viewportBottom = scrollTop + windowHeight - 20;
-    
-    top = Math.max(viewportTop, Math.min(top, viewportBottom - modalHeight));
-    
-    // Asegurar que no se salga horizontalmente
-    if (left < 10) left = 10;
-    if (left + modalWidth > windowWidth - 10) left = windowWidth - modalWidth - 10;
-    
-    console.log('📱 Modal position:', { top, left, elementTop: rect.top, scrollTop });
-    
-    setModalPosition({ top, left });
     setSelectedBooking(booking);
-    setShowBookingDetails(true);
+    openBookingModal(event);
   };
 
   const closeModal = () => {
-    setShowBookingDetails(false);
+    closeBookingModal();
     setSelectedBooking(null);
   };
 
@@ -470,13 +450,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         {/* Modal */}
         <div 
           className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
-          style={{
-            top: `${modalPosition.top}px`,
-            left: `${modalPosition.left}px`,
-            width: `${Math.min(350, window.innerWidth - 20)}px`,
-            maxHeight: `${window.innerHeight - 40}px`,
-            overflowY: 'auto'
-          }}
+          style={bookingModalStyle}
         >
           <div className="p-4">
             {/* Header */}
@@ -810,7 +784,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                         {isStartOfBooking && booking && (
                           <div
                             className={cn(
-                              "w-full rounded text-left cursor-pointer p-1 border-l-4 absolute top-0 left-0 select-none touch-manipulation",
+                              "booking-card w-full rounded text-left cursor-pointer p-1 border-l-4 absolute top-0 left-0 select-none touch-manipulation",
                               draggedBooking?.id === booking.id && "opacity-70 z-50 scale-105 shadow-lg"
                             )}
                             style={{

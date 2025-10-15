@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +12,7 @@ import { es } from "date-fns/locale";
 import MobileCard from "@/components/MobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useInternalCodes } from "@/hooks/useInternalCodes";
+import usePositionedModal from "@/hooks/use-positioned-modal";
 
 interface Booking {
   id: string;
@@ -63,8 +62,14 @@ interface BookingCardWithModalProps {
 }
 
 export default function BookingCardWithModal({ booking, onBookingUpdated }: BookingCardWithModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  const {
+    isOpen,
+    handleOpenModal: openPositionedModal,
+    closeModal: closePositionedModal,
+    modalStyle,
+  } = usePositionedModal({
+    anchorSelector: ".booking-card",
+  });
   const [bookingStatus, setBookingStatus] = useState(booking.status);
   const [paymentStatus, setPaymentStatus] = useState(booking.payment_status);
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -201,49 +206,12 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
            selectedBookingCodes.some(code => code.toLowerCase().includes('priority'));
   };
 
-  const handleOpenModal = async (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    // Obtener la tarjeta completa (parent del botón)
-    const cardElement = event.currentTarget.closest('.booking-card') as HTMLElement;
-    if (!cardElement) return;
-    
-    const cardRect = cardElement.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const windowWidth = window.innerWidth;
-    
-    // Dimensiones del modal
-    const modalWidth = Math.min(500, windowWidth - 40);
-    const modalHeight = Math.min(600, windowHeight - 80);
-    
-    // Calcular posición
-    let top = cardRect.top + scrollTop - 50; // Un poco arriba de la tarjeta
-    let left = (windowWidth - modalWidth) / 2; // Centrado horizontalmente
-    
-    // Ajustar verticalmente para que esté siempre visible
-    const viewportTop = scrollTop + 20;
-    const viewportBottom = scrollTop + windowHeight - 20;
-    
-    if (top < viewportTop) {
-      top = viewportTop;
-    } else if (top + modalHeight > viewportBottom) {
-      top = viewportBottom - modalHeight;
-    }
-    
-    // Asegurar que no se salga horizontalmente
-    if (left < 20) left = 20;
-    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-    
-    console.log('Modal position:', { top, left, cardTop: cardRect.top, scrollTop });
-    
-    setModalPosition({ top, left });
-    setIsOpen(true);
+  const handleOpenModal = (event: React.MouseEvent<HTMLElement>) => {
+    openPositionedModal(event);
   };
 
   const closeModal = () => {
-    setIsOpen(false);
+    closePositionedModal();
     setPaymentMethod('');
     setPaymentNotes('');
   };
@@ -307,7 +275,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       setPaymentStatus('paid');
       setPaymentMethod('');
       setPaymentNotes('');
-      setIsOpen(false);
+      closePositionedModal();
       onBookingUpdated();
     } catch (error) {
       console.error('Error processing payment:', error);
@@ -468,13 +436,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
             <div 
               className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
               style={{
-                top: `${modalPosition.top}px`,
-                left: `${modalPosition.left}px`,
-                width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(500, window.innerWidth - 40)}px`,
-                maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(600, window.innerHeight - 80)}px`,
-                overflowY: 'auto',
+                ...(modalStyle ?? {}),
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
               }}
             >
               <div className={`${isMobile ? 'p-4' : 'p-6'} flex flex-col gap-4 h-full`}>                

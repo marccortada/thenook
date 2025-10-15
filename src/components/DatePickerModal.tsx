@@ -5,7 +5,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
-import { useIsMobile } from "@/hooks/use-mobile";
+import usePositionedModal from "@/hooks/use-positioned-modal";
 
 interface DatePickerModalProps {
   open: boolean;
@@ -24,59 +24,11 @@ export const DatePickerModal = ({
   disabled,
   placeholder = "Seleccionar fecha"
 }: DatePickerModalProps) => {
-  const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = React.useState<boolean>(open);
-  const [modalPosition, setModalPosition] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
-
-  React.useEffect(() => {
-    setIsOpen(open);
-  }, [open]);
-
-  React.useEffect(() => {
-    if (!isOpen) return;
-    const windowHeight = window.innerHeight;
-    const windowWidth = window.innerWidth;
-    const modalWidth = Math.min(500, windowWidth - 40);
-    const modalHeight = Math.min(600, windowHeight - 80);
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    let top = scrollTop + (windowHeight - modalHeight) / 2;
-    let left = (windowWidth - modalWidth) / 2;
-    const viewportTop = scrollTop + 20;
-    const viewportBottom = scrollTop + windowHeight - 20;
-    if (top < viewportTop) top = viewportTop;
-    else if (top + modalHeight > viewportBottom) top = viewportBottom - modalHeight;
-    if (left < 20) left = 20;
-    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-    setModalPosition({ top, left });
-  }, [isOpen]);
-
-  const handleOpenModal = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const cardElement = (event.currentTarget as HTMLElement).closest('.client-card') as HTMLElement;
-    const rect = cardElement?.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const windowWidth = window.innerWidth;
-    const modalWidth = Math.min(500, windowWidth - 40);
-    const modalHeight = Math.min(600, windowHeight - 80);
-    let top = rect ? rect.top + scrollTop - 50 : scrollTop + 20;
-    let left = (windowWidth - modalWidth) / 2;
-    const viewportTop = scrollTop + 20;
-    const viewportBottom = scrollTop + windowHeight - 20;
-    if (top < viewportTop) top = viewportTop;
-    else if (top + modalHeight > viewportBottom) top = viewportBottom - modalHeight;
-    if (left < 20) left = 20;
-    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-    setModalPosition({ top, left });
-    setIsOpen(true);
-    onOpenChange(true);
-  };
-
-  const closeModal = () => {
-    setIsOpen(false);
-    onOpenChange(false);
-  };
+  const { isOpen, handleOpenModal, closeModal, modalStyle } = usePositionedModal({
+    open,
+    onOpenChange,
+    anchorSelector: ".client-card",
+  });
 
   return (
     <>
@@ -97,13 +49,7 @@ export const DatePickerModal = ({
           <div className="fixed inset-0 bg-black/50 z-40" onClick={closeModal} />
           <div
             className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
-            style={{
-              top: `${modalPosition.top}px`,
-              left: `${modalPosition.left}px`,
-              width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(500, window.innerWidth - 40)}px`,
-              maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(600, window.innerHeight - 80)}px`,
-              overflowY: 'auto'
-            }}
+            style={modalStyle}
           >
             <div className="pb-4 border-b border-border/10 p-6">
               <div className="flex items-center gap-3">

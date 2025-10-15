@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import usePositionedModal from "@/hooks/use-positioned-modal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,34 +22,10 @@ type PeriodType = 'day' | 'month' | 'quarter' | 'year';
 
 const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) => {
   const { toast } = useToast();
-  const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState<boolean>(open);
-  const [modalPosition, setModalPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
-
-  useEffect(() => setIsOpen(open), [open]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const windowHeight = window.innerHeight;
-    const windowWidth = window.innerWidth;
-    const modalWidth = Math.min(500, windowWidth - 40);
-    const modalHeight = Math.min(600, windowHeight - 80);
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    let top = scrollTop + (windowHeight - modalHeight) / 2;
-    let left = (windowWidth - modalWidth) / 2;
-    const viewportTop = scrollTop + 20;
-    const viewportBottom = scrollTop + windowHeight - 20;
-    if (top < viewportTop) top = viewportTop;
-    else if (top + modalHeight > viewportBottom) top = viewportBottom - modalHeight;
-    if (left < 20) left = 20;
-    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-    setModalPosition({ top, left });
-  }, [isOpen]);
-
-  const closeModal = () => {
-    setIsOpen(false);
-    onOpenChange(false);
-  };
+  const { isOpen, closeModal, modalStyle } = usePositionedModal({
+    open,
+    onOpenChange,
+  });
   const [selectedPeriodType, setSelectedPeriodType] = useState<PeriodType>('day');
   const [selectedRange, setSelectedRange] = useState<{ from: Date; to: Date } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -274,13 +250,7 @@ const fetchPeriodStats = async () => {
           <div className="fixed inset-0 bg-black/50 z-40" onClick={closeModal} />
           <div
             className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
-            style={{
-              top: `${modalPosition.top}px`,
-              left: `${modalPosition.left}px`,
-              width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(500, window.innerWidth - 40)}px`,
-              maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(600, window.innerHeight - 80)}px`,
-              overflowY: 'auto'
-            }}
+            style={modalStyle}
           >
             <div className="p-6 border-b">
               <div className="flex items-center gap-2 text-xl">
@@ -528,6 +498,7 @@ const fetchPeriodStats = async () => {
               Cerrar
             </Button>
           </div>
+        </div>
         </div>
         </>
       )}
