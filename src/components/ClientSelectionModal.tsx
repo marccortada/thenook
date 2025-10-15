@@ -1,5 +1,4 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -117,24 +116,24 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      console.log('Modal abriéndose/cerrándose:', newOpen); // Debug log
-      setOpen(newOpen);
-    }}>
-      <DialogTrigger asChild>
+    <>
+      <span onClick={() => setOpen(true)} style={{ display: 'contents' }}>
         {children}
-      </DialogTrigger>
-      <DialogContent
-        ref={modalRef}
-        className="fixed z-[120] flex max-h-[calc(100vh-3rem)] sm:max-h-[85vh] p-4 sm:p-6 flex-col rounded-xl overflow-hidden border bg-background shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
-        style={modalStyle}
-      >
-        <DialogHeader className="pb-4 flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <User className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="truncate">Seleccionar Cliente ({filteredClients.length})</span>
-          </DialogTitle>
-        </DialogHeader>
+      </span>
+      {open && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setOpen(false)} />
+          <div
+            ref={modalRef}
+            className="fixed z-[120] flex max-h-[calc(100vh-3rem)] sm:max-h-[85vh] p-4 sm:p-6 flex-col rounded-xl overflow-hidden border bg-background shadow-2xl transition-all duration-300"
+            style={modalStyle}
+          >
+            <div className="pb-4 flex-shrink-0">
+              <div className="flex items-center gap-2 text-base sm:text-lg">
+                <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="truncate">Seleccionar Cliente ({filteredClients.length})</span>
+              </div>
+            </div>
         
         {/* Search Input */}
         <div className="relative mb-4 flex-shrink-0">
@@ -205,13 +204,15 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
           </ScrollArea>
         </div>
 
-        <div className="flex justify-end pt-4 border-t mt-4 flex-shrink-0">
-          <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto text-sm">
-            Cancelar
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            <div className="flex justify-end pt-4 border-t mt-4 flex-shrink-0">
+              <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto text-sm">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
+    </>
   );
 };
 

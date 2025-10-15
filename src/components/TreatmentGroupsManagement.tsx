@@ -682,12 +682,12 @@ const TreatmentGroupsManagement: React.FC = () => {
           
           {/* Modal */}
           <div 
-            className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+            className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
             style={{
               top: `${modalPosition.top}px`,
               left: `${modalPosition.left}px`,
-              width: `${Math.min(600, window.innerWidth - 40)}px`,
-              maxHeight: `${Math.min(500, window.innerHeight - 80)}px`,
+              width: `${Math.min(500, window.innerWidth - 40)}px`,
+              maxHeight: `${Math.min(600, window.innerHeight - 80)}px`,
               overflowY: 'auto'
             }}
           >
@@ -852,7 +852,7 @@ const TreatmentGroupsManagement: React.FC = () => {
           {/* Modal */}
           <div 
             ref={serviceModalRef as React.RefObject<HTMLDivElement>}
-            className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+            className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
             style={{
               top: '50%',
               left: '50%',

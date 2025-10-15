@@ -466,12 +466,13 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
             
             {/* Modal */}
             <div 
-              className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+              className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
               style={{
                 top: `${modalPosition.top}px`,
                 left: `${modalPosition.left}px`,
                 width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(500, window.innerWidth - 40)}px`,
-                maxHeight: `${Math.min(isMobile ? window.innerHeight - 24 : window.innerHeight - 80, 640)}px`,
+                maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(600, window.innerHeight - 80)}px`,
+                overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column'
               }}

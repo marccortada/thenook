@@ -469,7 +469,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
         
         {/* Modal */}
         <div 
-          className="fixed z-50 bg-white rounded-lg shadow-2xl border"
+          className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
           style={{
             top: `${modalPosition.top}px`,
             left: `${modalPosition.left}px`,

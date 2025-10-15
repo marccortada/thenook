@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Service, Package } from "@/hooks/useDatabase";
@@ -210,8 +210,36 @@ const ServiceModal: React.FC<Props> = ({
   packages,
   selectedId,
   onSelect,
- }) => {
+}) => {
   const { isAdmin, isEmployee } = useSimpleAuth();
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = useState<boolean>(open);
+  const [modalPosition, setModalPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  React.useEffect(() => setIsOpen(open), [open]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    const modalWidth = Math.min(500, windowWidth - 40);
+    const modalHeight = Math.min(600, windowHeight - 80);
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    let top = scrollTop + (windowHeight - modalHeight) / 2;
+    let left = (windowWidth - modalWidth) / 2;
+    const viewportTop = scrollTop + 20;
+    const viewportBottom = scrollTop + windowHeight - 20;
+    if (top < viewportTop) top = viewportTop;
+    else if (top + modalHeight > viewportBottom) top = viewportBottom - modalHeight;
+    if (left < 20) left = 20;
+    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
+    setModalPosition({ top, left });
+  }, [isOpen]);
+
+  const closeModal = () => {
+    setIsOpen(false);
+    onOpenChange(false);
+  };
   
   const handleSelect = (id: string, kind: "service" | "package") => {
     onSelect(id, kind);
@@ -394,38 +422,49 @@ const ServiceModal: React.FC<Props> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl w-[95vw] max-h-[80vh] overflow-hidden flex flex-col bg-gradient-to-br from-background via-accent/5 to-background">
-        <DialogHeader className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-primary/5 via-accent/10 to-secondary/5 -mx-6 px-6 -mt-6 pt-6 rounded-t-lg">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-full bg-primary/10">
-              <Sparkles className="w-5 h-5 text-primary" />
+    <>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={closeModal} />
+          <div
+            className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
+            style={{
+              top: `${modalPosition.top}px`,
+              left: `${modalPosition.left}px`,
+              width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(500, window.innerWidth - 40)}px`,
+              maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(600, window.innerHeight - 80)}px`,
+              overflowY: 'auto'
+            }}
+          >
+            <div className="flex-shrink-0 pb-4 border-b bg-gradient-to-r from-primary/5 via-accent/10 to-secondary/5 p-6 rounded-t-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <div className="text-xl font-bold text-foreground">Seleccionar Servicio</div>
+                  <div className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</div>
+                </div>
+              </div>
             </div>
-            <div>
-              <DialogTitle className="text-xl font-bold text-foreground">
-                Seleccionar Servicio
-              </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground">Elige el servicio perfecto para ti</DialogDescription>
+            <div className="flex-1 overflow-y-auto px-6 service-modal-scroll">
+              <div className="space-y-6 py-4">
+                {groupedServices.map((group, index) => (
+                  <ServiceGroup 
+                    key={index}
+                    title={group.name} 
+                    services={group.services}
+                    packages={group.packages}
+                    icon={group.color}
+                    emoji={group.icon}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </DialogHeader>
-        
-        <div className="flex-1 overflow-y-auto -mx-6 px-6 service-modal-scroll">
-          <div className="space-y-6 py-4">
-            {groupedServices.map((group, index) => (
-              <ServiceGroup 
-                key={index}
-                title={group.name} 
-                services={group.services}
-                packages={group.packages}
-                icon={group.color}
-                emoji={group.icon}
-              />
-            ))}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </>
+      )}
+    </>
   );
 };
 
