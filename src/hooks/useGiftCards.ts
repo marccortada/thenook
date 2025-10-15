@@ -7,6 +7,8 @@ export interface GiftCard {
   code: string;
   initial_balance_cents: number;
   remaining_balance_cents: number;
+  total_sessions?: number | null;
+  remaining_sessions?: number | null;
   status: string;
   expiry_date?: string;
   assigned_client_id?: string;
@@ -28,6 +30,8 @@ export interface CreateGiftCardData {
   assigned_client_id?: string;
   purchased_by_email?: string;
   purchased_by_name?: string;
+  total_sessions?: number;
+  remaining_sessions?: number;
 }
 
 export function useGiftCards(searchTerm?: string) {
@@ -64,7 +68,13 @@ export function useGiftCards(searchTerm?: string) {
         throw fetchError;
       }
 
-      setGiftCards((data || []) as GiftCard[]);
+      setGiftCards(
+        (data || []).map((card: any) => ({
+          ...card,
+          total_sessions: card.total_sessions ?? 0,
+          remaining_sessions: card.remaining_sessions ?? 0,
+        })) as GiftCard[]
+      );
     } catch (err) {
       console.error('Error fetching gift cards:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
@@ -81,6 +91,8 @@ export function useGiftCards(searchTerm?: string) {
           initial_balance_cents: giftCardData.initial_balance_cents,
           remaining_balance_cents: giftCardData.initial_balance_cents,
           status: 'active',
+          total_sessions: giftCardData.total_sessions ?? 0,
+          remaining_sessions: giftCardData.remaining_sessions ?? giftCardData.total_sessions ?? 0,
           assigned_client_id: giftCardData.assigned_client_id,
           purchased_by_email: giftCardData.purchased_by_email,
           purchased_by_name: giftCardData.purchased_by_name,

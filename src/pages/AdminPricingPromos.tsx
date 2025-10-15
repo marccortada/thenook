@@ -553,13 +553,14 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
 
   // Tarjetas regalo - opciones de importes (sin duplicados) con visibilidad online
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
-  const [giftEdits, setGiftEdits] = useState<Record<string, { amount_euros: number; active: boolean; show_online: boolean }>>({});
+  const [giftEdits, setGiftEdits] = useState<Record<string, { amount_euros: number; active: boolean; show_online: boolean; sessions_count: number }>>({});
   const [newGiftCard, setNewGiftCard] = useState({
     name: '',
     description: '',
     amount_euros: 0,
     active: true,
     show_online: true,
+    sessions_count: 1,
     image: null as File | null,
     imageCrop: null as { x: number; y: number; width: number; height: number } | null
   });
@@ -567,18 +568,34 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
 
   const fetchGiftOptions = async () => {
     const { data } = await supabase.from('gift_card_options').select('*').order('amount_cents');
-    setGiftOptions(data || []);
+    setGiftOptions((data || []).map((opt: any) => ({
+      ...opt,
+      sessions_count: opt.sessions_count ?? 0,
+    })));
   };
 
   useEffect(() => {
     fetchGiftOptions();
   }, []);
 
-  const handleGiftChange = (id: string, field: 'amount_euros'|'active'|'show_online', value: any) => {
-    setGiftEdits((prev) => ({
-      ...prev,
-      [id]: { amount_euros: prev[id]?.amount_euros ?? 0, active: prev[id]?.active ?? true, show_online: prev[id]?.show_online ?? true, [field]: value }
-    }));
+  const handleGiftChange = (id: string, field: 'amount_euros'|'active'|'show_online'|'sessions_count', value: any) => {
+    setGiftEdits((prev) => {
+      const option = giftOptions.find((opt) => opt.id === id);
+      const base = {
+        amount_euros: prev[id]?.amount_euros ?? ((option?.amount_cents ?? 0) / 100),
+        active: prev[id]?.active ?? (option?.is_active ?? true),
+        show_online: prev[id]?.show_online ?? (option?.show_online ?? true),
+        sessions_count: prev[id]?.sessions_count ?? (option?.sessions_count ?? 1),
+      };
+
+      return {
+        ...prev,
+        [id]: {
+          ...base,
+          [field]: value,
+        },
+      };
+    });
   };
 
   const saveGiftOption = async (id: string) => {
@@ -586,7 +603,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
     if (!edit) return;
 
     const amountCents = Math.round(edit.amount_euros * 100);
-    await supabase.from('gift_card_options').update({ amount_cents: amountCents, is_active: edit.active, show_online: edit.show_online }).eq('id', id);
+    await supabase.from('gift_card_options').update({ amount_cents: amountCents, is_active: edit.active, show_online: edit.show_online, sessions_count: edit.sessions_count }).eq('id', id);
     toast({ title: 'Guardado', description: 'Opción de tarjeta regalo actualizada' });
     delete giftEdits[id];
     setGiftEdits({...giftEdits});
@@ -604,7 +621,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
     const existing = giftOptions.map(g => g.amount_cents);
     const toInsert = giftDenoms
       .filter(euros => !existing.includes(euros * 100))
-      .map(euros => ({ name: `Tarjeta ${euros}€`, amount_cents: euros * 100, is_active: true }));
+      .map(euros => ({ name: `Tarjeta ${euros}€`, amount_cents: euros * 100, is_active: true, sessions_count: 1 }));
 
     if (toInsert.length === 0) {
       toast({ title: 'Ya completo', description: 'Todas las opciones ya existen' });
@@ -625,6 +642,10 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
     
     if (!newGiftCard.name || !newGiftCard.amount_euros) {
       toast({ title: 'Campos requeridos', description: 'Nombre e importe son obligatorios', variant: 'destructive' });
+      return;
+    }
+    if (!newGiftCard.sessions_count || newGiftCard.sessions_count < 0) {
+      toast({ title: 'Sesiones requeridas', description: 'Indica las sesiones disponibles en la tarjeta regalo', variant: 'destructive' });
       return;
     }
 
@@ -665,7 +686,8 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
         image_url: imageUrl,
         amount_cents: Math.round(newGiftCard.amount_euros * 100),
         is_active: newGiftCard.active,
-        show_online: newGiftCard.show_online
+        show_online: newGiftCard.show_online,
+        sessions_count: newGiftCard.sessions_count
       };
       
       console.log('Inserting gift card option:', insertData);
@@ -684,6 +706,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
           amount_euros: 0,
           active: true,
           show_online: true,
+          sessions_count: 1,
           image: null,
           imageCrop: null
         });
@@ -1539,45 +1562,60 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-4">
-                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                     <div>
-                       <Label htmlFor="giftcard-name">Nombre *</Label>
-                       <Input
-                         id="giftcard-name"
-                         placeholder="Ej: Tarjeta 50€"
-                         value={newGiftCard.name}
-                         onChange={(e) => setNewGiftCard(prev => ({ ...prev, name: e.target.value }))}
-                       />
-                     </div>
-                     <div>
-                       <Label htmlFor="giftcard-amount">Importe (€) *</Label>
-                       <Input
-                         id="giftcard-amount"
-                         type="number"
-                         step="0.01"
-                         min="0"
-                         placeholder="50.00"
-                         value={newGiftCard.amount_euros || ''}
-                         onChange={(e) => setNewGiftCard(prev => ({ ...prev, amount_euros: parseFloat(e.target.value) || 0 }))}
-                       />
-                     </div>
-                      <div>
-                        <Label htmlFor="giftcard-status">Estado</Label>
-                        <InlineSelect
-                          value={String(newGiftCard.active)}
-                          onChange={(v) => setNewGiftCard(prev => ({ ...prev, active: v === 'true' }))}
-                          options={[{ label: 'Activo', value: 'true' }, { label: 'Inactivo', value: 'false' }]}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="giftcard-show-online">Mostrar Online</Label>
-                        <InlineSelect
-                          value={String(newGiftCard.show_online)}
-                          onChange={(v) => setNewGiftCard(prev => ({ ...prev, show_online: v === 'true' }))}
-                          options={[{ label: 'Sí', value: 'true' }, { label: 'No', value: 'false' }]}
-                        />
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div>
+                      <Label htmlFor="giftcard-name">Nombre *</Label>
+                      <Input
+                        id="giftcard-name"
+                        placeholder="Ej: Tarjeta 50€"
+                        value={newGiftCard.name}
+                        onChange={(e) => setNewGiftCard(prev => ({ ...prev, name: e.target.value }))}
+                      />
                     </div>
+                    <div>
+                      <Label htmlFor="giftcard-amount">Importe (€) *</Label>
+                      <Input
+                        id="giftcard-amount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="50.00"
+                        value={newGiftCard.amount_euros || ''}
+                        onChange={(e) => setNewGiftCard(prev => ({ ...prev, amount_euros: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="giftcard-sessions">Sesiones *</Label>
+                      <Input
+                        id="giftcard-sessions"
+                        type="number"
+                        min="0"
+                        placeholder="Ej: 3"
+                        value={newGiftCard.sessions_count ?? ''}
+                        onChange={(e) => {
+                          const parsed = parseInt(e.target.value || '0', 10);
+                          const sanitized = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+                          setNewGiftCard(prev => ({ ...prev, sessions_count: sanitized }));
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="giftcard-status">Estado</Label>
+                      <InlineSelect
+                        value={String(newGiftCard.active)}
+                        onChange={(v) => setNewGiftCard(prev => ({ ...prev, active: v === 'true' }))}
+                        options={[{ label: 'Activo', value: 'true' }, { label: 'Inactivo', value: 'false' }]}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="giftcard-show-online">Mostrar Online</Label>
+                      <InlineSelect
+                        value={String(newGiftCard.show_online)}
+                        onChange={(v) => setNewGiftCard(prev => ({ ...prev, show_online: v === 'true' }))}
+                        options={[{ label: 'Sí', value: 'true' }, { label: 'No', value: 'false' }]}
+                      />
+                    </div>
+                  </div>
                     
                     {newGiftCard.show_online && (
                       <div className="mt-4 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
@@ -1647,12 +1685,15 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {giftOptions.map((opt) => {
-                      const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active, show_online: opt.show_online ?? true };
+                      const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active, show_online: opt.show_online ?? true, sessions_count: opt.sessions_count ?? 0 };
                       return (
                         <div key={opt.id} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
                             <div className="font-medium">{opt.name}</div>
                             <div className="text-sm font-semibold">{currency(edit.amount_euros)}</div>
+                          </div>
+                          <div className="mb-2 text-xs text-muted-foreground">
+                            Sesiones configuradas: <span className="font-semibold text-foreground">{edit.sessions_count ?? 0}</span>
                           </div>
                           {opt.image_url && (
                             <div className="mb-2">
@@ -1680,6 +1721,33 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                  options={[{ label: 'Sí', value: 'true' }, { label: 'No', value: 'false' }]}
                                />
                              </div>
+                            <div className="col-span-3">
+                              <Accordion type="single" collapsible>
+                                <AccordionItem value="sessions">
+                                  <AccordionTrigger className="rounded-md border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-left text-sm font-medium hover:bg-primary/10">
+                                    Sesiones incluidas: <span className="ml-1 font-semibold">{edit.sessions_count}</span>
+                                  </AccordionTrigger>
+                                  <AccordionContent className="pt-3 space-y-3">
+                                    <div>
+                                      <Label>Sesiones *</Label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={edit.sessions_count}
+                                        onChange={(e) => {
+                                          const parsed = parseInt(e.target.value || '0', 10);
+                                          const sanitized = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+                                          handleGiftChange(opt.id, 'sessions_count', sanitized);
+                                        }}
+                                      />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      Define cuántas sesiones incluye esta tarjeta regalo para su uso interno.
+                                    </p>
+                                  </AccordionContent>
+                                </AccordionItem>
+                              </Accordion>
+                            </div>
                             
                              {edit.show_online && (
                                <div className="col-span-3 mt-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">

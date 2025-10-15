@@ -952,6 +952,7 @@ export type Database = {
           is_active: boolean
           name: string
           show_online: boolean
+          sessions_count: number | null
           updated_at: string
         }
         Insert: {
@@ -963,6 +964,7 @@ export type Database = {
           is_active?: boolean
           name: string
           show_online?: boolean
+          sessions_count?: number | null
           updated_at?: string
         }
         Update: {
@@ -974,6 +976,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           show_online?: boolean
+          sessions_count?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -1052,7 +1055,9 @@ export type Database = {
           purchased_by_email: string | null
           purchased_by_name: string | null
           remaining_balance_cents: number
+          remaining_sessions: number | null
           status: string
+          total_sessions: number | null
           updated_at: string
         }
         Insert: {
@@ -1066,7 +1071,9 @@ export type Database = {
           purchased_by_email?: string | null
           purchased_by_name?: string | null
           remaining_balance_cents: number
+          remaining_sessions?: number | null
           status?: string
+          total_sessions?: number | null
           updated_at?: string
         }
         Update: {
@@ -1080,7 +1087,9 @@ export type Database = {
           purchased_by_email?: string | null
           purchased_by_name?: string | null
           remaining_balance_cents?: number
+          remaining_sessions?: number | null
           status?: string
+          total_sessions?: number | null
           updated_at?: string
         }
         Relationships: [

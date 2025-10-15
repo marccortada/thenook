@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from '@/components/ui/calendar';
@@ -33,50 +33,18 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ClientSelector from '@/components/ClientSelector';
 import { ImageUploadCropper } from '@/components/ImageUploadCropper';
+import { ViewportSafeWrapper } from '@/components/ViewportSafeWrapper';
 
 const GiftCardManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCard, setEditingCard] = useState<GiftCard | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const scrollLockRef = useRef<number>(0);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [giftCardImage, setGiftCardImage] = useState<File | null>(null);
   const [giftCardImageCrop, setGiftCardImageCrop] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   
   const { giftCards, loading, error, refetch, createGiftCard, updateGiftCard, deactivateGiftCard } = useGiftCards(searchTerm);
   const [createClientId, setCreateClientId] = useState<string>('');
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const body = document.body;
-
-    if (isEditDialogOpen) {
-      scrollLockRef.current = window.scrollY;
-      body.style.position = 'fixed';
-      body.style.top = `-${scrollLockRef.current}px`;
-      body.style.left = '0';
-      body.style.right = '0';
-      body.style.width = '100%';
-    } else if (body.style.position === 'fixed') {
-      body.style.position = '';
-      body.style.top = '';
-      body.style.left = '';
-      body.style.right = '';
-      body.style.width = '';
-      window.scrollTo(0, scrollLockRef.current);
-    }
-
-    return () => {
-      if (body.style.position === 'fixed') {
-        body.style.position = '';
-        body.style.top = '';
-        body.style.left = '';
-        body.style.right = '';
-        body.style.width = '';
-        window.scrollTo(0, scrollLockRef.current);
-      }
-    };
-  }, [isEditDialogOpen]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -105,7 +73,13 @@ const GiftCardManagement = () => {
   };
 
   const getUsagePercentage = (remaining: number, initial: number) => {
+    if (!initial || initial <= 0) return 0;
     return Math.round(((initial - remaining) / initial) * 100);
+  };
+
+  const getSessionUsagePercentage = (remaining?: number | null, total?: number | null) => {
+    if (!total || total <= 0 || remaining == null) return 0;
+    return Math.round(((total - remaining) / total) * 100);
   };
 
   const handleUpdateGiftCard = async (id: string, updates: Partial<GiftCard>) => {
@@ -332,7 +306,7 @@ const GiftCardManagement = () => {
                           </div>
                           <div className="flex items-center space-x-2 mt-1">
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
+                              <div
                                 className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${100 - getUsagePercentage(card.remaining_balance_cents, card.initial_balance_cents)}%` }}
                               />
@@ -341,6 +315,28 @@ const GiftCardManagement = () => {
                               {100 - getUsagePercentage(card.remaining_balance_cents, card.initial_balance_cents)}%
                             </span>
                           </div>
+
+                          {(card.total_sessions ?? 0) > 0 && (
+                            <div className="mt-3 space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <span className="text-xs sm:text-sm font-medium truncate">
+                                  {(card.remaining_sessions ?? 0)} / {(card.total_sessions ?? 0)} sesiones
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${100 - getSessionUsagePercentage(card.remaining_sessions, card.total_sessions)}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-muted-foreground flex-shrink-0">
+                                  {100 - getSessionUsagePercentage(card.remaining_sessions, card.total_sessions)}%
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         
                         <div className="min-w-0">
@@ -385,6 +381,11 @@ const GiftCardManagement = () => {
                         </div>
                       )}
                     </div>
+                    {(card.total_sessions ?? 0) > 0 && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Sesiones restantes: {(card.remaining_sessions ?? 0)} / {(card.total_sessions ?? 0)}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -404,47 +405,104 @@ const GiftCardManagement = () => {
           }
         }}
       >
-        <DialogContent className="max-w-lg w-[calc(100vw-3rem)] sm:w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Editar Tarjeta Regalo</DialogTitle>
-            <DialogDescription>Modifica los datos de la tarjeta regalo</DialogDescription>
-          </DialogHeader>
-          {editingCard && (
-            <div className="space-y-4">
-              <div>
-                <Label>Código</Label>
-                <Input value={editingCard.code} disabled />
-              </div>
-              <div>
-                <Label>Saldo Restante (€)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={(editingCard.remaining_balance_cents / 100).toString()}
-                  onChange={(e) =>
-                    setEditingCard({
-                      ...editingCard,
-                      remaining_balance_cents: Math.round(parseFloat(e.target.value || "0") * 100),
-                    })
-                  }
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={() =>
-                    handleUpdateGiftCard(editingCard.id, {
-                      remaining_balance_cents: editingCard.remaining_balance_cents,
-                    })
-                  }
-                >
-                  Guardar
-                </Button>
-              </div>
-            </div>
-          )}
+        <DialogContent className="p-0 sm:max-w-lg">
+          <ViewportSafeWrapper
+            isOpen={isEditDialogOpen}
+            className="flex flex-col gap-6 p-6"
+          >
+            <DialogHeader className="text-left">
+              <DialogTitle>Editar Tarjeta Regalo</DialogTitle>
+              <DialogDescription>Modifica los datos de la tarjeta regalo</DialogDescription>
+            </DialogHeader>
+            {editingCard && (
+              <>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Código</Label>
+                    <Input value={editingCard.code} disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Saldo restante (€)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={(editingCard.remaining_balance_cents / 100).toString()}
+                      onChange={(e) => {
+                        const parsed = parseFloat(e.target.value || "0");
+                        const cents = Number.isNaN(parsed) ? 0 : Math.round(parsed * 100);
+                        setEditingCard({
+                          ...editingCard,
+                          remaining_balance_cents: cents,
+                        });
+                      }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Sesiones totales</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={String(editingCard.total_sessions ?? 0)}
+                        onChange={(e) => {
+                          const parsed = parseInt(e.target.value || "0", 10);
+                          const sanitized = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+                          const adjustedRemaining = Math.min(editingCard.remaining_sessions ?? 0, sanitized);
+                          setEditingCard({
+                            ...editingCard,
+                            total_sessions: sanitized,
+                            remaining_sessions: adjustedRemaining,
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sesiones restantes</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={String(editingCard.remaining_sessions ?? 0)}
+                        onChange={(e) => {
+                          const parsed = parseInt(e.target.value || "0", 10);
+                          const sanitized = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+                          const capped =
+                            editingCard.total_sessions != null && editingCard.total_sessions > 0
+                              ? Math.min(sanitized, editingCard.total_sessions)
+                              : sanitized;
+                          setEditingCard({
+                            ...editingCard,
+                            remaining_sessions: capped,
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter className="gap-2 sm:justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditDialogOpen(false);
+                      setEditingCard(null);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      handleUpdateGiftCard(editingCard.id, {
+                        remaining_balance_cents: editingCard.remaining_balance_cents,
+                        total_sessions: editingCard.total_sessions ?? 0,
+                        remaining_sessions: editingCard.remaining_sessions ?? 0,
+                      })
+                    }
+                  >
+                    Guardar
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </ViewportSafeWrapper>
         </DialogContent>
       </Dialog>
     </div>
