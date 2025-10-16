@@ -151,85 +151,6 @@ interface DialogContentProps
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-<<<<<<< HEAD
-  DialogContentProps
->(({ className, children, modalOptions, style, ...props }, ref) => {
-  const { isOpen, setOpen, anchorRef } = useDialogContext();
-  const isMobile = useIsMobile();
-  const [computedStyle, setComputedStyle] = React.useState<
-    React.CSSProperties | undefined
-  >(undefined);
-
-  const effectiveOptions = React.useMemo<PositionedModalConfig>(() => {
-    return {
-      ...DEFAULT_POSITIONED_MODAL_CONFIG,
-      ...modalOptions,
-    };
-  }, [modalOptions]);
-
-  React.useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const updatePosition = () => {
-      const coordinates = computeModalCoordinates({
-        anchor: anchorRef.current,
-        isMobile,
-        config: effectiveOptions,
-      });
-
-      if (coordinates) {
-        setComputedStyle({
-          top: `${coordinates.top}px`,
-          left: `${coordinates.left}px`,
-          width: `${coordinates.width}px`,
-          maxHeight: `${coordinates.maxHeight}px`,
-          overflowY: "auto",
-        });
-      }
-    };
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [anchorRef, effectiveOptions, isMobile, isOpen]);
-
-  const mergedStyle = React.useMemo<React.CSSProperties>(() => {
-    return {
-      ...(computedStyle ?? {}),
-      ...(style ?? {}),
-    };
-  }, [computedStyle, style]);
-
-  return (
-    <DialogPortal>
-      <DialogOverlay />
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn(
-          "fixed z-[100] rounded-xl border border-border bg-background shadow-2xl p-6 transition-all duration-300",
-          className
-        )}
-        style={mergedStyle}
-        {...props}
-      >
-        {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      </DialogPrimitive.Content>
-    </DialogPortal>
-  );
-});
-DialogContent.displayName = DialogPrimitive.Content.displayName;
-=======
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => (
   <DialogPortal>
@@ -251,7 +172,6 @@ DialogContent.displayName = DialogPrimitive.Content.displayName;
   </DialogPortal>
 ))
 DialogContent.displayName = DialogPrimitive.Content.displayName
->>>>>>> 90c7a1f (Descripción de los cmio)
 
 const DialogHeader = ({
   className,

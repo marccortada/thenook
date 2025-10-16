@@ -503,23 +503,7 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
         Ver Detalles
       </Button>
 
-<<<<<<< HEAD
-      {isOpen && (
-        <>
-          {/* Overlay */}
-          <div 
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={closeModal}
-          />
-          
-          {/* Modal */}
-          <div 
-            className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
-            style={modalStyle}
-          >
-=======
       <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
->>>>>>> 90c7a1f (Descripción de los cmio)
             <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
               {/* Header */}
               <div className={`flex items-center justify-between ${isMobile ? 'mb-4' : 'mb-6'}`}>

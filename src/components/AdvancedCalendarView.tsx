@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -47,6 +48,7 @@ import ClientSelectionModal from './ClientSelectionModal';
 import { useLaneBlocks } from '@/hooks/useLaneBlocks';
 import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { useInternalCodes } from '@/hooks/useInternalCodes';
+import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 
 interface TimeSlot {
   time: Date;
@@ -1708,27 +1710,33 @@ const AdvancedCalendarView = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="serviceId" className="text-sm font-medium">Servicio *</Label>
-              <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Seleccionar servicio" />
-                </SelectTrigger>
-                <SelectContent
-                  className="max-h-48 sm:max-h-60 overflow-y-auto z-[130] bg-popover border shadow-md"
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  sideOffset={8}
-                  avoidCollisions={true}
-                  collisionPadding={16}
-                >
-                  {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-sm font-medium">Servicio *</Label>
+              <Accordion type="single" collapsible defaultValue="service" className="w-full">
+                <AccordionItem value="service">
+                  <AccordionTrigger className="text-left">
+                    <div className="flex items-center justify-between w-full">
+                      <span>Selección de Servicio</span>
+                      {bookingForm.serviceId && (
+                        <span className="text-sm text-muted-foreground">
+                          ({services.find(s => s.id === bookingForm.serviceId)?.name})
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="pt-2">
+                      <ServiceSelectorGrouped
+                        mode="individual"
+                        services={services.filter(s => s.center_id === bookingForm.centerId || !s.center_id)}
+                        packages={[]}
+                        selectedId={bookingForm.serviceId}
+                        onSelect={(id) => setBookingForm({ ...bookingForm, serviceId: id })}
+                        useDropdown={false}
+                      />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
 
             <div className="space-y-2">

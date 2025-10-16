@@ -441,21 +441,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     if (!selectedBooking || !showBookingDetails) return null;
     return (
       <>
-<<<<<<< HEAD
-        {/* Overlay */}
-        <div 
-          className="fixed inset-0 bg-black/50 z-40"
-          onClick={closeModal}
-        />
-        
-        {/* Modal */}
-        <div 
-          className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
-          style={bookingModalStyle}
-        >
-=======
         <AppModal open={true} onClose={closeModal} maxWidth={360} mobileMaxWidth={350} maxHeight={640}>
->>>>>>> 90c7a1f (Descripción de los cmio)
           <div className="p-4">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">

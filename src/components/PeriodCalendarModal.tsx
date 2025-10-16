@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
-import usePositionedModal from "@/hooks/use-positioned-modal";
-=======
 import { useIsMobile } from "@/hooks/use-mobile";
 import AppModal from "@/components/ui/app-modal";
->>>>>>> 90c7a1f (Descripción de los cmio)
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,10 +23,8 @@ type PeriodType = 'day' | 'month' | 'quarter' | 'year';
 
 const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) => {
   const { toast } = useToast();
-  const { isOpen, closeModal, modalStyle } = usePositionedModal({
-    open,
-    onOpenChange,
-  });
+  const isOpen = open;
+  const closeModal = () => onOpenChange(false);
   const [selectedPeriodType, setSelectedPeriodType] = useState<PeriodType>('day');
   const [selectedRange, setSelectedRange] = useState<{ from: Date; to: Date } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -250,17 +244,7 @@ const fetchPeriodStats = async () => {
 
   return (
     <>
-<<<<<<< HEAD
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={closeModal} />
-          <div
-            className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
-            style={modalStyle}
-          >
-=======
       <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
->>>>>>> 90c7a1f (Descripción de los cmio)
             <div className="p-6 border-b">
               <div className="flex items-center gap-2 text-xl">
                 <CalendarIcon className="h-6 w-6 text-primary" />
@@ -507,14 +491,8 @@ const fetchPeriodStats = async () => {
               Cerrar
             </Button>
           </div>
-<<<<<<< HEAD
         </div>
-        </div>
-        </>
-      )}
-=======
       </AppModal>
->>>>>>> 90c7a1f (Descripción de los cmio)
     </>
   );
 };

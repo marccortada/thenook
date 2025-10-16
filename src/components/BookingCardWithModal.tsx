@@ -13,7 +13,6 @@ import MobileCard from "@/components/MobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import AppModal from "@/components/ui/app-modal";
 import { useInternalCodes } from "@/hooks/useInternalCodes";
-import usePositionedModal from "@/hooks/use-positioned-modal";
 
 interface Booking {
   id: string;
@@ -63,18 +62,7 @@ interface BookingCardWithModalProps {
 }
 
 export default function BookingCardWithModal({ booking, onBookingUpdated }: BookingCardWithModalProps) {
-<<<<<<< HEAD
-  const {
-    isOpen,
-    handleOpenModal: openPositionedModal,
-    closeModal: closePositionedModal,
-    modalStyle,
-  } = usePositionedModal({
-    anchorSelector: ".booking-card",
-  });
-=======
   const [isOpen, setIsOpen] = useState(false);
->>>>>>> 90c7a1f (Descripción de los cmio)
   const [bookingStatus, setBookingStatus] = useState(booking.status);
   const [paymentStatus, setPaymentStatus] = useState(booking.payment_status);
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -211,19 +199,14 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
            selectedBookingCodes.some(code => code.toLowerCase().includes('priority'));
   };
 
-<<<<<<< HEAD
-  const handleOpenModal = (event: React.MouseEvent<HTMLElement>) => {
-    openPositionedModal(event);
-=======
   const handleOpenModal = async (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     setIsOpen(true);
->>>>>>> 90c7a1f (Descripción de los cmio)
   };
 
   const closeModal = () => {
-    closePositionedModal();
+    setIsOpen(false);
     setPaymentMethod('');
     setPaymentNotes('');
   };
@@ -287,7 +270,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       setPaymentStatus('paid');
       setPaymentMethod('');
       setPaymentNotes('');
-      closePositionedModal();
+      setIsOpen(false);
       onBookingUpdated();
     } catch (error) {
       console.error('Error processing payment:', error);
@@ -435,29 +418,8 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
           </Button>
         </div>
 
-<<<<<<< HEAD
-        {/* Manual Positioned Modal */}
-        {isOpen && (
-          <>
-            {/* Overlay */}
-            <div 
-              className="fixed inset-0 bg-black/50 z-40"
-              onClick={closeModal}
-            />
-            
-            {/* Modal */}
-            <div 
-              className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
-              style={{
-                ...(modalStyle ?? {}),
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-=======
         {/* Unified AppModal */}
         <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
->>>>>>> 90c7a1f (Descripción de los cmio)
               <div className={`${isMobile ? 'p-4' : 'p-6'} flex flex-col gap-4 h-full`}>                
                 {/* Header */}
                 <div className={`flex items-center justify-between ${isMobile ? '' : 'mb-2'}`}>
@@ -613,9 +575,8 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                   )}
                 </div>
               </div>
-            </div>
         </AppModal>
       </div>
-    </MobileCard>
+     </MobileCard>
   );
 }
