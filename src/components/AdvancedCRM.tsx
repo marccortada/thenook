@@ -606,7 +606,7 @@ const AdvancedCRM = () => {
 
       {/* Profile Edit Dialog */}
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-[640px]">
           <DialogHeader>
             <DialogTitle>
               Editar Perfil: {selectedClient?.profiles?.first_name} {selectedClient?.profiles?.last_name}

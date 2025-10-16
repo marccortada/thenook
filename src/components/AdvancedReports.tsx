@@ -170,7 +170,7 @@ const AdvancedReports = () => {
                 Generar Reporte
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-[640px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Generar Nuevo Reporte</DialogTitle>
               </DialogHeader>
@@ -305,7 +305,7 @@ const AdvancedReports = () => {
                 Nueva Plantilla
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-[640px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Crear Plantilla de Reporte</DialogTitle>
               </DialogHeader>

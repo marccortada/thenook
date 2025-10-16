@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import AppModal from "@/components/ui/app-modal";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -502,6 +503,7 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
         Ver Detalles
       </Button>
 
+<<<<<<< HEAD
       {isOpen && (
         <>
           {/* Overlay */}
@@ -515,6 +517,9 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
             className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
             style={modalStyle}
           >
+=======
+      <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
+>>>>>>> 90c7a1f (Descripción de los cmio)
             <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
               {/* Header */}
               <div className={`flex items-center justify-between ${isMobile ? 'mb-4' : 'mb-6'}`}>
@@ -560,9 +565,7 @@ function ClientModal({ client, onClientUpdated }: ClientModalProps) {
                 getStatusText={getStatusText}
               />
             </div>
-          </div>
-        </>
-      )}
+      </AppModal>
     </>
   );
 }

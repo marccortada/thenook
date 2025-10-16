@@ -230,7 +230,7 @@ const ClientNotes = () => {
                 Nueva Nota
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-[640px]">
               <DialogHeader>
                 <DialogTitle>Crear Nueva Nota</DialogTitle>
               </DialogHeader>
@@ -647,7 +647,7 @@ const ClientNotes = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingNote} onOpenChange={() => setEditingNote(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-[640px]">
           <DialogHeader>
             <DialogTitle>Editar Nota</DialogTitle>
           </DialogHeader>

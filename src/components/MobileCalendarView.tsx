@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import AppModal from "@/components/ui/app-modal";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -438,9 +439,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   // Modal personalizado como en BookingManagement
   const BookingDetailsModal = () => {
     if (!selectedBooking || !showBookingDetails) return null;
-
     return (
       <>
+<<<<<<< HEAD
         {/* Overlay */}
         <div 
           className="fixed inset-0 bg-black/50 z-40"
@@ -452,6 +453,9 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
           className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
           style={bookingModalStyle}
         >
+=======
+        <AppModal open={true} onClose={closeModal} maxWidth={360} mobileMaxWidth={350} maxHeight={640}>
+>>>>>>> 90c7a1f (Descripción de los cmio)
           <div className="p-4">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
@@ -527,7 +531,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </AppModal>
       </>
     );
   };

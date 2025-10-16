@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileCalendarView from '@/components/MobileCalendarView';
 import { Button } from '@/components/ui/button';
+import AppModal from '@/components/ui/app-modal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -1559,15 +1560,7 @@ const AdvancedCalendarView = () => {
 
   const bookingModal = showBookingModal ? (
     <>
-      <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-        onClick={() => setShowBookingModal(false)}
-      />
-      <div
-        className="fixed z-50 flex"
-        data-new-booking-modal
-        style={{ ...getModalStyle(), maxHeight: "95vh" }}
-      >
+      <AppModal open={true} onClose={() => setShowBookingModal(false)} maxWidth={520} mobileMaxWidth={360} maxHeight={720}>
         <div className="bg-background rounded-xl shadow-2xl border border-border/60 overflow-hidden flex flex-col w-full max-h-full">
           <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background relative">
             <button
@@ -1720,14 +1713,14 @@ const AdvancedCalendarView = () => {
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder="Seleccionar servicio" />
                 </SelectTrigger>
-                <SelectContent 
+                <SelectContent
+                  className="max-h-48 sm:max-h-60 overflow-y-auto z-[130] bg-popover border shadow-md"
                   position="popper"
                   side="bottom"
-                  align="center"
-                  sideOffset={2}
+                  align="start"
+                  sideOffset={8}
                   avoidCollisions={true}
-                  collisionPadding={8}
-                  sticky="always"
+                  collisionPadding={16}
                 >
                   {services.filter(s => s.center_id === bookingForm.centerId || !s.center_id).map((service) => (
                     <SelectItem key={service.id} value={service.id}>
@@ -1771,23 +1764,13 @@ const AdvancedCalendarView = () => {
             </div>
           </div>
         </div>
-      </div>
+      </AppModal>
     </>
   ) : null;
 
   const editBookingModal = showEditModal && editingBooking ? (
     <>
-      <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-        onClick={() => {
-          setShowEditModal(false);
-          setEditingBooking(null);
-        }}
-      />
-      <div
-        className="fixed z-50 bg-background rounded-lg shadow-2xl border overflow-hidden flex flex-col"
-        style={getModalStyle()}
-      >
+      <AppModal open={true} onClose={() => { setShowEditModal(false); setEditingBooking(null); }} maxWidth={520} mobileMaxWidth={360} maxHeight={720}>
         <div className="flex flex-col h-full max-h-[95vh]">
           <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background">
             <h3 className="text-xl font-semibold">Editar Reserva</h3>
@@ -2043,7 +2026,7 @@ const AdvancedCalendarView = () => {
             </div>
           </div>
         </div>
-      </div>
+      </AppModal>
     </>
   ) : null;
 

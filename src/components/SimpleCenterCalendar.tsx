@@ -635,7 +635,7 @@ const SimpleCenterCalendar = () => {
 
       {/* New Booking Modal */}
       <Dialog open={showNewBookingModal} onOpenChange={setShowNewBookingModal}>
-        <DialogContent className="max-w-md sm:max-w-lg mx-auto my-4 max-h-[85vh] overflow-hidden rounded-lg border flex flex-col bg-background">
+        <DialogContent className="max-w-[640px] mx-auto my-4 max-h-[85vh] overflow-hidden rounded-lg border flex flex-col bg-background">
           <DialogHeader className="flex-shrink-0 p-4 border-b bg-background sticky top-0 z-10">
             <DialogTitle className="text-xl font-semibold">Nueva Reserva</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
@@ -741,14 +741,14 @@ const SimpleCenterCalendar = () => {
 
       {/* Edit Booking Modal */}
       <Dialog open={showEditBookingModal} onOpenChange={setShowEditBookingModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-[640px] overflow-hidden flex flex-col">
+          <DialogHeader className="px-4 sm:px-6 pt-4 pb-3 border-b bg-background sticky top-0 z-10">
             <DialogTitle>Gestionar Reserva</DialogTitle>
             <DialogDescription>
               Gestión completa de la reserva seleccionada
             </DialogDescription>
           </DialogHeader>
-          
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
           {selectedBooking && (
             <div className="space-y-6">
               {/* Booking Info */}
@@ -904,12 +904,13 @@ const SimpleCenterCalendar = () => {
               </div>
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Payment Modal */}
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="w-[300px] sm:w-[350px] max-h-[400px] overflow-y-auto p-4 mx-auto my-8">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-4 mx-auto my-8">
           <DialogHeader>
             <DialogTitle>Cobrar Cita</DialogTitle>
             <DialogDescription>
@@ -960,7 +961,7 @@ const SimpleCenterCalendar = () => {
 
       {/* Reschedule Modal */}
       <Dialog open={showRescheduleModal} onOpenChange={setShowRescheduleModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-blue-500" />

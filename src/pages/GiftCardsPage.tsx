@@ -510,7 +510,7 @@ const GiftCardsPage = () => {
       }}>
         <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] p-0 overflow-hidden flex flex-col">
           {/* Header fijo */}
-          <DialogHeader className="flex-shrink-0 px-6 py-4 border-b bg-background">
+          <DialogHeader className="flex-shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b bg-background">
             <DialogTitle>{t('your_cart')}</DialogTitle>
             <DialogDescription className="sr-only">
               {t('your_cart')}
@@ -818,8 +818,8 @@ const GiftCardsPage = () => {
 
           {/* Modal de Stripe Checkout */}
           <Dialog open={showStripeModal} onOpenChange={setShowStripeModal}>
-            <DialogContent className="max-w-2xl top-[5vh] translate-y-0 max-h-[90vh] overflow-hidden flex flex-col">
-              <DialogHeader className="flex-shrink-0">
+            <DialogContent className="max-w-[520px] top-[5vh] translate-y-0 max-h-[90vh] overflow-hidden flex flex-col">
+              <DialogHeader className="flex-shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b bg-background">
                 <DialogTitle>{t('complete_payment')}</DialogTitle>
                 <DialogDescription>{t('secure_payment_info')}</DialogDescription>
               </DialogHeader>

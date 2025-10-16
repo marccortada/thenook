@@ -5,7 +5,12 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
+<<<<<<< HEAD
 import usePositionedModal from "@/hooks/use-positioned-modal";
+=======
+import { useIsMobile } from "@/hooks/use-mobile";
+import AppModal from "@/components/ui/app-modal";
+>>>>>>> 90c7a1f (Descripción de los cmio)
 
 interface DatePickerModalProps {
   open: boolean;
@@ -24,11 +29,34 @@ export const DatePickerModal = ({
   disabled,
   placeholder = "Seleccionar fecha"
 }: DatePickerModalProps) => {
+<<<<<<< HEAD
   const { isOpen, handleOpenModal, closeModal, modalStyle } = usePositionedModal({
     open,
     onOpenChange,
     anchorSelector: ".client-card",
   });
+=======
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = React.useState<boolean>(open);
+
+  React.useEffect(() => {
+    setIsOpen(open);
+  }, [open]);
+
+  React.useEffect(() => { setIsOpen(open); }, [open]);
+
+  const handleOpenModal = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsOpen(true);
+    onOpenChange(true);
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
+    onOpenChange(false);
+  };
+>>>>>>> 90c7a1f (Descripción de los cmio)
 
   return (
     <>
@@ -44,6 +72,7 @@ export const DatePickerModal = ({
         {selected ? format(selected, "PPP", { locale: es }) : placeholder}
       </Button>
 
+<<<<<<< HEAD
       {isOpen && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40" onClick={closeModal} />
@@ -51,6 +80,9 @@ export const DatePickerModal = ({
             className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
             style={modalStyle}
           >
+=======
+      <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
+>>>>>>> 90c7a1f (Descripción de los cmio)
             <div className="pb-4 border-b border-border/10 p-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -98,9 +130,7 @@ export const DatePickerModal = ({
                 />
               </div>
             </div>
-          </div>
-        </>
-      )}
+      </AppModal>
     </>
   );
 };

@@ -420,7 +420,7 @@ const BuyPackagesPage = () => {
           data-cart-dialog-content
           className="w-[95vw] max-w-[600px] max-h-[90vh] p-0 overflow-hidden flex flex-col"
         >
-          <DialogHeader className="flex-shrink-0 px-6 py-4 border-b bg-background">
+          <DialogHeader className="flex-shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b bg-background">
             <DialogTitle>{t('your_cart')}</DialogTitle>
             <DialogDescription className="sr-only">{t('your_cart')}</DialogDescription>
           </DialogHeader>

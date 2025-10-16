@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import AppModal from "@/components/ui/app-modal";
 import { Search, User, Phone, Mail } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 
@@ -29,71 +30,6 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const { clients, loading } = useClients();
   const modalRef = useRef<HTMLDivElement | null>(null);
-  const [modalStyle, setModalStyle] = useState<React.CSSProperties>({
-    width: "min(480px, calc(100vw - 32px))",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-  });
-
-  useLayoutEffect(() => {
-    if (!open) {
-      setModalStyle({
-        width: "min(480px, calc(100vw - 32px))",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-      });
-      return;
-    }
-
-    const padding = 16;
-
-    const calculatePosition = () => {
-      const modalEl = modalRef.current;
-      if (!modalEl) return;
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      const parentModal = document.querySelector('[data-new-booking-modal]') as HTMLElement | null;
-      const parentRect = parentModal?.getBoundingClientRect();
-
-      const baseWidth = modalEl.scrollWidth || modalEl.getBoundingClientRect().width || 360;
-      const maxWidth = viewportWidth - padding * 2;
-      const width = Math.min(parentRect ? parentRect.width : baseWidth, maxWidth);
-
-      const contentHeight = modalEl.scrollHeight || modalEl.getBoundingClientRect().height;
-      const maxHeight = Math.min(parentRect ? parentRect.height : viewportHeight, viewportHeight - padding * 2);
-      const height = Math.min(contentHeight, maxHeight - padding);
-
-      const centerX = parentRect ? parentRect.left + parentRect.width / 2 : viewportWidth / 2;
-      const centerY = parentRect ? parentRect.top + parentRect.height / 2 : viewportHeight / 2;
-
-      const halfWidth = width / 2;
-      const halfHeight = height / 2;
-
-      const clampedCenterX = Math.max(padding + halfWidth, Math.min(centerX, viewportWidth - padding - halfWidth));
-      const clampedCenterY = Math.max(padding + halfHeight, Math.min(centerY, viewportHeight - padding - halfHeight));
-
-      setModalStyle({
-        width: `${width}px`,
-        maxHeight: `${maxHeight - padding}px`,
-        transform: "translate(-50%, -50%)",
-        left: `${clampedCenterX}px`,
-        top: `${clampedCenterY}px`,
-      });
-    };
-
-    const frame = requestAnimationFrame(calculatePosition);
-    window.addEventListener('resize', calculatePosition);
-    window.addEventListener('scroll', calculatePosition, true);
-
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('resize', calculatePosition);
-      window.removeEventListener('scroll', calculatePosition, true);
-    };
-  }, [open, clients.length, searchQuery]);
 
   const filteredClients = clients.filter(client => {
     if (!searchQuery) return true;
@@ -122,12 +58,8 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
       </span>
       {open && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setOpen(false)} />
-          <div
-            ref={modalRef}
-            className="fixed z-[120] flex max-h-[calc(100vh-3rem)] sm:max-h-[85vh] p-4 sm:p-6 flex-col rounded-xl overflow-hidden border bg-background shadow-2xl transition-all duration-300"
-            style={modalStyle}
-          >
+          <AppModal open={open} onClose={() => setOpen(false)} maxWidth={480} mobileMaxWidth={360} maxHeight={680} className="z-[120]">
+            <div ref={modalRef} className="flex max-h-[calc(100vh-3rem)] sm:max-h-[85vh] p-4 sm:p-6 flex-col rounded-xl overflow-hidden">
             <div className="pb-4 flex-shrink-0">
               <div className="flex items-center gap-2 text-base sm:text-lg">
                 <User className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -209,7 +141,8 @@ const ClientSelectionModal: React.FC<ClientSelectionModalProps> = ({
                 Cancelar
               </Button>
             </div>
-          </div>
+            </div>
+          </AppModal>
         </>
       )}
     </>

@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
+<<<<<<< HEAD
 import usePositionedModal from "@/hooks/use-positioned-modal";
+=======
+import { useIsMobile } from "@/hooks/use-mobile";
+import AppModal from "@/components/ui/app-modal";
+>>>>>>> 90c7a1f (Descripción de los cmio)
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -245,6 +250,7 @@ const fetchPeriodStats = async () => {
 
   return (
     <>
+<<<<<<< HEAD
       {isOpen && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40" onClick={closeModal} />
@@ -252,6 +258,9 @@ const fetchPeriodStats = async () => {
             className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
             style={modalStyle}
           >
+=======
+      <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
+>>>>>>> 90c7a1f (Descripción de los cmio)
             <div className="p-6 border-b">
               <div className="flex items-center gap-2 text-xl">
                 <CalendarIcon className="h-6 w-6 text-primary" />
@@ -498,10 +507,14 @@ const fetchPeriodStats = async () => {
               Cerrar
             </Button>
           </div>
+<<<<<<< HEAD
         </div>
         </div>
         </>
       )}
+=======
+      </AppModal>
+>>>>>>> 90c7a1f (Descripción de los cmio)
     </>
   );
 };

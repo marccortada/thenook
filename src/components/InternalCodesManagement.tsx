@@ -466,7 +466,7 @@ const InternalCodesManagement = () => {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-[460px]">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Código</DialogTitle>
             <DialogDescription>

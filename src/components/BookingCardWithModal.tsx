@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import MobileCard from "@/components/MobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import AppModal from "@/components/ui/app-modal";
 import { useInternalCodes } from "@/hooks/useInternalCodes";
 import usePositionedModal from "@/hooks/use-positioned-modal";
 
@@ -62,6 +63,7 @@ interface BookingCardWithModalProps {
 }
 
 export default function BookingCardWithModal({ booking, onBookingUpdated }: BookingCardWithModalProps) {
+<<<<<<< HEAD
   const {
     isOpen,
     handleOpenModal: openPositionedModal,
@@ -70,6 +72,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   } = usePositionedModal({
     anchorSelector: ".booking-card",
   });
+=======
+  const [isOpen, setIsOpen] = useState(false);
+>>>>>>> 90c7a1f (Descripción de los cmio)
   const [bookingStatus, setBookingStatus] = useState(booking.status);
   const [paymentStatus, setPaymentStatus] = useState(booking.payment_status);
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -206,8 +211,15 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
            selectedBookingCodes.some(code => code.toLowerCase().includes('priority'));
   };
 
+<<<<<<< HEAD
   const handleOpenModal = (event: React.MouseEvent<HTMLElement>) => {
     openPositionedModal(event);
+=======
+  const handleOpenModal = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsOpen(true);
+>>>>>>> 90c7a1f (Descripción de los cmio)
   };
 
   const closeModal = () => {
@@ -423,6 +435,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
           </Button>
         </div>
 
+<<<<<<< HEAD
         {/* Manual Positioned Modal */}
         {isOpen && (
           <>
@@ -441,6 +454,10 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                 flexDirection: 'column',
               }}
             >
+=======
+        {/* Unified AppModal */}
+        <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
+>>>>>>> 90c7a1f (Descripción de los cmio)
               <div className={`${isMobile ? 'p-4' : 'p-6'} flex flex-col gap-4 h-full`}>                
                 {/* Header */}
                 <div className={`flex items-center justify-between ${isMobile ? '' : 'mb-2'}`}>
@@ -597,8 +614,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                 </div>
               </div>
             </div>
-          </>
-        )}
+        </AppModal>
       </div>
     </MobileCard>
   );

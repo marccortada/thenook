@@ -381,67 +381,69 @@ const ManageBooking = () => {
 
               {/* Edit Modal */}
               {editingBooking && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                  <Card className="w-full max-w-md">
-                    <CardHeader>
-                      <CardTitle>Modificar Reserva</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label>Nueva Fecha</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full justify-start text-left font-normal mt-1",
-                                !editForm.date && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {editForm.date ? format(editForm.date, "PPP", { locale: es }) : "Selecciona fecha"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={editForm.date}
-                              onSelect={(date) => setEditForm({ ...editForm, date })}
-                              disabled={(date) => date < new Date()}
-                              initialFocus
-                              className={cn("p-3 pointer-events-auto")}
-                            />
-                          </PopoverContent>
-                        </Popover>
+                <>
+                  <AppModal open={true} onClose={() => setEditingBooking(null)} maxWidth={448} mobileMaxWidth={350} maxHeight={600}>
+                    <div className="p-4 sm:p-6">
+                      <div className="mb-4 sm:mb-6">
+                        <h2 className="text-lg font-semibold">Modificar Reserva</h2>
                       </div>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Nueva Fecha</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal mt-1",
+                                  !editForm.date && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {editForm.date ? format(editForm.date, "PPP", { locale: es }) : "Selecciona fecha"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={editForm.date}
+                                onSelect={(date) => setEditForm({ ...editForm, date })}
+                                disabled={(date) => date < new Date()}
+                                initialFocus
+                                className={cn("p-3 pointer-events-auto")}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
 
-                      <div>
-                        <Label>Nueva Hora</Label>
-                        <Select value={editForm.time} onValueChange={(value) => setEditForm({ ...editForm, time: value })}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Selecciona hora" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {timeSlots.map((time) => (
-                              <SelectItem key={time} value={time}>
-                                {time}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                        <div>
+                          <Label>Nueva Hora</Label>
+                          <Select value={editForm.time} onValueChange={(value) => setEditForm({ ...editForm, time: value })}>
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder="Selecciona hora" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {timeSlots.map((time) => (
+                                <SelectItem key={time} value={time}>
+                                  {time}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                      <div className="flex space-x-2 pt-4">
-                        <Button variant="outline" onClick={() => setEditingBooking(null)} className="flex-1">
-                          Cancelar
-                        </Button>
-                        <Button onClick={saveEdit} className="flex-1">
-                          Guardar
-                        </Button>
+                        <div className="flex space-x-2 pt-4">
+                          <Button variant="outline" onClick={() => setEditingBooking(null)} className="flex-1">
+                            Cancelar
+                          </Button>
+                          <Button onClick={saveEdit} className="flex-1">
+                            Guardar
+                          </Button>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                    </div>
+                  </AppModal>
+                </>
               )}
             </CardContent>
           </Card>

@@ -435,9 +435,9 @@ const DailyAgendaView = () => {
 
         {/* Booking Details Dialog */}
         <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
-          <DialogContent className="w-[96vw] sm:max-w-md p-0">
+          <DialogContent className="sm:max-w-md p-0">
             <div className="flex flex-col max-h-[85vh]">
-              <DialogHeader className="px-4 pt-4 pb-2 border-b">
+              <DialogHeader className="px-4 sm:px-6 pt-4 pb-3 border-b bg-background">
                 <DialogTitle>Detalles de la Reserva</DialogTitle>
                 <DialogDescription>
                   Información completa de la reserva seleccionada

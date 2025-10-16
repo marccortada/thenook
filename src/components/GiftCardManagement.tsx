@@ -259,7 +259,7 @@ const GiftCardManagement = () => {
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent className="w-[95vw] max-w-md mx-auto">
+                              <AlertDialogContent className="max-w-md mx-auto">
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>¿Desactivar tarjeta regalo?</AlertDialogTitle>
                                   <AlertDialogDescription>
@@ -410,7 +410,7 @@ const GiftCardManagement = () => {
             isOpen={isEditDialogOpen}
             className="flex flex-col gap-6 p-6"
           >
-            <DialogHeader className="text-left">
+            <DialogHeader className="px-4 sm:px-6 pt-4 pb-3 border-b bg-background text-left">
               <DialogTitle>Editar Tarjeta Regalo</DialogTitle>
               <DialogDescription>Modifica los datos de la tarjeta regalo</DialogDescription>
             </DialogHeader>

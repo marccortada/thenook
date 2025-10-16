@@ -674,23 +674,7 @@ const TreatmentGroupsManagement: React.FC = () => {
       {/* Modal para editar grupo */}
       {isDialogOpen && isPositionCalculated && (
         <>
-          {/* Overlay */}
-          <div 
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={closeDialog}
-          />
-          
-          {/* Modal */}
-          <div 
-            className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
-            style={{
-              top: `${modalPosition.top}px`,
-              left: `${modalPosition.left}px`,
-              width: `${Math.min(500, window.innerWidth - 40)}px`,
-              maxHeight: `${Math.min(600, window.innerHeight - 80)}px`,
-              overflowY: 'auto'
-            }}
-          >
+          <AppModal open={true} onClose={closeDialog} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
             <div className={`p-4 sm:p-6`}>
               {/* Header */}
               <div className={`flex items-center justify-between mb-4 sm:mb-6`}>
@@ -836,32 +820,14 @@ const TreatmentGroupsManagement: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </AppModal>
         </>
       )}
 
       {/* Modal para agregar nuevo servicio */}
       {isServiceDialogOpen && (
         <>
-          {/* Overlay */}
-          <div 
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={closeServiceDialog}
-          />
-          
-          {/* Modal */}
-          <div 
-            ref={serviceModalRef as React.RefObject<HTMLDivElement>}
-            className="fixed z-50 bg-white rounded-lg shadow-2xl border transition-all duration-300"
-            style={{
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: `${Math.min(500, window.innerWidth - 40)}px`,
-              maxHeight: `${Math.min(600, window.innerHeight - 80)}px`,
-              overflowY: 'auto'
-            }}
-          >
+          <AppModal open={true} onClose={closeServiceDialog} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
@@ -1001,7 +967,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </AppModal>
         </>
       )}
 

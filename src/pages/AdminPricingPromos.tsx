@@ -1080,23 +1080,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
             {/* Modal/Form para editar servicio */}
             {editingService && (
               <>
-                {/* Overlay */}
-                <div 
-                  className="fixed inset-0 bg-black/50 z-40"
-                  onClick={() => setEditingService(null)}
-                />
-                
-                {/* Modal */}
-                <div 
-                  className="fixed z-50 bg-white rounded-lg shadow-2xl border"
-                  style={{
-                    top: `${modalPosition.top}px`,
-                    left: `${modalPosition.left}px`,
-                    width: `${isMobile ? Math.min(350, window.innerWidth - 20) : Math.min(1000, window.innerWidth - 40)}px`,
-                    maxHeight: `${isMobile ? window.innerHeight - 40 : Math.min(700, window.innerHeight - 80)}px`,
-                    overflowY: 'auto'
-                  }}
-                >
+                <AppModal open={true} onClose={() => setEditingService(null)} maxWidth={1000} mobileMaxWidth={350} maxHeight={700}>
                   <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
                     {/* Header */}
                     <div className={`flex items-center justify-between ${isMobile ? 'mb-4' : 'mb-6'}`}>
@@ -1271,7 +1255,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       </div>
                     </div>
                   </div>
-                </div>
+                </AppModal>
               </>
             )}
           </TabsContent>
