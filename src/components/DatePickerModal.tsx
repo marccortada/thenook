@@ -60,7 +60,7 @@ export const DatePickerModal = ({
         {selected ? format(selected, "PPP", { locale: es }) : placeholder}
       </Button>
 
-      <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
+      <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600} zIndex={120}>
             <div className="pb-4 border-b border-border/10 p-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">

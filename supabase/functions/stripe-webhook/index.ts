@@ -225,7 +225,7 @@ async function sendBookingConfirmationEmail(args: {
 `;
 
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-  const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
 
   const alreadyProcessed =
     booking.email_status === "sent" &&
@@ -447,7 +447,7 @@ async function processPackageVoucher(args: {
 
   const year = new Date().getFullYear();
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-  const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
 
   for (const voucher of createdVouchers) {
     const pkg = voucher.package;
@@ -727,7 +727,7 @@ async function processGiftCards(args: {
   console.log(`[stripe-webhook] 📧 Sending ${createdGiftCards.length} gift card emails...`);
   const year = new Date().getFullYear();
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-  const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
 
   for (const card of createdGiftCards) {
     const emailTo = card.sendToBuyer ? card.purchaserEmail : card.recipientEmail;

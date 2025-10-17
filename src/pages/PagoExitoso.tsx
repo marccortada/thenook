@@ -159,40 +159,17 @@ const PagoExitoso = () => {
                         </p>
                       </div>
 
-                      {isGiftCard && giftCards.length > 0 && (
-                        <div className="bg-white border border-primary/20 rounded-lg p-4 text-left space-y-3">
-                          <p className="text-sm font-medium text-primary">
-                            Resumen de tu tarjeta regalo
+                      {isGiftCard && (
+                        <div className="bg-white border border-primary/20 rounded-lg p-4 text-left space-y-2">
+                          <p className="text-sm font-medium text-primary">¿Dónde está tu tarjeta?</p>
+                          <p className="text-sm text-muted-foreground">
+                            Te hemos enviado un correo con tu tarjeta regalo. En ese correo encontrarás el resumen de la compra, el código de la tarjeta y las instrucciones para descargarla y usarla.
                           </p>
-                          {giftCards.map((card: any, index: number) => (
-                            <div
-                              key={card.id ?? index}
-                              className="rounded-md bg-primary/5 p-3 space-y-1"
-                            >
-                              <p className="text-sm font-semibold text-primary">
-                                {card.gift_card_name || "Tarjeta regalo"}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Código: <span className="font-mono font-semibold">{card.code}</span>
-                              </p>
-                              {typeof card.amount_cents === "number" && (
-                                <p className="text-sm text-muted-foreground">
-                                  Valor: <span className="font-semibold">{formatEuro(card.amount_cents)}</span>
-                                </p>
-                              )}
-                              {card.recipient_name && (
-                                <p className="text-sm text-muted-foreground">
-                                  Destinatario: <span className="font-semibold">{card.recipient_name}</span>
-                                  {card.recipient_email ? (
-                                    <span className="font-normal"> · {card.recipient_email}</span>
-                                  ) : null}
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                          <p className="text-xs text-muted-foreground">
-                            También hemos enviado la tarjeta personalizada por correo electrónico como adjunto para que la descargues.
-                          </p>
+                          {giftCards.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Nota: por seguridad ya no mostramos el código en esta pantalla.
+                            </p>
+                          )}
                         </div>
                       )}
                     </>

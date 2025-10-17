@@ -630,16 +630,7 @@ const ClientReservation = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
-      {/* Overlay para cerrar dropdowns al hacer clic fuera */}
-      {(showCalendar || showTimeDropdown) && (
-        <div 
-          className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm"
-          onClick={() => {
-            setShowCalendar(false);
-            setShowTimeDropdown(false);
-          }}
-        />
-      )}
+      {/* Eliminado overlay manual: AppModal gestiona overlay y cierre */}
       {/* Simple Header */}
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">

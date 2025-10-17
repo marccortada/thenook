@@ -139,7 +139,7 @@ if (!findError && paymentIntent) {
 
         try {
           await resend.emails.send({
-            from: 'The Nook Madrid <onboarding@resend.dev>',
+            from: (Deno.env.get('RESEND_FROM_EMAIL') as string) || 'The Nook Madrid <reservas@thenookmadrid.com>',
             to: [client.email],
             subject: '✅ Tarjeta confirmada - Reserva asegurada - The Nook Madrid',
             html: `

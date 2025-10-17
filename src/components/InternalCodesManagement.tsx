@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import AppModal from "@/components/ui/app-modal";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInternalCodes, InternalCode } from '@/hooks/useInternalCodes';
 import { Plus, Edit, Trash2, Hash, Tag, Calendar, User, Search, Filter } from 'lucide-react';
@@ -32,12 +33,6 @@ const InternalCodesManagement = () => {
   const [selectedCode, setSelectedCode] = useState<InternalCode | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const createTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const [createModalLayout, setCreateModalLayout] = useState({
-    top: 0,
-    left: 0,
-    width: 520,
-    maxHeight: 600,
-  });
 
   const [newCode, setNewCode] = useState({
     code: '',
@@ -160,20 +155,7 @@ const InternalCodesManagement = () => {
   };
 
   useEffect(() => {
-    if (!isCreateDialogOpen) return;
-
-    const trigger = createTriggerRef.current;
-    updateCreateModalLayout(trigger || undefined);
-
-    const handleReposition = () => updateCreateModalLayout(trigger || undefined);
-
-    window.addEventListener('resize', handleReposition);
-    window.addEventListener('scroll', handleReposition, true);
-
-    return () => {
-      window.removeEventListener('resize', handleReposition);
-      window.removeEventListener('scroll', handleReposition, true);
-    };
+    // No longer need custom positioning; AppModal handles responsiveness
   }, [isCreateDialogOpen]);
 
   return (
@@ -185,118 +167,87 @@ const InternalCodesManagement = () => {
           <p className="text-muted-foreground">Gestiona códigos y etiquetas para organizar información</p>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              ref={createTriggerRef}
-              className="flex items-center space-x-2"
-              onClick={(event) => updateCreateModalLayout(event.currentTarget)}
-            >
-              <Plus className="h-4 w-4" />
-              <span>Nuevo Código</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent
-            className="max-w-none w-full overflow-hidden rounded-xl border bg-background shadow-2xl left-auto top-auto -translate-x-0 -translate-y-0 p-6"
-            onOpenAutoFocus={(event) => event.preventDefault()}
-            style={{
-              position: 'fixed',
-              top: createModalLayout.top,
-              left: createModalLayout.left,
-              width: createModalLayout.width,
-              maxHeight: createModalLayout.maxHeight,
-              display: 'flex',
-              flexDirection: 'column',
-              transform: 'none',
-            }}
-          >
-            <DialogHeader>
-              <DialogTitle>Crear Nuevo Código</DialogTitle>
-              <DialogDescription>
-                Crea un nuevo código interno para organizar y categorizar información.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex-1 space-y-4 overflow-y-auto pr-2">
-              <div>
-                <Label htmlFor="code">Código *</Label>
-                <Input
-                  id="code"
-                  value={newCode.code}
-                  onChange={(e) => setNewCode({ ...newCode, code: e.target.value.toUpperCase() })}
-                  placeholder="VIP, PRIORITY, etc."
-                  className="uppercase"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="name">Nombre *</Label>
-                <Input
-                  id="name"
-                  value={newCode.name}
-                  onChange={(e) => setNewCode({ ...newCode, name: e.target.value })}
-                  placeholder="Nombre descriptivo"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Descripción</Label>
-                <Textarea
-                  id="description"
-                  value={newCode.description}
-                  onChange={(e) => setNewCode({ ...newCode, description: e.target.value })}
-                  placeholder="Descripción opcional del código"
-                  rows={3}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="category">Categoría</Label>
-                <Select value={newCode.category} onValueChange={(value) => setNewCode({ ...newCode, category: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="color">Color</Label>
-                <Select value={newCode.color} onValueChange={(value) => setNewCode({ ...newCode, color: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un color" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {colorOptions.map((color) => (
-                      <SelectItem key={color.value} value={color.value}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded border"
-                            style={{ backgroundColor: color.value }}
-                          />
-                          {color.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button 
-                onClick={handleCreateCode} 
-                disabled={!newCode.code || !newCode.name || loading}
-                className="w-full"
-              >
-                {loading ? 'Creando...' : 'Crear Código'}
-              </Button>
+        <Button
+          ref={createTriggerRef}
+          className="flex items-center space-x-2"
+          onClick={() => setIsCreateDialogOpen(true)}
+        >
+          <Plus className="h-4 w-4" />
+          <span>Nuevo Código</span>
+        </Button>
+        <AppModal open={isCreateDialogOpen} onClose={() => setIsCreateDialogOpen(false)} maxWidth={520} mobileMaxWidth={360} maxHeight={680}>
+          <div className="flex flex-col h-full max-h-[95vh]">
+            <div className="px-6 pt-6 pb-4 border-b">
+              <h3 className="text-xl font-semibold">Crear Nuevo Código</h3>
+              <p className="text-sm text-muted-foreground">Crea un nuevo código interno para organizar y categorizar información.</p>
             </div>
-          </DialogContent>
-        </Dialog>
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              <Accordion type="single" collapsible defaultValue="basic" className="w-full">
+                <AccordionItem value="basic">
+                  <AccordionTrigger className="text-left">Datos del Código</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-2">
+                    <div>
+                      <Label htmlFor="code">Código *</Label>
+                      <Input id="code" value={newCode.code} onChange={(e) => setNewCode({ ...newCode, code: e.target.value.toUpperCase() })} placeholder="VIP, PRIORITY, etc." className="uppercase" />
+                    </div>
+                    <div>
+                      <Label htmlFor="name">Nombre *</Label>
+                      <Input id="name" value={newCode.name} onChange={(e) => setNewCode({ ...newCode, name: e.target.value })} placeholder="Nombre descriptivo" />
+                    </div>
+                    <div>
+                      <Label htmlFor="description">Descripción</Label>
+                      <Textarea id="description" value={newCode.description} onChange={(e) => setNewCode({ ...newCode, description: e.target.value })} placeholder="Descripción opcional del código" rows={3} />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="options">
+                  <AccordionTrigger className="text-left">Opciones</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-2">
+                    <div>
+                      <Label htmlFor="category">Categoría</Label>
+                      <Select value={newCode.category} onValueChange={(value) => setNewCode({ ...newCode, category: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                        <SelectContent className="z-[130] bg-popover border shadow-md" position="popper" side="bottom" align="start" sideOffset={8} avoidCollisions collisionPadding={16}>
+                          {categories.map((category) => (
+                            <SelectItem key={category.value} value={category.value}>
+                              {category.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="color">Color</Label>
+                      <Select value={newCode.color} onValueChange={(value) => setNewCode({ ...newCode, color: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un color" />
+                        </SelectTrigger>
+                        <SelectContent className="z-[130] bg-popover border shadow-md" position="popper" side="bottom" align="start" sideOffset={8} avoidCollisions collisionPadding={16}>
+                          {colorOptions.map((color) => (
+                            <SelectItem key={color.value} value={color.value}>
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 rounded border" style={{ backgroundColor: color.value }} />
+                                {color.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+            <div className="px-6 py-4 border-t bg-background flex-shrink-0">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="flex-1">Cancelar</Button>
+                <Button onClick={handleCreateCode} disabled={!newCode.code || !newCode.name || loading} className="flex-1">{loading ? 'Creando...' : 'Crear Código'}</Button>
+              </div>
+            </div>
+          </div>
+        </AppModal>
       </div>
 
       {/* Filters */}
@@ -465,113 +416,80 @@ const InternalCodesManagement = () => {
       )}
 
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Editar Código</DialogTitle>
-            <DialogDescription>
-              Modifica los detalles del código seleccionado. El código no se puede cambiar.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedCode && (
-            <div className="space-y-4">
-              <div>
-                <Label>Código</Label>
-                <Input
-                  value={selectedCode.code}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  El código no se puede modificar después de crearlo
-                </p>
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-name">Nombre *</Label>
-                <Input
-                  id="edit-name"
-                  value={selectedCode.name}
-                  onChange={(e) => setSelectedCode({ ...selectedCode, name: e.target.value })}
-                  placeholder="Nombre descriptivo"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-description">Descripción</Label>
-                <Textarea
-                  id="edit-description"
-                  value={selectedCode.description}
-                  onChange={(e) => setSelectedCode({ ...selectedCode, description: e.target.value })}
-                  placeholder="Descripción opcional del código"
-                  rows={3}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-category">Categoría</Label>
-                <Select 
-                  value={selectedCode.category} 
-                  onValueChange={(value) => setSelectedCode({ ...selectedCode, category: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-color">Color</Label>
-                <Select 
-                  value={selectedCode.color} 
-                  onValueChange={(value) => setSelectedCode({ ...selectedCode, color: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un color" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {colorOptions.map((color) => (
-                      <SelectItem key={color.value} value={color.value}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded border"
-                            style={{ backgroundColor: color.value }}
-                          />
-                          {color.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleUpdateCode} 
-                  disabled={!selectedCode.name || loading}
-                  className="flex-1"
-                >
-                  {loading ? 'Actualizando...' : 'Actualizar'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsEditDialogOpen(false)}
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
+      <AppModal open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)} maxWidth={520} mobileMaxWidth={360} maxHeight={680}>
+        {selectedCode && (
+          <div className="flex flex-col h-full max-h-[95vh]">
+            <div className="px-6 pt-6 pb-4 border-b">
+              <h3 className="text-xl font-semibold">Editar Código</h3>
+              <p className="text-sm text-muted-foreground">Modifica los detalles del código seleccionado. El código no se puede cambiar.</p>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              <Accordion type="single" collapsible defaultValue="basic" className="w-full">
+                <AccordionItem value="basic">
+                  <AccordionTrigger className="text-left">Datos del Código</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-2">
+                    <div>
+                      <Label>Código</Label>
+                      <Input value={selectedCode.code} disabled className="bg-muted" />
+                      <p className="text-xs text-muted-foreground mt-1">El código no se puede modificar después de crearlo</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-name">Nombre *</Label>
+                      <Input id="edit-name" value={selectedCode.name} onChange={(e) => setSelectedCode({ ...selectedCode, name: e.target.value })} placeholder="Nombre descriptivo" />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-description">Descripción</Label>
+                      <Textarea id="edit-description" value={selectedCode.description} onChange={(e) => setSelectedCode({ ...selectedCode, description: e.target.value })} placeholder="Descripción opcional del código" rows={3} />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="options">
+                  <AccordionTrigger className="text-left">Opciones</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-2">
+                    <div>
+                      <Label htmlFor="edit-category">Categoría</Label>
+                      <Select value={selectedCode.category} onValueChange={(value) => setSelectedCode({ ...selectedCode, category: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                        <SelectContent className="z-[130] bg-popover border shadow-md" position="popper" side="bottom" align="start" sideOffset={8} avoidCollisions collisionPadding={16}>
+                          {categories.map((category) => (
+                            <SelectItem key={category.value} value={category.value}>
+                              {category.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-color">Color</Label>
+                      <Select value={selectedCode.color} onValueChange={(value) => setSelectedCode({ ...selectedCode, color: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un color" />
+                        </SelectTrigger>
+                        <SelectContent className="z-[130] bg-popover border shadow-md" position="popper" side="bottom" align="start" sideOffset={8} avoidCollisions collisionPadding={16}>
+                          {colorOptions.map((color) => (
+                            <SelectItem key={color.value} value={color.value}>
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 rounded border" style={{ backgroundColor: color.value }} />
+                                {color.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+              <div className="flex gap-2 pb-2">
+                <Button onClick={handleUpdateCode} disabled={!selectedCode.name || loading} className="flex-1">{loading ? 'Actualizando...' : 'Actualizar'}</Button>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="flex-1">Cancelar</Button>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        )}
+      </AppModal>
     </div>
   );
 };
