@@ -913,6 +913,23 @@ serve(async (req) => {
             console.warn("[stripe-webhook] booking_id not found in payload");
           }
         }
+      } else if (intent === "booking_setup") {
+        // Flow: setup mode to only save payment method (no immediate charge)
+        // booking_id can come in metadata or inside the SetupIntent
+        let bookingIdFromMeta = session.metadata?.booking_id as string | undefined;
+        try {
+          if (!bookingIdFromMeta && session.setup_intent && typeof session.setup_intent !== 'string') {
+            const si = session.setup_intent as Stripe.SetupIntent;
+            bookingIdFromMeta = (si.metadata as any)?.booking_id as string | undefined;
+          }
+        } catch (_) {
+          // ignore
+        }
+        if (bookingIdFromMeta) {
+          await sendBookingConfirmationEmail({ bookingId: bookingIdFromMeta, session });
+        } else {
+          console.warn("[stripe-webhook] booking_setup without booking_id in metadata");
+        }
       } else if (intent === "package_voucher") {
         const payloadRaw = session.metadata?.pv_payload;
         if (!payloadRaw) {
