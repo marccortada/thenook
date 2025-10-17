@@ -131,7 +131,8 @@ const handlePaymentSetup = async () => {
     });
     if (error) throw error;
     if (data?.url) {
-      window.open(data.url, '_blank');
+      // Navegar en la misma pestaña para evitar bloqueadores de pop‑ups
+      window.location.href = data.url as string;
     } else {
       throw new Error('No se pudo iniciar Stripe Checkout');
     }
