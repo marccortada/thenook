@@ -141,6 +141,8 @@ const ReservationSystem = () => {
       isAdmin, 
       isEmployee, 
       clientName: formData.clientName, 
+      clientEmail: formData.clientEmail,
+      clientPhone: formData.clientPhone,
       service: formData.service, 
       center: formData.center, 
       date: formData.date, 
@@ -148,11 +150,25 @@ const ReservationSystem = () => {
     });
     
     const isStaff = isAdmin || isEmployee;
-    if ((!isAuthenticated && !formData.clientName) || (isStaff && !formData.clientName) || !formData.service || !formData.center || !formData.date || !formData.time) {
-      console.log('❌ Validación fallida');
+    const needsClientDetails = !isAuthenticated || isStaff;
+    const missingFields: string[] = [];
+
+    if (needsClientDetails) {
+      if (!formData.clientName?.trim()) missingFields.push('Nombre del cliente');
+      if (!formData.clientEmail?.trim()) missingFields.push('Email del cliente');
+      if (!formData.clientPhone?.trim()) missingFields.push('Teléfono del cliente');
+    }
+
+    if (!formData.center) missingFields.push('Centro');
+    if (!formData.service) missingFields.push('Servicio');
+    if (!formData.date) missingFields.push('Fecha');
+    if (!formData.time?.trim()) missingFields.push('Hora');
+
+    if (missingFields.length > 0) {
+      console.log('❌ Validación fallida. Campos faltantes:', missingFields);
       toast({
-        title: "Error",
-        description: "Por favor completa todos los campos obligatorios",
+        title: "Completa los campos obligatorios",
+        description: `Revisa: ${missingFields.join(', ')}`,
         variant: "destructive",
       });
       return;

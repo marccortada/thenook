@@ -528,7 +528,7 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
         const bp = JSON.parse(bpRaw) as { booking_id: string };
         const { error } = await supabaseAdmin
           .from("bookings")
-          .update({ payment_status: "completed", stripe_session_id: session.id })
+          .update({ payment_status: "completed" })
           .eq("id", bp.booking_id);
         if (error) throw error;
         results.booking_updated = true;
