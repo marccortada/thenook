@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { DateTime } from "https://esm.sh/luxon@3.4.4?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -99,25 +100,18 @@ async function sendBookingConfirmationEmail(args: {
     (session as any).display_items?.[0]?.custom?.name ||
     "Tratamiento";
 
-  const bookingDate = booking.booking_datetime
-    ? new Date(booking.booking_datetime)
+  const bookingDateTime = booking.booking_datetime
+    ? DateTime.fromISO(booking.booking_datetime, { zone: "utc" }).setZone("Europe/Madrid")
     : null;
 
   const rawLanguage = (session.metadata?.language || session.locale || "").toLowerCase();
   const language = rawLanguage.startsWith("en") ? "en" : "es";
   const isSpanish = language === "es";
   const langAttr = isSpanish ? "es" : "en";
-  const dateLocale = isSpanish ? "es-ES" : "en-GB";
-
-  const formattedDate = bookingDate
-    ? bookingDate.toLocaleString(dateLocale, {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+  const formattedDate = bookingDateTime
+    ? bookingDateTime
+        .setLocale(isSpanish ? "es" : "en")
+        .toFormat(isSpanish ? "EEEE d 'de' MMMM yyyy 'a las' HH:mm" : "EEEE, MMMM d, yyyy 'at' HH:mm")
     : isSpanish
       ? "Fecha por confirmar"
       : "Date to be confirmed";
