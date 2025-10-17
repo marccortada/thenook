@@ -169,8 +169,11 @@ serve(async (req) => {
           });
         }
 
-        // Create secure payment URL
-        const paymentUrl = `${req.headers.get("origin")}/asegurar-reserva?setup_intent=${setupIntent.id}&client_secret=${setupIntent.client_secret}`;
+        // Create secure payment URL (fallback when Origin header is missing e.g. cron)
+        const originHeader = req.headers.get("origin");
+        const publicSite = Deno.env.get("PUBLIC_SITE_URL") || "https://www.thenookmadrid.com";
+        const baseUrl = originHeader && /^https?:\/\//.test(originHeader) ? originHeader : publicSite;
+        const paymentUrl = `${baseUrl}/asegurar-reserva?setup_intent=${setupIntent.id}&client_secret=${setupIntent.client_secret}`;
         
         const employeeName = booking.employees?.profiles ? 
           `${booking.employees.profiles.first_name || ''} ${booking.employees.profiles.last_name || ''}`.trim() :
