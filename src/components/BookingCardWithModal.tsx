@@ -419,7 +419,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         </div>
 
         {/* Unified AppModal */}
-        <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
+        <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600} zIndex={120} overlayZIndex={110}>
               <div className={`${isMobile ? 'p-4' : 'p-6'} flex flex-col gap-4 h-full`}>                
                 {/* Header */}
                 <div className={`flex items-center justify-between ${isMobile ? '' : 'mb-2'}`}>

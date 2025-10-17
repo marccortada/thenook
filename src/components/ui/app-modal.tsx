@@ -53,6 +53,11 @@ export const AppModal: React.FC<AppModalProps> = ({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
+    // Prevent background scroll and fix containing block issues
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.classList.add("app-modal-open");
+    document.body.classList.add("app-modal-open");
     window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("keydown", onKey);
@@ -60,6 +65,9 @@ export const AppModal: React.FC<AppModalProps> = ({
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      document.documentElement.classList.remove("app-modal-open");
+      document.body.classList.remove("app-modal-open");
     };
   }, [open, recalc, onClose]);
 
@@ -80,8 +88,8 @@ export const AppModal: React.FC<AppModalProps> = ({
           top: centered ? "50%" : `${position.top}px`,
           left: centered ? "50%" : `${position.left}px`,
           transform: centered ? "translate(-50%, -50%)" : undefined,
-          width: `${position.width}px`,
-          maxHeight: `${position.height}px`,
+          width: position.width ? `${position.width}px` : "min(90vw, 520px)",
+          maxHeight: position.height ? `${position.height}px` : "min(85vh, 720px)",
           overflowY: "auto",
           zIndex,
         }}

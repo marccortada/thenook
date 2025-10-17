@@ -415,3 +415,10 @@ All colors MUST be HSL.
     }
   }
 }
+  /* When a modal is open, ensure fixed elements (modals) are relative to the viewport */
+  .app-modal-open {
+    -webkit-transform: none !important;
+    transform: none !important;
+    -webkit-backface-visibility: visible !important;
+    backface-visibility: visible !important;
+  }

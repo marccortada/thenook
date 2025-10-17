@@ -255,18 +255,19 @@ const PackageManagement = () => {
                 <div className="space-y-4">
                   {packages.map((pkg) => (
                     <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                           <div className="text-sm font-medium">Código: <span className="font-mono">{pkg.voucher_code}</span></div>
                           <Badge className={getStatusColor(pkg.status)}>
                             {getStatusLabel(pkg.status)}
                           </Badge>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                           {pkg.status === 'active' && (
                             <Button 
                               size="sm" 
                               variant="outline"
+                              className="whitespace-nowrap"
                               onClick={() => handleUseSession(pkg.id)}
                             >
                               Usar Sesión
@@ -275,6 +276,7 @@ const PackageManagement = () => {
                           <Button 
                             size="sm" 
                             variant="outline"
+                            className="whitespace-nowrap"
                             onClick={() => startEditingNotes(pkg.id, pkg.notes || '')}
                           >
                             <Edit3 className="h-4 w-4" />
@@ -282,7 +284,7 @@ const PackageManagement = () => {
                           {pkg.status === 'active' && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="destructive">
+                                <Button size="sm" variant="destructive" className="whitespace-nowrap">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -385,21 +387,24 @@ const PackageManagement = () => {
               <div className="space-y-4">
                 {packages.filter(p => p.status === 'active').map((pkg) => (
                   <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                         <div className="text-sm font-medium">Código: <span className="font-mono">{pkg.voucher_code}</span></div>
                         <Badge className={getStatusColor(pkg.status)}>
                           {getStatusLabel(pkg.status)}
                         </Badge>
                       </div>
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleUseSession(pkg.id)}
-                      >
-                        Usar Sesión
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          size="sm" 
+                          className="whitespace-nowrap"
+                          onClick={() => handleUseSession(pkg.id)}
+                        >
+                          Usar Sesión
+                        </Button>
+                      </div>
                     </div>
-                    <div className="mt-2 flex items-center justify-between">
+                    <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div className="text-sm">
                         {pkg.profiles?.first_name} {pkg.profiles?.last_name}
                       </div>

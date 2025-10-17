@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import AppModal from "@/components/ui/app-modal";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Palette, Edit, Save, X, Plus, Sparkles } from 'lucide-react';
 import { useServices, useLanes, useCenters } from '@/hooks/useDatabase';
@@ -82,10 +83,10 @@ const TreatmentGroupsManagement: React.FC = () => {
 
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isPositionCalculated, setIsPositionCalculated] = useState(false);
+  const [isPositionCalculated, setIsPositionCalculated] = useState(false); // legacy, not used for AppModal
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [selectedGroupForService, setSelectedGroupForService] = useState<string | null>(null);
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 }); // legacy, not used for AppModal
 
   const baseSelectClass =
     "flex h-12 w-full rounded-2xl border border-border/60 bg-gradient-to-b from-slate-100 via-slate-50 to-white px-4 text-sm font-semibold text-foreground shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60";
@@ -385,44 +386,10 @@ const TreatmentGroupsManagement: React.FC = () => {
     setIsServiceDialogOpen(true);
   };
 
-  const handleNewGroup = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    // Usar el botón como referencia para el posicionamiento
-    const buttonElement = event.currentTarget as HTMLElement;
-    const buttonRect = buttonElement.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const windowWidth = window.innerWidth;
-    
-    // Dimensiones del modal
-    const modalWidth = Math.min(600, windowWidth - 40);
-    const modalHeight = Math.min(500, windowHeight - 80);
-    
-    // Calcular posición
-    let top = buttonRect.top + scrollTop - 50;
-    let left = (windowWidth - modalWidth) / 2;
-    
-    // Ajustar verticalmente para que esté siempre visible
-    const viewportTop = scrollTop + 20;
-    const viewportBottom = scrollTop + windowHeight - 20;
-    
-    if (top < viewportTop) {
-      top = viewportTop;
-    } else if (top + modalHeight > viewportBottom) {
-      top = viewportBottom - modalHeight;
-    }
-    
-    // Asegurar que no se salga horizontalmente
-    if (left < 20) left = 20;
-    if (left + modalWidth > windowWidth - 20) left = windowWidth - modalWidth - 20;
-    
-    
-    // Establecer la posición calculada
-    setModalPosition({ top, left });
-    setIsPositionCalculated(true);
-    
+  const handleNewGroup = (event?: React.MouseEvent) => {
+    // Evitar navegación accidental si el botón estuviera dentro de un <a> o <form>
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
     setEditingGroup(null);
     setFormData({
       name: '',
@@ -432,8 +399,8 @@ const TreatmentGroupsManagement: React.FC = () => {
       center_id: '',
       active: true,
     });
-    
-    // Abrir el modal solo después de calcular la posición
+    // AppModal se centra solo; no necesitamos cálculos
+    setIsPositionCalculated(true);
     setIsDialogOpen(true);
   };
 
@@ -537,6 +504,7 @@ const TreatmentGroupsManagement: React.FC = () => {
           </p>
         </div>
         <Button 
+          type="button"
           onClick={handleNewGroup}
           className="flex items-center gap-2"
         >
@@ -672,7 +640,7 @@ const TreatmentGroupsManagement: React.FC = () => {
       </Accordion>
 
       {/* Modal para editar grupo */}
-      {isDialogOpen && isPositionCalculated && (
+      {isDialogOpen && (
         <>
           <AppModal open={true} onClose={closeDialog} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
             <div className={`p-4 sm:p-6`}>
