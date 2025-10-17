@@ -254,20 +254,20 @@ const PackageManagement = () => {
               ) : (
                 <div className="space-y-4">
                   {packages.map((pkg) => (
-                    <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                    <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors overflow-hidden">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
                           <div className="text-sm font-medium">Código: <span className="font-mono">{pkg.voucher_code}</span></div>
                           <Badge className={getStatusColor(pkg.status)}>
                             {getStatusLabel(pkg.status)}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
                           {pkg.status === 'active' && (
                             <Button 
                               size="sm" 
                               variant="outline"
-                              className="whitespace-nowrap"
+                              className="whitespace-nowrap w-full sm:w-auto"
                               onClick={() => handleUseSession(pkg.id)}
                             >
                               Usar Sesión
@@ -386,18 +386,18 @@ const PackageManagement = () => {
             <CardContent>
               <div className="space-y-4">
                 {packages.filter(p => p.status === 'active').map((pkg) => (
-                  <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                  <div key={pkg.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
                         <div className="text-sm font-medium">Código: <span className="font-mono">{pkg.voucher_code}</span></div>
                         <Badge className={getStatusColor(pkg.status)}>
                           {getStatusLabel(pkg.status)}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Button 
                           size="sm" 
-                          className="whitespace-nowrap"
+                          className="whitespace-nowrap w-full sm:w-auto"
                           onClick={() => handleUseSession(pkg.id)}
                         >
                           Usar Sesión
