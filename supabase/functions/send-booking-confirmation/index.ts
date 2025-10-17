@@ -20,6 +20,7 @@ serve(async (req) => {
     );
 
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'The Nook Madrid <reservas@thenookmadrid.com>';
 
     console.log('📧 Processing booking confirmation emails...');
     const nowIso = new Date().toISOString();
@@ -118,7 +119,7 @@ serve(async (req) => {
 
         // Send email using Resend
         const emailResponse = await resend.emails.send({
-          from: 'The Nook Madrid <reservas@thenookmadrid.com>',
+          from: fromEmail,
           to: [client.email],
           subject: notification.subject || (notification.type === 'booking_reminder' ? 'Recordatorio de tu cita' : 'Confirmación de reserva - THE NOOK'),
           html: `
