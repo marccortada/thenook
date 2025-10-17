@@ -14,7 +14,7 @@ export default function PaymentSetupSuccess() {
   const [centerData, setCenterData] = useState({
     name: 'The Nook Madrid',
     phone: '911 481 474',
-    email: 'reservas@thenookmadrid.com',
+    email: 'reservas@gnerai.com',
     address: 'Calle Zurbarán 10 bajo derecha, Madrid 28010'
   });
 
@@ -46,7 +46,7 @@ export default function PaymentSetupSuccess() {
         setCenterData({
           name: data.name || 'The Nook Madrid',
           phone: data.phone || '911 481 474',
-          email: data.email || 'reservas@thenookmadrid.com',
+          email: data.email || 'reservas@gnerai.com',
           address: data.address || 'Calle Zurbarán 10 bajo derecha, Madrid 28010'
         });
       }

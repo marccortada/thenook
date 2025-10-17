@@ -20,7 +20,7 @@ serve(async (req) => {
     );
 
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
-    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'The Nook Madrid <reservas@thenookmadrid.com>';
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'The Nook Madrid <reservas@gnerai.com>';
 
     console.log('📧 Processing booking confirmation emails...');
     const nowIso = new Date().toISOString();
@@ -218,7 +218,7 @@ serve(async (req) => {
           <p style="margin:8px 0 2px 0;"><strong>Contacto</strong></p>
           <p class="small" style="margin:2px 0;">
             Tel: <a href="tel:+34911481474">911 481 474</a> / <a href="tel:+34622360922">622 360 922</a><br>
-            Email: <a href="mailto:reservas@thenookmadrid.com">reservas@thenookmadrid.com</a>
+            Email: <a href="mailto:reservas@gnerai.com">reservas@gnerai.com</a>
           </p>
         </div>
       </div>

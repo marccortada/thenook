@@ -163,7 +163,7 @@ async function sendBookingConfirmationEmail(args: {
     <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
     <p><strong>${centerHeading}</strong><br>
     911 481 474 / 622 360 922<br>
-    <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a></p>
+    <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a></p>
   `;
 
   const englishBody = `
@@ -184,7 +184,7 @@ async function sendBookingConfirmationEmail(args: {
     <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
     <p><strong>${centerHeading}</strong><br>
     911 481 474 / 622 360 922<br>
-    <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a></p>
+    <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a></p>
   `;
 
   const contentBody = isSpanish ? spanishBody : englishBody;
@@ -224,8 +224,8 @@ async function sendBookingConfirmationEmail(args: {
 </html>
 `;
 
-  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@gnerai.com>";
 
   const alreadyProcessed =
     booking.email_status === "sent" &&
@@ -446,8 +446,8 @@ async function processPackageVoucher(args: {
   }
 
   const year = new Date().getFullYear();
-  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@gnerai.com>";
 
   for (const voucher of createdVouchers) {
     const pkg = voucher.package;
@@ -520,7 +520,7 @@ async function processPackageVoucher(args: {
             <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
             <p><strong>THE NOOK ${location}</strong><br>
               911 481 474 / 622 360 922<br>
-              <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a>
+              <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a>
             </p>
 
           </td>
@@ -726,8 +726,8 @@ async function processGiftCards(args: {
   // Enviar emails
   console.log(`[stripe-webhook] 📧 Sending ${createdGiftCards.length} gift card emails...`);
   const year = new Date().getFullYear();
-  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@gnerai.com>";
 
   for (const card of createdGiftCards) {
     const emailTo = card.sendToBuyer ? card.purchaserEmail : card.recipientEmail;
@@ -783,7 +783,7 @@ async function processGiftCards(args: {
               ${priceInfo}
             </div>
             <p>Para usar tu tarjeta regalo, simplemente menciona este código al reservar o pagar en The Nook Madrid.</p>
-            <p style="font-size:12px;color:#6b7280;margin-top:20px;">Reservas: 911 481 474 / 622 360 922<br>Email: <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a></p>
+            <p style="font-size:12px;color:#6b7280;margin-top:20px;">Reservas: 911 481 474 / 622 360 922<br>Email: <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a></p>
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
             <p style="font-size:11px;color:#9ca3af;">
               © ${year} THE NOOK Madrid<br>

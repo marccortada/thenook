@@ -136,8 +136,8 @@ serve(async (req) => {
       : packageInfo?.centers?.address_concha_espina ||
         "C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante 'La Ancha' (Metro Concha Espina salida Plaza de Cataluña)";
 
-    const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-    const fromEmail = "The Nook Madrid <reservas@thenookmadrid.com>";
+    const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
+    const fromEmail = "The Nook Madrid <reservas@gnerai.com>";
     const year = new Date().getFullYear();
 
     const emailHtml = `
@@ -179,7 +179,7 @@ serve(async (req) => {
             <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
             <p><strong>THE NOOK ${location}</strong><br>
               911 481 474 / 622 360 922<br>
-              <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a>
+              <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a>
             </p>
           </td>
         </tr>

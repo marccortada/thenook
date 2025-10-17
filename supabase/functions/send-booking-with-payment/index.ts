@@ -195,7 +195,7 @@ serve(async (req) => {
 
         // Send email with payment link
         const emailResponse = await resend.emails.send({
-          from: 'The Nook Madrid <reservas@thenookmadrid.com>',
+          from: 'The Nook Madrid <reservas@gnerai.com>',
           to: [client.email],
           subject: 'Confirmación de reserva - THE NOOK',
           html: `
@@ -310,7 +310,7 @@ serve(async (req) => {
           <p style="margin:8px 0 2px 0;"><strong>Contacto</strong></p>
           <p class="small" style="margin:2px 0;">
             Tel: <a href="tel:+34911481474">911 481 474</a> / <a href="tel:+34622360922">622 360 922</a><br>
-            Email: <a href="mailto:reservas@thenookmadrid.com">reservas@thenookmadrid.com</a>
+            Email: <a href="mailto:reservas@gnerai.com">reservas@gnerai.com</a>
           </p>
         </div>
       </div>

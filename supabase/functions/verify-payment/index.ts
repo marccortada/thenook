@@ -21,10 +21,10 @@ serve(async (req) => {
   );
 
   const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
-  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
   const fromEmail =
     Deno.env.get("RESEND_FROM_EMAIL") ||
-    "The Nook Madrid <reservas@thenookmadrid.com>";
+    "The Nook Madrid <reservas@gnerai.com>";
 
   // Try to get base64 of template from Supabase Storage bucket 'gift-cards/template.png'
 let giftCardTemplateCache: string | null | undefined;

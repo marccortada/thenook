@@ -27,7 +27,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending email to:", to, "with subject:", subject);
 
     const emailResponse = await resend.emails.send({
-      from: "The Nook Madrid <reservas@thenookmadrid.com>",
+      from: "The Nook Madrid <reservas@gnerai.com>",
       to: [to],
       subject: subject,
       html: `
@@ -40,7 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #f0f0f0; color: #888; font-size: 14px;">
             <p>Este mensaje ha sido enviado desde The Nook Madrid</p>
-            <p>Email: reservas@thenookmadrid.com</p>
+            <p>Email: reservas@gnerai.com</p>
           </div>
         </div>
       `,

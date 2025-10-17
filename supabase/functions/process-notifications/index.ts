@@ -229,7 +229,7 @@ async function sendEmail(notification: NotificationToProcess, message: string) {
     throw new Error('RESEND_API_KEY not configured')
   }
 
-  const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'The Nook Madrid <reservas@thenookmadrid.com>'
+  const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'The Nook Madrid <reservas@gnerai.com>'
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
