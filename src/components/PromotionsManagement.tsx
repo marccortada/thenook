@@ -3,7 +3,7 @@ import { usePromotions, CreatePromotionData } from '@/hooks/usePromotions';
 import { useCenters, useServices } from '@/hooks/useDatabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import AppModal from "@/components/ui/app-modal";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -204,37 +204,37 @@ const PromotionsManagement = () => {
             Crea promociones que se aplican automáticamente según horarios, fechas y servicios
           </p>
         </div>
-        
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button ref={createTriggerRef} onClick={(event) => {
-              handleOpenDialog(event.currentTarget);
+        <Button
+          type="button"
+          ref={createTriggerRef}
+          onClick={() => {
+            resetForm();
+            setShowCreateDialog(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nueva Promoción
+        </Button>
+
+        {showCreateDialog && (
+          <AppModal
+            open={true}
+            onClose={() => {
+              setShowCreateDialog(false);
+              resetForm();
             }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Promoción
-            </Button>
-          </DialogTrigger>
-          <DialogContent
-            className="max-w-none w-full overflow-hidden rounded-xl border bg-background shadow-2xl left-auto top-auto -translate-x-0 -translate-y-0 p-6"
-            onOpenAutoFocus={(event) => event.preventDefault()}
-            style={{
-              position: 'fixed',
-              top: dialogLayout.top,
-              left: dialogLayout.left,
-              width: dialogLayout.width,
-              maxHeight: dialogLayout.maxHeight,
-              display: 'flex',
-              flexDirection: 'column',
-            }}
+            maxWidth={620}
+            mobileMaxWidth={360}
+            maxHeight={720}
           >
-            <DialogHeader>
-              <DialogTitle>
-                {editingPromotion ? 'Editar Promoción' : 'Nueva Promoción'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <form onSubmit={handleSubmit} className="flex-1 space-y-6 overflow-y-auto pr-2">
+            <div className="flex flex-col h-full">
+              <div className="px-6 pt-6 pb-4 border-b">
+                <h3 className="text-lg font-semibold">
+                  {editingPromotion ? 'Editar Promoción' : 'Nueva Promoción'}
+                </h3>
+              </div>
+
+            <form onSubmit={handleSubmit} className="flex-1 space-y-6 overflow-y-auto pr-2 px-6 py-4">
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre *</Label>
@@ -425,7 +425,7 @@ const PromotionsManagement = () => {
                 <Label htmlFor="is_active">Promoción Activa</Label>
               </div>
 
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2 pb-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -441,8 +441,9 @@ const PromotionsManagement = () => {
                 </Button>
               </div>
             </form>
-          </DialogContent>
-        </Dialog>
+            </div>
+          </AppModal>
+        )}
       </div>
 
       <div className="grid gap-4">

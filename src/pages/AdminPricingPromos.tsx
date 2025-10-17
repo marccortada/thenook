@@ -22,6 +22,7 @@ import PromotionsManagement from "@/components/PromotionsManagement";
 import PriceDisplay from "@/components/PriceDisplay";
 import { ImageUploadCropper } from "@/components/ImageUploadCropper";
 import InlineSelect from "@/components/InlineSelect";
+import AppModal from "@/components/ui/app-modal";
 
 
 const currency = (euros?: number) => typeof euros === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(euros) : "-";
@@ -810,29 +811,29 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
               </CardHeader>
               {!isServicesCollapsed && (
               <CardContent>
-                <Accordion type="multiple" className="w-full space-y-4">
+                <Accordion type="multiple" className="w-full space-y-3 sm:space-y-4">
                   {groupedServices.map((group) => (
                     <AccordionItem key={group.id} value={group.id} className="border rounded-lg">
                       <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           <div 
                             className="w-4 h-4 rounded-full"
                             style={{ backgroundColor: group.color }}
                           />
-                          <span className="text-lg font-semibold">{group.name}</span>
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-base sm:text-lg font-semibold">{group.name}</span>
+                          <span className="text-xs sm:text-sm text-muted-foreground">
                             ({group.services.length} servicios)
                           </span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="pt-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <AccordionContent className="pt-3 sm:pt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                           {group.services.map((service: any) => (
-                            <div key={service.id} className="border rounded-lg p-4 service-card">
-                              <div className="flex items-start justify-between mb-3">
+                            <div key={service.id} className="border rounded-lg p-3 sm:p-4 service-card">
+                              <div className="flex items-start justify-between mb-2 sm:mb-3">
                                 <div className="flex-1">
-                                  <h3 className="font-semibold text-lg">{service.name}</h3>
-                                  <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
+                                  <h3 className="font-semibold text-base sm:text-lg">{service.name}</h3>
+                                  <div className="text-xs sm:text-sm text-muted-foreground mb-2 flex items-center gap-2">
                                     <span>{service.duration_minutes} min</span>
                                     <span>•</span>
                                      <PriceDisplay 
@@ -843,7 +844,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                          has_discount: !!service.has_discount,
                                          discount_price_cents: service.discount_price_cents || 0
                                        }}
-                                       className="text-sm"
+                                       className="text-xs sm:text-sm"
                                      />
                                   </div>
                                   {service.description && (
@@ -859,7 +860,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -903,7 +904,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                     setModalPosition({ top, left });
                                     setEditingService({ ...service });
                                   }}
-                                  className="flex-1"
+                                  className="w-full sm:w-auto"
                                 >
                                   <Edit className="h-3 w-3 mr-1" />
                                   Editar
