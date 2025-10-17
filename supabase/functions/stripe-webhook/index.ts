@@ -918,17 +918,24 @@ serve(async (req) => {
         // booking_id can come in metadata or inside the SetupIntent
         let bookingIdFromMeta = session.metadata?.booking_id as string | undefined;
         try {
-          if (!bookingIdFromMeta && session.setup_intent && typeof session.setup_intent !== 'string') {
-            const si = session.setup_intent as Stripe.SetupIntent;
-            bookingIdFromMeta = (si.metadata as any)?.booking_id as string | undefined;
+          if (!bookingIdFromMeta && session.setup_intent) {
+            if (typeof session.setup_intent === 'string') {
+              // Retrieve the SetupIntent to read metadata
+              const si = await stripe.setupIntents.retrieve(session.setup_intent);
+              bookingIdFromMeta = (si.metadata as any)?.booking_id as string | undefined;
+              console.log('[stripe-webhook] Retrieved SetupIntent metadata booking_id:', bookingIdFromMeta);
+            } else {
+              const siObj = session.setup_intent as Stripe.SetupIntent;
+              bookingIdFromMeta = (siObj.metadata as any)?.booking_id as string | undefined;
+            }
           }
-        } catch (_) {
-          // ignore
+        } catch (e) {
+          console.warn('[stripe-webhook] Could not read SetupIntent metadata:', e);
         }
         if (bookingIdFromMeta) {
           await sendBookingConfirmationEmail({ bookingId: bookingIdFromMeta, session });
         } else {
-          console.warn("[stripe-webhook] booking_setup without booking_id in metadata");
+          console.warn('[stripe-webhook] booking_setup without booking_id in metadata');
         }
       } else if (intent === "package_voucher") {
         const payloadRaw = session.metadata?.pv_payload;
