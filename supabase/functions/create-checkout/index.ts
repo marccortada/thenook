@@ -125,6 +125,7 @@ serve(async (req) => {
       }
       metadata.intent = "gift_cards";
       metadata.gc_payload = JSON.stringify({ items });
+      metadata.gc_skip_verify_email = "true";
     }
 
     if (body.intent === "package_voucher") {

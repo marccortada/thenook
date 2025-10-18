@@ -111,6 +111,15 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
             show_buyer_data?: boolean;
           }[] 
         };
+
+        if (session.metadata?.gc_skip_verify_email === "true") {
+          console.log("[verify-payment] Gift cards already handled by webhook; skipping verify-payment email flow");
+          results.gift_cards = [];
+          return new Response(JSON.stringify({ paid: true, ...results }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
         
         const created: Array<{ 
           id: string; 

@@ -600,12 +600,83 @@ async function processGiftCards(args: {
     return;
   }
 
+  const cloudinaryCloudName = Deno.env.get("CLOUDINARY_CLOUD_NAME")?.trim();
+  const cloudinaryTemplateId =
+    Deno.env.get("CLOUDINARY_GIFT_CARD_TEMPLATE")?.trim() || "template_ukdzku.jpg";
+
+  const encodeCloudinaryText = (value: string) =>
+    encodeURIComponent(
+      (value ?? "")
+        .replace(/\r?\n/g, " ")
+        .replace(/\s+/g, " ")
+        .trim(),
+    );
+
+  const buildCloudinaryUrls = (
+    card: {
+      title: string;
+      code: string;
+      amountCents: number;
+      showPrice: boolean;
+    },
+    purchaseDate: string,
+  ) => {
+    if (!cloudinaryCloudName) return null;
+
+    const amountSuffix = card.showPrice
+      ? ` · ${(card.amountCents / 100).toFixed(2)}€`
+      : "";
+    const overlayTitle = encodeCloudinaryText(`${card.title}${amountSuffix}`);
+    const overlayCode = encodeCloudinaryText(card.code);
+    const overlayDate = encodeCloudinaryText(purchaseDate.replace(/\//g, "-"));
+
+    const baseTransform = [
+      "f_auto,q_auto",
+      `l_text:Arial_35_bold:${overlayTitle},co_rgb:222222,g_center,y_-200`,
+      `l_text:Arial_30_bold:${overlayCode},co_rgb:1A6AFF,g_center,y_210`,
+      `l_text:Arial_28_bold:${overlayDate},co_rgb:059669,g_center,y_135`,
+    ].join("/");
+
+    return {
+      imageUrl: `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/${cloudinaryTemplateId}`,
+      downloadUrl: `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/fl_attachment/${cloudinaryTemplateId}`,
+    };
+  };
+
+  const fetchCloudinaryImage = async (url: string, code: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.error("[stripe-webhook] Cloudinary fetch failed", {
+          status: response.status,
+          statusText: response.statusText,
+        });
+        return null;
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      const contentType = response.headers.get("content-type") || "image/jpeg";
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      return {
+        dataUrl: `data:${contentType};base64,${base64}`,
+        attachment: {
+          filename: `gift-card-${code}.${contentType.includes("png") ? "png" : "jpg"}`,
+          content: base64,
+          contentType,
+        },
+      };
+    } catch (err) {
+      console.error("[stripe-webhook] Cloudinary fetch error", err);
+      return null;
+    }
+  };
+
   const sessionCustomer = session.customer_details;
   const createdGiftCards: Array<{
     code: string;
     amount_cents: number;
     recipientEmail: string;
     recipientName: string;
+    giftCardName: string;
     giftMessage?: string;
     purchaserEmail: string;
     purchaserName: string;
@@ -631,6 +702,11 @@ async function processGiftCards(args: {
     const showPrice = item.show_price ?? true;
     const sendToBuyer = item.send_to_buyer ?? true;
     const showBuyerData = item.show_buyer_data ?? true;
+    const giftCardName =
+      (item.card_name || item.gift_card_name || item.name || "").toString().trim() ||
+      recipientName ||
+      purchaserName ||
+      "Tarjeta Regalo";
 
     // Obtener o crear perfil del beneficiario
     let profileId: string | undefined;
@@ -698,6 +774,7 @@ async function processGiftCards(args: {
           amount_cents: item.amount_cents,
           recipientEmail,
           recipientName,
+          giftCardName,
           giftMessage: giftMessage || undefined,
           purchaserEmail,
           purchaserName,
@@ -717,39 +794,96 @@ async function processGiftCards(args: {
     return;
   }
 
-  // Enviar emails
-  console.log(`[stripe-webhook] 📧 Sending ${createdGiftCards.length} gift card emails...`);
+  console.log(`[stripe-webhook] 📧 Preparing ${createdGiftCards.length} gift card emails...`);
   const year = new Date().getFullYear();
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
   const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@gnerai.com>";
 
   for (const card of createdGiftCards) {
-    const emailTo = card.sendToBuyer ? card.purchaserEmail : card.recipientEmail;
-    const emailName = card.sendToBuyer ? card.purchaserName : card.recipientName;
-
     const amountFormatted = new Intl.NumberFormat("es-ES", {
       style: "currency",
       currency: "EUR",
     }).format(card.amount_cents / 100);
+    const purchaseDate = new Date()
+      .toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })
+      .replace(/\//g, "-");
 
-    const giftBlock = card.giftMessage
-      ? `
-        <div style="background:#f0fdf4;border-left:4px solid #10b981;padding:16px;margin:16px 0;">
-          <p style="margin:0;font-style:italic;color:#065f46;">"${card.giftMessage}"</p>
-        </div>
-      `
+    const urls = buildCloudinaryUrls(
+      {
+        title: card.giftCardName,
+        code: card.code,
+        amountCents: card.amount_cents,
+        showPrice: card.showPrice,
+      },
+      purchaseDate,
+    );
+
+    let imageSrc: string | null = null;
+    let downloadUrl: string | null = urls?.downloadUrl ?? null;
+    let attachment: { filename: string; content: string; contentType: string } | null = null;
+
+    if (urls) {
+      const cloudinaryImage = await fetchCloudinaryImage(urls.imageUrl, card.code);
+      if (cloudinaryImage) {
+        imageSrc = cloudinaryImage.dataUrl || urls.imageUrl;
+        attachment = cloudinaryImage.attachment;
+        downloadUrl = urls.downloadUrl ?? downloadUrl;
+      } else {
+        imageSrc = urls.imageUrl;
+      }
+    } else {
+      console.warn("[stripe-webhook] Cloudinary config missing; email will be sent without image", {
+        hasCloudinaryCloudName: Boolean(cloudinaryCloudName),
+        template: cloudinaryTemplateId,
+      });
+    }
+
+    const sendToBuyer = card.sendToBuyer !== false;
+    const purchaserEmail = card.purchaserEmail;
+    const recipientEmail = card.recipientEmail;
+    const primaryEmail = sendToBuyer ? purchaserEmail : recipientEmail;
+
+    if (!primaryEmail) {
+      console.warn("[stripe-webhook] Missing primary email for gift card", {
+        code: card.code,
+        sendToBuyer,
+        purchaserEmail,
+        recipientEmail,
+      });
+      continue;
+    }
+
+    const primaryName = sendToBuyer ? card.purchaserName : card.recipientName;
+    const safePrimaryName = (primaryName || "Cliente").trim();
+    const amountLineVisible = card.showPrice !== false;
+    const cardTitleLine = card.giftCardName
+      ? `<p style="font-size:18px;font-weight:600;margin:16px 0 8px;color:#1f2937;">${card.giftCardName}</p>`
       : "";
-
-    const buyerInfoBlock =
-      card.isGift && card.showBuyerData
-        ? `<p style="font-size:14px;color:#6b7280;margin:8px 0;">De parte de: ${card.purchaserName}</p>`
+    const priceLine = amountLineVisible
+      ? `<p style="margin:10px 0 0;font-size:16px;font-weight:600;color:#059669;">Valor: ${amountFormatted}</p>`
+      : "";
+    const buyerInfoLine =
+      card.isGift && !sendToBuyer && card.showBuyerData
+        ? `<p style="font-size:14px;color:#6b7280;margin:8px 0;">De parte de: <strong>${card.purchaserName}</strong></p>`
         : "";
-
-    const priceInfo = card.showPrice
-      ? `<p style="font-size:16px;color:#059669;font-weight:600;margin:8px 0;">Valor: ${amountFormatted}</p>`
+    const giftBlock = card.giftMessage
+      ? `<div style="background:#f0fdf4;border-left:4px solid #10b981;padding:16px;margin:16px 0;border-radius:10px;"><p style="margin:0;font-style:italic;color:#047857;">"${card.giftMessage}"</p></div>`
+      : "";
+    const imageBlock = imageSrc
+      ? `<div style="margin:24px 0;text-align:center;"><img src="${imageSrc}" alt="Tarjeta regalo The Nook Madrid" style="max-width:100%;border-radius:12px;box-shadow:0 10px 30px rgba(26,106,255,0.1);" /></div>`
+      : "";
+    const downloadBlock = downloadUrl
+      ? `<div style="margin:24px 0;text-align:center;"><a href="${downloadUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;">Descargar tarjeta</a></div>`
       : "";
 
-    const emailHtml = `
+    const isGift = card.isGift;
+    const introLine = isGift
+      ? sendToBuyer
+        ? "Aquí tienes tu tarjeta regalo lista para que la compartas cuando quieras."
+        : `Has recibido una tarjeta regalo de <strong>${card.purchaserName || "alguien especial"}</strong>.`
+      : "Gracias por tu compra de tarjeta regalo.";
+
+    const recipientHtml = `
 <!doctype html>
 <html lang="es">
   <head>
@@ -757,55 +891,155 @@ async function processGiftCards(args: {
     <title>Tarjeta Regalo - The Nook Madrid</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
-  <body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#f8f9fb;color:#111;">
+  <body style="margin:0;padding:0;background:#f8f9fb;font-family:Arial,Helvetica,sans-serif;color:#111827;">
     <center style="width:100%;background:#f8f9fb;">
-      <table role="presentation" width="100%" style="max-width:600px;margin:auto;background:#ffffff;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,0.08);border-collapse:separate;">
+      <table role="presentation" width="100%" style="max-width:600px;margin:auto;background:#ffffff;border-radius:12px;box-shadow:0 10px 35px rgba(15,23,42,0.08);border-collapse:separate;">
         <tr>
-          <td style="background:linear-gradient(135deg,#424CB8,#1A6AFF);color:#fff;text-align:center;padding:24px;border-radius:12px 12px 0 0;">
-            <h1 style="margin:0;font-size:22px;">🎁 Tarjeta Regalo The Nook Madrid</h1>
+          <td style="background:linear-gradient(135deg,#424CB8,#1A6AFF);color:#fff;text-align:center;padding:28px;border-radius:12px 12px 0 0;">
+            <h1 style="margin:0;font-size:24px;">🎁 Tarjeta Regalo The Nook Madrid</h1>
           </td>
         </tr>
         <tr>
           <td style="padding:24px;">
-            <p>Hola <strong>${emailName}</strong>!</p>
-            ${card.isGift ? `<p>Has recibido una tarjeta regalo de <strong>${card.purchaserName}</strong>.</p>` : `<p>Gracias por tu compra de tarjeta regalo.</p>`}
+            <p>Hola <strong>${safePrimaryName}</strong>!</p>
+            <p>${introLine}</p>
+            ${buyerInfoLine}
+            ${cardTitleLine}
             ${giftBlock}
-            ${buyerInfoBlock}
-            <div style="background:#f3f4f6;border-radius:8px;padding:20px;margin:20px 0;text-align:center;">
-              <p style="margin:0 0 8px 0;font-size:14px;color:#6b7280;">Tu código de tarjeta regalo:</p>
-              <p style="margin:0;font-size:28px;font-weight:bold;color:#424CB8;letter-spacing:2px;">${card.code}</p>
-              ${priceInfo}
+            <div style="background:#f3f4f6;border-radius:12px;padding:20px;margin:24px 0;text-align:center;">
+              <p style="margin:0 0 6px;font-size:14px;color:#6b7280;">Tu código de tarjeta regalo:</p>
+              <p style="margin:0;font-size:32px;font-weight:700;color:#424CB8;letter-spacing:6px;">${card.code}</p>
+              ${priceLine}
+              <p style="font-size:13px;color:#6b7280;margin:8px 0 0;">Fecha de compra: ${purchaseDate}</p>
             </div>
-            <p>Para usar tu tarjeta regalo, simplemente menciona este código al reservar o pagar en The Nook Madrid.</p>
-            <p style="font-size:12px;color:#6b7280;margin-top:20px;">Reservas: 911 481 474 / 622 360 922<br>Email: <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a></p>
-            <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
-            <p style="font-size:11px;color:#9ca3af;">
-              © ${year} THE NOOK Madrid<br>
-              Este correo se ha generado automáticamente.
-            </p>
+            ${imageBlock}
+            ${downloadBlock}
+            <div style="background:#f0f9ff;border-radius:12px;padding:20px;margin:24px 0;">
+              <h3 style="margin-top:0;color:#1e40af;font-size:18px;">¿Cómo usar tu tarjeta regalo?</h3>
+              <ol style="margin:0;padding-left:20px;color:#374151;font-size:14px;line-height:1.6;">
+                <li>Reserva tu cita llamando al <strong>911 481 474</strong>.</li>
+                <li>Presenta el código <strong>${card.code}</strong> en recepción.</li>
+                <li>Disfruta de tu experiencia en The Nook Madrid.</li>
+              </ol>
+            </div>
+            <p style="font-size:13px;color:#4b5563;">Si necesitas ayuda, escríbenos a <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a>.</p>
+            <p style="font-size:13px;color:#4b5563;margin-top:12px;">Reservas: 911 481 474 / 622 360 922</p>
           </td>
         </tr>
       </table>
+      <p style="font-size:11px;color:#9ca3af;margin:20px auto 0;">© ${year} THE NOOK Madrid — Este correo se ha generado automáticamente.</p>
     </center>
   </body>
 </html>
     `;
 
-    console.log(`[stripe-webhook] Sending email to: ${emailTo}`);
-    const emailResult = await resend.emails.send({
+    const recipientSubject = isGift
+      ? sendToBuyer
+        ? `🎁 Tu tarjeta regalo de The Nook Madrid (para ${card.recipientName || "regalar"})`
+        : `🎁 ¡Has recibido ${card.giftCardName} de ${card.purchaserName || "alguien especial"}!`
+      : `Tu ${card.giftCardName} de The Nook Madrid`;
+
+    const recipientEmailPayload: any = {
       from: fromEmail,
-      to: [emailTo],
-      subject: card.isGift
-        ? `🎁 Has recibido una Tarjeta Regalo de The Nook Madrid`
-        : `Tu Tarjeta Regalo de The Nook Madrid`,
-      html: emailHtml,
+      to: [primaryEmail],
+      subject: recipientSubject,
+      html: recipientHtml,
+    };
+
+    if (attachment) {
+      recipientEmailPayload.attachments = [
+        {
+          filename: attachment.filename,
+          content: attachment.content,
+          contentType: attachment.contentType,
+        },
+      ];
+    }
+
+    console.log("[stripe-webhook] Sending primary gift card email", {
+      to: primaryEmail,
+      code: card.code,
+      sendToBuyer,
     });
-    console.log(`[stripe-webhook] ✅ Email sent successfully to ${emailTo}:`, emailResult);
+    await resend.emails.send(recipientEmailPayload);
+
+    const shouldSendBuyerCopy =
+      isGift &&
+      !sendToBuyer &&
+      purchaserEmail &&
+      purchaserEmail.toLowerCase() !== (recipientEmail || "").toLowerCase();
+
+    if (shouldSendBuyerCopy) {
+      const recipientDisplayName = (card.recipientName || "la persona destinataria").trim();
+      const recipientEmailLabel = recipientEmail ? ` (${recipientEmail})` : "";
+      const purchaserHtml = `
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <title>Confirmación Tarjeta Regalo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body style="margin:0;padding:0;background:#f8f9fb;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+    <center style="width:100%;background:#f8f9fb;">
+      <table role="presentation" width="100%" style="max-width:600px;margin:auto;background:#ffffff;border-radius:12px;box-shadow:0 10px 35px rgba(15,23,42,0.08);border-collapse:separate;">
+        <tr>
+          <td style="background:linear-gradient(135deg,#1FA16A,#0EA5E9);color:#fff;text-align:center;padding:26px;border-radius:12px 12px 0 0;">
+            <h1 style="margin:0;font-size:22px;">✅ Confirmación de envío</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px;">
+            <p>Hola <strong>${card.purchaserName}</strong>!</p>
+            <p>Hemos enviado la tarjeta regalo a <strong>${recipientDisplayName}</strong>${recipientEmailLabel}.</p>
+            ${cardTitleLine}
+            ${giftBlock}
+            <div style="background:#f0fdf4;border-radius:12px;padding:20px;margin:24px 0;">
+              <h3 style="margin-top:0;color:#166534;font-size:16px;">Resumen del regalo</h3>
+              <p style="margin:6px 0;color:#374151;"><strong>Código:</strong> ${card.code}</p>
+              ${amountLineVisible ? `<p style="margin:6px 0;color:#374151;"><strong>Valor:</strong> ${amountFormatted}</p>` : ""}
+              <p style="margin:6px 0;color:#374151;"><strong>Fecha de compra:</strong> ${purchaseDate}</p>
+              <p style="margin:6px 0;color:#374151;"><strong>Destinatario:</strong> ${recipientDisplayName}${recipientEmailLabel}</p>
+            </div>
+            ${imageBlock}
+            ${downloadBlock}
+            <p style="font-size:13px;color:#4b5563;">Te hemos adjuntado la tarjeta por si deseas reenviarla manualmente.</p>
+            <p style="font-size:13px;color:#4b5563;">Gracias por confiar en The Nook Madrid.</p>
+          </td>
+        </tr>
+      </table>
+      <p style="font-size:11px;color:#9ca3af;margin:20px auto 0;">© ${year} THE NOOK Madrid — Este correo se ha generado automáticamente.</p>
+    </center>
+  </body>
+</html>
+      `;
+
+      const purchaserPayload: any = {
+        from: fromEmail,
+        to: [purchaserEmail],
+        subject: "Confirmación: Tarjeta regalo enviada",
+        html: purchaserHtml,
+      };
+
+      if (attachment) {
+        purchaserPayload.attachments = [
+          {
+            filename: attachment.filename,
+            content: attachment.content,
+            contentType: attachment.contentType,
+          },
+        ];
+      }
+
+      console.log("[stripe-webhook] Sending purchaser confirmation email", {
+        to: purchaserEmail,
+        code: card.code,
+      });
+      await resend.emails.send(purchaserPayload);
+    }
   }
 
-  // Email de resumen al admin
   if (adminEmail) {
-    console.log(`[stripe-webhook] Sending admin summary to: ${adminEmail}`);
     const summaryHtml = `
       <div style="font-family: Arial, sans-serif;">
         <h3>🎁 Nueva compra de Tarjeta(s) Regalo</h3>
@@ -813,28 +1047,26 @@ async function processGiftCards(args: {
         <p><strong>Total:</strong> ${createdGiftCards.length} tarjeta(s)</p>
         <ul>
           ${createdGiftCards
-            .map(
-              (c) => {
-                const amt = new Intl.NumberFormat("es-ES", {
-                  style: "currency",
-                  currency: "EUR",
-                }).format(c.amount_cents / 100);
-                return `<li>${amt} — Código: <code>${c.code}</code> — Para: ${c.recipientName} (${c.recipientEmail})${c.isGift ? " [ES REGALO]" : ""}</li>`;
-              }
-            )
+            .map((c) => {
+              const amt = new Intl.NumberFormat("es-ES", {
+                style: "currency",
+                currency: "EUR",
+              }).format(c.amount_cents / 100);
+              return `<li>${c.giftCardName} — ${amt} — Código: <code>${c.code}</code> — ${c.isGift ? `Para: ${c.recipientName} (${c.recipientEmail})` : "Compra personal"}</li>`;
+            })
             .join("")}
         </ul>
         <p>Sesión Stripe: ${session.id}</p>
       </div>
     `;
 
-    const adminEmailResult = await resend.emails.send({
+    console.log(`[stripe-webhook] Sending admin summary to: ${adminEmail}`);
+    await resend.emails.send({
       from: fromEmail,
       to: [adminEmail],
       subject: `Nueva compra Tarjeta Regalo · ${createdGiftCards[0].purchaserName}`,
       html: summaryHtml,
     });
-    console.log(`[stripe-webhook] ✅ Admin email sent successfully:`, adminEmailResult);
   }
 }
 
