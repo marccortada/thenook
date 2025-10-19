@@ -32,8 +32,6 @@ export const DatePickerModal = ({
     setIsOpen(open);
   }, [open]);
 
-  React.useEffect(() => { setIsOpen(open); }, [open]);
-
   const handleOpenModal = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
