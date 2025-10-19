@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 type AppModalProps = {
@@ -73,7 +74,7 @@ export const AppModal: React.FC<AppModalProps> = ({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <>
       <div
         className="fixed inset-0 bg-black/50"
@@ -97,7 +98,8 @@ export const AppModal: React.FC<AppModalProps> = ({
       >
         {children}
       </div>
-    </>
+    </>,
+    document.body
   );
 };
 
