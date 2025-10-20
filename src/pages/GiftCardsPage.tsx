@@ -131,7 +131,7 @@ const GiftCardsPage = () => {
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
   
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Efecto para seguir al modal cuando se abre
   useEffect(() => {
@@ -229,11 +229,10 @@ const GiftCardsPage = () => {
     }
     
     // Usar idioma por defecto sin llamar useTranslation nuevamente
-    const currentLang = 'es'; // default language
+    const currentLang = (language || 'es') as keyof typeof translationMap[keyof typeof translationMap];
     const mapping = translationMap[normalizedKey];
-    if (mapping && mapping[currentLang]) {
-      return mapping[currentLang];
-    }
+    if (mapping && mapping[currentLang]) return mapping[currentLang];
+    if (mapping && mapping['es']) return mapping['es'];
     
     // Si no hay traducción, devolver nombre limpio
     return cleanName;
@@ -347,7 +346,7 @@ const GiftCardsPage = () => {
     
     const handleCustomAmountAdd = (amount: number) => {
       handleAddToCart({
-        name: `Tarjeta Regalo Personalizada - ${amount}€`,
+        name: `${t('custom_gift_card')} - ${amount}€`,
         priceCents: amount * 100
       });
       setCustomGiftDialogs(prev => ({
@@ -366,10 +365,10 @@ const GiftCardsPage = () => {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Settings className="h-5 w-5 text-primary" />
-            Tarjeta Regalo Personalizada
+            {t('custom_gift_card_title')}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Elige el valor que prefieras para {title.toLowerCase()}
+            {t('choose_amount_for')} {title.toLowerCase()}
           </p>
         </CardHeader>
         <CardFooter className="pt-0">
@@ -380,14 +379,14 @@ const GiftCardsPage = () => {
               onClick={() => handleCustomGiftToggle(groupKey)}
             >
               <Settings className="h-4 w-4 mr-2" />
-              Personalizar
+              {t('customize')}
             </Button>
             <DialogContent className="sm:max-w-md">
               <ViewportSafeWrapper isOpen={isOpen} autoScroll={true} delay={100}>
                 <DialogHeader>
-                  <DialogTitle>Personalizar Tarjeta Regalo</DialogTitle>
+                  <DialogTitle>{t('customize_gift_card_title')}</DialogTitle>
                   <DialogDescription>
-                    Selecciona el valor de tu tarjeta regalo para {title.toLowerCase()}
+                    {t('customize_gift_card_description_prefix')} {title.toLowerCase()}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -404,14 +403,14 @@ const GiftCardsPage = () => {
                     ))}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="custom-amount">Otro valor (€)</Label>
+                    <Label htmlFor="custom-amount">{t('other_value_label')}</Label>
                     <div className="flex gap-2">
                       <Input
                         id="custom-amount"
                         type="number"
                         min="10"
                         max="500"
-                        placeholder="Ej: 75"
+                        placeholder="75"
                         value={customValue}
                         onChange={(e) => handleCustomValueChange(e.target.value)}
                       />
@@ -424,11 +423,11 @@ const GiftCardsPage = () => {
                         }}
                         disabled={!customValue || parseInt(customValue) < 10 || parseInt(customValue) > 500}
                       >
-                        Añadir
+                        {t('add')}
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Valor mínimo: 10€ - Valor máximo: 500€
+                      {t('value_min_max_note')}
                     </p>
                   </div>
                 </div>
@@ -848,11 +847,11 @@ const GiftCardsPage = () => {
               {groups.individuales.length > 0 && (
                 <AccordionItem value="tarjetas-individuales" className="border rounded-lg">
                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje Individual</h2>
-                   </AccordionTrigger>
-                   <AccordionContent className="px-4 pb-4">
-                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {renderCustomGiftCard('individuales', 'Masajes Individuales')}
+                    <h2 className="text-lg font-semibold">{t('gift_card_group_individual')}</h2>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {renderCustomGiftCard('individuales', t('individual_massages'))}
                         {groups.individuales.map((item) => (
                           <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                              <OptimizedImage
@@ -894,11 +893,11 @@ const GiftCardsPage = () => {
               {groups.paraDos.length > 0 && (
                 <AccordionItem value="tarjetas-dos-personas" className="border rounded-lg">
                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje para Dos</h2>
+                     <h2 className="text-lg font-semibold">{t('gift_card_group_couples')}</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                         {renderCustomGiftCard('paraDos', 'Masajes para Dos Personas')}
+                        {renderCustomGiftCard('paraDos', t('couples_massages'))}
                          {groups.paraDos.map((item) => (
                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                               <OptimizedImage
@@ -940,11 +939,11 @@ const GiftCardsPage = () => {
               {groups.cuatro.length > 0 && (
                 <AccordionItem value="tarjetas-cuatro-manos" className="border rounded-lg">
                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Masaje a Cuatro Manos</h2>
+                     <h2 className="text-lg font-semibold">{t('gift_card_group_four_hands')}</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                         {renderCustomGiftCard('cuatro', 'Masajes a Cuatro Manos')}
+                        {renderCustomGiftCard('cuatro', t('four_hands_massages'))}
                          {groups.cuatro.map((item) => (
                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                               <OptimizedImage
@@ -986,11 +985,11 @@ const GiftCardsPage = () => {
               {groups.rituales.length > 0 && (
                 <AccordionItem value="tarjetas-rituales" className="border rounded-lg">
                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">Tarjeta Regalo - Rituales Individuales</h2>
+                     <h2 className="text-lg font-semibold">{t('gift_card_group_individual_rituals')}</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                         {renderCustomGiftCard('rituales', 'Rituales Individuales')}
+                        {renderCustomGiftCard('rituales', t('rituals'))}
                          {groups.rituales.map((item) => (
                            <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
                               <OptimizedImage
@@ -1029,14 +1028,14 @@ const GiftCardsPage = () => {
                  </AccordionItem>
                )}
 
-               {groups.ritualesParaDos.length > 0 && (
-                 <AccordionItem value="tarjetas-rituales-dos" className="border rounded-lg">
-                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                      <h2 className="text-lg font-semibold">Tarjeta Regalo - Rituales para Dos</h2>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                          {renderCustomGiftCard('ritualesParaDos', 'Rituales para Dos Personas')}
+              {groups.ritualesParaDos.length > 0 && (
+                <AccordionItem value="tarjetas-rituales-dos" className="border rounded-lg">
+                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                     <h2 className="text-lg font-semibold">{t('gift_card_group_couples_rituals')}</h2>
+                   </AccordionTrigger>
+                   <AccordionContent className="px-4 pb-4">
+                     <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                          {renderCustomGiftCard('ritualesParaDos', t('rituals_for_two'))}
                           {groups.ritualesParaDos.map((item) => (
                             <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
                                <OptimizedImage

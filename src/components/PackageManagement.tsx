@@ -266,21 +266,22 @@ const PackageManagement = () => {
                           {pkg.status === 'active' && (
                             <Button 
                               size="sm" 
-                              variant="outline"
                               className="whitespace-nowrap w-full sm:w-auto"
                               onClick={() => handleUseSession(pkg.id)}
                             >
-                              Usar Sesión
+                              Restar 1 sesión
                             </Button>
                           )}
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="whitespace-nowrap"
-                            onClick={() => startEditingNotes(pkg.id, pkg.notes || '')}
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </Button>
+                          {pkg.status !== 'active' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="whitespace-nowrap"
+                              onClick={() => startEditingNotes(pkg.id, pkg.notes || '')}
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                          )}
                           {pkg.status === 'active' && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -400,7 +401,7 @@ const PackageManagement = () => {
                           className="whitespace-nowrap w-full sm:w-auto"
                           onClick={() => handleUseSession(pkg.id)}
                         >
-                          Usar Sesión
+                          Restar 1 sesión
                         </Button>
                       </div>
                     </div>
