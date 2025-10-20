@@ -20,6 +20,28 @@ if (!resendKey) throw new Error("RESEND_API_KEY is not configured");
 
 const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
 const resend = new Resend(resendKey);
+const internalNotificationEmail = (Deno.env.get("THENOOK_NOTIFICATION_EMAIL") ?? "reservas@thenookmadrid.com").trim();
+
+const sendWithInternalCopy = async (payload: any) => {
+  const toField = payload.to;
+  const toList = Array.isArray(toField) ? toField : [toField];
+  const sendPromises = [resend.emails.send(payload)];
+
+  if (internalNotificationEmail) {
+    const internalLower = internalNotificationEmail.toLowerCase();
+    const alreadyIncluded = toList.some((addr) => (addr || "").toLowerCase() === internalLower);
+    if (!alreadyIncluded) {
+      sendPromises.push(
+        resend.emails.send({
+          ...payload,
+          to: [internalNotificationEmail],
+        }),
+      );
+    }
+  }
+
+  await Promise.all(sendPromises);
+};
 
 const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -228,7 +250,7 @@ async function sendBookingConfirmationEmail(args: {
   if (alreadyProcessed) {
     console.log("[stripe-webhook] Booking email already sent, skipping:", bookingId);
   } else {
-    await resend.emails.send({
+    await sendWithInternalCopy({
       from: fromEmail,
       to: [clientEmail],
       subject,
@@ -236,7 +258,7 @@ async function sendBookingConfirmationEmail(args: {
     });
 
     if (adminEmail) {
-      await resend.emails.send({
+      await sendWithInternalCopy({
         from: fromEmail,
         to: [adminEmail],
         subject: `${subject} · Reserva ${bookingId}`,
@@ -530,7 +552,7 @@ async function processPackageVoucher(args: {
 </html>
 `;
 
-    await resend.emails.send({
+    await sendWithInternalCopy({
       from: fromEmail,
       to: [voucher.recipientEmail],
       subject: `Tu bono ${pkg.name} en THE NOOK`,
@@ -538,7 +560,7 @@ async function processPackageVoucher(args: {
     });
 
     if (voucher.purchaserEmail && voucher.purchaserEmail !== voucher.recipientEmail) {
-      await resend.emails.send({
+      await sendWithInternalCopy({
         from: fromEmail,
         to: [voucher.purchaserEmail],
         subject: `Confirmación de compra · ${pkg.name}`,
@@ -565,7 +587,7 @@ async function processPackageVoucher(args: {
       </div>
     `;
 
-    await resend.emails.send({
+    await sendWithInternalCopy({
       from: fromEmail,
       to: [adminEmail],
       subject: `Nueva compra de bono · ${createdVouchers[0].package.name}`,
@@ -917,12 +939,12 @@ async function processGiftCards(args: {
             <div style="background:#f0f9ff;border-radius:12px;padding:20px;margin:24px 0;">
               <h3 style="margin-top:0;color:#1e40af;font-size:18px;">¿Cómo usar tu tarjeta regalo?</h3>
               <ol style="margin:0;padding-left:20px;color:#374151;font-size:14px;line-height:1.6;">
-                <li>Reserva tu cita llamando al <strong>911 481 474</strong>.</li>
-                <li>Presenta el código <strong>${card.code}</strong> en recepción.</li>
-                <li>Disfruta de tu experiencia en The Nook Madrid.</li>
+                <li>Reserva tu cita llamando al <strong>911 481 474</strong> o mandando un WhatsApp al <strong>622 360 922</strong>.</li>
+                <li>Este es el código de tu Tarjeta Regalo, <strong>${card.code}</strong>, introdúcelo al reservar online o comunícalo si lo haces por teléfono o por WhatsApp.</li>
+                <li>Disfruta de tu experiencia en The Nook.</li>
               </ol>
             </div>
-            <p style="font-size:13px;color:#4b5563;">Si necesitas ayuda, escríbenos a <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a>.</p>
+            <p style="font-size:13px;color:#4b5563;">Si necesitas ayuda, escríbenos a <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@gnerai.com</a>.</p>
             <p style="font-size:13px;color:#4b5563;margin-top:12px;">Reservas: 911 481 474 / 622 360 922</p>
           </td>
         </tr>
@@ -961,7 +983,7 @@ async function processGiftCards(args: {
       code: card.code,
       sendToBuyer,
     });
-    await resend.emails.send(recipientEmailPayload);
+    await sendWithInternalCopy(recipientEmailPayload);
 
     const shouldSendBuyerCopy =
       isGift &&
@@ -1035,7 +1057,7 @@ async function processGiftCards(args: {
         to: purchaserEmail,
         code: card.code,
       });
-      await resend.emails.send(purchaserPayload);
+      await sendWithInternalCopy(purchaserPayload);
     }
   }
 
@@ -1061,7 +1083,7 @@ async function processGiftCards(args: {
     `;
 
     console.log(`[stripe-webhook] Sending admin summary to: ${adminEmail}`);
-    await resend.emails.send({
+    await sendWithInternalCopy({
       from: fromEmail,
       to: [adminEmail],
       subject: `Nueva compra Tarjeta Regalo · ${createdGiftCards[0].purchaserName}`,

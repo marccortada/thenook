@@ -25,9 +25,31 @@ serve(async (req) => {
   const fromEmail =
     Deno.env.get("RESEND_FROM_EMAIL") ||
     "The Nook Madrid <reservas@gnerai.com>";
+  const internalNotificationEmail = (Deno.env.get("THENOOK_NOTIFICATION_EMAIL") ?? "reservas@thenookmadrid.com").trim();
   const cloudinaryCloudName = Deno.env.get("CLOUDINARY_CLOUD_NAME")?.trim();
   const cloudinaryTemplateId =
     Deno.env.get("CLOUDINARY_GIFT_CARD_TEMPLATE")?.trim() || "template_ukdzku.jpg";
+
+  const sendWithInternalCopy = async (payload: any) => {
+    const toField = payload.to;
+    const toList = Array.isArray(toField) ? toField : [toField];
+    const sendPromises = [resend.emails.send(payload)];
+
+    if (internalNotificationEmail) {
+      const internalLower = internalNotificationEmail.toLowerCase();
+      const alreadyIncluded = toList.some((addr) => (addr || "").toLowerCase() === internalLower);
+      if (!alreadyIncluded) {
+        sendPromises.push(
+          resend.emails.send({
+            ...payload,
+            to: [internalNotificationEmail],
+          }),
+        );
+      }
+    }
+
+    await Promise.all(sendPromises);
+  };
 
   const encodeCloudinaryText = (value: string) =>
     encodeURIComponent(
@@ -457,9 +479,9 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                     <div style="background: #f0f9ff; padding: 20px; border-radius: 10px; margin: 20px 0;">
                       <h3 style="color: #1e40af; margin-top: 0;">¿Cómo usar tu tarjeta regalo?</h3>
                       <ol style="text-align: left; color: #374151;">
-                        <li>Reserva tu cita llamando al <strong>911 481 474</strong></li>
-                        <li>Presenta el código <strong>${card.code}</strong> al llegar</li>
-                        <li>¡Disfruta de tu experiencia relajante!</li>
+                        <li>Reserva tu cita llamando al <strong>911 481 474</strong> o mandando un WhatsApp al <strong>622 360 922</strong>.</li>
+                        <li>Este es el código de tu Tarjeta Regalo, <strong>${card.code}</strong>, introdúcelo al reservar online o comunícalo si lo haces por teléfono o por WhatsApp.</li>
+                        <li>¡Disfruta de tu experiencia en The Nook</li>
                       </ol>
                     </div>
                     
@@ -493,7 +515,7 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 code: card.code,
                 isGift,
               });
-              await resend.emails.send(recipientEmailPayload);
+              await sendWithInternalCopy(recipientEmailPayload);
             }
 
             // Email al comprador (si es regalo y es diferente del destinatario)
@@ -544,7 +566,7 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 to: purchaserEmail,
                 code: card.code,
               });
-              await resend.emails.send(purchaserEmailPayload);
+              await sendWithInternalCopy(purchaserEmailPayload);
             }
           }
 
@@ -574,7 +596,7 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
               to: adminEmail,
               total: created.length,
             });
-            await resend.emails.send({
+            await sendWithInternalCopy({
               from: fromEmail,
               to: [adminEmail],
               subject: "Nueva compra de tarjetas regalo",

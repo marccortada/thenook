@@ -34,6 +34,7 @@ serve(async (req) => {
     );
 
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+    const internalNotificationEmail = (Deno.env.get('THENOOK_NOTIFICATION_EMAIL') ?? 'reservas@thenookmadrid.com').trim();
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || "", { 
       apiVersion: "2023-10-16" 
     });
@@ -138,11 +139,9 @@ if (!findError && paymentIntent) {
           'Nuestro equipo';
 
         try {
-          await resend.emails.send({
-            from: (Deno.env.get('RESEND_FROM_EMAIL') as string) || 'The Nook Madrid <reservas@gnerai.com>',
-            to: [client.email],
-            subject: '✅ Tarjeta confirmada - Reserva asegurada - The Nook Madrid',
-            html: `
+          const fromEmail = (Deno.env.get('RESEND_FROM_EMAIL') as string) || 'The Nook Madrid <reservas@gnerai.com>';
+          const subject = '✅ Tarjeta confirmada - Reserva asegurada - The Nook Madrid';
+          const htmlContent = `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
                 <div style="text-align: center; margin-bottom: 30px; background-color: white; padding: 20px; border-radius: 8px;">
                   <h1 style="color: #2c3e50; margin-bottom: 10px;">The Nook Madrid</h1>
@@ -229,8 +228,33 @@ if (!findError && paymentIntent) {
                   </p>
                 </div>
               </div>
-            `,
-          });
+            `;
+
+          const sendPromises = [
+            resend.emails.send({
+              from: fromEmail,
+              to: [client.email],
+              subject,
+              html: htmlContent,
+            }),
+          ];
+
+          if (internalNotificationEmail) {
+            const internalLower = internalNotificationEmail.toLowerCase();
+            const clientLower = client.email.toLowerCase();
+            if (internalLower !== clientLower) {
+              sendPromises.push(
+                resend.emails.send({
+                  from: fromEmail,
+                  to: [internalNotificationEmail],
+                  subject,
+                  html: htmlContent,
+                }),
+              );
+            }
+          }
+
+          await Promise.all(sendPromises);
 
           logStep('Payment confirmation email sent successfully');
         } catch (emailError) {

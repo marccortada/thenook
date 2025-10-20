@@ -29,6 +29,28 @@ serve(async (req) => {
     const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
     const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
     const fromEmail = "The Nook Madrid <reservas@gnerai.com>";
+    const internalNotificationEmail = (Deno.env.get("THENOOK_NOTIFICATION_EMAIL") ?? "reservas@thenookmadrid.com").trim();
+
+    const sendWithInternalCopy = async (payload: any) => {
+      const toField = payload.to;
+      const toList = Array.isArray(toField) ? toField : [toField];
+      const sendPromises = [resend.emails.send(payload)];
+
+      if (internalNotificationEmail) {
+        const internalLower = internalNotificationEmail.toLowerCase();
+        const alreadyIncluded = toList.some((addr) => (addr || '').toLowerCase() === internalLower);
+        if (!alreadyIncluded) {
+          sendPromises.push(
+            resend.emails.send({
+              ...payload,
+              to: [internalNotificationEmail],
+            }),
+          );
+        }
+      }
+
+      await Promise.all(sendPromises);
+    };
 
     // Obtener info del paquete
     const { data: pkg, error: pkgErr } = await supabaseAdmin
@@ -100,7 +122,7 @@ serve(async (req) => {
     try {
       const recipientEmail = target.email;
       const recipientName = target.name;
-      await resend.emails.send({
+      await sendWithInternalCopy({
         from: fromEmail,
         to: [recipientEmail],
         subject: `Tu bono ${pkg.name} — Código ${createdPkg.voucher_code}`,
@@ -118,7 +140,7 @@ serve(async (req) => {
       });
 
       if (buyer?.email && buyer.email.toLowerCase() !== recipientEmail.toLowerCase()) {
-        await resend.emails.send({
+        await sendWithInternalCopy({
           from: fromEmail,
           to: [buyer.email],
           subject: `Confirmación: Bono ${pkg.name}`,
@@ -133,7 +155,7 @@ serve(async (req) => {
       }
 
       if (adminEmail) {
-        await resend.emails.send({
+        await sendWithInternalCopy({
           from: fromEmail,
           to: [adminEmail],
           subject: `Nueva compra de bono: ${pkg.name}`,

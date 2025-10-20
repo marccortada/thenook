@@ -21,6 +21,7 @@ serve(async (req) => {
 
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
     const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'The Nook Madrid <reservas@gnerai.com>';
+    const internalNotificationEmail = (Deno.env.get('THENOOK_NOTIFICATION_EMAIL') ?? 'reservas@thenookmadrid.com').trim();
 
     console.log('📧 Processing booking confirmation emails...');
     const nowIso = new Date().toISOString();
@@ -118,11 +119,8 @@ serve(async (req) => {
           : 'https://goo.gl/maps/zHuPpdHATcJf6QWX8';
 
         // Send email using Resend
-        const emailResponse = await resend.emails.send({
-          from: fromEmail,
-          to: [client.email],
-          subject: notification.subject || (notification.type === 'booking_reminder' ? 'Recordatorio de tu cita' : 'Confirmación de reserva - THE NOOK'),
-          html: `
+        const emailSubject = notification.subject || (notification.type === 'booking_reminder' ? 'Recordatorio de tu cita' : 'Confirmación de reserva - THE NOOK');
+        const emailHtml = `
 <!doctype html>
 <html lang="es">
 <head>
@@ -228,14 +226,38 @@ serve(async (req) => {
         <p style="margin:0 0 6px 0;">THE NOOK ${centerLocation}</p>
         <p style="margin:0;" class="small">Si tienes alguna duda o necesitas modificar tu reserva, contacta con nosotros lo antes posible.</p>
       </div>
-    </div>
+      </div>
   </div>
 </body>
 </html>
-          `,
-        });
+        `;
 
-        console.log(`✅ Email sent to ${client.email}:`, emailResponse);
+        const sendPromises = [
+          resend.emails.send({
+            from: fromEmail,
+            to: [client.email],
+            subject: emailSubject,
+            html: emailHtml,
+          }),
+        ];
+
+        if (internalNotificationEmail) {
+          const internalLower = internalNotificationEmail.toLowerCase();
+          const clientLower = client.email.toLowerCase();
+          if (internalLower !== clientLower) {
+            sendPromises.push(
+              resend.emails.send({
+                from: fromEmail,
+                to: [internalNotificationEmail],
+                subject: emailSubject,
+                html: emailHtml,
+              }),
+            );
+          }
+        }
+
+        await Promise.all(sendPromises);
+        console.log(`✅ Emails sent for notification ${notification.id} to client ${client.email} and internal copy`);
 
         // Mark as sent
         await supabaseClient
