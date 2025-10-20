@@ -166,7 +166,7 @@ const translations = {
     // Landing page widgets
     "book_description": "Reserva tu cita de masaje relajante",
     "vouchers": "Bonos",
-    "vouchers_description": "Compra paquetes de sesiones con descuento",
+    "vouchers_description": "Compra varias sesiones con descuento",
     "gift_description": "Regala experiencias de bienestar únicas",
      "our_locations": "Nuestras Ubicaciones",
      "locations_subtitle": "Encuéntranos en Madrid",

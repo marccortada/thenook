@@ -78,6 +78,8 @@ const SelectContent = React.forwardRef<
           "data-[side=bottom]:translate-y-2 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-2",
         className
       )}
+      sideOffset={(props as any)?.sideOffset ?? 6}
+      align={(props as any)?.align ?? "center"}
       {...props}
     >
       <SelectPrimitive.Viewport

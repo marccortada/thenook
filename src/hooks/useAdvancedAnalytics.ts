@@ -354,44 +354,45 @@ export const useAdvancedAnalytics = () => {
 
   const fetchTimeSeriesData = async (startDate: Date, endDate: Date) => {
     try {
-      const days = [];
-      const currentDate = new Date(startDate);
-      
-      while (currentDate <= endDate) {
-        const dayStart = new Date(currentDate);
-        const dayEnd = new Date(currentDate);
-        dayEnd.setHours(23, 59, 59, 999);
+      // 1) Traer todas las reservas del rango en una sola consulta
+      const { data: bookings } = await supabase
+        .from('bookings')
+        .select(`
+          booking_datetime,
+          total_price_cents,
+          profiles!inner(created_at)
+        `)
+        .gte('booking_datetime', startDate.toISOString())
+        .lte('booking_datetime', endDate.toISOString());
 
-        const { data: dayBookings } = await supabase
-          .from('bookings')
-          .select(`
-            total_price_cents,
-            profiles!inner(created_at)
-          `)
-          .gte('booking_datetime', dayStart.toISOString())
-          .lte('booking_datetime', dayEnd.toISOString());
+      // 2) Preparar mapa por día
+      const dayMap = new Map<string, { bookings: number; revenue: number; newClients: number }>();
 
-        const bookings = dayBookings?.length || 0;
-        const revenue = dayBookings?.reduce((sum, booking) => 
-          sum + (booking.total_price_cents / 100), 0) || 0;
-
-        // Contar nuevos clientes del día
-        const newClients = dayBookings?.filter(booking => {
-          const createdDate = new Date(booking.profiles.created_at);
-          return createdDate >= dayStart && createdDate <= dayEnd;
-        }).length || 0;
-
-        days.push({
-          date: currentDate.toISOString().split('T')[0],
-          bookings,
-          revenue,
-          newClients
-        });
-
-        currentDate.setDate(currentDate.getDate() + 1);
+      // Rellenar todos los días del rango con ceros para mantener la continuidad
+      const cursor = new Date(startDate);
+      while (cursor <= endDate) {
+        const key = cursor.toISOString().split('T')[0];
+        dayMap.set(key, { bookings: 0, revenue: 0, newClients: 0 });
+        cursor.setDate(cursor.getDate() + 1);
       }
 
-      return days;
+      // 3) Agregar valores por día
+      (bookings || []).forEach((b: any) => {
+        const key = new Date(b.booking_datetime).toISOString().split('T')[0];
+        const entry = dayMap.get(key);
+        if (entry) {
+          entry.bookings += 1;
+          entry.revenue += (b.total_price_cents || 0) / 100;
+          const created = b.profiles?.created_at ? new Date(b.profiles.created_at) : null;
+          if (created) {
+            const createdKey = created.toISOString().split('T')[0];
+            if (createdKey === key) entry.newClients += 1;
+          }
+        }
+      });
+
+      // 4) Convertir a arreglo ordenado
+      return Array.from(dayMap.entries()).map(([date, v]) => ({ date, ...v }));
     } catch (error) {
       console.error('Error fetching time series data:', error);
       return [];

@@ -9,6 +9,33 @@ export default function PublicLandingPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   
+  // Precise map configuration; set lat/lng when you want exact pin placement
+  const MAPS = {
+    chamberi: {
+      address: 'C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid',
+      label: 'Centro de masajes Madrid Zurbarán - The Nook',
+      // lat: 40.43002, lng: -3.69162, // opcional si quieres fijar la chincheta exactamente
+    },
+    chamartin: {
+      address: 'C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid',
+      label: 'Centro de masajes Madrid Concha Espina - The Nook',
+      // Coordenadas precisas proporcionadas
+      lat: 40.44962561648345,
+      lng: -3.6771259067454367,
+    }
+  } as const;
+
+  const buildEmbed = (cfg: { address: string; label?: string; lat?: number; lng?: number }) => {
+    if (cfg.lat != null && cfg.lng != null) {
+      const { lat, lng } = cfg;
+      // Forzar chincheta y texto: usa q=label y ll=lat,lng para mostrar el nombre, no las coordenadas
+      const q = cfg.label || `${lat},${lng}`;
+      return `https://maps.google.com/maps?hl=es&q=${encodeURIComponent(q)}&ll=${lat},${lng}&z=18&output=embed`;
+    }
+    const qAddr = cfg.label ? `${cfg.label}, ${cfg.address}` : cfg.address;
+    return `https://www.google.com/maps?hl=es&q=${encodeURIComponent(qAddr)}&z=17&output=embed`;
+  };
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
       {/* Simple Header */}
@@ -124,75 +151,79 @@ export default function PublicLandingPage() {
           </p>
         </div>
         
-        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {/* Centro Zurbarán */}
-          <Card className="glass-effect border-primary/20 shadow-lg">
+        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto items-stretch">
+          {/* Chamberí */}
+          <Card className="glass-effect border-primary/20 shadow-lg h-full flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-primary" />
-                Centro Zurbarán
+                Chamberí
               </CardTitle>
               <CardDescription>
-                C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid
+                {MAPS.chamberi.address}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="flex-1 flex flex-col">
+              <div className="space-y-4 flex-1 flex flex-col">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.5489!2d-3.6917!3d40.4296!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd4228849b1e5263%3A0x7e1b9e3f8b3c1234!2sC.%20de%20Zurbar%C3%A1n%2C%2010%2C%20Chamber%C3%AD%2C%2028010%20Madrid!5e0!3m2!1sen!2ses!4v1234567890"
+                  src={buildEmbed(MAPS.chamberi)}
                   width="100%"
-                  height="200"
+                  height="220"
                   style={{ border: 0, borderRadius: "8px" }}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
-                <Button variant="outline" className="w-full" asChild>
-                  <a 
-                    href="https://maps.google.com/?q=C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    <MapPin className="mr-2 h-4 w-4" />
-                    {t('open_maps')}
-                  </a>
-                </Button>
+                />
+                <div className="mt-auto">
+                  <Button variant="outline" className="w-full" asChild>
+                    <a 
+                      href={`https://maps.google.com/?q=${encodeURIComponent(MAPS.chamberi.label || MAPS.chamberi.address)}&ll=${''}&z=18`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      {t('open_maps')}
+                    </a>
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Centro Concha Espina */}
-          <Card className="glass-effect border-primary/20 shadow-lg">
+          {/* Chamartín */}
+          <Card className="glass-effect border-primary/20 shadow-lg h-full flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-primary" />
-                Centro Concha Espina
+                Chamartín
               </CardTitle>
               <CardDescription>
-                Centro de masajes Madrid Concha Espina - The Nook, C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid
+                {MAPS.chamartin.address}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="flex-1 flex flex-col">
+              <div className="space-y-4 flex-1 flex flex-col">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.364!2d-3.6736659!3d40.4347875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDI2JzA1LjIiTiAzwrA0MCcyNS4yIlc!5e0!3m2!1sen!2ses!4v1646123456789!5m2!1sen!2ses&q=C.+del+Príncipe+de+Vergara,+204+duplicado+posterior,+local+10,+28002+Madrid"
+                  src={buildEmbed(MAPS.chamartin)}
                   width="100%"
-                  height="200"
+                  height="220"
                   style={{ border: 0, borderRadius: "8px" }}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
-                <Button variant="outline" className="w-full" asChild>
-                  <a 
-                    href="https://maps.google.com/?q=Centro+de+masajes+Madrid+Concha+Espina+The+Nook,+C.+del+Príncipe+de+Vergara,+204+duplicado+posterior,+local+10,+28002+Madrid" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    <MapPin className="mr-2 h-4 w-4" />
-                    {t('open_maps')}
-                  </a>
-                </Button>
+                />
+                <div className="mt-auto">
+                  <Button variant="outline" className="w-full" asChild>
+                    <a 
+                      href={`https://maps.google.com/?q=${encodeURIComponent(MAPS.chamartin.label || `${MAPS.chamartin.lat},${MAPS.chamartin.lng}`)}&ll=${MAPS.chamartin.lat},${MAPS.chamartin.lng}&z=18`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      {t('open_maps')}
+                    </a>
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -213,11 +244,11 @@ export default function PublicLandingPage() {
             </a>
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 flex-shrink-0" />
-              <span className="text-sm break-all sm:break-normal">reservas@gnerai.com</span>
+              <span className="text-sm break-all sm:break-normal">reservas@thenookmadrid.com</span>
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
-            © GnerAI 2025 · Todos los derechos reservados
+            © THE NOOK Madrid 2025 · Todos los derechos reservados
           </p>
         </div>
       </footer>

@@ -191,7 +191,8 @@ serve(async (req) => {
         </p>
 
         <p class="small">
-          Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de uso y nuestra Política de Cancelación.
+          Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de uso y nuestra
+          <a href="https://www.thenookmadrid.com/politica-de-cancelaciones/" target="_blank" rel="noopener noreferrer"> Política de Cancelación</a>.
         </p>
 
         <p class="muted">

@@ -79,7 +79,7 @@ const fetchBookingDetails = async () => {
           total_price_cents,
           duration_minutes,
           payment_method_status,
-          services(name),
+          services(name, price_cents, has_discount, discount_price_cents),
           employees(profiles(first_name, last_name)),
           profiles(first_name, last_name, email),
           centers(name, address)
@@ -97,7 +97,7 @@ const fetchBookingDetails = async () => {
           total_price_cents,
           duration_minutes,
           payment_method_status,
-          services(name),
+          services(name, price_cents, has_discount, discount_price_cents),
           employees(profiles(first_name, last_name)),
           profiles(first_name, last_name, email),
           centers(name, address)
@@ -179,9 +179,28 @@ const handlePaymentSetup = async () => {
     );
   }
 
-  const employeeName = booking.employees?.profiles 
-    ? `${booking.employees.profiles.first_name} ${booking.employees.profiles.last_name}`.trim()
-    : 'Nuestro equipo';
+  const employeeProfile = booking.employees?.profiles || null;
+  const employeeName = employeeProfile
+    ? `${employeeProfile.first_name} ${employeeProfile.last_name}`.trim()
+    : '';
+
+  const centerDisplayName = (() => {
+    const name = booking.centers?.name || '';
+    const addr = booking.centers?.address || '';
+    if (/zurbar[aá]n/i.test(addr) || /zurbar[aá]n/i.test(name)) return 'Zurbarán';
+    if (/vergara/i.test(addr) || /concha\s*espina/i.test(name)) return 'Concha Espina';
+    return name || 'The Nook Madrid';
+  })();
+
+  const computeDisplayTotal = () => {
+    const svc: any = booking.services || {};
+    const hasDiscount = !!svc.has_discount && typeof svc.discount_price_cents === 'number';
+    if (hasDiscount) return svc.discount_price_cents as number;
+    if (typeof booking.total_price_cents === 'number') return booking.total_price_cents;
+    if (typeof svc.price_cents === 'number') return svc.price_cents as number;
+    return 0;
+  };
+  const displayTotalCents = computeDisplayTotal();
 
   const isPaymentSetup = booking.payment_method_status === 'succeeded';
 
@@ -198,7 +217,7 @@ const handlePaymentSetup = async () => {
               loading="lazy"
             />
           </div>
-          <p className="text-muted-foreground">Asegurar tu reserva</p>
+          <p className="text-muted-foreground">Confirma tu reserva</p>
         </div>
 
         {/* Success Message if already completed */}
@@ -224,7 +243,7 @@ const handlePaymentSetup = async () => {
               Detalles de tu Reserva
             </CardTitle>
             <CardDescription>
-              Confirma los detalles antes de asegurar tu reserva
+              Revisa los datos antes de confirmar
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -267,26 +286,26 @@ const handlePaymentSetup = async () => {
                 </div>
                 <div>
                   <p className="font-medium">{booking.duration_minutes} minutos</p>
-                  <p className="text-sm text-muted-foreground">Duración estimada</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <User className="h-4 w-4 text-primary" />
+              {employeeProfile && (
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <User className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{employeeName}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">{employeeName}</p>
-                  <p className="text-sm text-muted-foreground">Profesional asignado</p>
-                </div>
-              </div>
+              )}
 
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <MapPin className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium">{booking.centers?.name || 'The Nook Madrid'}</p>
+                  <p className="font-medium">{centerDisplayName}</p>
                   <p className="text-sm text-muted-foreground">{booking.centers?.address || 'Centro de tratamientos'}</p>
                 </div>
               </div>
@@ -297,7 +316,7 @@ const handlePaymentSetup = async () => {
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Total:</span>
               <span className="text-2xl font-bold text-primary">
-                {booking.total_price_cents ? `${(booking.total_price_cents / 100).toFixed(2)}€` : 'A confirmar'}
+                {displayTotalCents ? `${(displayTotalCents / 100).toFixed(2)}€` : 'A confirmar'}
               </span>
             </div>
           </CardContent>
@@ -311,10 +330,11 @@ const handlePaymentSetup = async () => {
               <div className="space-y-2">
                 <h3 className="font-semibold text-blue-900">🛡️ Seguridad garantizada</h3>
                 <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Tu tarjeta se guarda de forma segura con Stripe</li>
-                  <li>• <strong>No se realizará ningún cargo hasta el momento del tratamiento</strong></li>
-                  <li>• Puedes cancelar hasta 24h antes sin coste</li>
+                  <li>• Pago seguro con Stripe</li>
                   <li>• Conexión SSL cifrada de extremo a extremo</li>
+                  <li>• Puedes consultar nuestras condiciones de reserva y compra en
+                    {' '}<a className="underline" href="https://www.thenookmadrid.com/politica-de-cancelaciones/" target="_blank" rel="noopener noreferrer">este enlace</a>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -338,7 +358,7 @@ onClick={handlePaymentSetup}
               ) : (
                 <>
                   <CreditCard className="mr-2 h-5 w-5" />
-                  🔒 Asegurar mi Reserva
+                  Confirmar mi Reserva
                 </>
               )}
             </Button>
@@ -365,10 +385,10 @@ onClick={handlePaymentSetup}
         <div className="text-center text-sm text-muted-foreground space-y-2">
           <div>
             <p>Si tienes alguna pregunta, contáctanos en</p>
-            <p className="font-medium">reservas@gnerai.com</p>
+            <p className="font-medium">reservas@thenookmadrid.com</p>
           </div>
           <p className="text-xs border-t pt-2">
-            © GnerAI 2025 · Todos los derechos reservados
+            © THE NOOK Madrid 2025 · Todos los derechos reservados
           </p>
         </div>
       </div>
