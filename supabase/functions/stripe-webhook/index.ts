@@ -640,6 +640,7 @@ async function processGiftCards(args: {
       code: string;
       amountCents: number;
       showPrice: boolean;
+      giftMessage?: string;
     },
     purchaseDate: string,
   ) => {
@@ -651,13 +652,24 @@ async function processGiftCards(args: {
     const overlayTitle = encodeCloudinaryText(`${card.title}${amountSuffix}`);
     const overlayCode = encodeCloudinaryText(card.code);
     const overlayDate = encodeCloudinaryText(purchaseDate.replace(/\//g, "-"));
+    const giftMessageRaw = (card.giftMessage ?? "").trim();
+    const overlayGiftMessage = giftMessageRaw ? encodeCloudinaryText(giftMessageRaw) : null;
 
-    const baseTransform = [
+    const transforms = [
       "f_auto,q_auto",
-      `l_text:Arial_35_bold:${overlayTitle},co_rgb:222222,g_center,y_-200`,
+      `l_text:Arial_35_bold:${overlayTitle},co_rgb:222222,g_center,y_-210`,
+    ];
+
+    if (overlayGiftMessage) {
+      transforms.push(`l_text:Arial_28:${overlayGiftMessage},co_rgb:374151,g_center,y_-160`);
+    }
+
+    transforms.push(
       `l_text:Arial_30_bold:${overlayCode},co_rgb:1A6AFF,g_center,y_210`,
       `l_text:Arial_28_bold:${overlayDate},co_rgb:059669,g_center,y_135`,
-    ].join("/");
+    );
+
+    const baseTransform = transforms.join("/");
 
     return {
       imageUrl: `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/${cloudinaryTemplateId}`,
@@ -836,6 +848,7 @@ async function processGiftCards(args: {
         code: card.code,
         amountCents: card.amount_cents,
         showPrice: card.showPrice,
+        giftMessage: card.giftMessage,
       },
       purchaseDate,
     );
@@ -888,9 +901,6 @@ async function processGiftCards(args: {
       card.isGift && !sendToBuyer && card.showBuyerData
         ? `<p style="font-size:14px;color:#6b7280;margin:8px 0;">De parte de: <strong>${card.purchaserName}</strong></p>`
         : "";
-    const giftBlock = card.giftMessage
-      ? `<div style="background:#f0fdf4;border-left:4px solid #10b981;padding:16px;margin:16px 0;border-radius:10px;"><p style="margin:0;font-style:italic;color:#047857;">"${card.giftMessage}"</p></div>`
-      : "";
     const imageBlock = imageSrc
       ? `<div style="margin:24px 0;text-align:center;"><img src="${imageSrc}" alt="Tarjeta regalo The Nook Madrid" style="max-width:100%;border-radius:12px;box-shadow:0 10px 30px rgba(26,106,255,0.1);" /></div>`
       : "";
@@ -927,7 +937,6 @@ async function processGiftCards(args: {
             <p>${introLine}</p>
             ${buyerInfoLine}
             ${cardTitleLine}
-            ${giftBlock}
             <div style="background:#f3f4f6;border-radius:12px;padding:20px;margin:24px 0;text-align:center;">
               <p style="margin:0 0 6px;font-size:14px;color:#6b7280;">Tu código de tarjeta regalo:</p>
               <p style="margin:0;font-size:32px;font-weight:700;color:#424CB8;letter-spacing:6px;">${card.code}</p>
@@ -1015,7 +1024,6 @@ async function processGiftCards(args: {
             <p>Hola <strong>${card.purchaserName}</strong>!</p>
             <p>Hemos enviado la tarjeta regalo a <strong>${recipientDisplayName}</strong>${recipientEmailLabel}.</p>
             ${cardTitleLine}
-            ${giftBlock}
             <div style="background:#f0fdf4;border-radius:12px;padding:20px;margin:24px 0;">
               <h3 style="margin-top:0;color:#166534;font-size:16px;">Resumen del regalo</h3>
               <p style="margin:6px 0;color:#374151;"><strong>Código:</strong> ${card.code}</p>
