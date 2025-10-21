@@ -254,12 +254,24 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
             const overlayCode = encodeCloudinaryText(card.code);
             const overlayDate = encodeCloudinaryText(purchaseDate.replace(/\//g, "-"));
 
-            const baseTransform = [
+            const giftMessageRaw = (card.gift_message ?? "").trim();
+            const overlayGiftMessage = giftMessageRaw ? encodeCloudinaryText(giftMessageRaw) : null;
+
+            const transforms = [
               "f_auto,q_auto",
-              `l_text:Arial_35_bold:${overlayTitle},co_rgb:222222,g_center,y_-200`,
+              `l_text:Arial_35_bold:${overlayTitle},co_rgb:222222,g_center,y_-210`,
+            ];
+
+            if (overlayGiftMessage) {
+              transforms.push(`l_text:Arial_28:${overlayGiftMessage},co_rgb:374151,g_center,y_-160`);
+            }
+
+            transforms.push(
               `l_text:Arial_30_bold:${overlayCode},co_rgb:1A6AFF,g_center,y_210`,
               `l_text:Arial_28_bold:${overlayDate},co_rgb:059669,g_center,y_135`,
-            ].join("/");
+            );
+
+            const baseTransform = transforms.join("/");
 
             const imageUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/${cloudinaryTemplateId}`;
             const downloadUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/fl_attachment/${cloudinaryTemplateId}`;
@@ -313,13 +325,29 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 : "";
               const treatmentLabel =
                 (card.gift_card_name?.trim() || "Tarjeta regalo") + formattedAmount;
+              const giftMessageRaw = (card.gift_message ?? "").trim();
+              const giftMessageLines = giftMessageRaw
+                ? giftMessageRaw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+                : [];
+              const treatmentFontSize = svgWidth * 0.032;
+              const messageFontSize = svgWidth * 0.026;
+              const treatmentY = svgHeight * 0.53 - 10;
+              const messageStartY = treatmentY + treatmentFontSize + 10;
+              const messageLineHeight = messageFontSize * 1.25;
+              const giftMessageSvg = giftMessageLines
+                .map(
+                  (line, index) =>
+                    `<text x="${centerX}" y="${messageStartY + index * messageLineHeight}" text-anchor="middle" font-family="\"Source Sans Pro\", Arial, sans-serif" font-size="${messageFontSize}" font-weight="400" fill="#4b5563">${escapeSvgText(line)}</text>`,
+                )
+                .join("\n");
 
               const svgContent = `
                 <svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">
                   <image href="${templateImage}" x="0" y="0" width="${svgWidth}" height="${svgHeight}" preserveAspectRatio="xMidYMid slice"/>
                   
                   <text x="${centerX}" y="${svgHeight * 0.42}" text-anchor="middle" font-family="\"Source Sans Pro\", Arial, sans-serif" font-size="${svgWidth * 0.04}" font-weight="600" fill="#1f2937">${escapeSvgText(recipientName)}</text>
-                  <text x="${centerX}" y="${svgHeight * 0.53}" text-anchor="middle" font-family="\"Source Sans Pro\", Arial, sans-serif" font-size="${svgWidth * 0.032}" font-weight="500" fill="#374151">${escapeSvgText(treatmentLabel)}</text>
+                  <text x="${centerX}" y="${treatmentY}" text-anchor="middle" font-family="\"Source Sans Pro\", Arial, sans-serif" font-size="${treatmentFontSize}" font-weight="500" fill="#374151">${escapeSvgText(treatmentLabel)}</text>
+                  ${giftMessageLines.length ? giftMessageSvg : ""}
                   <text x="${centerX}" y="${svgHeight * 0.64}" text-anchor="middle" font-family="\"Source Sans Pro\", Arial, sans-serif" font-size="${svgWidth * 0.055}" font-weight="700" fill="#111827" letter-spacing="6">${escapeSvgText(card.code)}</text>
                   <text x="${centerX}" y="${svgHeight * 0.72}" text-anchor="middle" font-family="\"Source Sans Pro\", Arial, sans-serif" font-size="${svgWidth * 0.03}" font-weight="500" fill="#1f2937">${escapeSvgText(purchaseDate)}</text>
                 </svg>
@@ -453,7 +481,6 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
             const recipientEmail = card.recipient_email;
             const recipientName = card.recipient_name;
             const purchaserName = card.purchased_by_name;
-            const giftMessage = card.gift_message;
 
             // Email al destinatario (si es regalo) o comprador
             const finalRecipientEmail = isGift ? recipientEmail : purchaserEmail;
@@ -470,7 +497,6 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                     <h2 style="color: #8B5CF6;">${isGift ? '🎁 ¡Has recibido una tarjeta regalo!' : '✨ Tu tarjeta regalo'}</h2>
                     <h3 style="color: #D4B896; margin: 10px 0;">${card.gift_card_name}</h3>
                     ${isGift ? `<p style="font-size: 18px; color: #666;">De parte de: <strong>${purchaserName || 'Alguien especial'}</strong></p>` : ''}
-                    ${giftMessage ? `<div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; font-style: italic; color: #666;">"${giftMessage}"</div>` : ''}
                     
                     <div style="margin: 30px 0;">
                       <img src="${giftCardImageSrc}" alt="${card.gift_card_name}" style="max-width: 100%; height: auto; border-radius: 15px;"/>
@@ -535,7 +561,6 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                       <p style="color: #374151; margin: 5px 0;"><strong>Para:</strong> ${recipientName} (${recipientEmail})</p>
                       <p style="color: #374151; margin: 5px 0;"><strong>Valor:</strong> ${(card.amount_cents / 100).toFixed(2)}€</p>
                       <p style="color: #374151; margin: 5px 0;"><strong>Código:</strong> ${card.code}</p>
-                      ${giftMessage ? `<p style="color: #374151; margin: 5px 0;"><strong>Mensaje:</strong> "${giftMessage}"</p>` : ''}
                     </div>
                     
                     <p style="color: #666; font-size: 14px;">
