@@ -944,7 +944,7 @@ async function processGiftCards(args: {
                 <li>Disfruta de tu experiencia en The Nook.</li>
               </ol>
             </div>
-            <p style="font-size:13px;color:#4b5563;">Si necesitas ayuda, escríbenos a <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@gnerai.com</a>.</p>
+            <p style="font-size:13px;color:#4b5563;">Si necesitas ayuda, escríbenos a <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a>.</p>
             <p style="font-size:13px;color:#4b5563;margin-top:12px;">Reservas: 911 481 474 / 622 360 922</p>
           </td>
         </tr>
