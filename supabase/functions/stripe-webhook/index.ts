@@ -624,7 +624,7 @@ async function processGiftCards(args: {
 
   const cloudinaryCloudName = Deno.env.get("CLOUDINARY_CLOUD_NAME")?.trim();
   const cloudinaryTemplateId =
-    Deno.env.get("CLOUDINARY_GIFT_CARD_TEMPLATE")?.trim() || "template_ukdzku.jpg";
+    Deno.env.get("CLOUDINARY_GIFT_CARD_TEMPLATE")?.trim() || "tarjeta_regalo_base";
 
   const encodeCloudinaryText = (value: string) =>
     encodeURIComponent(
@@ -634,6 +634,13 @@ async function processGiftCards(args: {
         .trim(),
     );
 
+  const sanitizeAttachmentPart = (value: string) =>
+    (value ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "")
+      .slice(0, 40);
+
   const buildCloudinaryUrls = (
     card: {
       title: string;
@@ -641,6 +648,7 @@ async function processGiftCards(args: {
       amountCents: number;
       showPrice: boolean;
       giftMessage?: string;
+      recipientName?: string;
     },
     purchaseDate: string,
   ) => {
@@ -670,10 +678,13 @@ async function processGiftCards(args: {
     );
 
     const baseTransform = transforms.join("/");
+    const nameCandidate =
+      sanitizeAttachmentPart(card.recipientName || card.title || card.code) || card.code;
+    const attachmentLabel = encodeURIComponent(`TarjetaRegalo${nameCandidate}`);
 
     return {
       imageUrl: `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/${cloudinaryTemplateId}`,
-      downloadUrl: `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/fl_attachment/${cloudinaryTemplateId}`,
+      downloadUrl: `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/fl_attachment:${attachmentLabel}/${cloudinaryTemplateId}`,
     };
   };
 
@@ -849,6 +860,7 @@ async function processGiftCards(args: {
         amountCents: card.amount_cents,
         showPrice: card.showPrice,
         giftMessage: card.giftMessage,
+        recipientName: card.recipientName,
       },
       purchaseDate,
     );

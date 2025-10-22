@@ -28,7 +28,7 @@ serve(async (req) => {
   const internalNotificationEmail = (Deno.env.get("THENOOK_NOTIFICATION_EMAIL") ?? "reservas@thenookmadrid.com").trim();
   const cloudinaryCloudName = Deno.env.get("CLOUDINARY_CLOUD_NAME")?.trim();
   const cloudinaryTemplateId =
-    Deno.env.get("CLOUDINARY_GIFT_CARD_TEMPLATE")?.trim() || "template_ukdzku.jpg";
+    Deno.env.get("CLOUDINARY_GIFT_CARD_TEMPLATE")?.trim() || "tarjeta_regalo_base";
 
   const sendWithInternalCopy = async (payload: any) => {
     const toField = payload.to;
@@ -238,6 +238,13 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
           } | null;
         };
 
+        const sanitizeAttachmentPart = (value: string | null | undefined) =>
+          (value ?? "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-zA-Z0-9]+/g, "")
+            .slice(0, 40);
+
         async function generateCloudinaryImage(card: any, purchaseDate: string): Promise<GiftCardImageResult | null> {
           if (!cloudinaryCloudName) return null;
           try {
@@ -272,9 +279,16 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
             );
 
             const baseTransform = transforms.join("/");
+            const downloadNameCandidate =
+              sanitizeAttachmentPart(
+                card.recipient_name?.trim() ||
+                  card.gift_card_name?.trim() ||
+                  card.purchased_by_name?.trim(),
+              ) || card.code;
+            const attachmentLabel = encodeURIComponent(`TarjetaRegalo${downloadNameCandidate}`);
 
             const imageUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/${cloudinaryTemplateId}`;
-            const downloadUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/fl_attachment/${cloudinaryTemplateId}`;
+            const downloadUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/fl_attachment:${attachmentLabel}/${cloudinaryTemplateId}`;
 
             const response = await fetch(imageUrl);
             if (!response.ok) {
