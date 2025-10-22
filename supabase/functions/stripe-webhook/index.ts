@@ -657,16 +657,16 @@ async function processGiftCards(args: {
 
     const transforms = [
       "f_auto,q_auto",
-      `l_text:Arial_35_bold:${overlayTitle},co_rgb:222222,g_center,y_-210`,
+      `l_text:Avenir_35_bold:${overlayTitle},co_rgb:4a4a4a,g_center,y_-210`,
     ];
 
     if (overlayGiftMessage) {
-      transforms.push(`l_text:Arial_28:${overlayGiftMessage},co_rgb:374151,g_center,y_-160`);
+      transforms.push(`l_text:Avenir_28:${overlayGiftMessage},co_rgb:4a4a4a,g_center,y_-160`);
     }
 
     transforms.push(
-      `l_text:Arial_30_bold:${overlayCode},co_rgb:1A6AFF,g_center,y_210`,
-      `l_text:Arial_28_bold:${overlayDate},co_rgb:059669,g_center,y_135`,
+      `l_text:Avenir_30_bold:${overlayCode},co_rgb:4a4a4a,g_center,y_210`,
+      `l_text:Avenir_28_bold:${overlayDate},co_rgb:4a4a4a,g_center,y_135`,
     );
 
     const baseTransform = transforms.join("/");
@@ -892,14 +892,14 @@ async function processGiftCards(args: {
     const safePrimaryName = (primaryName || "Cliente").trim();
     const amountLineVisible = card.showPrice !== false;
     const cardTitleLine = card.giftCardName
-      ? `<p style="font-size:18px;font-weight:600;margin:16px 0 8px;color:#1f2937;">${card.giftCardName}</p>`
+      ? `<p style="font-size:18px;font-weight:600;margin:16px 0 8px;color:#4a4a4a;">${card.giftCardName}</p>`
       : "";
     const priceLine = amountLineVisible
-      ? `<p style="margin:10px 0 0;font-size:16px;font-weight:600;color:#059669;">Valor: ${amountFormatted}</p>`
+      ? `<p style="margin:10px 0 0;font-size:16px;font-weight:600;color:#4a4a4a;">Valor: ${amountFormatted}</p>`
       : "";
     const buyerInfoLine =
       card.isGift && !sendToBuyer && card.showBuyerData
-        ? `<p style="font-size:14px;color:#6b7280;margin:8px 0;">De parte de: <strong>${card.purchaserName}</strong></p>`
+        ? `<p style="font-size:14px;color:#4a4a4a;margin:8px 0;">De parte de: <strong>${card.purchaserName}</strong></p>`
         : "";
     const imageBlock = imageSrc
       ? `<div style="margin:24px 0;text-align:center;"><img src="${imageSrc}" alt="Tarjeta regalo The Nook Madrid" style="max-width:100%;border-radius:12px;box-shadow:0 10px 30px rgba(26,106,255,0.1);" /></div>`
@@ -923,11 +923,11 @@ async function processGiftCards(args: {
     <title>Tarjeta Regalo - The Nook Madrid</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
-  <body style="margin:0;padding:0;background:#f8f9fb;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+  <body style="margin:0;padding:0;background:#f8f9fb;font-family:'Avenir',Helvetica,Arial,sans-serif;color:#4a4a4a;">
     <center style="width:100%;background:#f8f9fb;">
       <table role="presentation" width="100%" style="max-width:600px;margin:auto;background:#ffffff;border-radius:12px;box-shadow:0 10px 35px rgba(15,23,42,0.08);border-collapse:separate;">
         <tr>
-          <td style="background:linear-gradient(135deg,#424CB8,#1A6AFF);color:#fff;text-align:center;padding:28px;border-radius:12px 12px 0 0;">
+          <td style="background:linear-gradient(135deg,#424CB8,#1A6AFF);color:#4a4a4a;text-align:center;padding:28px;border-radius:12px 12px 0 0;">
             <h1 style="margin:0;font-size:24px;">🎁 Tarjeta Regalo The Nook Madrid</h1>
           </td>
         </tr>
@@ -938,27 +938,27 @@ async function processGiftCards(args: {
             ${buyerInfoLine}
             ${cardTitleLine}
             <div style="background:#f3f4f6;border-radius:12px;padding:20px;margin:24px 0;text-align:center;">
-              <p style="margin:0 0 6px;font-size:14px;color:#6b7280;">Tu código de tarjeta regalo:</p>
-              <p style="margin:0;font-size:32px;font-weight:700;color:#424CB8;letter-spacing:6px;">${card.code}</p>
+              <p style="margin:0 0 6px;font-size:14px;color:#4a4a4a;">Tu código de tarjeta regalo:</p>
+              <p style="margin:0;font-size:32px;font-weight:700;color:#4a4a4a;letter-spacing:6px;">${card.code}</p>
               ${priceLine}
-              <p style="font-size:13px;color:#6b7280;margin:8px 0 0;">Fecha de compra: ${purchaseDate}</p>
+              <p style="font-size:13px;color:#4a4a4a;margin:8px 0 0;">Fecha de compra: ${purchaseDate}</p>
             </div>
             ${imageBlock}
             ${downloadBlock}
             <div style="background:#f0f9ff;border-radius:12px;padding:20px;margin:24px 0;">
-              <h3 style="margin-top:0;color:#1e40af;font-size:18px;">¿Cómo usar tu tarjeta regalo?</h3>
-              <ol style="margin:0;padding-left:20px;color:#374151;font-size:14px;line-height:1.6;">
+              <h3 style="margin-top:0;color:#4a4a4a;font-size:18px;">¿Cómo usar tu tarjeta regalo?</h3>
+              <ol style="margin:0;padding-left:20px;color:#4a4a4a;font-size:14px;line-height:1.6;">
                 <li>Reserva tu cita llamando al <strong>911 481 474</strong> o mandando un WhatsApp al <strong>622 360 922</strong>.</li>
                 <li>Este es el código de tu Tarjeta Regalo, <strong>${card.code}</strong>, introdúcelo al reservar online o comunícalo si lo haces por teléfono o por WhatsApp.</li>
                 <li>Disfruta de tu experiencia en The Nook.</li>
               </ol>
             </div>
-            <p style="font-size:13px;color:#4b5563;">Si necesitas ayuda, escríbenos a <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a>.</p>
-            <p style="font-size:13px;color:#4b5563;margin-top:12px;">Reservas: 911 481 474 / 622 360 922</p>
+            <p style="font-size:13px;color:#4a4a4a;">Si necesitas ayuda, escríbenos a <a href="mailto:reservas@thenookmadrid.com" style="color:#4a4a4a;">reservas@thenookmadrid.com</a>.</p>
+            <p style="font-size:13px;color:#4a4a4a;margin-top:12px;">Reservas: 911 481 474 / 622 360 922</p>
           </td>
         </tr>
       </table>
-      <p style="font-size:11px;color:#9ca3af;margin:20px auto 0;">© ${year} THE NOOK Madrid — Este correo se ha generado automáticamente.</p>
+      <p style="font-size:11px;color:#4a4a4a;margin:20px auto 0;">© ${year} THE NOOK Madrid — Este correo se ha generado automáticamente.</p>
     </center>
   </body>
 </html>
@@ -1011,11 +1011,11 @@ async function processGiftCards(args: {
     <title>Confirmación Tarjeta Regalo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
-  <body style="margin:0;padding:0;background:#f8f9fb;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+  <body style="margin:0;padding:0;background:#f8f9fb;font-family:'Avenir',Helvetica,Arial,sans-serif;color:#4a4a4a;">
     <center style="width:100%;background:#f8f9fb;">
       <table role="presentation" width="100%" style="max-width:600px;margin:auto;background:#ffffff;border-radius:12px;box-shadow:0 10px 35px rgba(15,23,42,0.08);border-collapse:separate;">
         <tr>
-          <td style="background:linear-gradient(135deg,#1FA16A,#0EA5E9);color:#fff;text-align:center;padding:26px;border-radius:12px 12px 0 0;">
+          <td style="background:linear-gradient(135deg,#1FA16A,#0EA5E9);color:#4a4a4a;text-align:center;padding:26px;border-radius:12px 12px 0 0;">
             <h1 style="margin:0;font-size:22px;">✅ Confirmación de envío</h1>
           </td>
         </tr>
@@ -1025,20 +1025,20 @@ async function processGiftCards(args: {
             <p>Hemos enviado la tarjeta regalo a <strong>${recipientDisplayName}</strong>${recipientEmailLabel}.</p>
             ${cardTitleLine}
             <div style="background:#f0fdf4;border-radius:12px;padding:20px;margin:24px 0;">
-              <h3 style="margin-top:0;color:#166534;font-size:16px;">Resumen del regalo</h3>
-              <p style="margin:6px 0;color:#374151;"><strong>Código:</strong> ${card.code}</p>
-              ${amountLineVisible ? `<p style="margin:6px 0;color:#374151;"><strong>Valor:</strong> ${amountFormatted}</p>` : ""}
-              <p style="margin:6px 0;color:#374151;"><strong>Fecha de compra:</strong> ${purchaseDate}</p>
-              <p style="margin:6px 0;color:#374151;"><strong>Destinatario:</strong> ${recipientDisplayName}${recipientEmailLabel}</p>
+              <h3 style="margin-top:0;color:#4a4a4a;font-size:16px;">Resumen del regalo</h3>
+              <p style="margin:6px 0;color:#4a4a4a;"><strong>Código:</strong> ${card.code}</p>
+              ${amountLineVisible ? `<p style="margin:6px 0;color:#4a4a4a;"><strong>Valor:</strong> ${amountFormatted}</p>` : ""}
+              <p style="margin:6px 0;color:#4a4a4a;"><strong>Fecha de compra:</strong> ${purchaseDate}</p>
+              <p style="margin:6px 0;color:#4a4a4a;"><strong>Destinatario:</strong> ${recipientDisplayName}${recipientEmailLabel}</p>
             </div>
             ${imageBlock}
             ${downloadBlock}
-            <p style="font-size:13px;color:#4b5563;">Te hemos adjuntado la tarjeta por si deseas reenviarla manualmente.</p>
-            <p style="font-size:13px;color:#4b5563;">Gracias por confiar en The Nook Madrid.</p>
+            <p style="font-size:13px;color:#4a4a4a;">Te hemos adjuntado la tarjeta por si deseas reenviarla manualmente.</p>
+            <p style="font-size:13px;color:#4a4a4a;">Gracias por confiar en The Nook Madrid.</p>
           </td>
         </tr>
       </table>
-      <p style="font-size:11px;color:#9ca3af;margin:20px auto 0;">© ${year} THE NOOK Madrid — Este correo se ha generado automáticamente.</p>
+      <p style="font-size:11px;color:#4a4a4a;margin:20px auto 0;">© ${year} THE NOOK Madrid — Este correo se ha generado automáticamente.</p>
     </center>
   </body>
 </html>
