@@ -259,16 +259,16 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
 
             const transforms = [
               "f_auto,q_auto",
-              `l_text:Helvetica_Neue_35_bold:${overlayTitle},co_rgb:4a4a4a,g_center,y_-210`,
+              `l_text:Helvetica_35_bold:${overlayTitle},co_rgb:4a4a4a,g_center,y_-210`,
             ];
 
             if (overlayGiftMessage) {
-              transforms.push(`l_text:Helvetica_Neue_28:${overlayGiftMessage},co_rgb:4a4a4a,g_center,y_-160`);
+              transforms.push(`l_text:Helvetica_28:${overlayGiftMessage},co_rgb:4a4a4a,g_center,y_-160`);
             }
 
             transforms.push(
-              `l_text:Helvetica_Neue_30_bold:${overlayCode},co_rgb:4a4a4a,g_center,y_210`,
-              `l_text:Helvetica_Neue_28_bold:${overlayDate},co_rgb:4a4a4a,g_center,y_135`,
+              `l_text:Helvetica_30_bold:${overlayCode},co_rgb:4a4a4a,g_center,y_210`,
+              `l_text:Helvetica_28_bold:${overlayDate},co_rgb:4a4a4a,g_center,y_135`,
             );
 
             const baseTransform = transforms.join("/");
@@ -337,7 +337,7 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
               const giftMessageSvg = giftMessageLines
                 .map(
                   (line, index) =>
-                    `<text x="${centerX}" y="${messageStartY + index * messageLineHeight}" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="${messageFontSize}" font-weight="400" fill="#4a4a4a">${escapeSvgText(line)}</text>`,
+                    `<text x="${centerX}" y="${messageStartY + index * messageLineHeight}" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="${messageFontSize}" font-weight="400" fill="#4a4a4a">${escapeSvgText(line)}</text>`,
                 )
                 .join("\n");
 
@@ -345,11 +345,11 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 <svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">
                   <image href="${templateImage}" x="0" y="0" width="${svgWidth}" height="${svgHeight}" preserveAspectRatio="xMidYMid slice"/>
                   
-                  <text x="${centerX}" y="${svgHeight * 0.42}" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="${svgWidth * 0.04}" font-weight="600" fill="#4a4a4a">${escapeSvgText(recipientName)}</text>
-                  <text x="${centerX}" y="${treatmentY}" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="${treatmentFontSize}" font-weight="500" fill="#4a4a4a">${escapeSvgText(treatmentLabel)}</text>
+                  <text x="${centerX}" y="${svgHeight * 0.42}" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="${svgWidth * 0.04}" font-weight="600" fill="#4a4a4a">${escapeSvgText(recipientName)}</text>
+                  <text x="${centerX}" y="${treatmentY}" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="${treatmentFontSize}" font-weight="500" fill="#4a4a4a">${escapeSvgText(treatmentLabel)}</text>
                   ${giftMessageLines.length ? giftMessageSvg : ""}
-                  <text x="${centerX}" y="${svgHeight * 0.64}" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="${svgWidth * 0.055}" font-weight="700" fill="#4a4a4a" letter-spacing="6">${escapeSvgText(card.code)}</text>
-                  <text x="${centerX}" y="${svgHeight * 0.72}" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="${svgWidth * 0.03}" font-weight="500" fill="#4a4a4a">${escapeSvgText(purchaseDate)}</text>
+                  <text x="${centerX}" y="${svgHeight * 0.64}" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="${svgWidth * 0.055}" font-weight="700" fill="#4a4a4a" letter-spacing="6">${escapeSvgText(card.code)}</text>
+                  <text x="${centerX}" y="${svgHeight * 0.72}" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="${svgWidth * 0.03}" font-weight="500" fill="#4a4a4a">${escapeSvgText(purchaseDate)}</text>
                 </svg>
               `;
 
@@ -405,16 +405,16 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
             const fallbackSvg = `
               <svg width="400" height="250" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
                 <rect width="400" height="250" fill="#D4B896"/>
-                <text x="200" y="50" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="24" font-weight="bold" fill="#4a4a4a">
+                <text x="200" y="50" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="24" font-weight="bold" fill="#4a4a4a">
                   TARJETA REGALO
                 </text>
-                <text x="200" y="120" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" fill="#4a4a4a">
+                <text x="200" y="120" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="20" font-weight="bold" fill="#4a4a4a">
                   ${escapeSvgText(card.code)}
                 </text>
-                <text x="200" y="150" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" fill="#4a4a4a">
+                <text x="200" y="150" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="16" fill="#4a4a4a">
                   ${escapeSvgText(purchaseDate)}
                 </text>
-                <text x="200" y="200" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" fill="#4a4a4a">
+                <text x="200" y="200" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="16" fill="#4a4a4a">
                   THE NOOK MADRID
                 </text>
               </svg>
@@ -434,10 +434,10 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
             const errorSvg = `
               <svg width="400" height="250" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
                 <rect width="400" height="250" fill="#FEE2E2"/>
-                <text x="200" y="120" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="18" font-weight="bold" fill="#4a4a4a">
+                <text x="200" y="120" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="18" font-weight="bold" fill="#4a4a4a">
                   Error al generar tarjeta
                 </text>
-                <text x="200" y="160" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" fill="#4a4a4a">
+                <text x="200" y="160" text-anchor="middle" font-family="'Helvetica', Arial, sans-serif" font-size="14" fill="#4a4a4a">
                   Código: ${escapeSvgText(card.code)}
                 </text>
               </svg>
@@ -492,7 +492,7 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
                 : `Tu ${card.gift_card_name} de The Nook Madrid`;
                 
               const recipientHtml = `
-                <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="font-family: 'Helvetica', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                   <div style="text-align: center; padding: 20px;">
                     <h2 style="color: #4a4a4a;">${isGift ? '🎁 ¡Has recibido una tarjeta regalo!' : '✨ Tu tarjeta regalo'}</h2>
                     <h3 style="color: #4a4a4a; margin: 10px 0;">${card.gift_card_name}</h3>
@@ -547,7 +547,7 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
             // Email al comprador (si es regalo y es diferente del destinatario)
             if (isGift && purchaserEmail && purchaserEmail.toLowerCase() !== recipientEmail?.toLowerCase()) {
               const purchaserHtml = `
-                <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="font-family: 'Helvetica', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                   <div style="text-align: center; padding: 20px;">
                     <h2 style="color: #4a4a4a;">✅ Confirmación de compra</h2>
                     <p>Tu tarjeta regalo ha sido enviada exitosamente a <strong>${recipientName}</strong> (${recipientEmail})</p>
@@ -598,7 +598,7 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
           // Email al administrador
           if (adminEmail) {
             const adminHtml = `
-              <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+              <div style="font-family: 'Helvetica', Arial, sans-serif;">
                 <h3>🎁 Nueva compra de tarjetas regalo</h3>
                 <p><strong>Total:</strong> ${created.length} tarjeta(s)</p>
                 <p><strong>Comprador:</strong> ${buyerEmail || "desconocido"}</p>
