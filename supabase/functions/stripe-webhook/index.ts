@@ -657,16 +657,16 @@ async function processGiftCards(args: {
 
     const transforms = [
       "f_auto,q_auto",
-      `l_text:Avenir_35_bold:${overlayTitle},co_rgb:4a4a4a,g_center,y_-210`,
+      `l_text:Helvetica_Neue_35_bold:${overlayTitle},co_rgb:4a4a4a,g_center,y_-210`,
     ];
 
     if (overlayGiftMessage) {
-      transforms.push(`l_text:Avenir_28:${overlayGiftMessage},co_rgb:4a4a4a,g_center,y_-160`);
+      transforms.push(`l_text:Helvetica_Neue_28:${overlayGiftMessage},co_rgb:4a4a4a,g_center,y_-160`);
     }
 
     transforms.push(
-      `l_text:Avenir_30_bold:${overlayCode},co_rgb:4a4a4a,g_center,y_210`,
-      `l_text:Avenir_28_bold:${overlayDate},co_rgb:4a4a4a,g_center,y_135`,
+      `l_text:Helvetica_Neue_30_bold:${overlayCode},co_rgb:4a4a4a,g_center,y_210`,
+      `l_text:Helvetica_Neue_28_bold:${overlayDate},co_rgb:4a4a4a,g_center,y_135`,
     );
 
     const baseTransform = transforms.join("/");
@@ -923,11 +923,11 @@ async function processGiftCards(args: {
     <title>Tarjeta Regalo - The Nook Madrid</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
-  <body style="margin:0;padding:0;background:#f8f9fb;font-family:'Avenir',Helvetica,Arial,sans-serif;color:#4a4a4a;">
+  <body style="margin:0;padding:0;background:#f8f9fb;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#4a4a4a;">
     <center style="width:100%;background:#f8f9fb;">
       <table role="presentation" width="100%" style="max-width:600px;margin:auto;background:#ffffff;border-radius:12px;box-shadow:0 10px 35px rgba(15,23,42,0.08);border-collapse:separate;">
         <tr>
-          <td style="background:linear-gradient(135deg,#424CB8,#1A6AFF);color:#4a4a4a;text-align:center;padding:28px;border-radius:12px 12px 0 0;">
+          <td style="background:linear-gradient(135deg,#424CB8,#1A6AFF);color:#ffffff;text-align:center;padding:28px;border-radius:12px 12px 0 0;">
             <h1 style="margin:0;font-size:24px;">🎁 Tarjeta Regalo The Nook Madrid</h1>
           </td>
         </tr>
@@ -1011,7 +1011,7 @@ async function processGiftCards(args: {
     <title>Confirmación Tarjeta Regalo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
-  <body style="margin:0;padding:0;background:#f8f9fb;font-family:'Avenir',Helvetica,Arial,sans-serif;color:#4a4a4a;">
+  <body style="margin:0;padding:0;background:#f8f9fb;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#4a4a4a;">
     <center style="width:100%;background:#f8f9fb;">
       <table role="presentation" width="100%" style="max-width:600px;margin:auto;background:#ffffff;border-radius:12px;box-shadow:0 10px 35px rgba(15,23,42,0.08);border-collapse:separate;">
         <tr>
