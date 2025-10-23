@@ -344,6 +344,10 @@ const GiftCardsPage = () => {
       }));
     };
     
+    const setDialogOpen = (open: boolean) => {
+      setCustomGiftDialogs(prev => ({ ...prev, [groupKey]: open }));
+    };
+    
     const handleCustomAmountAdd = (amount: number) => {
       handleAddToCart({
         name: `${t('custom_gift_card')} - ${amount}€`,
@@ -372,16 +376,16 @@ const GiftCardsPage = () => {
           </p>
         </CardHeader>
         <CardFooter className="pt-0">
-          <Dialog open={isOpen} onOpenChange={(open) => handleCustomGiftToggle(groupKey)}>
+          <Dialog open={isOpen} onOpenChange={setDialogOpen}>
             <Button 
               variant="outline" 
               className="w-full"
-              onClick={() => handleCustomGiftToggle(groupKey)}
+              onClick={() => setDialogOpen(true)}
             >
               <Settings className="h-4 w-4 mr-2" />
               {t('customize')}
             </Button>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md top-[10vh] translate-y-0">
               <ViewportSafeWrapper isOpen={isOpen} autoScroll={true} delay={100}>
                 <DialogHeader>
                   <DialogTitle>{t('customize_gift_card_title')}</DialogTitle>
@@ -1035,7 +1039,7 @@ const GiftCardsPage = () => {
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-                          {renderCustomGiftCard('ritualesParaDos', t('rituals_for_two'))}
+                          {renderCustomGiftCard('ritualesParaDos', t('gift_card_group_couples_rituals'))}
                           {groups.ritualesParaDos.map((item) => (
                             <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200 max-w-sm">
                                <OptimizedImage

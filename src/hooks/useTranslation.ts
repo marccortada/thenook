@@ -74,6 +74,8 @@ const translations = {
     "email_beneficiary": "Email al beneficiario",
     "email_center": "Notificación al centro",
     "open_secure_payment": "Abrir Página de Pago Seguro",
+    "method_card": "Tarjeta",
+    "secure_payment_with_stripe": "Pago 100% seguro procesado por Stripe",
     
     // Gift Cards Page
     "gift_cards_page": "Tarjetas Regalo",
@@ -83,7 +85,7 @@ const translations = {
     "gift_card_group_four_hands": "Tarjeta Regalo - Masaje a Cuatro Manos",
     "gift_card_group_individual_rituals": "Tarjeta Regalo - Rituales Individuales",
     "gift_card_group_couples_rituals": "Tarjeta Regalo - Rituales para Dos",
-    "rituals_for_two": "Rituales para Dos Personas",
+    "rituals_for_two": "Bonos para Rituales para Dos",
     "custom_gift_card_title": "Tarjeta Regalo Personalizada",
     "choose_amount_for": "Elige el valor que prefieras para",
     "customize": "Personalizar",
@@ -97,7 +99,7 @@ const translations = {
     "gift_card_group_four_hands": "Tarjeta Regalo - Masaje a Cuatro Manos",
     "gift_card_group_individual_rituals": "Tarjeta Regalo - Rituales Individuales",
     "gift_card_group_couples_rituals": "Tarjeta Regalo - Rituales para Dos",
-    "rituals_for_two": "Rituales para Dos Personas",
+    "rituals_for_two": "Bonos para Rituales para Dos",
     "cart": "Carrito",
     "your_cart": "Tu carrito",
      "cart_empty": "Tu carrito está vacío.",
@@ -196,10 +198,10 @@ const translations = {
      "gift_message": "Mensaje de regalo (opcional)",
      "gift_message_placeholder": "Tu mensaje personalizado...",
      "empty_cart_button": "Vaciar",
-       "individual_massages_packages": "Tarjetas para Masaje Individual",
-       "four_hands_packages": "Tarjetas para Masaje a Cuatro Manos",
-       "rituals_packages": "Tarjetas para Rituales Individuales",
-       "couples_packages": "Tarjetas para Masaje para Dos",
+     "individual_massages_packages": "Bonos para Masaje Individual",
+      "four_hands_packages": "Bonos para Masaje a Cuatro Manos",
+      "rituals_packages": "Bonos para Rituales Individuales",
+      "couples_packages": "Bonos para Masaje para Dos",
      "sessions_count": "sesiones",
      
      // Package names translations
@@ -349,6 +351,8 @@ const translations = {
     "email_beneficiary": "Email to beneficiary",
     "email_center": "Notification to center",
     "open_secure_payment": "Open Secure Payment Page",
+    "method_card": "Card",
+    "secure_payment_with_stripe": "100% secure payment processed by Stripe",
     
     // Gift Cards Page
     "gift_cards_page": "Gift Cards",
@@ -1266,6 +1270,210 @@ const translations = {
     "value_min_max_note": "Mínimo: 10 € – Máximo: 500 €",
     "customize_gift_card_title": "Personalizar Cartão‑Presente",
     "customize_gift_card_description_prefix": "Seleciona o valor do cartão‑presente para",
+  },
+  zh: {
+    // Header / Landing
+    "admin": "管理",
+    "back": "返回",
+    "wellness_center": "身心健康中心",
+    "landing_subtitle": "在我们独家的按摩中心探索放松与健康的完美平衡",
+    "book_appointment": "预约",
+    "book_description": "预约您的放松按摩",
+    "book_now": "立即预约",
+    "gift_cards": "礼品卡",
+    "gift_description": "赠送独特的身心健康体验",
+    "our_locations": "我们的门店",
+    "locations_subtitle": "在马德里找到我们",
+    "open_maps": "在地图中打开",
+    "hours": "营业时间",
+    "rights_reserved": "版权所有",
+
+    // Bonos / Vouchers page
+    "massage_vouchers": "按摩套餐",
+    "save_buying_session_packages": "购买多次套餐更优惠",
+    "cart": "购物车",
+    "your_cart": "您的购物车",
+    "cart_empty": "您的购物车是空的。",
+    "empty_cart": "清空",
+    "empty_cart_button": "清空",
+    "total": "合计",
+    "buy_button": "购买",
+
+    // Packages groups (Bonos)
+    "individual_massages_packages": "单人按摩套餐",
+    "couples_packages": "双人按摩套餐",
+    "four_hands_packages": "四手按摩套餐",
+    "rituals_packages": "单人仪式套餐",
+    "rituals_for_two": "双人仪式套餐",
+    "sessions_count": "次",
+    "no_individual_vouchers": "暂无单人套餐",
+    "no_two_people_vouchers": "暂无双人套餐",
+    "no_four_hands_vouchers": "暂无四手按摩套餐",
+    "no_ritual_vouchers": "暂无仪式套餐",
+
+    // Gift Cards page
+    "gift_cards_page": "礼品卡",
+    "gift_cards_subtitle": "选择您的礼品卡。优雅设计，100% 自适应。",
+    "add_to_cart": "加入购物车",
+    "added_to_cart": "已加入购物车",
+    "custom_amount": "自定义金额",
+    "custom_gift_card": "自定义金额礼品卡",
+    "custom_gift_card_title": "自定义礼品卡",
+    "choose_amount_for": "选择金额：",
+    "customize": "自定义",
+    "other_value_label": "其他金额 (€)",
+    "add": "添加",
+    "value_min_max_note": "最小：10€ · 最大：500€",
+    "customize_gift_card_title": "自定义礼品卡",
+    "customize_gift_card_description_prefix": "请选择礼品卡金额：",
+    "gift_card_group_individual": "礼品卡 - 单人按摩",
+    "gift_card_group_couples": "礼品卡 - 双人按摩",
+    "gift_card_group_four_hands": "礼品卡 - 四手按摩",
+    "gift_card_group_individual_rituals": "礼品卡 - 单人仪式",
+    "gift_card_group_couples_rituals": "礼品卡 - 双人仪式",
+
+    // Forms / Checkout
+    "purchased_by_name": "购买者（姓名）",
+    "buyer_name_placeholder": "购买者姓名",
+    "buyer_email": "购买者邮箱",
+    "buyer_email_placeholder": "email@示例.com",
+    "is_gift": "是否为礼物？",
+    "recipient_name_required": "收件人（姓名）*",
+    "recipient_name_placeholder": "收件人姓名",
+    "recipient_email": "收件人邮箱",
+    "gift_message": "礼物留言（可选）",
+    "gift_message_placeholder": "您的个性化留言…",
+
+    // Client reservation minimal strings
+    "loading_centers": "正在加载门店…",
+    "error": "错误",
+    "select_service_error": "请选择一个服务",
+    "complete_required_fields": "请填写必填字段",
+    // Landing Vouchers card
+    "vouchers": "套餐",
+    "vouchers_description": "购买优惠的多次套餐",
+    "buy_voucher": "购买套餐",
+
+    // Reservation labels
+    "personal_information": "个人信息",
+    "name_label": "姓名",
+    "phone": "电话",
+    "phone_placeholder": "+34 600 000 000",
+    "email": "邮箱",
+    "email_placeholder": "client@email.com",
+    "center_selection": "门店选择",
+    "center": "门店",
+    "service_selection": "服务选择",
+    "date": "日期",
+    "select_date": "选择日期",
+    "time": "时间",
+    "select_time": "选择时间",
+    "additional_notes": "附加备注",
+    "notes_placeholder_form": "任何您认为重要的附加信息…",
+    "booking_summary": "预订摘要",
+    "method_card": "银行卡",
+    "secure_payment_with_stripe": "通过 Stripe 处理的 100% 安全支付",
+  },
+  ar: {
+    // Header / Landing
+    "admin": "الإدارة",
+    "back": "رجوع",
+    "wellness_center": "مركز العافية",
+    "landing_subtitle": "اكتشف التوازن المثالي بين الاسترخاء والعافية في مركزنا الحصري للتدليك",
+    "book_appointment": "احجز موعداً",
+    "book_description": "احجز جلسة تدليك مريحة",
+    "book_now": "احجز الآن",
+    "gift_cards": "بطاقات الهدايا",
+    "gift_description": "أهدِ تجارب عافية فريدة",
+    "our_locations": "مواقعنا",
+    "locations_subtitle": "اعثر علينا في مدريد",
+    "open_maps": "افتح في الخرائط",
+    "hours": "ساعات العمل",
+    "rights_reserved": "جميع الحقوق محفوظة",
+
+    // Landing Vouchers card
+    "vouchers": "الباقات",
+    "vouchers_description": "اشترِ باقات جلسات بخصم",
+    "buy_voucher": "شراء باقة",
+
+    // Bonos / Vouchers page
+    "massage_vouchers": "باقات التدليك",
+    "save_buying_session_packages": "وفّر عند شراء باقات الجلسات المخفّضة",
+    "cart": "السلة",
+    "your_cart": "سلتك",
+    "cart_empty": "سلتك فارغة.",
+    "empty_cart": "تفريغ",
+    "empty_cart_button": "تفريغ",
+    "total": "الإجمالي",
+    "buy_button": "شراء",
+
+    // Packages groups (Bonos)
+    "individual_massages_packages": "باقات التدليك الفردي",
+    "couples_packages": "باقات تدليك لشخصين",
+    "four_hands_packages": "باقات تدليك بأربع أيادٍ",
+    "rituals_packages": "باقات الطقوس الفردية",
+    "rituals_for_two": "باقات طقوس لشخصين",
+    "sessions_count": "جلسات",
+    "no_individual_vouchers": "لا توجد باقات فردية",
+    "no_two_people_vouchers": "لا توجد باقات لشخصين",
+    "no_four_hands_vouchers": "لا توجد باقات بأربع أيادٍ",
+    "no_ritual_vouchers": "لا توجد باقات طقوس",
+
+    // Gift Cards page
+    "gift_cards_page": "بطاقات الهدايا",
+    "gift_cards_subtitle": "اختر بطاقة الهدية الخاصة بك. تصميم أنيق ومتجاوب بالكامل.",
+    "add_to_cart": "أضف إلى السلة",
+    "added_to_cart": "تمت الإضافة إلى السلة",
+    "custom_amount": "مبلغ مخصص",
+    "custom_gift_card": "بطاقة هدية بمبلغ مخصص",
+    "custom_gift_card_title": "تخصيص بطاقة الهدية",
+    "choose_amount_for": "اختر المبلغ لـ",
+    "customize": "تخصيص",
+    "other_value_label": "مبلغ آخر (€)",
+    "add": "إضافة",
+    "value_min_max_note": "الحد الأدنى: 10€ · الحد الأقصى: 500€",
+    "customize_gift_card_description_prefix": "اختر مبلغ بطاقة الهدية لـ",
+    "gift_card_group_individual": "بطاقة هدية - تدليك فردي",
+    "gift_card_group_couples": "بطاقة هدية - تدليك لشخصين",
+    "gift_card_group_four_hands": "بطاقة هدية - تدليك بأربع أيادٍ",
+    "gift_card_group_individual_rituals": "بطاقة هدية - طقوس فردية",
+    "gift_card_group_couples_rituals": "بطاقة هدية - طقوس لشخصين",
+
+    // Forms / Checkout
+    "purchased_by_name": "الشراء بواسطة (الاسم)",
+    "buyer_name_placeholder": "اسم المشتري",
+    "buyer_email": "بريد المشتري الإلكتروني",
+    "buyer_email_placeholder": "email@مثال.com",
+    "is_gift": "هل هي هدية؟",
+    "recipient_name_required": "إلى (اسم المستلم) *",
+    "recipient_name_placeholder": "اسم المستلم",
+    "recipient_email": "بريد المستلم الإلكتروني",
+    "gift_message": "رسالة مع الهدية (اختياري)",
+    "gift_message_placeholder": "رسالتك المخصصة…",
+
+    // Client reservation (labels)
+    "loading_centers": "جارٍ تحميل المراكز…",
+    "error": "خطأ",
+    "select_service_error": "يرجى اختيار خدمة",
+    "complete_required_fields": "يرجى إكمال الحقول المطلوبة",
+    "personal_information": "المعلومات الشخصية",
+    "name_label": "الاسم",
+    "phone": "الهاتف",
+    "phone_placeholder": "+34 600 000 000",
+    "email": "البريد الإلكتروني",
+    "email_placeholder": "client@email.com",
+    "center_selection": "اختيار المركز",
+    "center": "المركز",
+    "service_selection": "اختيار الخدمة",
+    "date": "التاريخ",
+    "select_date": "اختر التاريخ",
+    "time": "الوقت",
+    "select_time": "اختر الوقت",
+    "additional_notes": "ملاحظات إضافية",
+    "notes_placeholder_form": "أي معلومات إضافية تراها مهمة…",
+    "booking_summary": "ملخص الحجز",
+    "method_card": "بطاقة",
+    "secure_payment_with_stripe": "دفع آمن 100٪ تتم معالجته عبر Stripe",
   }
 } as const;
 
@@ -1304,7 +1512,12 @@ export const useTranslationHook = () => {
   }, [language]);
 
   const t = (key: TranslationKey): string => {
-    return translations[language]?.[key] || translations.es[key] || key;
+    return (
+      (translations as any)[language]?.[key] ||
+      (translations as any).en?.[key] ||
+      (translations as any).es?.[key] ||
+      (key as string)
+    );
   };
 
   return { language, setLanguage, t };

@@ -81,13 +81,11 @@ export default function PublicLandingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center p-4 sm:p-6 pt-0 mt-auto">
-              <Button 
-                size="lg" 
-                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground text-sm sm:text-base py-3"
-                onClick={() => navigate('/client-reservation')}
-              >
-                <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                {t('book_now')}
+              <Button size="lg" asChild className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground text-sm sm:text-base py-3">
+                <Link to="/client-reservation">
+                  <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  {t('book_now')}
+                </Link>
               </Button>
             </CardContent>
           </Card>
@@ -104,14 +102,11 @@ export default function PublicLandingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center p-4 sm:p-6 pt-0 mt-auto">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="w-full text-sm sm:text-base py-3"
-                onClick={() => navigate('/packages')}
-              >
-                <Gift className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                {t('buy_voucher')}
+              <Button size="lg" variant="outline" asChild className="w-full text-sm sm:text-base py-3">
+                <Link to="/packages">
+                  <Gift className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  {t('buy_voucher')}
+                </Link>
               </Button>
             </CardContent>
           </Card>
@@ -128,14 +123,11 @@ export default function PublicLandingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center p-4 sm:p-6 pt-0 mt-auto">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="w-full text-sm sm:text-base py-3"
-                onClick={() => navigate('/gift-cards')}
-              >
-                <Star className="mr-2 h-5 w-5" />
-                {t('gift_cards')}
+              <Button size="lg" variant="outline" asChild className="w-full text-sm sm:text-base py-3">
+                <Link to="/gift-cards">
+                  <Star className="mr-2 h-5 w-5" />
+                  {t('gift_cards')}
+                </Link>
               </Button>
             </CardContent>
           </Card>

@@ -1,14 +1,16 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { CreditCard, Smartphone, Wallet } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function PaymentMethodsInfo() {
+  const { t } = useTranslation();
   return (
     <Card className="border-border/20 bg-gradient-to-r from-accent/5 to-primary/5">
       <CardContent className="p-4">
         <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
-            <span>Tarjeta</span>
+            <span>{t('method_card') || 'Tarjeta'}</span>
           </div>
           <div className="flex items-center gap-2">
             <Smartphone className="h-4 w-4" />
@@ -24,7 +26,7 @@ export function PaymentMethodsInfo() {
           </div>
         </div>
         <p className="text-center text-xs text-muted-foreground mt-2">
-          Pago 100% seguro procesado por Stripe
+          {t('secure_payment_with_stripe') || 'Pago 100% seguro procesado por Stripe'}
         </p>
       </CardContent>
     </Card>

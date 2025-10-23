@@ -15,6 +15,8 @@ const languages: LanguageOption[] = [
   { code: "de", name: "Deutsch", flag: "🇩🇪" },
   { code: "it", name: "Italiano", flag: "🇮🇹" },
   { code: "pt", name: "Português", flag: "🇵🇹" },
+  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "ar", name: "العربية", flag: "🇸🇦" },
 ];
 
 export function LanguageSelector() {

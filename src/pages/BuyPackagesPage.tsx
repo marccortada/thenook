@@ -151,11 +151,14 @@ const BuyPackagesPage = () => {
   }, [packages]);
 
   const groups = useMemo(() => {
-    const individuales = packageItems.filter((i) => i.type === "fixed" && !isCuatroManos(i.name) && !isRitual(i.name) && !isDuo(i.name));
+    const individuales = packageItems.filter(
+      (i) => i.type === "fixed" && !isCuatroManos(i.name) && !isRitual(i.name) && !isDuo(i.name)
+    );
     const cuatro = packageItems.filter((i) => i.type === "fixed" && isCuatroManos(i.name));
-    const rituales = packageItems.filter((i) => i.type === "fixed" && isRitual(i.name));
-    const paraDos = packageItems.filter((i) => i.type === "fixed" && isDuo(i.name));
-    return { individuales, cuatro, rituales, paraDos };
+    const rituales = packageItems.filter((i) => i.type === "fixed" && isRitual(i.name) && !isDuo(i.name));
+    const ritualesParaDos = packageItems.filter((i) => i.type === "fixed" && isRitual(i.name) && isDuo(i.name));
+    const paraDos = packageItems.filter((i) => i.type === "fixed" && isDuo(i.name) && !isRitual(i.name));
+    return { individuales, cuatro, rituales, ritualesParaDos, paraDos };
   }, [packageItems]);
 
   const { items, add, remove, clear, totalCents } = useLocalCart();
@@ -238,15 +241,17 @@ const BuyPackagesPage = () => {
           </header>
 
           <section className="grid gap-6">
-            <Accordion type="multiple" defaultValue={[]} className="space-y-4">
-              {groups.individuales.length > 0 && (
-                <AccordionItem value="bonos-individuales" className="border rounded-lg">
+            <Accordion type="multiple" defaultValue={["bonos-individuales"]} className="space-y-4">
+              <AccordionItem value="bonos-individuales" className="border rounded-lg">
                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                     <h2 className="text-lg font-semibold">{t('individual_massages_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {groups.individuales.map((pkg) => (
+                    {groups.individuales.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">{t('no_individual_vouchers')}</p>
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {groups.individuales.map((pkg) => (
                         <Card key={pkg.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                           <CardHeader className="pb-2">
                              <CardTitle className="text-base leading-tight">{translatePackageName(pkg.name)}</CardTitle>
@@ -277,19 +282,21 @@ const BuyPackagesPage = () => {
                           </CardFooter>
                         </Card>
                       ))}
-                    </div>
+                      </div>
+                    )}
                   </AccordionContent>
                 </AccordionItem>
-              )}
 
-              {groups.paraDos.length > 0 && (
-                <AccordionItem value="bonos-dos-personas" className="border rounded-lg">
+              <AccordionItem value="bonos-dos-personas" className="border rounded-lg">
                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                     <h2 className="text-lg font-semibold">{t('couples_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {groups.paraDos.map((pkg) => (
+                    {groups.paraDos.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">{t('no_two_people_vouchers')}</p>
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {groups.paraDos.map((pkg) => (
                         <Card key={pkg.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                           <CardHeader className="pb-2">
                              <CardTitle className="text-base leading-tight">{translatePackageName(pkg.name)}</CardTitle>
@@ -320,19 +327,21 @@ const BuyPackagesPage = () => {
                           </CardFooter>
                         </Card>
                       ))}
-                    </div>
+                      </div>
+                    )}
                   </AccordionContent>
                 </AccordionItem>
-              )}
 
-              {groups.cuatro.length > 0 && (
-                <AccordionItem value="bonos-cuatro-manos" className="border rounded-lg">
+              <AccordionItem value="bonos-cuatro-manos" className="border rounded-lg">
                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                     <h2 className="text-lg font-semibold">{t('four_hands_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {groups.cuatro.map((pkg) => (
+                    {groups.cuatro.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">{t('no_four_hands_vouchers')}</p>
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {groups.cuatro.map((pkg) => (
                         <Card key={pkg.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                           <CardHeader className="pb-2">
                              <CardTitle className="text-base leading-tight">{translatePackageName(pkg.name)}</CardTitle>
@@ -363,19 +372,66 @@ const BuyPackagesPage = () => {
                           </CardFooter>
                         </Card>
                       ))}
-                    </div>
+                      </div>
+                    )}
                   </AccordionContent>
                 </AccordionItem>
-              )}
 
-              {groups.rituales.length > 0 && (
-                <AccordionItem value="bonos-rituales" className="border rounded-lg">
+              <AccordionItem value="bonos-rituales" className="border rounded-lg">
                   <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
                     <h2 className="text-lg font-semibold">{t('rituals_packages')}</h2>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
+                    {groups.rituales.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">{t('no_ritual_vouchers')}</p>
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {groups.rituales.map((pkg) => (
+                        <Card key={pkg.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base leading-tight">{translatePackageName(pkg.name)}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="space-y-1">
+                              {pkg.sessions_count && (
+                                <p className="text-sm text-muted-foreground">{pkg.sessions_count} {t('sessions_count')}</p>
+                              )}
+                              <PriceDisplay originalPrice={pkg.priceCents!} className="text-lg font-bold" />
+                            </div>
+                          </CardContent>
+                          <CardFooter className="pt-2">
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              onClick={() => {
+                                add({
+                                  name: translatePackageName(pkg.name),
+                                  priceCents: pkg.priceCents!,
+                                  packageId: pkg.id,
+                                });
+                                setIsCartOpen(true);
+                              }}
+                            >
+                              {t('add_to_cart')}
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+
+              <AccordionItem value="bonos-rituales-dos" className="border rounded-lg">
+                <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                  <h2 className="text-lg font-semibold">{t('rituals_for_two')}</h2>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  {groups.ritualesParaDos.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t('no_ritual_vouchers')}</p>
+                  ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {groups.rituales.map((pkg) => (
+                      {groups.ritualesParaDos.map((pkg) => (
                         <Card key={pkg.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-base leading-tight">{translatePackageName(pkg.name)}</CardTitle>
@@ -407,9 +463,9 @@ const BuyPackagesPage = () => {
                         </Card>
                       ))}
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
+                  )}
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
           </section>
         </article>

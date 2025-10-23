@@ -881,13 +881,13 @@ const ClientReservation = () => {
                 <div className="space-y-3 sm:space-y-4">
                   <h3 className="font-medium flex items-center space-x-2 text-sm sm:text-base">
                     <Clock className="h-4 w-4" />
-                    <span>Fecha y Hora</span>
+                    <span>{t('date')} / {t('time')}</span>
                   </h3>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                      {/* Date picker */}
                      <div>
-                       <Label className="text-sm">Fecha *</Label>
+                       <Label className="text-sm">{t('date')} *</Label>
                        <DatePickerModal
                          open={showCalendar}
                          onOpenChange={setShowCalendar}
@@ -900,7 +900,7 @@ const ClientReservation = () => {
 
                      {/* Time picker */}
                      <div>
-                       <Label className="text-sm">Hora *</Label>
+                       <Label className="text-sm">{t('time')} *</Label>
                        <TimePickerModal
                          open={showTimeDropdown}
                          onOpenChange={setShowTimeDropdown}
