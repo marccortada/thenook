@@ -162,46 +162,45 @@ async function sendBookingConfirmationEmail(args: {
   const year = new Date().getFullYear();
 
   const spanishBody = `
-    <p>Hola <strong>${clientName}</strong>!</p>
-    <p>Has reservado correctamente tu tratamiento en ${centerHeading}.</p>
-    <p>Estos son los detalles de la reserva:</p>
-    <ul style="list-style:none; padding:0; margin:0 0 16px 0;">
-      <li><strong>Tratamiento:</strong> ${serviceDisplay}</li>
-      <li><strong>Fecha:</strong> ${formattedDate}</li>
-    </ul>
-    <p>${addressLineEs}</p>
-    <p>Estamos aquí 👉 <a href="${mapLink}" style="color:#1A6AFF;">Ver mapa</a></p>
-    <p>Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de uso y nuestra <a href="${cancellationLink}" style="color:#1A6AFF;">Política de Cancelación</a>.</p>
-    <p>Es aconsejable llegar al centro cinco minutos antes de la cita. Rogamos máxima puntualidad, al haber otras citas después de la vuestra, si llegáis tarde, quizás no podamos realizar el tratamiento completo.</p>
-    <p>En caso de estar embarazada, por favor háznoslo saber con antelación a la cita.</p>
-    <p>En este email tienes la dirección del centro reservado, la hora de la cita y el tratamiento elegido. Revisa bien esta información, ya que The Nook no se hace responsable si acudes al centro equivocado o a una hora distinta.</p>
-    <p>Te recomendamos leer la Política de Cancelación completa aquí:<br><a href="${cancellationLink}" style="color:#1A6AFF;">${cancellationLink}</a></p>
-    <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
-    <p><strong>${centerHeading}</strong><br>
-    911 481 474 / 622 360 922<br>
-    <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a></p>
-  `;
+  <p>Hola <strong>${clientName}</strong>!</p>
+  <p>Has reservado correctamente tu tratamiento en ${centerHeading}.</p>
+  <p>Estos son los detalles de la reserva:</p>
+  <ul style="list-style:none; padding:0; margin:0 0 16px 0;">
+    <li><strong>Tratamiento:</strong> ${serviceDisplay}</li>
+    <li><strong>Fecha:</strong> ${formattedDate}</li>
+  </ul>
+  <p>${addressLineEs}</p>
+  <p>Estamos aquí 👉 <a href="${mapLink}" style="color:#1A6AFF;">Ver mapa</a></p>
+  <p>Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de reserva y nuestra Política de Cancelación.</p>
+  <p>Es aconsejable llegar al centro cinco minutos antes de la cita. Rogamos máxima puntualidad, al haber otras citas después de la vuestra, si llegáis tarde, quizás no podamos realizar el tratamiento completo.</p>
+  <p>En caso de estar embarazada, por favor háznoslo saber con antelación a la cita.</p>
+  <p>En este email tienes la dirección del centro reservado, la hora de la cita y el tratamiento elegido. Revisa bien esta información, The Nook no se hace responsable si acudes al centro equivocado o a una hora distinta.</p>
+  <p>Te recomendamos leer nuestras condiciones de reserva, compra y cancelación la Política de Cancelación completa aquí:<br><a href="${cancellationLink}" style="color:#1A6AFF;">${cancellationLink}</a></p>
+  <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
+  <p><strong>${centerHeading}</strong><br>
+  911 481 474 / 622 360 922<br>
+  <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a></p>
+`;
 
   const englishBody = `
-    <p>Hi <strong>${clientName}</strong>!</p>
-    <p>Your booking is confirmed at ${centerHeading}.</p>
-    <p>These are the details of your appointment:</p>
-    <ul style="list-style:none; padding:0; margin:0 0 16px 0;">
-      <li><strong>Treatment:</strong> ${serviceDisplay}</li>
-      <li><strong>Date:</strong> ${formattedDate}</li>
-    </ul>
-    <p>${addressLineEn}</p>
-    <p>We are here 👉 <a href="${mapLink}" style="color:#1A6AFF;">View map</a></p>
-    <p>This email confirms your reservation. By booking with us, you accept our conditions and our <a href="${cancellationLink}" style="color:#1A6AFF;">Cancellation Policy</a>.</p>
-    <p>Please arrive five minutes before your appointment. If you’re late, we may have to shorten your treatment as there are other bookings after yours.</p>
-    <p>Please let us know in advance if you are pregnant.</p>
-    <p>In this email you have all the information regarding your booking (date, time and address). Please check it carefully — The Nook won’t take responsibility if you go to the wrong address or at a different time.</p>
-    <p>We encourage you to read our full cancellation policy here:<br><a href="${cancellationLink}" style="color:#1A6AFF;">${cancellationLink}</a></p>
-    <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
-    <p><strong>${centerHeading}</strong><br>
-    911 481 474 / 622 360 922<br>
-    <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a></p>
-  `;
+  <p>Hi <strong>${clientName}</strong>!</p>
+  <p>Your appointment at ${centerHeading} has been successfully booked.</p>
+  <p>Here are the details of your booking:</p>
+  <ul style="list-style:none; padding:0; margin:0 0 16px 0;">
+    <li><strong>Treatment:</strong> ${serviceDisplay}</li>
+    <li><strong>Date:</strong> ${formattedDate}</li>
+  </ul>
+  <p>${addressLineEn}</p>
+  <p>We’re here 👉 <a href="${mapLink}" style="color:#1A6AFF;">View map</a></p>
+  <p>This email confirms your reservation. By completing this booking, you accept our booking terms and our Cancellation Policy.</p>  <p>Please arrive at the center five minutes before your appointment. Punctuality is important — as there are other clients after you, if you arrive late, we might not be able to perform the full treatment.</p>
+  <p>If you are pregnant, please let us know in advance.</p>
+  <p>This email includes the center’s address, the time of your appointment, and the selected treatment. Please double-check all details — The Nook cannot be held responsible if you go to the wrong location or at a different time.</p>
+  <p>We recommend reading our full booking, purchase, and cancellation terms here:<br><a href="${cancellationLink}" style="color:#1A6AFF;">${cancellationLink}</a></p>
+  <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
+  <p><strong>${centerHeading}</strong><br>
+  911 481 474 / 622 360 922<br>
+  <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a></p>
+`;
 
   const contentBody = isSpanish ? spanishBody : englishBody;
 
