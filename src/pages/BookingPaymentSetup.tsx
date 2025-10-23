@@ -315,9 +315,29 @@ const handlePaymentSetup = async () => {
 
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Total:</span>
-              <span className="text-2xl font-bold text-primary">
-                {displayTotalCents ? `${(displayTotalCents / 100).toFixed(2)}€` : 'A confirmar'}
-              </span>
+              <div className="flex items-baseline gap-2">
+                {(() => {
+                  const svc: any = booking.services || {};
+                  const hasDiscount = !!svc.has_discount && typeof svc.discount_price_cents === 'number' && typeof svc.price_cents === 'number' && svc.discount_price_cents < svc.price_cents;
+                  if (hasDiscount) {
+                    return (
+                      <>
+                        <span className="text-lg text-muted-foreground line-through">
+                          {(svc.price_cents / 100).toFixed(2)}€
+                        </span>
+                        <span className="text-2xl font-bold text-primary">
+                          {(svc.discount_price_cents / 100).toFixed(2)}€
+                        </span>
+                      </>
+                    );
+                  }
+                  return (
+                    <span className="text-2xl font-bold text-primary">
+                      {displayTotalCents ? `${(displayTotalCents / 100).toFixed(2)}€` : 'A confirmar'}
+                    </span>
+                  );
+                })()}
+              </div>
             </div>
           </CardContent>
         </Card>
