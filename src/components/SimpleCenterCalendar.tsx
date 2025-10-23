@@ -200,13 +200,15 @@ const SimpleCenterCalendar = () => {
         } else {
           const { data: newProfile, error: profileError } = await supabase
             .from('profiles')
-            .insert([{
+            .upsert([{
               email: newBookingForm.clientEmail,
               first_name: newBookingForm.clientName.split(' ')[0],
               last_name: newBookingForm.clientName.split(' ').slice(1).join(' '),
               phone: newBookingForm.clientPhone,
               role: 'client'
-            }])
+            }], {
+              onConflict: 'email'
+            })
             .select()
             .single();
 

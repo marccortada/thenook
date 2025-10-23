@@ -661,13 +661,15 @@ const AdvancedCalendarView = () => {
           // Create a new client profile for the walk-in
           const { data: newProfile, error: profileError } = await supabase
             .from('profiles')
-            .insert([{
+            .upsert([{
               first_name: bookingForm.clientName.split(' ')[0],
               last_name: bookingForm.clientName.split(' ').slice(1).join(' ') || '',
               phone: bookingForm.clientPhone || null,
               email: bookingForm.clientEmail || null,
               role: 'client'
-            }])
+            }], {
+              onConflict: 'email'
+            })
             .select('id')
             .single();
           

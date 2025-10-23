@@ -224,13 +224,15 @@ const ReservationSystem = () => {
           // Create new client profile with role 'client'
           const { data: newProfile, error: profileError } = await supabase
             .from('profiles')
-            .insert([{
+            .upsert([{
               email: clientEmail,
               first_name: formData.clientName.split(' ')[0],
               last_name: formData.clientName.split(' ').slice(1).join(' ') || '',
               phone: formData.clientPhone,
               role: 'client'  // Explicitly set role as client
-            }])
+            }], {
+              onConflict: 'email'
+            })
             .select()
             .single();
 
