@@ -267,7 +267,7 @@ async function sendBookingConfirmationEmail(args: {
   }
 
   const updates: Record<string, unknown> = {
-    payment_status: "completed",
+    payment_status: "paid",
     stripe_session_id: session.id,
     email_status: "sent",
     email_sent_at: new Date().toISOString(),

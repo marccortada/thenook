@@ -48,6 +48,7 @@ const BOOKING_STATUSES = [
 const PAYMENT_STATUSES = [
   { value: 'pending', label: 'Pendiente de Pago', color: 'bg-orange-100 text-orange-800' },
   { value: 'paid', label: 'Pagada', color: 'bg-green-100 text-green-800' },
+  { value: 'completed', label: 'Pagada', color: 'bg-green-100 text-green-800' },
 ];
 
 const PAYMENT_METHODS = [
@@ -154,7 +155,8 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
           body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
         });
         if (error || !data?.ok) {
-          throw new Error(error?.message || data?.error || 'No se pudo procesar el cobro');
+          await sendPaymentLinkFallback((error as any)?.message || data?.error);
+          return;
         }
       }
 
@@ -330,7 +332,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
       });
       if (error || !data?.ok) {
-        throw new Error(error?.message || data?.error || 'No se pudo procesar el cobro');
+        const reason = (error as any)?.message || data?.error || 'No se pudo procesar el cobro';
+        await sendPaymentLinkFallback(reason);
+        return;
       }
       await supabase
         .from('bookings')
@@ -343,6 +347,42 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       toast({ title: 'Error', description: (e as any).message || 'No se pudo procesar el cobro', variant: 'destructive' });
     } finally {
       setIsProcessingPayment(false);
+    }
+  };
+
+  // Fallback: crear sesión de Checkout y enviar link por email
+  const sendPaymentLinkFallback = async (_reason?: string) => {
+    try {
+      const { data, error } = await (supabase as any).functions.invoke('create-checkout', {
+        body: { intent: 'booking_payment', booking_payment: { booking_id: booking.id }, currency: 'eur' }
+      });
+      const checkoutUrl: string | null = data?.url || (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
+      if (error || !checkoutUrl) {
+        throw new Error(error?.message || 'No se pudo generar el link de pago');
+      }
+
+      const to = booking.profiles?.email;
+      if (to) {
+        const msg = `Hola,\n\nHemos generado un enlace de pago para tu cita en The Nook Madrid.\nImporte: ${(booking.total_price_cents / 100).toFixed(2)}€.\n\nPor favor completa el pago aquí: ${checkoutUrl}\n\nGracias.`;
+        try {
+          await (supabase as any).functions.invoke('send-email', {
+            body: { to, subject: 'Enlace de pago de tu cita - The Nook Madrid', message: msg }
+          });
+        } catch (e) {
+          console.warn('No se pudo enviar el email con el link de pago:', e);
+        }
+      }
+
+      try { await navigator.clipboard.writeText(checkoutUrl); } catch {}
+
+      toast({
+        title: 'Link de pago enviado',
+        description: to
+          ? `Hemos enviado el enlace a ${to} y lo hemos copiado al portapapeles.`
+          : 'Enlace generado y copiado al portapapeles.',
+      });
+    } catch (e) {
+      toast({ title: 'Error', description: (e as any).message || 'No se pudo generar el link de pago', variant: 'destructive' });
     }
   };
 

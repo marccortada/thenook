@@ -192,7 +192,7 @@ serve(async (req) => {
       if (!bp?.booking_id) throw new Error("Falta booking_id");
       const { data: bkg, error } = await supabaseAdmin
         .from("bookings")
-        .select("id,total_price_cents,status")
+        .select("id,total_price_cents,status, services(name), profiles!client_id(email, first_name, last_name)")
         .eq("id", bp.booking_id)
         .single();
       if (error || !bkg) throw new Error("Reserva no encontrada");
@@ -200,13 +200,17 @@ serve(async (req) => {
       line_items.push({
         price_data: {
           currency,
-          product_data: { name: `Pago de reserva` },
+          product_data: { name: `Pago de reserva${bkg.services?.name ? ` - ${bkg.services.name}` : ''}` },
           unit_amount: bkg.total_price_cents,
         },
         quantity: 1,
       });
       metadata.intent = "booking_payment";
       metadata.bp_payload = JSON.stringify(bp);
+
+      if (bkg?.profiles?.email) {
+        customerEmail = bkg.profiles.email.toLowerCase();
+      }
     }
 
     if (!line_items.length) throw new Error("No se han generado artículos para el pago");
