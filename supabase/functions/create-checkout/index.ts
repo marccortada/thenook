@@ -45,7 +45,7 @@ interface PackageVoucherReq {
   notes?: string;
   total_cents?: number;
 }
-interface BookingPaymentReq { booking_id: string }
+interface BookingPaymentReq { booking_id: string; amount_cents?: number }
 
 interface CreateCheckoutBody {
   intent: "gift_cards" | "package_voucher" | "booking_payment";
@@ -196,17 +196,22 @@ serve(async (req) => {
         .eq("id", bp.booking_id)
         .single();
       if (error || !bkg) throw new Error("Reserva no encontrada");
-
+      const amountCents = typeof bp.amount_cents === 'number' && bp.amount_cents > 0
+        ? Math.round(bp.amount_cents)
+        : (bkg.total_price_cents || 0);
+      if (!amountCents || amountCents < 50) {
+        throw new Error("El monto mínimo para pagos con Stripe es €0.50. Por favor ajusta el importe.");
+      }
       line_items.push({
         price_data: {
           currency,
           product_data: { name: `Pago de reserva${bkg.services?.name ? ` - ${bkg.services.name}` : ''}` },
-          unit_amount: bkg.total_price_cents,
+          unit_amount: amountCents,
         },
         quantity: 1,
       });
       metadata.intent = "booking_payment";
-      metadata.bp_payload = JSON.stringify(bp);
+      metadata.bp_payload = JSON.stringify({ booking_id: bp.booking_id });
 
       if (bkg?.profiles?.email) {
         customerEmail = bkg.profiles.email.toLowerCase();

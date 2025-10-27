@@ -180,11 +180,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       onBookingUpdated();
     } catch (error) {
       console.error('Error updating booking payment:', error);
-      toast({
-        title: "Error",
-        description: (error as any)?.message || "No se pudo actualizar el estado del pago",
-        variant: "destructive"
-      });
+      // Fallback a link de pago si falló el cobro
+      await sendPaymentLinkFallback((error as any)?.message);
+      return;
     } finally {
       setIsProcessingPayment(false);
     }
@@ -344,7 +342,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       toast({ title: 'Pago procesado', description: 'Se ha cobrado la reserva correctamente' });
       onBookingUpdated();
     } catch (e) {
-      toast({ title: 'Error', description: (e as any).message || 'No se pudo procesar el cobro', variant: 'destructive' });
+      // Si la invocación devolvió non-2xx (excepción), generar link como fallback
+      await sendPaymentLinkFallback((e as any)?.message);
+      return;
     } finally {
       setIsProcessingPayment(false);
     }
@@ -353,8 +353,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   // Fallback: crear sesión de Checkout y enviar link por email
   const sendPaymentLinkFallback = async (_reason?: string) => {
     try {
+      const minCents = Math.max(50, booking.total_price_cents || 0);
       const { data, error } = await (supabase as any).functions.invoke('create-checkout', {
-        body: { intent: 'booking_payment', booking_payment: { booking_id: booking.id }, currency: 'eur' }
+        body: { intent: 'booking_payment', booking_payment: { booking_id: booking.id, amount_cents: minCents }, currency: 'eur' }
       });
       const checkoutUrl: string | null = data?.url || (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
       if (error || !checkoutUrl) {
@@ -376,10 +377,8 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       try { await navigator.clipboard.writeText(checkoutUrl); } catch {}
 
       toast({
-        title: 'Link de pago enviado',
-        description: to
-          ? `Hemos enviado el enlace a ${to} y lo hemos copiado al portapapeles.`
-          : 'Enlace generado y copiado al portapapeles.',
+        title: 'Link de pago generado',
+        description: `${to ? `Enviado a ${to}. ` : ''}También lo hemos copiado. ${checkoutUrl}`,
       });
     } catch (e) {
       toast({ title: 'Error', description: (e as any).message || 'No se pudo generar el link de pago', variant: 'destructive' });

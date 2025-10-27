@@ -317,23 +317,79 @@ const SimpleCenterCalendar = () => {
     }
   };
 
+  // Helper: create checkout session and send email to client
+  const sendPaymentLinkFallback = async (amountOverrideCents?: number) => {
+    try {
+      const baseCents = typeof amountOverrideCents === 'number' && amountOverrideCents > 0
+        ? Math.round(amountOverrideCents)
+        : (selectedBooking?.total_price_cents || 0);
+      const minCents = Math.max(50, baseCents);
+      const { data, error } = await (supabase as any).functions.invoke('create-checkout', {
+        body: { intent: 'booking_payment', booking_payment: { booking_id: selectedBooking.id, amount_cents: minCents }, currency: 'eur' }
+      });
+      const checkoutUrl: string | null = data?.url || (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
+      if (error || !checkoutUrl) throw new Error(error?.message || 'No se pudo generar el link de pago');
+
+      const to = selectedBooking?.profiles?.email;
+      if (to) {
+        const msg = `Hola,\n\nHemos generado un enlace de pago para tu cita en The Nook Madrid.\nImporte: ${((selectedBooking.total_price_cents || 0) / 100).toFixed(2)}€.\n\nPor favor completa el pago aquí: ${checkoutUrl}\n\nGracias.`;
+        try {
+          await (supabase as any).functions.invoke('send-email', {
+            body: { to, subject: 'Enlace de pago de tu cita - The Nook Madrid', message: msg }
+          });
+        } catch (e) {
+          console.warn('No se pudo enviar el email con el link de pago:', e);
+        }
+      }
+
+      try { await navigator.clipboard.writeText(checkoutUrl); } catch {}
+
+      toast({
+        title: 'Link de pago generado',
+        description: `${to ? `Enviado a ${to}. ` : ''}También lo hemos copiado. ${checkoutUrl}`,
+      });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'No se pudo generar el link de pago', variant: 'destructive' });
+    }
+  };
+
   // Process payment
   const processPayment = async () => {
     try {
       const amountCents = Math.round((paymentAmount > 0 ? paymentAmount : ((selectedBooking.total_price_cents || 0) / 100)) * 100);
-      const { data, error: fnErr } = await (supabase as any).functions.invoke('charge-booking', {
-        body: { booking_id: selectedBooking.id, amount_cents: amountCents }
-      });
-      if (fnErr || !data?.ok) throw new Error(fnErr?.message || data?.error || 'No se pudo procesar el pago');
-      const { error } = await supabase
-        .from('bookings')
-        .update({ payment_status: 'paid', payment_method: paymentMethod, payment_notes: paymentNotes })
-        .eq('id', selectedBooking.id);
-      if (error) throw error;
+
+      // If staff selects tarjeta, try to charge saved card
+      if (paymentMethod === 'tarjeta') {
+        const { data, error: fnErr } = await (supabase as any).functions.invoke('charge-booking', {
+          body: { booking_id: selectedBooking.id, amount_cents: amountCents }
+        });
+        if (fnErr || !data?.ok) {
+          // Fallback: send payment link with the same amount (min 0.50€)
+          await sendPaymentLinkFallback(amountCents);
+          return;
+        }
+        // Mark as paid by card
+        const { error } = await supabase
+          .from('bookings')
+          .update({ payment_status: 'paid', payment_method: 'tarjeta', payment_notes: paymentNotes || 'Cobro automático Stripe' })
+          .eq('id', selectedBooking.id);
+        if (error) throw error;
+      } else if (paymentMethod === 'online') {
+        // Generate link and keep booking pending until paid (use amount from input if provided)
+        await sendPaymentLinkFallback(amountCents);
+        return;
+      } else {
+        // Manual methods: efectivo/bizum/transferencia
+        const { error } = await supabase
+          .from('bookings')
+          .update({ payment_status: 'paid', payment_method: paymentMethod, payment_notes: paymentNotes })
+          .eq('id', selectedBooking.id);
+        if (error) throw error;
+      }
 
       toast({
         title: "✅ Pago Registrado",
-        description: `Pago procesado exitosamente con ${paymentMethod}.`,
+        description: `Pago procesado exitosamente${paymentMethod ? ` con ${paymentMethod}` : ''}.`,
       });
 
       refetchBookings();
@@ -344,11 +400,8 @@ const SimpleCenterCalendar = () => {
       setPaymentAmount(0);
     } catch (error) {
       console.error('Error processing payment:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo procesar el pago.",
-        variant: "destructive",
-      });
+      // Last resort
+      await sendPaymentLinkFallback();
     }
   };
 
