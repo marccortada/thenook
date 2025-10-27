@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Check, Calendar, CreditCard, Clock, User } from "lucide-react";
+import { Check } from "lucide-react";
 
 export default function PaymentSetupSuccess() {
   const [searchParams] = useSearchParams();
@@ -17,17 +17,47 @@ export default function PaymentSetupSuccess() {
     email: 'reservas@thenookmadrid.com',
     address: 'Calle Zurbarán 10 bajo derecha, Madrid 28010'
   });
+  const [bookingCenter, setBookingCenter] = useState<{ name?: string; address?: string } | null>(null);
 
   const setupIntentId = searchParams.get('setup_intent');
 
   useEffect(() => {
     loadCenterData();
     if (setupIntentId) {
-      confirmPaymentMethod();
+      fetchBookingCenter(setupIntentId).finally(() => confirmPaymentMethod());
     } else {
       setLoading(false);
     }
   }, [setupIntentId]);
+
+  const fetchBookingCenter = async (intentId: string) => {
+    try {
+      const { data: intentRow, error: intentErr } = await (supabase as any)
+        .from('booking_payment_intents')
+        .select('booking_id')
+        .eq('stripe_setup_intent_id', intentId)
+        .maybeSingle();
+      if (intentErr || !intentRow?.booking_id) return;
+
+      const { data: booking, error: bookErr } = await (supabase as any)
+        .from('bookings')
+        .select('centers(name, address_zurbaran, address_concha_espina), center_id')
+        .eq('id', intentRow.booking_id)
+        .maybeSingle();
+      if (bookErr || !booking) return;
+
+      const c = booking.centers;
+      const isZurbaran = (c?.name || '').toLowerCase().includes('zurbar');
+      const address = isZurbaran ? (c?.address_zurbaran || '') : (c?.address_concha_espina || '');
+      setBookingCenter({ name: c?.name, address });
+      // Si tenemos dirección desde la reserva, sobreescribir centerData visible
+      if (address) {
+        setCenterData((prev) => ({ ...prev, name: c?.name || prev.name, address }));
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
 
   const loadCenterData = async () => {
     try {
@@ -108,102 +138,18 @@ export default function PaymentSetupSuccess() {
               loading="lazy"
             />
           </div>
-          <p className="text-muted-foreground">Confirmación de pago</p>
+          <p className="text-muted-foreground">Reserva confirmada</p>
         </div>
 
-        {/* Success Card */}
+        {/* Success Card minimal */}
         <Card className="border-green-200 bg-green-50">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+          <div className="text-center p-6">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3">
               <Check className="h-8 w-8 text-green-600" />
             </div>
-            <CardTitle className="text-green-800">¡Reserva Asegurada!</CardTitle>
-            <CardDescription className="text-green-600">
-              Tu método de pago ha sido configurado correctamente
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-white rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <CreditCard className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium">Tarjeta guardada de forma segura</p>
-                  <p className="text-sm text-muted-foreground">
-                    Protegida con encriptación de grado bancario
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Clock className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium">No se ha realizado ningún cargo</p>
-                  <p className="text-sm text-muted-foreground">
-                    El pago se procesará el día de tu cita
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium">Recordatorio automático</p>
-                  <p className="text-sm text-muted-foreground">
-                    Te enviaremos un recordatorio 24h antes
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Next Steps Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Próximos pasos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">
-                  1
-                </div>
-                <div>
-                  <p className="font-medium">Recibirás un recordatorio</p>
-                  <p className="text-sm text-muted-foreground">
-                    Te enviaremos un email 24 horas antes de tu cita
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">
-                  2
-                </div>
-                <div>
-                  <p className="font-medium">Disfruta de tu tratamiento</p>
-                  <p className="text-sm text-muted-foreground">
-                    Llega unos minutos antes para prepararte
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">
-                  3
-                </div>
-                <div>
-                  <p className="font-medium">Pago automático</p>
-                  <p className="text-sm text-muted-foreground">
-                    Se procesará el pago una vez completado el servicio
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
+            <p className="text-green-800 text-lg font-semibold">¡Reserva confirmada!</p>
+            <p className="text-green-700 text-sm">Tu método de pago ha sido configurado correctamente.</p>
+          </div>
         </Card>
 
         {/* Action Buttons */}
@@ -233,7 +179,7 @@ export default function PaymentSetupSuccess() {
               <p className="text-muted-foreground">
                 📧 {centerData.email}<br />
                 📞 {centerData.phone}<br />
-                📍 {centerData.address}
+                📍 {bookingCenter?.address || centerData.address}
               </p>
               <p className="text-xs border-t pt-2 mt-3">© THE NOOK Madrid 2025 · Todos los derechos reservados</p>
             </div>

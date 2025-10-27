@@ -45,6 +45,7 @@ const SimpleCenterCalendar = () => {
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [newBookingDate, setNewBookingDate] = useState(new Date());
   const [newBookingTime, setNewBookingTime] = useState('');
   
@@ -319,15 +320,15 @@ const SimpleCenterCalendar = () => {
   // Process payment
   const processPayment = async () => {
     try {
+      const amountCents = Math.round((paymentAmount > 0 ? paymentAmount : ((selectedBooking.total_price_cents || 0) / 100)) * 100);
+      const { data, error: fnErr } = await (supabase as any).functions.invoke('charge-booking', {
+        body: { booking_id: selectedBooking.id, amount_cents: amountCents }
+      });
+      if (fnErr || !data?.ok) throw new Error(fnErr?.message || data?.error || 'No se pudo procesar el pago');
       const { error } = await supabase
         .from('bookings')
-        .update({ 
-          payment_status: 'paid',
-          payment_method: paymentMethod,
-          payment_notes: paymentNotes
-        })
+        .update({ payment_status: 'paid', payment_method: paymentMethod, payment_notes: paymentNotes })
         .eq('id', selectedBooking.id);
-
       if (error) throw error;
 
       toast({
@@ -340,6 +341,7 @@ const SimpleCenterCalendar = () => {
       setShowEditBookingModal(false);
       setPaymentMethod('');
       setPaymentNotes('');
+      setPaymentAmount(0);
     } catch (error) {
       console.error('Error processing payment:', error);
       toast({
@@ -921,6 +923,17 @@ const SimpleCenterCalendar = () => {
           </DialogHeader>
           
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="paymentAmount">Importe a cobrar (€)</Label>
+              <Input
+                id="paymentAmount"
+                type="number"
+                min={0}
+                step={0.01}
+                value={paymentAmount || (selectedBooking ? (selectedBooking.total_price_cents || 0) / 100 : 0)}
+                onChange={(e) => setPaymentAmount(parseFloat(e.target.value))}
+              />
+            </div>
             <div>
               <Label htmlFor="paymentMethod">Forma de Pago</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>

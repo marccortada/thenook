@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.send-voucher-remaining]
 verify_jwt = true
+
+[functions.charge-booking]
+verify_jwt = false

@@ -101,6 +101,24 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
 
   const updateBookingStatus = async (status: string) => {
     try {
+      // Si marcamos como completada y aún no está pagada, intenta cobrar primero
+      if (status === 'completed' && paymentStatus !== 'paid') {
+        try {
+          setIsProcessingPayment(true);
+          const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
+            body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
+          });
+          if (error || !data?.ok) throw new Error(error?.message || data?.error);
+          await supabase.from('bookings').update({ payment_status: 'paid' }).eq('id', booking.id);
+          setPaymentStatus('paid');
+          toast({ title: 'Pago procesado', description: 'Se ha cobrado la reserva correctamente' });
+        } catch (e) {
+          console.warn('No se pudo cobrar automáticamente antes de completar:', e);
+        } finally {
+          setIsProcessingPayment(false);
+        }
+      }
+
       const { error } = await supabase
         .from('bookings')
         .update({ status: status as any })
@@ -127,27 +145,40 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
 
   const updatePaymentStatus = async (status: string) => {
     try {
-      const { error } = await supabase
+      // Si marcamos como pagada, primero cobramos a la tarjeta guardada
+      if (status === 'paid' && paymentStatus !== 'paid') {
+        setIsProcessingPayment(true);
+        const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
+          body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
+        });
+        if (error || !data?.ok) {
+          throw new Error(error?.message || data?.error || 'No se pudo procesar el cobro');
+        }
+      }
+
+      const { error: updErr } = await supabase
         .from('bookings')
         .update({ payment_status: status as any })
         .eq('id', booking.id);
 
-      if (error) throw error;
+      if (updErr) throw updErr;
 
       toast({
         title: "Pago actualizado",
-        description: "El estado del pago ha sido actualizado"
+        description: status === 'paid' ? 'Se ha cobrado la reserva correctamente' : 'El estado del pago ha sido actualizado'
       });
 
       setPaymentStatus(status);
       onBookingUpdated();
     } catch (error) {
-      console.error('Error updating payment status:', error);
+      console.error('Error updating booking payment:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el estado del pago",
+        description: (error as any)?.message || "No se pudo actualizar el estado del pago",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -211,6 +242,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
     setPaymentNotes('');
   };
 
+  // Registrar pago manual (efectivo, bizum, etc.)
   const processPayment = async () => {
     if (!paymentMethod) {
       toast({
@@ -284,6 +316,27 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
     }
   };
 
+  // Cobrar tarjeta guardada vía Edge Function (Stripe)
+  const chargeSavedCard = async () => {
+    try {
+      setIsProcessingPayment(true);
+      const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
+        body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
+      });
+      if (error || !data?.ok) {
+        throw new Error(error?.message || data?.error || 'No se pudo procesar el cobro');
+      }
+      await supabase.from('bookings').update({ payment_status: 'paid' }).eq('id', booking.id);
+      setPaymentStatus('paid');
+      toast({ title: 'Pago procesado', description: 'Se ha cobrado la reserva correctamente' });
+      onBookingUpdated();
+    } catch (e) {
+      toast({ title: 'Error', description: (e as any).message || 'No se pudo procesar el cobro', variant: 'destructive' });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
   return (
     <MobileCard 
       className={`booking-card ${isVipBooking() ? 'ring-2 ring-yellow-400' : isPriorityBooking() ? 'ring-2 ring-orange-400' : ''}`} 
@@ -323,9 +376,19 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
             }`}>
               {(booking.total_price_cents / 100).toFixed(2)}€
             </div>
-            <div className="flex gap-1 sm:gap-2">
+            <div className="flex gap-1 sm:gap-2 items-center justify-end">
               {getStatusBadge(bookingStatus)}
               {getPaymentBadge(paymentStatus)}
+              {paymentStatus === 'pending' && (
+                <Button
+                  size="sm"
+                  onClick={chargeSavedCard}
+                  disabled={isProcessingPayment}
+                  className="h-7"
+                >
+                  {isProcessingPayment ? 'Cobrando…' : 'Cobrar'}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -469,6 +532,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                       value={paymentStatus}
                       onChange={(e) => updatePaymentStatus(e.target.value)}
                       className={baseSelectClass}
+                      disabled={isProcessingPayment}
                     >
                       {PAYMENT_STATUSES.map((status) => (
                         <option key={status.value} value={status.value}>
@@ -528,12 +592,28 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                     </div>
                   </div>
 
-                  {/* Procesar pago */}
+                  {/* Cobro rápido con tarjeta guardada + Procesar pago */}
                   {paymentStatus === 'pending' && (
                     <div className="space-y-3 border-t pt-3">
-                      <Label className="text-sm font-medium">Procesar Pago</Label>
-                      
+                      {/* Botón de cobro con tarjeta guardada (Stripe) */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Cobrar ahora</Label>
+                        <Button
+                          onClick={chargeSavedCard}
+                          disabled={isProcessingPayment}
+                          className="w-full"
+                          size="sm"
+                        >
+                          {isProcessingPayment ? 'Cobrando…' : `Cobrar tarjeta guardada (${(booking.total_price_cents / 100).toFixed(2)}€)`}
+                        </Button>
+                        <p className="text-xs text-muted-foreground">
+                          Cobra a la tarjeta guardada del cliente mediante Stripe. Si no hay tarjeta guardada o falla, verás un error.
+                        </p>
+                      </div>
+
+                      {/* Alternativa: registrar pago manual */}
                       <div className="space-y-3">
+                        <Label className="text-sm font-medium">Registrar pago manual</Label>
                         <div>
                           <Label className="text-sm">Método de Pago</Label>
                           <select
@@ -568,7 +648,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                           className="w-full"
                           size="sm"
                         >
-                          {isProcessingPayment ? "Procesando..." : `Procesar Pago (${(booking.total_price_cents / 100).toFixed(2)}€)`}
+                          {isProcessingPayment ? "Procesando..." : `Marcar como pagado (${(booking.total_price_cents / 100).toFixed(2)}€)`}
                         </Button>
                       </div>
                     </div>

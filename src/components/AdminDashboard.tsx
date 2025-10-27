@@ -105,7 +105,7 @@ const AdminDashboard = () => {
       label: "Gestión de Citas",
       icon: Calendar,
       component: BookingManagement,
-      roles: ["admin"]
+      roles: ["admin", "employee"]
     },
     {
       id: "configuracion",
