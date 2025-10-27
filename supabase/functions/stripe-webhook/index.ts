@@ -169,7 +169,7 @@ async function sendBookingConfirmationEmail(args: {
     <li><strong>Tratamiento:</strong> ${serviceDisplay}</li>
     <li><strong>Fecha:</strong> ${formattedDate}</li>
   </ul>
-  <p>${addressLineEs}</p>
+  <p><strong>Dirección:</strong><br>${addressLineEs}</p>
   <p>Estamos aquí 👉 <a href="${mapLink}" style="color:#1A6AFF;">Ver mapa</a></p>
   <p>Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de reserva y nuestra Política de Cancelación.</p>
   <p>Es aconsejable llegar al centro cinco minutos antes de la cita. Rogamos máxima puntualidad, al haber otras citas después de la vuestra, si llegáis tarde, quizás no podamos realizar el tratamiento completo.</p>
@@ -190,7 +190,7 @@ async function sendBookingConfirmationEmail(args: {
     <li><strong>Treatment:</strong> ${serviceDisplay}</li>
     <li><strong>Date:</strong> ${formattedDate}</li>
   </ul>
-  <p>${addressLineEn}</p>
+  <p><strong>Address:</strong><br>${addressLineEn}</p>
   <p>We’re here 👉 <a href="${mapLink}" style="color:#1A6AFF;">View map</a></p>
   <p>This email confirms your reservation. By completing this booking, you accept our booking terms and our Cancellation Policy.</p>  <p>Please arrive at the center five minutes before your appointment. Punctuality is important — as there are other clients after you, if you arrive late, we might not be able to perform the full treatment.</p>
   <p>If you are pregnant, please let us know in advance.</p>
@@ -523,10 +523,10 @@ async function processPackageVoucher(args: {
             </div>
 
             <p>Podrás usar tu bono en nuestro centro de <strong>${location}</strong>:</p>
-            <p>${address}</p>
+            <p><strong>Dirección:</strong><br>${address}</p>
             <p>Estamos aquí 👉 <a href="${mapLink}" target="_blank" style="color:#1A6AFF;">Ver mapa</a></p>
 
-            <p>Este email es una confirmación de tu compra. Al adquirir este bono, aceptas nuestras condiciones de uso y nuestra <a href="https://www.thenookmadrid.com/politica-de-cancelaciones/" target="_blank" style="color:#1A6AFF;">Política de Cancelación</a>.</p>
+            <p>Este email es una confirmación de tu compra. Al adquirir este bono, aceptas nuestras condiciones de uso y nuestra Política de Cancelación.</p>
 
             <p>Te recomendamos leer la política completa aquí:<br>
               <a href="https://www.thenookmadrid.com/politica-de-cancelaciones/" target="_blank" style="color:#1A6AFF;">https://www.thenookmadrid.com/politica-de-cancelaciones/</a>
