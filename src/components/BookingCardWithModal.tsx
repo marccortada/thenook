@@ -21,6 +21,8 @@ interface Booking {
   total_price_cents: number;
   status: string;
   payment_status: string;
+  payment_method?: string;
+  payment_notes?: string;
   notes?: string;
   booking_codes?: string[];
   services?: { name: string };
@@ -158,7 +160,11 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
 
       const { error: updErr } = await supabase
         .from('bookings')
-        .update({ payment_status: status as any })
+        .update({ 
+          payment_status: status as any,
+          payment_method: status === 'paid' ? 'tarjeta' : null,
+          payment_notes: status === 'paid' ? `Cobro automático Stripe` : null
+        } as any)
         .eq('id', booking.id);
 
       if (updErr) throw updErr;
@@ -326,7 +332,10 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       if (error || !data?.ok) {
         throw new Error(error?.message || data?.error || 'No se pudo procesar el cobro');
       }
-      await supabase.from('bookings').update({ payment_status: 'paid' }).eq('id', booking.id);
+      await supabase
+        .from('bookings')
+        .update({ payment_status: 'paid', payment_method: 'tarjeta', payment_notes: `Cobro automático Stripe` })
+        .eq('id', booking.id);
       setPaymentStatus('paid');
       toast({ title: 'Pago procesado', description: 'Se ha cobrado la reserva correctamente' });
       onBookingUpdated();
@@ -426,6 +435,14 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
               {booking.notes || 'Sin notas'}
             </p>
           </div>
+          {paymentStatus === 'paid' && (
+            <div className="md:col-span-2">
+              <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Pago</Label>
+              <p className="text-xs sm:text-sm">
+                Método: {booking.payment_method ? booking.payment_method : 'tarjeta'} {booking.payment_notes ? `· ${booking.payment_notes}` : ''}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Códigos Section */}

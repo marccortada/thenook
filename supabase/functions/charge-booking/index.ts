@@ -30,9 +30,15 @@ serve(async (req) => {
       : (booking.total_price_cents || 0);
     if (amount <= 0) throw new Error('Amount must be greater than 0');
 
+    // Retrieve payment method to get the attached customer
+    const pm = await stripe.paymentMethods.retrieve(booking.stripe_payment_method_id);
+    const customerId = (pm.customer as string) || '';
+    if (!customerId) throw new Error('Payment method is not attached to a customer');
+
     const intent = await stripe.paymentIntents.create({
       amount,
       currency: 'eur',
+      customer: customerId,
       payment_method: booking.stripe_payment_method_id,
       confirm: true,
       off_session: true,
@@ -42,7 +48,13 @@ serve(async (req) => {
 
     await supabase
       .from('bookings')
-      .update({ payment_status: 'paid', stripe_session_id: intent.id, updated_at: new Date().toISOString() })
+      .update({ 
+        payment_status: 'paid', 
+        payment_method: 'tarjeta',
+        payment_notes: `Cobro automático Stripe PI ${intent.id}`,
+        stripe_session_id: intent.id, 
+        updated_at: new Date().toISOString() 
+      })
       .eq('id', booking_id);
 
     return new Response(JSON.stringify({ ok: true, payment_intent: intent.id, status: intent.status }), { headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -50,4 +62,3 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: (e as Error).message }), { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } });
   }
 });
-
