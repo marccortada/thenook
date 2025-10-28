@@ -71,6 +71,8 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showChargeOptions, setShowChargeOptions] = useState(false);
+  const [generatedCheckoutUrl, setGeneratedCheckoutUrl] = useState<string | null>(null);
   const [selectedBookingCodes, setSelectedBookingCodes] = useState<string[]>(booking.booking_codes || []);
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -350,6 +352,70 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
     }
   };
 
+  // Crear link de pago (Checkout) y devolver URL
+  const createPaymentLink = async (): Promise<string> => {
+    const minCents = Math.max(50, booking.total_price_cents || 0);
+    const { data, error } = await (supabase as any).functions.invoke('create-checkout', {
+      body: { intent: 'booking_payment', booking_payment: { booking_id: booking.id, amount_cents: minCents }, currency: 'eur' }
+    });
+    const checkoutUrl: string | null = data?.url || (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
+    if (error || !checkoutUrl) throw new Error(error?.message || 'No se pudo generar el link de pago');
+    return checkoutUrl;
+  };
+
+  const normalizePhone = (phone?: string) => (phone || '').replace(/[^0-9+]/g, '').replace(/^\+/, '');
+
+  const openWhatsAppWithLink = async () => {
+    try {
+      setIsProcessingPayment(true);
+      // First try to send SMS directly via edge function
+      const minCents = Math.max(50, booking.total_price_cents || 0);
+      const { data, error } = await (supabase as any).functions.invoke('send-payment-link', {
+        body: { booking_id: booking.id, amount_cents: minCents }
+      });
+      const url: string | null = data?.url || generatedCheckoutUrl || null;
+      if (data?.ok && url) {
+        setGeneratedCheckoutUrl(url);
+        if (data.sms_sent) {
+          toast({ title: 'SMS enviado', description: 'El enlace se ha enviado al teléfono del cliente.' });
+          return; // SMS delivered; still copy and show WA below for conveniency
+        }
+      }
+      // If SMS not sent (no Twilio), fallback to WhatsApp
+      const finalUrl = url || await createPaymentLink();
+      setGeneratedCheckoutUrl(finalUrl);
+      const msg = `Hola, te enviamos el enlace para pagar tu cita en The Nook Madrid. Importe ${(booking.total_price_cents/100).toFixed(2)}€\n\n${url}`;
+      try { await navigator.clipboard.writeText(msg); } catch {}
+      const phone = normalizePhone(booking.profiles?.phone);
+      const wa = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      window.open(wa, '_blank');
+      toast({ title: 'Link de pago listo', description: data?.sms_sent ? 'SMS enviado. También abrimos WhatsApp y copiamos el mensaje.' : 'Abriendo WhatsApp y copiado al portapapeles' });
+    } catch (e) {
+      toast({ title: 'Error', description: (e as any).message || 'No se pudo generar el link', variant: 'destructive' });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const markCashPaid = async () => {
+    try {
+      setIsProcessingPayment(true);
+      const { error } = await supabase
+        .from('bookings')
+        .update({ payment_status: 'paid', payment_method: 'efectivo', payment_notes: `Cobrado en efectivo el ${new Date().toLocaleString()}` })
+        .eq('id', booking.id);
+      if (error) throw error;
+      setPaymentStatus('paid');
+      toast({ title: 'Pago registrado', description: 'Marcado como cobrado en efectivo' });
+      onBookingUpdated();
+      setShowChargeOptions(false);
+    } catch (e) {
+      toast({ title: 'Error', description: (e as any).message || 'No se pudo registrar el pago', variant: 'destructive' });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
   // Fallback: crear sesión de Checkout y enviar link por email
   const sendPaymentLinkFallback = async (_reason?: string) => {
     try {
@@ -430,7 +496,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
               {paymentStatus === 'pending' && (
                 <Button
                   size="sm"
-                  onClick={chargeSavedCard}
+                  onClick={() => setShowChargeOptions(true)}
                   disabled={isProcessingPayment}
                   className="h-7"
                 >
@@ -655,7 +721,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Cobrar ahora</Label>
                         <Button
-                          onClick={chargeSavedCard}
+                          onClick={() => setShowChargeOptions(true)}
                           disabled={isProcessingPayment}
                           className="w-full"
                           size="sm"
@@ -714,5 +780,22 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         </AppModal>
       </div>
      </MobileCard>
+     {/* Modal para elegir método de cobro rápido */}
+     <AppModal isOpen={showChargeOptions} onClose={() => setShowChargeOptions(false)}>
+       <div className="p-4 space-y-3">
+         <h3 className="font-semibold text-lg">Cobrar Cita</h3>
+         <p className="text-sm text-muted-foreground">Elige cómo quieres cobrar esta cita.</p>
+         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+           <Button onClick={markCashPaid} disabled={isProcessingPayment}>💰 Efectivo</Button>
+           <Button onClick={openWhatsAppWithLink} disabled={isProcessingPayment}>💳 Tarjeta (enviar link)</Button>
+         </div>
+         {generatedCheckoutUrl && (
+           <div className="mt-3">
+             <Label className="text-xs text-muted-foreground">Enlace generado</Label>
+             <p className="text-xs break-all">{generatedCheckoutUrl}</p>
+           </div>
+         )}
+       </div>
+     </AppModal>
   );
 }

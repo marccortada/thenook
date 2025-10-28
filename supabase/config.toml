@@ -32,3 +32,12 @@ verify_jwt = false
 
 [functions.send-email]
 verify_jwt = false
+
+[functions.send-payment-link]
+verify_jwt = false
+
+[functions.stripe-webhook-reservas]
+verify_jwt = false
+
+[functions.capture-payment]
+verify_jwt = false
