@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.capture-payment]
 verify_jwt = false
+
+[functions.create-reserva-payment-intent]
+verify_jwt = false

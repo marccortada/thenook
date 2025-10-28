@@ -15,7 +15,10 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
     const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY') || '';
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || '';
+    // Permite usar un secreto específico para este endpoint sin romper otros webhooks
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET_RESERVAS')
+      || Deno.env.get('STRIPE_WEBHOOK_SECRET')
+      || '';
     if (!stripeSecret || !webhookSecret) {
       return new Response(JSON.stringify({ ok: false, error: 'Missing Stripe secrets' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -108,4 +111,3 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
-
