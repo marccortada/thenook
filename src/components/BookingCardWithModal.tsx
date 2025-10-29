@@ -452,350 +452,352 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   };
 
   return (
-    <MobileCard 
-      className={`booking-card ${isVipBooking() ? 'ring-2 ring-yellow-400' : isPriorityBooking() ? 'ring-2 ring-orange-400' : ''}`} 
-      padding="sm"
-    >
-      <div className="space-y-3 sm:space-y-4">
-        {/* Header Mobile/Desktop */}
-        <div className={`${isMobile ? 'space-y-3' : 'flex justify-between items-start'}`}>
-          <div className="space-y-2">
-            <div className={`font-semibold flex items-center gap-2 ${
-              isMobile ? 'text-base' : 'text-lg'
-            }`}>
-              <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-              Cita - {format(new Date(booking.booking_datetime), 'dd/MM/yyyy', { locale: es })}
-            </div>
-            <div className={`${
-              isMobile ? 'flex flex-col gap-1' : 'flex items-center gap-4'
-            } text-xs sm:text-sm text-muted-foreground`}>
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                {format(new Date(booking.booking_datetime), 'HH:mm', { locale: es })} 
-                ({booking.duration_minutes} min)
+    <>
+      <MobileCard 
+        className={`booking-card ${isVipBooking() ? 'ring-2 ring-yellow-400' : isPriorityBooking() ? 'ring-2 ring-orange-400' : ''}`} 
+        padding="sm"
+      >
+        <div className="space-y-3 sm:space-y-4">
+          {/* Header Mobile/Desktop */}
+          <div className={`${isMobile ? 'space-y-3' : 'flex justify-between items-start'}`}>
+            <div className="space-y-2">
+              <div className={`font-semibold flex items-center gap-2 ${
+                isMobile ? 'text-base' : 'text-lg'
+              }`}>
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                Cita - {format(new Date(booking.booking_datetime), 'dd/MM/yyyy', { locale: es })}
               </div>
-              {booking.profiles && (
+              <div className={`${
+                isMobile ? 'flex flex-col gap-1' : 'flex items-center gap-4'
+              } text-xs sm:text-sm text-muted-foreground`}>
                 <div className="flex items-center gap-1">
-                  <User className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="truncate">
-                    {booking.profiles.first_name} {booking.profiles.last_name}
-                  </span>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                  {format(new Date(booking.booking_datetime), 'HH:mm', { locale: es })} 
+                  ({booking.duration_minutes} min)
                 </div>
-              )}
+                {booking.profiles && (
+                  <div className="flex items-center gap-1">
+                    <User className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="truncate">
+                      {booking.profiles.first_name} {booking.profiles.last_name}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className={`${isMobile ? 'flex justify-between items-center' : 'text-right'} space-y-2`}>
+              <div className={`font-bold text-primary ${
+                isMobile ? 'text-lg' : 'text-xl'
+              }`}>
+                {(booking.total_price_cents / 100).toFixed(2)}€
+              </div>
+              <div className="flex gap-1 sm:gap-2 items-center justify-end">
+                {getStatusBadge(bookingStatus)}
+                {getPaymentBadge(paymentStatus)}
+                {paymentStatus === 'pending' && (
+                  <Button
+                    size="sm"
+                    onClick={() => setShowChargeOptions(true)}
+                    disabled={isProcessingPayment}
+                    className="h-7"
+                  >
+                    {isProcessingPayment ? 'Cobrando…' : 'Cobrar'}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-          <div className={`${isMobile ? 'flex justify-between items-center' : 'text-right'} space-y-2`}>
-            <div className={`font-bold text-primary ${
-              isMobile ? 'text-lg' : 'text-xl'
-            }`}>
-              {(booking.total_price_cents / 100).toFixed(2)}€
-            </div>
-            <div className="flex gap-1 sm:gap-2 items-center justify-end">
-              {getStatusBadge(bookingStatus)}
-              {getPaymentBadge(paymentStatus)}
-              {paymentStatus === 'pending' && (
-                <Button
-                  size="sm"
-                  onClick={() => setShowChargeOptions(true)}
-                  disabled={isProcessingPayment}
-                  className="h-7"
-                >
-                  {isProcessingPayment ? 'Cobrando…' : 'Cobrar'}
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
 
-        {/* Details Grid */}
-        <div className={`grid gap-3 sm:gap-4 ${
-          isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-        }`}>
-          <div>
-            <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Servicio</Label>
-            <p className="font-medium text-sm sm:text-base truncate">
-              {booking.services?.name || 'Sin servicio'}
-            </p>
-          </div>
-          <div>
-            <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Centro</Label>
-            <p className="font-medium text-sm sm:text-base truncate">
-              {booking.centers?.name || 'Sin centro'}
-            </p>
-          </div>
-          <div>
-            <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Cliente</Label>
-            <p className="font-medium text-sm sm:text-base truncate">
-              {booking.profiles?.email || 'Sin email'}
-            </p>
-            {booking.profiles?.phone && (
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                {booking.profiles.phone}
+          {/* Details Grid */}
+          <div className={`grid gap-3 sm:gap-4 ${
+            isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+          }`}>
+            <div>
+              <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Servicio</Label>
+              <p className="font-medium text-sm sm:text-base truncate">
+                {booking.services?.name || 'Sin servicio'}
               </p>
+            </div>
+            <div>
+              <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Centro</Label>
+              <p className="font-medium text-sm sm:text-base truncate">
+                {booking.centers?.name || 'Sin centro'}
+              </p>
+            </div>
+            <div>
+              <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Cliente</Label>
+              <p className="font-medium text-sm sm:text-base truncate">
+                {booking.profiles?.email || 'Sin email'}
+              </p>
+              {booking.profiles?.phone && (
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {booking.profiles.phone}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Notas</Label>
+              <p className="text-xs sm:text-sm line-clamp-2">
+                {booking.notes || 'Sin notas'}
+              </p>
+            </div>
+            {paymentStatus === 'paid' && (
+              <div className="md:col-span-2">
+                <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Pago</Label>
+                <p className="text-xs sm:text-sm">
+                  Método: {booking.payment_method ? booking.payment_method : 'tarjeta'} {booking.payment_notes ? `· ${booking.payment_notes}` : ''}
+                </p>
+              </div>
             )}
           </div>
-          <div>
-            <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Notas</Label>
-            <p className="text-xs sm:text-sm line-clamp-2">
-              {booking.notes || 'Sin notas'}
-            </p>
+
+          {/* Códigos Section */}
+          {(clientCodes.length > 0 || selectedBookingCodes.length > 0) && (
+            <div className="space-y-2">
+              <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Tag className="h-3 w-3" />
+                Códigos
+              </Label>
+              <div className="flex flex-wrap gap-1">
+                {/* Client codes */}
+                {clientCodes.map((assignment) => (
+                  <Badge 
+                    key={assignment.id}
+                    variant="outline"
+                    className="text-xs"
+                    style={{ 
+                      borderColor: assignment.code_color,
+                      color: assignment.code_color,
+                      backgroundColor: `${assignment.code_color}10`
+                    }}
+                  >
+                    Cliente: {assignment.code}
+                  </Badge>
+                ))}
+                {/* Booking specific codes */}
+                {selectedBookingCodes.map((code) => (
+                  <Badge 
+                    key={code}
+                    variant="secondary"
+                    className="text-xs"
+                    style={{ 
+                      borderColor: getCodeBadgeColor(code),
+                      color: getCodeBadgeColor(code),
+                      backgroundColor: `${getCodeBadgeColor(code)}20`
+                    }}
+                  >
+                    Reserva: {code}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="pt-3 sm:pt-4 border-t">
+            <Button
+              className="w-full sm:w-auto"
+              variant="outline"
+              onClick={handleOpenModal}
+            >
+              Modificar Reserva
+            </Button>
           </div>
-          {paymentStatus === 'paid' && (
-            <div className="md:col-span-2">
-              <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Pago</Label>
-              <p className="text-xs sm:text-sm">
-                Método: {booking.payment_method ? booking.payment_method : 'tarjeta'} {booking.payment_notes ? `· ${booking.payment_notes}` : ''}
-              </p>
+
+          {/* Unified AppModal */}
+          <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600} zIndex={120} overlayZIndex={110}>
+                <div className={`${isMobile ? 'p-4' : 'p-6'} flex flex-col gap-4 h-full`}>                
+                  {/* Header */}
+                  <div className={`flex items-center justify-between ${isMobile ? '' : 'mb-2'}`}>
+                    <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>
+                      Modificar Reserva
+                    </h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={closeModal}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="space-y-3 sm:space-y-4 overflow-y-auto pr-1 flex-1">
+                    {/* Información de la reserva */}
+                    <div className="space-y-2 text-sm text-muted-foreground border-b pb-3">
+                      <p>Cliente: {booking.profiles?.first_name} {booking.profiles?.last_name}</p>
+                      <p>Fecha: {format(new Date(booking.booking_datetime), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
+                      <p>Servicio: {booking.services?.name || 'Sin servicio'}</p>
+                      <p>Precio: {(booking.total_price_cents / 100).toFixed(2)}€</p>
+                    </div>
+
+                    {/* Estado de la cita */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Estado de la Cita</Label>
+                      <select
+                        value={bookingStatus}
+                        onChange={(e) => updateBookingStatus(e.target.value)}
+                        className={baseSelectClass}
+                      >
+                        {BOOKING_STATUSES.map((status) => (
+                          <option key={status.value} value={status.value}>
+                            {status.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Estado del pago */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Estado del Pago</Label>
+                      <select
+                        value={paymentStatus}
+                        onChange={(e) => updatePaymentStatus(e.target.value)}
+                        className={baseSelectClass}
+                        disabled={isProcessingPayment}
+                      >
+                        {PAYMENT_STATUSES.map((status) => (
+                          <option key={status.value} value={status.value}>
+                            {status.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Códigos de la reserva */}
+                    <div className="space-y-3 border-t pt-3">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        <Tag className="h-4 w-4" />
+                        Códigos de la Reserva
+                      </Label>
+                      
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {codes.map((code) => (
+                            <Badge
+                              key={code.id}
+                              variant={selectedBookingCodes.includes(code.code) ? "default" : "outline"}
+                              className="cursor-pointer text-xs"
+                              style={{
+                                backgroundColor: selectedBookingCodes.includes(code.code) ? code.color : 'transparent',
+                                borderColor: code.color,
+                                color: selectedBookingCodes.includes(code.code) ? 'white' : code.color
+                              }}
+                              onClick={() => toggleBookingCode(code.code)}
+                            >
+                              {code.code} - {code.name}
+                            </Badge>
+                          ))}
+                        </div>
+                        
+                        {clientCodes.length > 0 && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Códigos del cliente:</Label>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {clientCodes.map((assignment) => (
+                                <Badge 
+                                  key={assignment.id}
+                                  variant="outline"
+                                  className="text-xs"
+                                  style={{ 
+                                    borderColor: assignment.code_color,
+                                    color: assignment.code_color,
+                                    backgroundColor: `${assignment.code_color}10`
+                                  }}
+                                >
+                                  {assignment.code}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Cobro rápido con tarjeta guardada + Procesar pago */}
+                    {paymentStatus === 'pending' && (
+                      <div className="space-y-3 border-t pt-3">
+                        {/* Botón de cobro con tarjeta guardada (Stripe) */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Cobrar ahora</Label>
+                          <Button
+                            onClick={() => setShowChargeOptions(true)}
+                            disabled={isProcessingPayment}
+                            className="w-full"
+                            size="sm"
+                          >
+                            {isProcessingPayment ? 'Cobrando…' : `Cobrar tarjeta guardada (${(booking.total_price_cents / 100).toFixed(2)}€)`}
+                          </Button>
+                          <p className="text-xs text-muted-foreground">
+                            Cobra a la tarjeta guardada del cliente mediante Stripe. Si no hay tarjeta guardada o falla, verás un error.
+                          </p>
+                        </div>
+
+                        {/* Alternativa: registrar pago manual */}
+                        <div className="space-y-3">
+                          <Label className="text-sm font-medium">Registrar pago manual</Label>
+                          <div>
+                            <Label className="text-sm">Método de Pago</Label>
+                            <select
+                              value={paymentMethod}
+                              onChange={(e) => setPaymentMethod(e.target.value)}
+                              className={baseSelectClass}
+                            >
+                              <option value="" disabled hidden>
+                                Seleccionar método...
+                              </option>
+                              {PAYMENT_METHODS.map((method) => (
+                                <option key={method.value} value={method.value}>
+                                  {method.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <Label className="text-sm">Notas del Pago (Opcional)</Label>
+                            <Textarea
+                              placeholder="Notas adicionales..."
+                              value={paymentNotes}
+                              onChange={(e) => setPaymentNotes(e.target.value)}
+                              className="min-h-[60px] resize-none"
+                            />
+                          </div>
+
+                          <Button
+                            onClick={processPayment}
+                            disabled={isProcessingPayment || !paymentMethod}
+                            className="w-full"
+                            size="sm"
+                          >
+                            {isProcessingPayment ? "Procesando..." : `Marcar como pagado (${(booking.total_price_cents / 100).toFixed(2)}€)`}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+          </AppModal>
+        </div>
+      </MobileCard>
+      {/* Modal para elegir método de cobro rápido */}
+      <AppModal isOpen={showChargeOptions} onClose={() => setShowChargeOptions(false)}>
+        <div className="p-4 space-y-3">
+          <h3 className="font-semibold text-lg">Cobrar Cita</h3>
+          <p className="text-sm text-muted-foreground">Elige cómo quieres cobrar esta cita.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button onClick={markCashPaid} disabled={isProcessingPayment}>💰 Efectivo</Button>
+            <Button onClick={openWhatsAppWithLink} disabled={isProcessingPayment}>💳 Tarjeta (enviar link)</Button>
+          </div>
+          {generatedCheckoutUrl && (
+            <div className="mt-3">
+              <Label className="text-xs text-muted-foreground">Enlace generado</Label>
+              <p className="text-xs break-all">{generatedCheckoutUrl}</p>
             </div>
           )}
         </div>
-
-        {/* Códigos Section */}
-        {(clientCodes.length > 0 || selectedBookingCodes.length > 0) && (
-          <div className="space-y-2">
-            <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1">
-              <Tag className="h-3 w-3" />
-              Códigos
-            </Label>
-            <div className="flex flex-wrap gap-1">
-              {/* Client codes */}
-              {clientCodes.map((assignment) => (
-                <Badge 
-                  key={assignment.id}
-                  variant="outline"
-                  className="text-xs"
-                  style={{ 
-                    borderColor: assignment.code_color,
-                    color: assignment.code_color,
-                    backgroundColor: `${assignment.code_color}10`
-                  }}
-                >
-                  Cliente: {assignment.code}
-                </Badge>
-              ))}
-              {/* Booking specific codes */}
-              {selectedBookingCodes.map((code) => (
-                <Badge 
-                  key={code}
-                  variant="secondary"
-                  className="text-xs"
-                  style={{ 
-                    borderColor: getCodeBadgeColor(code),
-                    color: getCodeBadgeColor(code),
-                    backgroundColor: `${getCodeBadgeColor(code)}20`
-                  }}
-                >
-                  Reserva: {code}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="pt-3 sm:pt-4 border-t">
-          <Button
-            className="w-full sm:w-auto"
-            variant="outline"
-            onClick={handleOpenModal}
-          >
-            Modificar Reserva
-          </Button>
-        </div>
-
-        {/* Unified AppModal */}
-        <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600} zIndex={120} overlayZIndex={110}>
-              <div className={`${isMobile ? 'p-4' : 'p-6'} flex flex-col gap-4 h-full`}>                
-                {/* Header */}
-                <div className={`flex items-center justify-between ${isMobile ? '' : 'mb-2'}`}>
-                  <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>
-                    Modificar Reserva
-                  </h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={closeModal}
-                    className="h-8 w-8 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                {/* Content */}
-                <div className="space-y-3 sm:space-y-4 overflow-y-auto pr-1 flex-1">
-                  {/* Información de la reserva */}
-                  <div className="space-y-2 text-sm text-muted-foreground border-b pb-3">
-                    <p>Cliente: {booking.profiles?.first_name} {booking.profiles?.last_name}</p>
-                    <p>Fecha: {format(new Date(booking.booking_datetime), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
-                    <p>Servicio: {booking.services?.name || 'Sin servicio'}</p>
-                    <p>Precio: {(booking.total_price_cents / 100).toFixed(2)}€</p>
-                  </div>
-
-                  {/* Estado de la cita */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Estado de la Cita</Label>
-                    <select
-                      value={bookingStatus}
-                      onChange={(e) => updateBookingStatus(e.target.value)}
-                      className={baseSelectClass}
-                    >
-                      {BOOKING_STATUSES.map((status) => (
-                        <option key={status.value} value={status.value}>
-                          {status.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Estado del pago */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Estado del Pago</Label>
-                    <select
-                      value={paymentStatus}
-                      onChange={(e) => updatePaymentStatus(e.target.value)}
-                      className={baseSelectClass}
-                      disabled={isProcessingPayment}
-                    >
-                      {PAYMENT_STATUSES.map((status) => (
-                        <option key={status.value} value={status.value}>
-                          {status.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Códigos de la reserva */}
-                  <div className="space-y-3 border-t pt-3">
-                    <Label className="text-sm font-medium flex items-center gap-1">
-                      <Tag className="h-4 w-4" />
-                      Códigos de la Reserva
-                    </Label>
-                    
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        {codes.map((code) => (
-                          <Badge
-                            key={code.id}
-                            variant={selectedBookingCodes.includes(code.code) ? "default" : "outline"}
-                            className="cursor-pointer text-xs"
-                            style={{
-                              backgroundColor: selectedBookingCodes.includes(code.code) ? code.color : 'transparent',
-                              borderColor: code.color,
-                              color: selectedBookingCodes.includes(code.code) ? 'white' : code.color
-                            }}
-                            onClick={() => toggleBookingCode(code.code)}
-                          >
-                            {code.code} - {code.name}
-                          </Badge>
-                        ))}
-                      </div>
-                      
-                      {clientCodes.length > 0 && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Códigos del cliente:</Label>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {clientCodes.map((assignment) => (
-                              <Badge 
-                                key={assignment.id}
-                                variant="outline"
-                                className="text-xs"
-                                style={{ 
-                                  borderColor: assignment.code_color,
-                                  color: assignment.code_color,
-                                  backgroundColor: `${assignment.code_color}10`
-                                }}
-                              >
-                                {assignment.code}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Cobro rápido con tarjeta guardada + Procesar pago */}
-                  {paymentStatus === 'pending' && (
-                    <div className="space-y-3 border-t pt-3">
-                      {/* Botón de cobro con tarjeta guardada (Stripe) */}
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Cobrar ahora</Label>
-                        <Button
-                          onClick={() => setShowChargeOptions(true)}
-                          disabled={isProcessingPayment}
-                          className="w-full"
-                          size="sm"
-                        >
-                          {isProcessingPayment ? 'Cobrando…' : `Cobrar tarjeta guardada (${(booking.total_price_cents / 100).toFixed(2)}€)`}
-                        </Button>
-                        <p className="text-xs text-muted-foreground">
-                          Cobra a la tarjeta guardada del cliente mediante Stripe. Si no hay tarjeta guardada o falla, verás un error.
-                        </p>
-                      </div>
-
-                      {/* Alternativa: registrar pago manual */}
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium">Registrar pago manual</Label>
-                        <div>
-                          <Label className="text-sm">Método de Pago</Label>
-                          <select
-                            value={paymentMethod}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
-                            className={baseSelectClass}
-                          >
-                            <option value="" disabled hidden>
-                              Seleccionar método...
-                            </option>
-                            {PAYMENT_METHODS.map((method) => (
-                              <option key={method.value} value={method.value}>
-                                {method.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm">Notas del Pago (Opcional)</Label>
-                          <Textarea
-                            placeholder="Notas adicionales..."
-                            value={paymentNotes}
-                            onChange={(e) => setPaymentNotes(e.target.value)}
-                            className="min-h-[60px] resize-none"
-                          />
-                        </div>
-
-                        <Button
-                          onClick={processPayment}
-                          disabled={isProcessingPayment || !paymentMethod}
-                          className="w-full"
-                          size="sm"
-                        >
-                          {isProcessingPayment ? "Procesando..." : `Marcar como pagado (${(booking.total_price_cents / 100).toFixed(2)}€)`}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-        </AppModal>
-      </div>
-     </MobileCard>
-     {/* Modal para elegir método de cobro rápido */}
-     <AppModal isOpen={showChargeOptions} onClose={() => setShowChargeOptions(false)}>
-       <div className="p-4 space-y-3">
-         <h3 className="font-semibold text-lg">Cobrar Cita</h3>
-         <p className="text-sm text-muted-foreground">Elige cómo quieres cobrar esta cita.</p>
-         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-           <Button onClick={markCashPaid} disabled={isProcessingPayment}>💰 Efectivo</Button>
-           <Button onClick={openWhatsAppWithLink} disabled={isProcessingPayment}>💳 Tarjeta (enviar link)</Button>
-         </div>
-         {generatedCheckoutUrl && (
-           <div className="mt-3">
-             <Label className="text-xs text-muted-foreground">Enlace generado</Label>
-             <p className="text-xs break-all">{generatedCheckoutUrl}</p>
-           </div>
-         )}
-       </div>
-     </AppModal>
+      </AppModal>
+    </>
   );
 }
