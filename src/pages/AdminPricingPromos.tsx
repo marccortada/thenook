@@ -1678,15 +1678,6 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-4 space-y-6">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleDeleteAllGiftOptions}
-                    >
-                      Eliminar todas
-                    </Button>
-                  </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {giftOptions.map((opt) => {
                       const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active, show_online: opt.show_online ?? true, sessions_count: opt.sessions_count ?? 0 };

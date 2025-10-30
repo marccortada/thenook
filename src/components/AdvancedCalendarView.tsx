@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, differenceInMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { useBookings, useCenters, useLanes, useServices } from '@/hooks/useDatabase';
@@ -415,6 +415,11 @@ const AdvancedCalendarView = () => {
 
     event.preventDefault();
     
+    // Si el carril está bloqueado, ignoramos interacción
+    if (isLaneBlocked(laneId, timeSlot)) {
+      return;
+    }
+
     // Si estamos en modo bloqueo tradicional
     if (blockingMode) {
       handleBlockingSlotClick(laneId, timeSlot);
@@ -516,7 +521,7 @@ const AdvancedCalendarView = () => {
       // Crear bloqueo
       const blockEndTime = new Date(endTime);
       blockEndTime.setMinutes(blockEndTime.getMinutes() + 5); // Añadir 5 min para que sea un rango
-      createLaneBlock(selectedCenter, laneId, startTime, blockEndTime, 'Bloqueo por arrastre');
+      createLaneBlock(selectedCenter, laneId, startTime, blockEndTime, 'Desbloquea para interactuar');
     } else {
       // Crear reserva con duración calculada
       const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60) + 5; // +5 para incluir el slot final
@@ -551,6 +556,11 @@ const AdvancedCalendarView = () => {
 
   // Handle slot click
   const handleSlotClick = (centerId: string, laneId: string, date: Date, timeSlot: Date, event?: React.MouseEvent) => {
+    // Evitar interacción sobre franjas bloqueadas
+    if (isLaneBlocked(laneId, timeSlot)) {
+      return;
+    }
+
     // Si estamos en modo bloqueo
     if (blockingMode) {
       handleBlockingSlotClick(laneId, timeSlot);
@@ -1073,7 +1083,7 @@ const AdvancedCalendarView = () => {
               {timeSlots.map((timeSlot, timeIndex) => (
                 <div key={timeIndex} className="contents">
                   {/* Time label */}
-                  <div className="p-1 text-center text-xs border-r border-b bg-muted/30 font-medium h-6 flex items-center justify-center">
+                  <div className="p-1 text-center text-xs border-r border-b bg-muted/30 font-medium h-3 flex items-center justify-center">
                     {timeSlot.hour}
                   </div>
 
@@ -1090,7 +1100,15 @@ const AdvancedCalendarView = () => {
                         });
                        if (fallback) booking = fallback;
                      }
-                     const isBlocked = isLaneBlocked(lane.id, timeSlot.time);
+                     const block = isLaneBlocked(lane.id, timeSlot.time);
+                     const previousSlotTime = addMinutes(timeSlot.time, -5);
+                     const isPreviousSlotBlocked = !!isLaneBlocked(lane.id, previousSlotTime);
+                     const isBlockStartSlot = !!block && !isPreviousSlotBlocked;
+                     const blockEndDate = block ? new Date(block.end_datetime) : null;
+                     const blockDurationMinutes = blockEndDate
+                       ? Math.max(5, differenceInMinutes(blockEndDate, timeSlot.time))
+                       : 0;
+                     const blockHeightPx = Math.max(12, (blockDurationMinutes / 5) * 12);
                      const isFirstSlotOfBooking = booking &&
                       format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
@@ -1100,10 +1118,11 @@ const AdvancedCalendarView = () => {
                           <div
                             key={lane.id}
                             className={cn(
-                              "relative h-6 border-r border-b cursor-pointer transition-colors",
-                              !booking && !isBlocked && "hover:bg-muted/20",
+                              "relative h-3 border-r border-b cursor-pointer transition-colors",
+                              !booking && !block && "hover:bg-muted/20",
                               isInDragSelection && dragMode === 'booking' && "bg-blue-200/50 border-blue-400",
-                              isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400"
+                              isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400",
+                              block && !isBlockStartSlot && "pointer-events-none"
                             )}
                             onMouseDown={(e) => handleSlotMouseDown(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
                             onMouseEnter={() => handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, timeSlot.time)}
@@ -1147,7 +1166,7 @@ const AdvancedCalendarView = () => {
                                    backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
                                    borderLeftColor: getServiceLaneColor(booking.service_id),
                                    color: getServiceLaneColor(booking.service_id),
-                                   height: `${((booking.duration_minutes || 60) / 5) * 24}px`,
+                                   height: `${((booking.duration_minutes || 60) / 5) * 12}px`,
                                    zIndex: 2
                                  }}
                                 draggable={moveMode}
@@ -1191,28 +1210,37 @@ const AdvancedCalendarView = () => {
                                </div>
                            </div>
                          )}
-                          {isBlocked && !booking && (
+                          {block && isBlockStartSlot && !booking && (
                             <div 
-                              className="absolute top-1 left-1 right-1 bottom-1 rounded bg-gray-400/40 border border-gray-500/60 flex items-center justify-center"
+                              className="absolute top-1 left-1 right-1 rounded bg-gray-400/40 border border-gray-500/60 flex items-center justify-between px-2 py-1"
+                              style={{
+                                height: `${Math.max(8, blockHeightPx - 8)}px`,
+                                zIndex: 30
+                              }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onMouseEnter={(e) => e.stopPropagation()}
                               onMouseUp={(e) => e.stopPropagation()}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 pr-2">
                                 <span className="text-xs font-bold text-gray-700">BLOQUEADO</span>
+                                {block?.reason && (
+                                  <span className="text-[10px] text-gray-600 truncate max-w-[140px]">{block.reason}</span>
+                                )}
+                              </div>
+                              {(isAdmin || isEmployee) && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   className="h-6 w-6 p-0 hover:bg-red-600 hover:text-white"
-                                  onClick={(e) => handleUnblockLane(isBlocked.id, e)}
+                                  onClick={(e) => handleUnblockLane(block.id, e)}
                                 >
                                   <X className="h-3 w-3" />
                                 </Button>
-                              </div>
+                              )}
                             </div>
                           )}
-                         {blockingMode && !booking && !isBlocked && (
+                         {blockingMode && !booking && !block && (
                            <div className={cn(
                              "absolute top-1 left-1 right-1 bottom-1 rounded border-2 border-dashed transition-all",
                              blockStartSlot?.laneId === lane.id && blockStartSlot?.timeSlot.getTime() === timeSlot.time.getTime() 
@@ -1284,8 +1312,14 @@ const AdvancedCalendarView = () => {
                 <div className="p-1 text-center font-medium border-r bg-muted/50 text-xs">Hora</div>
               </div>
               {weekDates.map((date) => 
-                centerLanes.map((lane) => (
-                  <div key={`${date.toISOString()}-${lane.id}`} className="sticky top-0 z-10 bg-background border-b">
+                centerLanes.map((lane, laneIndex) => (
+                  <div
+                    key={`${date.toISOString()}-${lane.id}`}
+                    className={cn(
+                      "sticky top-0 z-10 bg-background border-b",
+                      laneIndex === centerLanes.length - 1 && "border-r-2 border-r-slate-300"
+                    )}
+                  >
                     <div 
                       className="p-1 text-center font-medium border-r"
                       style={{ backgroundColor: `#f1f5f920`, borderLeft: `3px solid #6b7280` }}
@@ -1311,20 +1345,31 @@ const AdvancedCalendarView = () => {
 
                    {/* Week day-lane slots */}
                    {weekDates.map((date) => 
-                     centerLanes.map((lane) => {
+                     centerLanes.map((lane, laneIndex) => {
                        // Create the correct datetime for this specific day and time slot
                        const slotDateTime = new Date(date);
                        slotDateTime.setHours(timeSlot.time.getHours(), timeSlot.time.getMinutes(), 0, 0);
                        
                        const booking = getBookingForSlot(selectedCenter, lane.id, date, slotDateTime);
-                       const isBlocked = isLaneBlocked(lane.id, slotDateTime);
+                       const block = isLaneBlocked(lane.id, slotDateTime);
+                       const prevSlot = addMinutes(slotDateTime, -5);
+                       const isPrevBlocked = !!isLaneBlocked(lane.id, prevSlot);
+                       const isBlockStart = !!block && !isPrevBlocked;
+                       const blockEnd = block ? new Date(block.end_datetime) : null;
+                       const blockMinutes = blockEnd ? Math.max(5, differenceInMinutes(blockEnd, slotDateTime)) : 0;
+                       const blockHeight = Math.max(24, (blockMinutes / 5) * 24);
                        const isFirstSlotOfBooking = booking &&
                          format(slotDateTime, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
                       return (
-                         <div
+                        <div
                            key={`${date.toISOString()}-${lane.id}`}
-                           className="relative h-6 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
+                           className={cn(
+                             "relative h-6 border-r border-b cursor-pointer transition-colors",
+                             !booking && !block && "hover:bg-muted/30",
+                             block && !isBlockStart && "pointer-events-none",
+                             laneIndex === centerLanes.length - 1 && "border-r-2 border-r-slate-300"
+                           )}
                            onClick={(e) => handleSlotClick(selectedCenter, lane.id, date, slotDateTime, e)}
                            onDragOver={(e) => {
                              e.preventDefault();
@@ -1401,24 +1446,25 @@ const AdvancedCalendarView = () => {
                              </div>
                            )}
                           
-                          {isBlocked && !booking && (
-                            <div className="absolute inset-0 bg-gray-400/30 rounded-sm flex items-center justify-center">
-                              <span className="text-[8px] font-medium text-gray-600 rotate-45">BLOCK</span>
+                          {block && isBlockStart && !booking && (
+                            <div
+                              className="absolute left-0 right-0 rounded-sm bg-gray-400/30 flex items-center justify-center px-1"
+                              style={{
+                                top: 0,
+                                height: `${blockHeight}px`,
+                                zIndex: 20
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span className="text-[8px] font-semibold text-gray-600">BLOQUEADO</span>
                               {(isAdmin || isEmployee) && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="absolute top-0 right-0 w-4 h-4 p-0 hover:bg-red-100"
+                                  className="absolute top-0 right-0 w-4 h-4 p-0 hover:bg-red-500 hover:text-white"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    const block = laneBlocks.find(block => 
-                                      block.lane_id === lane.id && 
-                                      timeSlot.time >= new Date(block.start_datetime) && 
-                                      timeSlot.time < new Date(block.end_datetime)
-                                    );
-                                    if (block) {
-                                      deleteLaneBlock(block.id);
-                                    }
+                                    deleteLaneBlock(block.id);
                                   }}
                                 >
                                   <X className="h-2 w-2" />
