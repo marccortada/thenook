@@ -23,6 +23,7 @@ type PeriodType = 'day' | 'month' | 'quarter' | 'year';
 
 const PeriodCalendarModal = ({ open, onOpenChange }: PeriodCalendarModalProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const isOpen = open;
   const closeModal = () => onOpenChange(false);
   const [selectedPeriodType, setSelectedPeriodType] = useState<PeriodType>('day');
@@ -244,15 +245,16 @@ const fetchPeriodStats = async () => {
 
   return (
     <>
-      <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
-            <div className="p-6 border-b">
-              <div className="flex items-center gap-2 text-xl">
+      <AppModal open={isOpen} onClose={closeModal} maxWidth={4000} mobileMaxWidth={4000} maxHeight={10000} viewportPadding={0} fullScreen>
+            <div className="h-full flex flex-col">
+            <div className="p-6 border-b flex-shrink-0">
+              <div className="flex items-center justify-between gap-2 text-xl">
                 <CalendarIcon className="h-6 w-6 text-primary" />
-                Comparar Períodos - Datos Reales
+                <span>Comparar Períodos - Datos Reales</span>
               </div>
             </div>
 
-<div className="space-y-6">
+<div className="space-y-6 p-6 flex-1 overflow-auto min-h-[60vh]">
   <div className="flex flex-wrap items-end gap-4">
     <div className="space-y-1">
       <span className="text-sm font-medium">Centro</span>
@@ -279,19 +281,19 @@ const fetchPeriodStats = async () => {
             </TabsList>
 
             <TabsContent value="day" className="space-y-4">
-              <Card>
+              <Card className="h-[56vh] flex flex-col">
                 <CardHeader>
                   <CardTitle>Seleccionar Período - Pulsa dos fechas</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Primera fecha: inicio del período | Segunda fecha: fin del período
                   </p>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1 overflow-auto">
                   <Calendar
                     mode="range"
                     selected={selectedRange}
                     onSelect={handleDaySelection}
-                    numberOfMonths={2}
+                    numberOfMonths={isMobile ? 1 : 2}
                     className="pointer-events-auto"
                     locale={es}
                   />
@@ -300,12 +302,12 @@ const fetchPeriodStats = async () => {
             </TabsContent>
 
             <TabsContent value="month" className="space-y-4">
-              <Card>
+              <Card className="h-[56vh] flex flex-col">
                 <CardHeader>
                   <CardTitle>Seleccionar Mes</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                <CardContent className="flex-1 overflow-auto">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {months.map((month) => (
                       <Button
                         key={month.label}
@@ -328,12 +330,12 @@ const fetchPeriodStats = async () => {
             </TabsContent>
 
             <TabsContent value="quarter" className="space-y-4">
-              <Card>
+              <Card className="h-[56vh] flex flex-col">
                 <CardHeader>
                   <CardTitle>Seleccionar Trimestre</CardTitle>
                 </CardHeader>
-                <CardContent>
-                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <CardContent className="flex-1 overflow-auto">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                      {quarters.map((quarter) => {
                        const isSelected = selectedRange?.from?.getTime() === quarter.start.getTime();
                        const isCurrent = quarter.isCurrent;
@@ -374,11 +376,11 @@ const fetchPeriodStats = async () => {
             </TabsContent>
 
             <TabsContent value="year" className="space-y-4">
-              <Card>
+              <Card className="h-[56vh] flex flex-col">
                 <CardHeader>
                   <CardTitle>Seleccionar Año</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1 overflow-auto">
                   <div className="grid grid-cols-2 gap-4">
                     {years.map((year) => (
                       <Button
@@ -486,11 +488,10 @@ const fetchPeriodStats = async () => {
           )}
 
           {/* Close Button */}
-          <div className="flex justify-end">
-            <Button onClick={closeModal}>
-              Cerrar
-            </Button>
+          <div className="flex justify-end pt-2 border-t flex-shrink-0">
+            <Button onClick={closeModal}>Cerrar</Button>
           </div>
+        </div>
         </div>
       </AppModal>
     </>

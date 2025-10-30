@@ -130,7 +130,12 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
         packages: [] as Package[]
       },
       'rituales': {
-        name: 'Rituales',
+        name: 'Rituales Individuales',
+        services: [] as Service[],
+        packages: [] as Package[]
+      },
+      'rituales-pareja': {
+        name: 'Rituales para Dos',
         services: [] as Service[],
         packages: [] as Package[]
       }
@@ -144,6 +149,8 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
       
       if (name.includes('cuatro manos')) {
         groups['masajes-cuatro-manos'].services.push(service);
+      } else if (isRitualService && isDuoService) {
+        groups['rituales-pareja'].services.push(service);
       } else if (isDuoService) {
         groups['masajes-pareja'].services.push(service);
       } else if (isRitualService) {

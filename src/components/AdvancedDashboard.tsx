@@ -20,6 +20,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { useAdvancedAnalytics } from "@/hooks/useAdvancedAnalytics";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { PeriodComparisonChart } from "@/components/PeriodComparisonChart";
 import PeriodCalendarModal from "@/components/PeriodCalendarModal";
 import { cn } from "@/lib/utils";
@@ -186,18 +187,32 @@ const AdvancedDashboard = () => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-            <SelectTrigger className="w-full sm:w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Hoy</SelectItem>
-              <SelectItem value="week">Semana</SelectItem>
-              <SelectItem value="month">Mes</SelectItem>
-              <SelectItem value="quarter">Trimestre</SelectItem>
-              <SelectItem value="year">Año</SelectItem>
-            </SelectContent>
-          </Select>
+          {isMobile ? (
+            <select
+              value={selectedPeriod}
+              onChange={(e) => handlePeriodChange(e.target.value as any)}
+              className="h-10 w-full sm:w-32 rounded-md border border-border bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="today">Hoy</option>
+              <option value="week">Semana</option>
+              <option value="month">Mes</option>
+              <option value="quarter">Trimestre</option>
+              <option value="year">Año</option>
+            </select>
+          ) : (
+            <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+              <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base w-full sm:w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-[130] bg-popover border shadow-md" position="popper" side="bottom" align="start" sideOffset={6} avoidCollisions collisionPadding={16}>
+                <SelectItem value="today">Hoy</SelectItem>
+                <SelectItem value="week">Semana</SelectItem>
+                <SelectItem value="month">Mes</SelectItem>
+                <SelectItem value="quarter">Trimestre</SelectItem>
+                <SelectItem value="year">Año</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -534,3 +549,4 @@ const AdvancedDashboard = () => {
 };
 
 export default AdvancedDashboard;
+  const isMobile = useIsMobile();
