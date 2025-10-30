@@ -356,7 +356,11 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   const createPaymentLink = async (): Promise<string> => {
     const minCents = Math.max(50, booking.total_price_cents || 0);
     const { data, error } = await (supabase as any).functions.invoke('create-checkout', {
-      body: { intent: 'booking_payment', booking_payment: { booking_id: booking.id, amount_cents: minCents }, currency: 'eur' }
+      body: {
+        intent: 'booking_payment',
+        booking_payment: { booking_id: booking.id, amount_cents: minCents, mode: 'payment' },
+        currency: 'eur'
+      }
     });
     const checkoutUrl: string | null = data?.url || (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
     if (error || !checkoutUrl) throw new Error(error?.message || 'No se pudo generar el link de pago');
@@ -421,7 +425,11 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
     try {
       const minCents = Math.max(50, booking.total_price_cents || 0);
       const { data, error } = await (supabase as any).functions.invoke('create-checkout', {
-        body: { intent: 'booking_payment', booking_payment: { booking_id: booking.id, amount_cents: minCents }, currency: 'eur' }
+        body: {
+          intent: 'booking_payment',
+          booking_payment: { booking_id: booking.id, amount_cents: minCents, mode: 'payment' },
+          currency: 'eur'
+        }
       });
       const checkoutUrl: string | null = data?.url || (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
       if (error || !checkoutUrl) {

@@ -45,7 +45,7 @@ interface PackageVoucherReq {
   notes?: string;
   total_cents?: number;
 }
-interface BookingPaymentReq { booking_id: string; amount_cents?: number }
+interface BookingPaymentReq { booking_id: string; amount_cents?: number; mode?: "payment" | "setup" }
 
 interface CreateCheckoutBody {
   intent: "gift_cards" | "package_voucher" | "booking_payment";

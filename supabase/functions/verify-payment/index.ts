@@ -99,14 +99,16 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
     const paymentStatus = session.payment_status;
     const buyerEmail = (session.customer_details?.email || (session as any).customer_email || null) as string | null;
 
-    if (paymentStatus !== "paid") {
+    const intent = (session.metadata?.intent || session.payment_intent && typeof session.payment_intent !== 'string' ? (session.payment_intent as any).metadata?.intent : undefined) as string | undefined;
+    const isBookingSetup = (session.mode === 'setup') || intent === "booking_setup";
+
+    if (paymentStatus !== "paid" && !isBookingSetup) {
       return new Response(JSON.stringify({ paid: false, status: paymentStatus }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    const intent = (session.metadata?.intent || session.payment_intent && typeof session.payment_intent !== 'string' ? (session.payment_intent as any).metadata?.intent : undefined) as string | undefined;
     console.log("[verify-payment] Processing session intent", {
       sessionId: session.id,
       intent,
@@ -682,6 +684,84 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
     }
 
 
+    if (intent === "booking_setup") {
+      let bookingId =
+        (session.metadata?.booking_id as string | undefined) ||
+        undefined;
+      let setupIntentId: string | null = null;
+      let setupIntentStatus: string | null = null;
+      let paymentMethodId: string | null = null;
+
+      try {
+        if (session.setup_intent) {
+          if (typeof session.setup_intent === "string") {
+            const si = await stripe.setupIntents.retrieve(session.setup_intent);
+            setupIntentId = si.id;
+            setupIntentStatus = si.status;
+            paymentMethodId =
+              typeof si.payment_method === "string"
+                ? si.payment_method
+                : si.payment_method?.id ?? null;
+            if (!bookingId) {
+              bookingId = (si.metadata as any)?.booking_id as string | undefined;
+            }
+          } else {
+            const siObj = session.setup_intent as Stripe.SetupIntent;
+            setupIntentId = siObj.id;
+            setupIntentStatus = siObj.status;
+            paymentMethodId =
+              typeof siObj.payment_method === "string"
+                ? siObj.payment_method
+                : siObj.payment_method?.id ?? null;
+            if (!bookingId) {
+              bookingId = (siObj.metadata as any)?.booking_id as string | undefined;
+            }
+          }
+        }
+      } catch (siError) {
+        console.warn("[verify-payment] Could not retrieve SetupIntent details:", siError);
+      }
+
+      if (bookingId) {
+        const bookingUpdates: Record<string, unknown> = {
+          stripe_session_id: session.id,
+          updated_at: new Date().toISOString(),
+        };
+        if (setupIntentId) bookingUpdates.stripe_setup_intent_id = setupIntentId;
+        if (setupIntentStatus) bookingUpdates.payment_method_status = setupIntentStatus;
+
+        await supabaseAdmin
+          .from("bookings")
+          .update(bookingUpdates)
+          .eq("id", bookingId);
+
+        try {
+          const paymentIntentUpdates: Record<string, unknown> = {
+            updated_at: new Date().toISOString(),
+            status: setupIntentStatus ?? session.status ?? "setup_completed",
+          };
+          if (setupIntentId) paymentIntentUpdates.stripe_setup_intent_id = setupIntentId;
+          if (paymentMethodId) paymentIntentUpdates.stripe_payment_method_id = paymentMethodId;
+          await supabaseAdmin
+            .from("booking_payment_intents")
+            .update(paymentIntentUpdates)
+            .eq("booking_id", bookingId);
+        } catch (paymentIntentErr) {
+          console.warn("[verify-payment] Unable to update booking_payment_intents for setup:", paymentIntentErr);
+        }
+
+        results.booking_setup = {
+          booking_id: bookingId,
+          setup_intent_id: setupIntentId,
+          setup_status: setupIntentStatus ?? session.status ?? null,
+          payment_method_id: paymentMethodId,
+        };
+      } else {
+        results.booking_setup_missing_booking = true;
+      }
+    }
+
+
     if (intent === "booking_payment") {
       const bpRaw = session.metadata?.bp_payload;
       if (bpRaw) {
@@ -697,7 +777,13 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
       }
     }
 
-    return new Response(JSON.stringify({ paid: true, ...results }), {
+    const responsePayload = {
+      paid: paymentStatus === "paid" && intent !== "booking_setup",
+      status: paymentStatus,
+      ...results,
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

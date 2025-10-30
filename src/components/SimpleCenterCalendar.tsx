@@ -325,7 +325,11 @@ const SimpleCenterCalendar = () => {
         : (selectedBooking?.total_price_cents || 0);
       const minCents = Math.max(50, baseCents);
       const { data, error } = await (supabase as any).functions.invoke('create-checkout', {
-        body: { intent: 'booking_payment', booking_payment: { booking_id: selectedBooking.id, amount_cents: minCents }, currency: 'eur' }
+        body: {
+          intent: 'booking_payment',
+          booking_payment: { booking_id: selectedBooking.id, amount_cents: minCents, mode: 'payment' },
+          currency: 'eur'
+        }
       });
       const checkoutUrl: string | null = data?.url || (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
       if (error || !checkoutUrl) throw new Error(error?.message || 'No se pudo generar el link de pago');

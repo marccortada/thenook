@@ -72,8 +72,15 @@ interface PackageVoucherPayload {
 async function sendBookingConfirmationEmail(args: {
   bookingId: string;
   session: Stripe.Checkout.Session;
+  markAsPaid?: boolean;
+  setupIntent?: Stripe.SetupIntent | null;
 }) {
-  const { bookingId, session } = args;
+  const {
+    bookingId,
+    session,
+    markAsPaid = true,
+    setupIntent = null,
+  } = args;
   const { data: booking, error } = await supabaseAdmin
     .from("bookings")
     .select(`
@@ -274,15 +281,59 @@ async function sendBookingConfirmationEmail(args: {
     updated_at: new Date().toISOString(),
   };
 
+  if (!markAsPaid) {
+    delete updates.payment_status;
+  }
+
+  if (setupIntent?.id) {
+    updates.stripe_setup_intent_id = setupIntent.id;
+  }
+  if (setupIntent?.status) {
+    updates.payment_method_status = setupIntent.status;
+  }
+  if (setupIntent?.payment_method) {
+    const paymentMethodId =
+      typeof setupIntent.payment_method === "string"
+        ? setupIntent.payment_method
+        : setupIntent.payment_method?.id;
+    if (paymentMethodId) {
+      updates.stripe_payment_method_id = paymentMethodId;
+    }
+  }
+
+  if (markAsPaid) {
+    updates.payment_status = "paid";
+  }
+
   await supabaseAdmin.from("bookings").update(updates).eq("id", bookingId);
 
   try {
+    const paymentIntentUpdate: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (setupIntent?.status) {
+      paymentIntentUpdate.status = setupIntent.status;
+    } else if (markAsPaid) {
+      paymentIntentUpdate.status = "paid";
+    } else {
+      paymentIntentUpdate.status = session.status ?? "setup_completed";
+    }
+    if (setupIntent?.payment_method) {
+      const paymentMethodId =
+        typeof setupIntent.payment_method === "string"
+          ? setupIntent.payment_method
+          : setupIntent.payment_method?.id;
+      if (paymentMethodId) {
+        paymentIntentUpdate.stripe_payment_method_id = paymentMethodId;
+      }
+    }
+    if (setupIntent?.id) {
+      paymentIntentUpdate.stripe_setup_intent_id = setupIntent.id;
+    }
+
     await supabaseAdmin
       .from("booking_payment_intents")
-      .update({
-        status: "paid",
-        updated_at: new Date().toISOString(),
-      })
+      .update(paymentIntentUpdate)
       .eq("booking_id", bookingId);
   } catch (intentErr) {
     console.warn("[stripe-webhook] Unable to update booking_payment_intents:", intentErr);
@@ -1184,23 +1235,42 @@ serve(async (req) => {
         // Flow: setup mode to only save payment method (no immediate charge)
         // booking_id can come in metadata or inside the SetupIntent
         let bookingIdFromMeta = session.metadata?.booking_id as string | undefined;
+        let setupIntent: Stripe.SetupIntent | null = null;
         try {
           if (!bookingIdFromMeta && session.setup_intent) {
             if (typeof session.setup_intent === 'string') {
               // Retrieve the SetupIntent to read metadata
               const si = await stripe.setupIntents.retrieve(session.setup_intent);
+              setupIntent = si;
               bookingIdFromMeta = (si.metadata as any)?.booking_id as string | undefined;
               console.log('[stripe-webhook] Retrieved SetupIntent metadata booking_id:', bookingIdFromMeta);
             } else {
               const siObj = session.setup_intent as Stripe.SetupIntent;
+              setupIntent = siObj;
               bookingIdFromMeta = (siObj.metadata as any)?.booking_id as string | undefined;
             }
           }
         } catch (e) {
           console.warn('[stripe-webhook] Could not read SetupIntent metadata:', e);
         }
+        if (!setupIntent && session.setup_intent) {
+          try {
+            if (typeof session.setup_intent === 'string') {
+              setupIntent = await stripe.setupIntents.retrieve(session.setup_intent);
+            } else {
+              setupIntent = session.setup_intent as Stripe.SetupIntent;
+            }
+          } catch (retrieveErr) {
+            console.warn('[stripe-webhook] Unable to retrieve SetupIntent details:', retrieveErr);
+          }
+        }
         if (bookingIdFromMeta) {
-          await sendBookingConfirmationEmail({ bookingId: bookingIdFromMeta, session });
+          await sendBookingConfirmationEmail({
+            bookingId: bookingIdFromMeta,
+            session,
+            markAsPaid: false,
+            setupIntent,
+          });
         } else {
           console.warn('[stripe-webhook] booking_setup without booking_id in metadata');
         }

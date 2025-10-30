@@ -349,7 +349,7 @@ const ManageBooking = () => {
                                     const { data, error } = await supabase.functions.invoke("create-checkout", {
                                       body: {
                                         intent: "booking_payment",
-                                        booking_payment: { booking_id: booking.id },
+                                        booking_payment: { booking_id: booking.id, mode: "payment" },
                                         currency: "eur",
                                       },
                                     });
