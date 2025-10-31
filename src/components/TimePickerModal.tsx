@@ -16,7 +16,7 @@ interface TimePickerModalProps {
   onOpenChange: (open: boolean) => void;
   selected: string | undefined;
   onSelect: (time: string) => void;
-  timeSlots: TimeSlot[];
+  timeSlots: Array<TimeSlot | string>;
   placeholder?: string;
 }
 
@@ -44,6 +44,14 @@ export const TimePickerModal = ({
     setIsOpen(false);
     onOpenChange(false);
   };
+
+  const normalizedSlots = React.useMemo(() => {
+    return timeSlots
+      .map((slot) =>
+        typeof slot === "string" ? { time: slot } : slot,
+      )
+      .filter((slot): slot is TimeSlot => typeof slot.time === "string" && slot.time.length > 0);
+  }, [timeSlots]);
 
   return (
     <>
@@ -73,7 +81,7 @@ export const TimePickerModal = ({
             </div>
             <div className="flex-1 overflow-y-auto py-6">
               <div className="grid grid-cols-3 gap-3 px-4">
-                {timeSlots.map(({ time, disabled, reason }) => (
+                {normalizedSlots.map(({ time, disabled, reason }) => (
                   <Button
                     key={time}
                     variant={selected === time ? "default" : "outline"}

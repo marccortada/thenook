@@ -880,22 +880,25 @@ const ReservationSystem = () => {
                                    <DrawerTitle className="text-lg font-semibold">Seleccionar Hora</DrawerTitle>
                                  </DrawerHeader>
                                  <div className="px-4 pb-6 overflow-y-auto flex-1">
-                                   <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
-                                     {timeSlots.map((time) => (
-                                       <Button
-                                         key={time}
-                                         variant={formData.time === time ? "default" : "outline"}
-                                         size="sm"
-                                         onClick={() => {
-                                           console.log('Hora seleccionada:', time);
-                                           setFormData({ ...formData, time });
-                                         }}
-                                         className="h-14 text-sm font-medium min-w-0 flex items-center justify-center"
-                                       >
-                                         {time}
-                                       </Button>
-                                     ))}
-                                   </div>
+                                     <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
+                                       {timeSlots.map((time) => (
+                                         <Button
+                                           key={time}
+                                           variant={formData.time === time ? "default" : "outline"}
+                                           size="sm"
+                                           onClick={() => {
+                                             console.log('Hora seleccionada:', time);
+                                             setFormData({ ...formData, time });
+                                           }}
+                                          className={cn(
+                                            "h-14 text-sm font-semibold min-w-0 flex items-center justify-center text-slate-900 dark:text-slate-100",
+                                            formData.time === time && "text-primary-foreground dark:text-primary-foreground"
+                                          )}
+                                         >
+                                           {time}
+                                         </Button>
+                                       ))}
+                                     </div>
                                  </div>
                                </DrawerContent>
                              </Drawer>

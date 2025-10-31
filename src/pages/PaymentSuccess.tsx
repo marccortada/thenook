@@ -1,2 +1,2 @@
-export { default } from '../../../src/pages/PaymentSuccess';
+export { default } from "./PagoExitoso";
 
