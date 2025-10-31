@@ -132,6 +132,7 @@ const AdvancedCalendarView = () => {
   const [editDuration, setEditDuration] = useState<number>(60);
   const [editTime, setEditTime] = useState<Date>(new Date());
   const [editBookingCodes, setEditBookingCodes] = useState<string[]>([]);
+  const [isChargingBooking, setIsChargingBooking] = useState(false);
   
   // Form state
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
@@ -897,6 +898,16 @@ const AdvancedCalendarView = () => {
         return;
       }
 
+      if (!overrides?.paymentStatus && paymentStatusToSave === 'paid' && editingBooking.payment_status !== 'paid') {
+        toast({
+          title: 'Cobro pendiente',
+          description: 'Utiliza el botón 💳 Cobrar para registrar el pago.',
+          variant: 'destructive',
+        });
+        setEditPaymentStatus(editingBooking.payment_status || 'pending');
+        return;
+      }
+
       const updates: any = {
         notes: editNotes || null,
         payment_status: paymentStatusToSave,
@@ -924,6 +935,51 @@ const AdvancedCalendarView = () => {
     } catch (err) {
       console.error('Error updating booking', err);
       toast({ title: 'Error', description: 'No se pudo actualizar la reserva.', variant: 'destructive' });
+    }
+  };
+
+  const handleChargeAndConfirm = async () => {
+    if (!editingBooking || isChargingBooking) return;
+
+    const targetServiceId = editServiceId || editingBooking.service_id || '';
+    const serviceForBooking = services.find(s => s.id === targetServiceId);
+    const amountCents = editingBooking.total_price_cents || serviceForBooking?.price_cents || 0;
+
+    if (!amountCents || amountCents <= 0) {
+      toast({
+        title: 'Importe no válido',
+        description: 'El tratamiento no tiene un precio asignado. Actualiza el precio antes de cobrar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsChargingBooking(true);
+      const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
+        body: { booking_id: editingBooking.id, amount_cents: amountCents },
+      });
+
+      if (error || !data?.ok) {
+        const message = (error as any)?.message || data?.error || 'No se pudo procesar el cobro.';
+        toast({
+          title: 'Error al cobrar',
+          description: message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      await saveBookingEdits({ paymentStatus: 'paid', bookingStatus: 'confirmed' });
+    } catch (err) {
+      console.error('Error charging booking:', err);
+      toast({
+        title: 'Error al cobrar',
+        description: err instanceof Error ? err.message : 'No se pudo procesar el cobro.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsChargingBooking(false);
     }
   };
 
@@ -1853,7 +1909,7 @@ const AdvancedCalendarView = () => {
 
             <div className="space-y-2">
               <Label htmlFor="serviceId" className="text-sm font-medium">Servicio *</Label>
-              <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
+              <Select value={editServiceId || undefined} onValueChange={(value) => setEditServiceId(value)}>
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder="Seleccionar servicio" />
                 </SelectTrigger>
@@ -2029,11 +2085,10 @@ const AdvancedCalendarView = () => {
                   size="sm" 
                   variant="default"
                   className="flex-1"
-                  onClick={() => {
-                    saveBookingEdits({ paymentStatus: 'paid', bookingStatus: 'confirmed' });
-                  }}
+                  onClick={handleChargeAndConfirm}
+                  disabled={isChargingBooking}
                 >
-                  💳 Cobrar
+                  {isChargingBooking ? 'Cobrando…' : '💳 Cobrar'}
                 </Button>
                 
                 <AlertDialog>
