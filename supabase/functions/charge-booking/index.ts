@@ -21,7 +21,7 @@ serve(async (req) => {
 
     const { data: booking, error } = await supabase
       .from('bookings')
-      .select('id, total_price_cents, stripe_payment_method_id, profiles!client_id(email), payment_status')
+      .select('id, total_price_cents, stripe_payment_method_id, service_id, profiles!client_id(email), payment_status, services(price_cents)')
       .eq('id', booking_id)
       .maybeSingle();
     if (error) {
@@ -34,9 +34,14 @@ serve(async (req) => {
       return new Response(JSON.stringify({ ok: false, error: 'No saved payment method' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
     }
 
-    const amount = typeof amount_cents === 'number' && amount_cents > 0
+    const amountFromRequest = typeof amount_cents === 'number' && amount_cents > 0
       ? amount_cents
-      : (booking.total_price_cents || 0);
+      : null;
+    const servicePriceCents = booking.services?.price_cents ?? null;
+    const fallbackAmount = (booking.total_price_cents && booking.total_price_cents > 0)
+      ? booking.total_price_cents
+      : (servicePriceCents && servicePriceCents > 0 ? servicePriceCents : null);
+    const amount = amountFromRequest ?? fallbackAmount ?? 0;
     if (amount <= 0) {
       return new Response(JSON.stringify({ ok: false, error: 'Amount must be greater than 0' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
     }
@@ -86,6 +91,7 @@ serve(async (req) => {
         payment_method: 'tarjeta',
         payment_notes: `Cobro automático Stripe PI ${intent.id}`,
         stripe_session_id: intent.id, 
+        total_price_cents: amount,
         updated_at: new Date().toISOString() 
       })
       .eq('id', booking_id);
