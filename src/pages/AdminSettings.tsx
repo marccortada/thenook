@@ -549,7 +549,6 @@ const AdminSettings = () => {
                       y las tarjetas de los clientes estén guardadas durante el proceso de reserva.
                     </p>
                     <ul className="text-xs text-yellow-600 space-y-1">
-                      <li>• <strong>No Show (0%):</strong> No se cobra nada aunque haya tarjeta guardada</li>
                       <li>• <strong>No Show (&gt;0%):</strong> Se cobra el porcentaje automáticamente</li>
                       <li>• <strong>Cancelaciones:</strong> Se aplicarán según las políticas configuradas</li>
                     </ul>

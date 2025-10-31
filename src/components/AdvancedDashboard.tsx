@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -30,6 +31,7 @@ type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year';
 
 const AdvancedDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
+  const [periodAccordionOpen, setPeriodAccordionOpen] = useState<string | null>(null);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const {
     kpiMetrics,
@@ -69,6 +71,17 @@ const AdvancedDashboard = () => {
     setSelectedPeriod(period);
     loadAnalytics(period);
   };
+
+  const periodOptions: Array<{ value: PeriodType; label: string }> = [
+    { value: 'today', label: 'Hoy' },
+    { value: 'week', label: 'Semana' },
+    { value: 'month', label: 'Mes' },
+    { value: 'quarter', label: 'Trimestre' },
+    { value: 'year', label: 'Año' },
+  ];
+
+  const selectedPeriodLabel =
+    periodOptions.find((option) => option.value === selectedPeriod)?.label || 'Selecciona';
 
   const formatCurrency = (amount: number) => `€${amount.toFixed(2)}`;
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
@@ -200,18 +213,42 @@ const AdvancedDashboard = () => {
               <option value="year">Año</option>
             </select>
           ) : (
-            <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-              <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base w-full sm:w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="z-[130] bg-popover border shadow-md" position="popper" side="bottom" align="start" sideOffset={6} avoidCollisions collisionPadding={16}>
-                <SelectItem value="today">Hoy</SelectItem>
-                <SelectItem value="week">Semana</SelectItem>
-                <SelectItem value="month">Mes</SelectItem>
-                <SelectItem value="quarter">Trimestre</SelectItem>
-                <SelectItem value="year">Año</SelectItem>
-              </SelectContent>
-            </Select>
+            <Accordion
+              type="single"
+              collapsible
+              value={periodAccordionOpen || undefined}
+              onValueChange={(value) => setPeriodAccordionOpen(value)}
+              className="w-full sm:w-40"
+            >
+              <AccordionItem value="period-selector" className="border rounded-md">
+                <AccordionTrigger className="h-10 sm:h-11 rounded-md px-3 text-sm sm:text-base font-medium justify-between hover:no-underline">
+                  <span>{selectedPeriodLabel}</span>
+                </AccordionTrigger>
+                <AccordionContent className="pt-0">
+                  <div className="flex flex-col py-2">
+                    {periodOptions.map((option) => {
+                      const isActive = option.value === selectedPeriod;
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            handlePeriodChange(option.value);
+                            setPeriodAccordionOpen(null);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between px-3 py-2 text-sm transition-colors",
+                            isActive ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                          )}
+                        >
+                          {option.label}
+                          {isActive && <span className="text-xs uppercase tracking-wide">Actual</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           )}
           <Button
             variant="outline"
