@@ -534,11 +534,6 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
               {getStatusBadge(bookingStatus)}
               {getPaymentBadge(paymentStatus)}
               {getReservaStatusBadge()}
-              {booking.reserva && typeof (booking.reserva as any).amount_capturable === 'number' && (booking.reserva as any).amount_capturable > 0 && (
-                <Badge className="bg-amber-100 text-amber-800">
-                  Retenido {(((booking.reserva as any).amount_capturable || 0) / 100).toFixed(2)}€
-                </Badge>
-              )}
               {paymentStatus === 'pending' && (
                 <Button
                   size="sm"

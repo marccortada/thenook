@@ -379,7 +379,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
     } else if (currentDraggedBooking && !wasDragging) {
       // Short tap - open modal
       console.log('🎯 Short tap detected - opening modal');
-      handleBookingClick(currentDraggedBooking, event);
+      handleBookingClick(currentDraggedBooking, event as any);
     }
     
     // Reset state

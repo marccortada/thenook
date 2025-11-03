@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import AppModal from "@/components/ui/app-modal";
 
 interface Booking {
   id: string;

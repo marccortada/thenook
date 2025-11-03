@@ -50,13 +50,12 @@ export default function BookingManagement() {
           *,
           services (name),
           centers (name),
-          profiles (id, first_name, last_name, email, phone),
-          reserva:reservas!bookings_reserva_id_fkey (amount_capturable, estado_reserva)
+          profiles (id, first_name, last_name, email, phone)
         `)
         .order('booking_datetime', { ascending: false });
 
       if (error) throw error;
-      setBookings(data || []);
+      setBookings(data as any || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast({

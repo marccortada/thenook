@@ -133,9 +133,6 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-8">
-          <div className="mb-2 p-2 rounded bg-yellow-100 text-yellow-900 text-xs font-semibold">
-            DEPLOY TEST – {new Date().toISOString()}
-          </div>
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-bold mb-2 truncate">

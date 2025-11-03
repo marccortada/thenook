@@ -310,7 +310,7 @@ const fetchPeriodStats = async () => {
                     mode="range"
                     selected={selectedRange}
                     onSelect={handleDaySelection}
-                    numberOfMonths={isMobile ? 1 : 2}
+                    numberOfMonths={1}
                     className="pointer-events-auto"
                     locale={es}
                   />

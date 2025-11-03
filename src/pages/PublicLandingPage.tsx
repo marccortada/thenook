@@ -38,7 +38,6 @@ export default function PublicLandingPage() {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10">
-      <div className="text-center text-xs bg-amber-100 text-amber-900 py-1">DEPLOY TEST – {new Date().toISOString()}</div>
       {/* Simple Header */}
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">

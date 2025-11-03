@@ -124,36 +124,6 @@ const InternalCodesManagement = () => {
     return `Último uso: ${new Date(code.last_used).toLocaleDateString()}`;
   };
 
-  const updateCreateModalLayout = (trigger?: HTMLElement | null) => {
-    if (typeof window === 'undefined') return;
-
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const width = Math.min(520, windowWidth - 32);
-    const maxHeight = Math.min(600, windowHeight - 32);
-
-    let top = window.scrollY + (windowHeight - maxHeight) / 2;
-    let left = (windowWidth - width) / 2;
-
-    if (trigger) {
-      const rect = trigger.getBoundingClientRect();
-      top = rect.top + window.scrollY - maxHeight / 2 + rect.height / 2;
-      left = rect.left + rect.width / 2 - width / 2;
-    }
-
-    const minTop = window.scrollY + 16;
-    const maxTop = Math.max(minTop, window.scrollY + windowHeight - maxHeight - 16);
-    const minLeft = 16;
-    const maxLeft = Math.max(minLeft, windowWidth - width - 16);
-
-    setCreateModalLayout({
-      top: Math.max(minTop, Math.min(top, maxTop)),
-      left: Math.max(minLeft, Math.min(left, maxLeft)),
-      width,
-      maxHeight,
-    });
-  };
-
   useEffect(() => {
     // No longer need custom positioning; AppModal handles responsiveness
   }, [isCreateDialogOpen]);

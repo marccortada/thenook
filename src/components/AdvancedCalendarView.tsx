@@ -1233,7 +1233,7 @@ const AdvancedCalendarView = () => {
                       {/* Configurar grupos permitidos */}
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" size="xs" className="h-6 px-2 text-[10px]">Grupos</Button>
+                          <Button variant="outline" size="sm" className="h-6 px-2 text-[10px]">Grupos</Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-56">
                           <div className="space-y-2">

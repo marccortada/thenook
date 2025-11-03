@@ -96,7 +96,7 @@ const DialogTrigger = React.forwardRef<
 
   const handlePointerDown = React.useCallback(
     (event: React.PointerEvent<HTMLElement>) => {
-      onPointerDown?.(event);
+      onPointerDown?.(event as any);
       if (!event.defaultPrevented) {
         setAnchor(event.currentTarget as HTMLElement);
       }
@@ -106,7 +106,7 @@ const DialogTrigger = React.forwardRef<
 
   const handleClick = React.useCallback(
     (event: React.MouseEvent<HTMLElement>) => {
-      onClick?.(event);
+      onClick?.(event as any);
       if (!event.defaultPrevented && event.detail === 0) {
         setAnchor(event.currentTarget as HTMLElement);
       }
