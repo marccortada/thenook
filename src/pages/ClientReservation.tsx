@@ -155,6 +155,17 @@ const ClientReservation = () => {
       }
 
       let lanesToUse = centerLanes;
+      // Si el servicio o su grupo está definido, filtrar por allowed_group_ids
+      const selectedService = currentSelection.kind === 'service' ? services.find(s => s.id === currentSelection.id) : null;
+      const groupByService = selectedService ? getTreatmentGroupByService(selectedService.id, services) : null;
+      const groupId = selectedService?.group_id || groupByService?.id;
+      if (groupId) {
+        const filtered = centerLanes.filter(l => {
+          const allowed: string[] = ((l as any).allowed_group_ids || []) as string[];
+          return allowed.length === 0 || allowed.includes(groupId);
+        });
+        if (filtered.length > 0) lanesToUse = filtered;
+      }
       if (laneIdsToCheck.length > 0) {
         const specificLanes = centerLanes.filter((lane) =>
           laneIdsToCheck.includes(lane.id)

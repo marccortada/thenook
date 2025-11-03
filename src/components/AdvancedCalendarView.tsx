@@ -32,6 +32,7 @@ import {
   Trash2,
   Move
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
@@ -132,6 +133,10 @@ const AdvancedCalendarView = () => {
   const [editDuration, setEditDuration] = useState<number>(60);
   const [editTime, setEditTime] = useState<Date>(new Date());
   const [editBookingCodes, setEditBookingCodes] = useState<string[]>([]);
+  // Control de edición manual del estado de pago (deshabilitado por defecto)
+  const [paymentEditUnlocked, setPaymentEditUnlocked] = useState(false);
+  const [showPaymentConfirm1, setShowPaymentConfirm1] = useState(false);
+  const [showPaymentConfirm2, setShowPaymentConfirm2] = useState(false);
   
   // Form state
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
@@ -174,6 +179,40 @@ const AdvancedCalendarView = () => {
     return '#3B82F6'; // Default blue
   };
 
+  // Iconos por carril: colores según especificación del cliente
+  // Carriles 1 y 2: verde
+  // Carril 3: dos colores (teal y rojo)
+  // Carril 4: dos colores (morado y rosa)
+  const getLaneIconColors = (laneIndex: number): string[] => {
+    switch (laneIndex) {
+      case 0:
+      case 1:
+        return ['#22C55E']; // verde
+      case 2:
+        return ['#14B8A6', '#EF4444']; // teal y rojo
+      case 3:
+        return ['#6366F1', '#EC4899']; // morado y rosa
+      default:
+        return ['#64748B'];
+    }
+  };
+
+  const LaneIcons = ({ index }: { index: number }) => {
+    const colors = getLaneIconColors(index);
+    return (
+      <span className="inline-flex items-center gap-1">
+        {colors.map((c, i) => (
+          <span
+            key={i}
+            aria-hidden
+            style={{ backgroundColor: c, boxShadow: '0 0 0 2px #fff' }}
+            className="inline-block h-3.5 w-3.5 rounded-full border border-gray-200"
+          />
+        ))}
+      </span>
+    );
+  };
+
   // Function to get lane assignment based on service treatment group
   const getLaneForService = (serviceId: string, centerId: string) => {
     const service = services.find(s => s.id === serviceId);
@@ -197,6 +236,14 @@ const AdvancedCalendarView = () => {
     }
     
     return centerLanes[laneIndex] || centerLanes[0];
+  };
+
+  const toggleLaneAllowedGroup = async (laneId: string, groupId: string, checked: boolean) => {
+    const lane = lanes.find(l => l.id === laneId);
+    if (!lane) return;
+    const current: string[] = ((lane as any).allowed_group_ids || []) as string[];
+    const updated = checked ? Array.from(new Set([...current, groupId])) : current.filter(id => id !== groupId);
+    await (supabase as any).from('lanes').update({ allowed_group_ids: updated }).eq('id', laneId);
   };
 
   // Function to get lane color for a specific service (based on its treatment group)
@@ -316,6 +363,19 @@ const AdvancedCalendarView = () => {
     return lanes
       .filter(lane => lane.center_id === centerId && lane.active)
       .sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  // Check if a lane is at full capacity for a given slot
+  const isLaneAtTimeFull = (centerId: string, laneId: string, timeSlot: Date) => {
+    const lane = lanes.find(l => l.id === laneId);
+    const capacity = (lane as any)?.capacity ?? 1;
+    const count = bookings.filter(b => {
+      if (b.center_id !== centerId || b.lane_id !== laneId || !b.booking_datetime) return false;
+      const start = parseISO(b.booking_datetime);
+      const end = addMinutes(start, b.duration_minutes || 60);
+      return timeSlot >= start && timeSlot < end; // overlaps that 5-min slot
+    }).length;
+    return count >= capacity;
   };
 
   // Get booking for specific slot - now with filtering
@@ -461,8 +521,20 @@ const AdvancedCalendarView = () => {
     const modalWidth = windowWidth < 768 ? Math.max(280, windowWidth - 32) : Math.min(520, windowWidth - 48);
     const modalHeight = Math.min(windowHeight - 40, windowWidth < 768 ? windowHeight - 32 : 720);
 
-    let top = scrollTop + (windowHeight - modalHeight) / 2;
-    let left = (windowWidth - modalWidth) / 2;
+    let top: number;
+    let left: number;
+    if (target) {
+      // Posicionar respecto al elemento clicado
+      const rect = target.getBoundingClientRect();
+      const anchorTop = rect.top + scrollTop + rect.height / 2;
+      const anchorLeft = rect.left + rect.width + 12; // a la derecha del slot
+      top = anchorTop - modalHeight / 2; // centrar verticalmente respecto al slot
+      left = anchorLeft; // abrir a la derecha
+    } else {
+      // Centrado en viewport
+      top = scrollTop + (windowHeight - modalHeight) / 2;
+      left = (windowWidth - modalWidth) / 2;
+    }
 
     top = Math.max(viewportTop + 16, Math.min(top, viewportBottom - modalHeight - 16));
     left = Math.max(16, Math.min(left, windowWidth - modalWidth - 16));
@@ -580,6 +652,7 @@ const AdvancedCalendarView = () => {
       setEditEmail(existingBooking.profiles?.email || '');
       setEditPhone(existingBooking.profiles?.phone || '');
       setEditBookingCodes(existingBooking.booking_codes || []);
+      setPaymentEditUnlocked(false); // bloquear edición manual al abrir
       setShowEditModal(true);
       return;
     }
@@ -743,6 +816,64 @@ const AdvancedCalendarView = () => {
       const timeSlotMinutes = bookingForm.timeSlot.getMinutes();
       bookingDateTime.setHours(timeSlotHours, timeSlotMinutes, 0, 0);
 
+      // 1) Validación de compatibilidad servicio ↔ carril
+      const clickedLane = lanes.find(l => l.id === assignedLaneId);
+      const laneAllowedGroups: string[] = ((clickedLane as any)?.allowed_group_ids || []) as string[];
+      const isLaneExplicitlyConfigured = laneAllowedGroups && laneAllowedGroups.length > 0;
+      if (selectedService.group_id) {
+        // Si el carril tiene grupos definidos, debe incluir el del servicio
+        if (isLaneExplicitlyConfigured && !laneAllowedGroups.includes(selectedService.group_id)) {
+          toast({ title: 'Carril no válido', description: 'Este servicio no se puede reservar en el carril seleccionado.', variant: 'destructive' });
+          return;
+        }
+        // Si no hay configuración explícita, aplicar mapeo por defecto (posición del carril)
+        const centerLanesList = getCenterLanes(bookingForm.centerId);
+        const laneIndex = Math.max(0, centerLanesList.findIndex(l => l.id === assignedLaneId));
+        const defaultAllowed: Record<number, string> = {
+          0: 'Masajes',
+          1: 'Tratamientos',
+          2: 'Rituales',
+          3: 'Cuatro Manos',
+        };
+        if (!isLaneExplicitlyConfigured) {
+          const serviceGroupName = treatmentGroups.find(tg => tg.id === selectedService.group_id)?.name || '';
+          const expected = defaultAllowed[laneIndex] || '';
+          if (expected && !serviceGroupName.includes(expected)) {
+            toast({ title: 'Carril no válido', description: `Selecciona un carril correspondiente a ${expected}.`, variant: 'destructive' });
+            return;
+          }
+        }
+      }
+
+      // 2) Validación de capacidad/ocupación del carril en el rango
+      const durationMinutes = selectedService.duration_minutes || 60;
+      const bookingEndTime = addMinutes(bookingDateTime, durationMinutes);
+      const laneCapacity = (clickedLane as any)?.capacity ?? 1;
+      const overlappingOnLane = bookings.filter(b =>
+        b.center_id === bookingForm.centerId &&
+        b.lane_id === assignedLaneId &&
+        b.booking_datetime &&
+        // solape temporal
+        ((parseISO(b.booking_datetime) < bookingEndTime) && (addMinutes(parseISO(b.booking_datetime), b.duration_minutes || 60) > bookingDateTime))
+      ).length;
+      if (overlappingOnLane >= laneCapacity) {
+        toast({ title: 'Carril ocupado', description: 'Este carril ya está reservado en ese horario.', variant: 'destructive' });
+        return;
+      }
+
+      // 3) Evitar doble reserva del mismo cliente en el mismo rango
+      if (createClientId) {
+        const overlappingForClient = bookings.some(b =>
+          b.client_id === createClientId &&
+          b.booking_datetime &&
+          ((parseISO(b.booking_datetime) < bookingEndTime) && (addMinutes(parseISO(b.booking_datetime), b.duration_minutes || 60) > bookingDateTime))
+        );
+        if (overlappingForClient) {
+          toast({ title: 'Cliente ya tiene cita', description: 'El cliente ya tiene una reserva que solapa en ese horario.', variant: 'destructive' });
+          return;
+        }
+      }
+
       const { data: created, error: bookingError } = await supabase
         .from('bookings')
         .insert({
@@ -838,6 +969,19 @@ const AdvancedCalendarView = () => {
         lane: newLaneId
       });
 
+      // Validar capacidad antes de mover
+      const lane = lanes.find(l => l.id === newLaneId);
+      const laneCapacity = (lane as any)?.capacity ?? 1;
+      const newEnd = addMinutes(newDateTime, bookings.find(b=>b.id===bookingId)?.duration_minutes || 60);
+      const overlappingOnLane = bookings.filter(b =>
+        b.id !== bookingId && b.center_id === newCenterId && b.lane_id === newLaneId && b.booking_datetime &&
+        (parseISO(b.booking_datetime) < newEnd) && (addMinutes(parseISO(b.booking_datetime), b.duration_minutes || 60) > newDateTime)
+      ).length;
+      if (overlappingOnLane >= laneCapacity) {
+        toast({ title: 'Carril ocupado', description: 'No se puede mover: el carril está lleno en ese horario.', variant: 'destructive' });
+        return;
+      }
+
       const { error } = await supabase
         .from('bookings')
         .update({
@@ -889,13 +1033,18 @@ const AdvancedCalendarView = () => {
 
       const updates: any = {
         notes: editNotes || null,
-        payment_status: paymentStatusToSave,
         status: bookingStatusToSave,
         service_id: editServiceId || editingBooking.service_id,
         duration_minutes: editDuration || editingBooking.duration_minutes,
         booking_datetime: newDateTime.toISOString(),
         booking_codes: editBookingCodes,
       };
+      // Solo permitir cambiar el estado de pago si se ha desbloqueado manualmente
+      // o si viene como override (por ejemplo, al pulsar "Cobrar").
+      const allowPaymentUpdate = paymentEditUnlocked || overrides?.paymentStatus !== undefined;
+      if (allowPaymentUpdate) {
+        updates.payment_status = paymentStatusToSave;
+      }
       if (editClientId) updates.client_id = editClientId;
 
       const { error } = await supabase
@@ -910,6 +1059,7 @@ const AdvancedCalendarView = () => {
       toast({ title: 'Reserva actualizada', description: 'Los cambios se han guardado correctamente.' });
       setShowEditModal(false);
       setEditingBooking(null);
+      setPaymentEditUnlocked(false);
       await refetchBookings();
     } catch (err) {
       console.error('Error updating booking', err);
@@ -943,6 +1093,21 @@ const AdvancedCalendarView = () => {
       case 'cancelled': return 'bg-red-500/20 border-l-red-500 text-red-700';
       case 'completed': return 'bg-blue-500/20 border-l-blue-500 text-blue-700';
       default: return 'bg-gray-500/20 border-l-gray-500 text-gray-700';
+    }
+  };
+
+  // Hex color by status (para inline styles)
+  const getStatusHex = (status?: string) => {
+    switch (status) {
+      case 'confirmed': return '#10B981'; // green-500
+      case 'pending': return '#F59E0B';   // amber-500
+      case 'cancelled': return '#EF4444'; // red-500
+      case 'completed': return '#3B82F6'; // blue-500
+      case 'requested': return '#8B5CF6'; // violet-500
+      case 'new': return '#06B6D4';      // cyan-500
+      case 'online': return '#14B8A6';   // teal-500
+      case 'no_show': return '#9CA3AF';  // gray-400
+      default: return undefined;
     }
   };
 
@@ -1043,28 +1208,61 @@ const AdvancedCalendarView = () => {
         <CardContent className="p-0">
           <ScrollArea className="h-[85vh]">
             {/* Responsive grid based on number of lanes */}
-            <div className={cn(
-              "gap-0 min-w-fit select-none",
-              isDragging && "cursor-grabbing",
-              centerLanes.length === 1 ? "grid grid-cols-[60px_1fr]" :
-              centerLanes.length === 2 ? "grid grid-cols-[60px_repeat(2,1fr)]" :
-              centerLanes.length === 3 ? "grid grid-cols-[60px_repeat(3,1fr)]" :
-              "grid grid-cols-[60px_repeat(4,1fr)]"
-            )}>
+            <div
+              className={cn(
+                "grid gap-x-2 gap-y-0 min-w-fit select-none",
+                isDragging && "cursor-grabbing",
+              )}
+              style={{ gridTemplateColumns: `60px repeat(${Math.min(4, centerLanes.length || 1)}, 1fr)` }}
+            >
               {/* Header */}
               <div className="sticky top-0 z-10 bg-background border-b">
                 <div className="p-2 text-center font-medium border-r bg-muted/50 text-sm">
                   Hora
                 </div>
               </div>
-              {centerLanes.slice(0, 4).map((lane) => (
+              {centerLanes.slice(0, 4).map((lane, laneIdx) => (
                 <div key={lane.id} className="sticky top-0 z-10 bg-background border-b">
                   <div 
                     className="p-2 text-center font-medium border-r"
                     style={{ backgroundColor: `#f1f5f920`, borderLeft: `4px solid #6b7280` }}
                   >
-                    <div className="font-semibold text-sm">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="font-semibold text-sm">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
+                      <LaneIcons index={laneIdx} />
+                      {/* Configurar grupos permitidos */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="xs" className="h-6 px-2 text-[10px]">Grupos</Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56">
+                          <div className="space-y-2">
+                            <div className="text-xs font-semibold">Grupos reservables</div>
+                            {treatmentGroups.map((g: any) => {
+                              const list: string[] = ((lane as any).allowed_group_ids || []) as string[];
+                              const checked = list.includes(g.id);
+                              return (
+                                <label key={g.id} className="flex items-center gap-2 text-sm">
+                                  <Checkbox checked={checked} onCheckedChange={(v) => toggleLaneAllowedGroup(lane.id, g.id, !!v)} />
+                                  <span>{g.name}</span>
+                                </label>
+                              );
+                            })}
+                            <div className="text-[11px] text-muted-foreground">Si no marcas ninguno, el carril acepta todos los grupos.</div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                     <div className="text-xs text-muted-foreground">Cap: {lane.capacity}</div>
+                    {/* Mostrar grupos permitidos si existen; si no, no mostrar texto */}
+                    <div className="mt-1 flex flex-wrap justify-center gap-1">
+                      {(((lane as any).allowed_group_ids || []) as string[]).length > 0 ? (
+                        (((lane as any).allowed_group_ids || []) as string[]).map(id => {
+                          const g = treatmentGroups.find((tg: any) => tg.id === id);
+                          return g ? <Badge key={id} className="text-[10px]" variant="secondary">{g.name}</Badge> : null;
+                        })
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1091,6 +1289,7 @@ const AdvancedCalendarView = () => {
                        if (fallback) booking = fallback;
                      }
                      const isBlocked = isLaneBlocked(lane.id, timeSlot.time);
+                     const isFull = isLaneAtTimeFull(selectedCenter, lane.id, timeSlot.time);
                      const isFirstSlotOfBooking = booking &&
                       format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
@@ -1100,14 +1299,15 @@ const AdvancedCalendarView = () => {
                           <div
                             key={lane.id}
                             className={cn(
-                              "relative h-6 border-r border-b cursor-pointer transition-colors",
-                              !booking && !isBlocked && "hover:bg-muted/20",
+                              "relative h-6 border-r border-b transition-colors",
+                              !booking && !isBlocked && !isFull && "cursor-pointer hover:bg-muted/20",
+                              (isBlocked || isFull) && !booking && "bg-muted/40 opacity-60 cursor-not-allowed",
                               isInDragSelection && dragMode === 'booking' && "bg-blue-200/50 border-blue-400",
                               isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400"
                             )}
-                            onMouseDown={(e) => handleSlotMouseDown(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
-                            onMouseEnter={() => handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, timeSlot.time)}
-                            onMouseUp={(e) => handleSlotMouseUp(selectedCenter, lane.id, selectedDate, timeSlot.time, e)}
+                            onMouseDown={(e) => { if (isBlocked || isFull) return; handleSlotMouseDown(selectedCenter, lane.id, selectedDate, timeSlot.time, e); }}
+                            onMouseEnter={() => { if (isBlocked || isFull) return; handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, timeSlot.time); }}
+                            onMouseUp={(e) => { if (isBlocked || isFull) return; handleSlotMouseUp(selectedCenter, lane.id, selectedDate, timeSlot.time, e); }}
                             onDragOver={(e) => {
                               e.preventDefault();
                               e.dataTransfer.dropEffect = 'move';
@@ -1115,6 +1315,7 @@ const AdvancedCalendarView = () => {
                             onDrop={(e) => {
                               if (!moveMode) return;
                               e.preventDefault();
+                              if (isBlocked || isFull) return;
                               const bookingData = e.dataTransfer.getData('booking');
                               if (bookingData) {
                                 const draggedBooking = JSON.parse(bookingData);
@@ -1278,20 +1479,24 @@ const AdvancedCalendarView = () => {
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[85vh]">
-            <div className="grid grid-cols-[50px_repeat(28,1fr)] gap-0 min-w-[1200px]">
+            <div
+              className="grid gap-x-2 gap-y-0 min-w-[1200px]"
+              style={{ gridTemplateColumns: `50px repeat(${7 * Math.min(4, centerLanes.length || 1)}, 1fr)` }}
+            >
               {/* Week header */}
               <div className="sticky top-0 z-10 bg-background border-b">
                 <div className="p-1 text-center font-medium border-r bg-muted/50 text-xs">Hora</div>
               </div>
               {weekDates.map((date) => 
-                centerLanes.map((lane) => (
+                centerLanes.map((lane, laneIdx) => (
                   <div key={`${date.toISOString()}-${lane.id}`} className="sticky top-0 z-10 bg-background border-b">
                     <div 
                       className="p-1 text-center font-medium border-r"
                       style={{ backgroundColor: `#f1f5f920`, borderLeft: `3px solid #6b7280` }}
                     >
-                      <div className="font-semibold text-[9px]">
-                        {format(date, "EEE", { locale: es })} - {(lane.name || '').replace(/ra[ií]l/gi, 'C')}
+                      <div className="font-semibold text-[9px] flex items-center justify-center gap-1">
+                        <span>{format(date, "EEE", { locale: es })} - {(lane.name || '').replace(/ra[ií]l/gi, 'C')}</span>
+                        <LaneIcons index={laneIdx} />
                       </div>
                       <div className="text-[8px] text-muted-foreground">
                         {format(date, "d/M", { locale: es })}
@@ -1311,21 +1516,28 @@ const AdvancedCalendarView = () => {
 
                    {/* Week day-lane slots */}
                    {weekDates.map((date) => 
-                     centerLanes.map((lane) => {
+                     centerLanes.map((lane, laneIdx) => {
                        // Create the correct datetime for this specific day and time slot
                        const slotDateTime = new Date(date);
                        slotDateTime.setHours(timeSlot.time.getHours(), timeSlot.time.getMinutes(), 0, 0);
                        
                        const booking = getBookingForSlot(selectedCenter, lane.id, date, slotDateTime);
                        const isBlocked = isLaneBlocked(lane.id, slotDateTime);
+                       const isFull = isLaneAtTimeFull(selectedCenter, lane.id, slotDateTime);
                        const isFirstSlotOfBooking = booking &&
                          format(slotDateTime, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
+                      const isFirstLaneOfDay = laneIdx === 0; // dibujar separador grueso al inicio de cada día
                       return (
                          <div
                            key={`${date.toISOString()}-${lane.id}`}
-                           className="relative h-6 border-r border-b hover:bg-muted/30 cursor-pointer transition-colors"
-                           onClick={(e) => handleSlotClick(selectedCenter, lane.id, date, slotDateTime, e)}
+                           className={cn(
+                             "relative h-6 border-r border-b transition-colors",
+                             !booking && !isBlocked && !isFull && "cursor-pointer hover:bg-muted/30",
+                             (isBlocked || isFull) && !booking && "bg-muted/40 opacity-60 cursor-not-allowed"
+                           )}
+                           style={isFirstLaneOfDay ? { borderLeft: '3px solid #6b7280' } : undefined}
+                           onClick={(e) => { if (isBlocked || isFull) return; handleSlotClick(selectedCenter, lane.id, date, slotDateTime, e); }}
                            onDragOver={(e) => {
                              e.preventDefault();
                              e.dataTransfer.dropEffect = 'move';
@@ -1333,6 +1545,7 @@ const AdvancedCalendarView = () => {
                            onDrop={(e) => {
                              if (!moveMode) return;
                              e.preventDefault();
+                             if (isBlocked || isFull) return;
                              const bookingData = e.dataTransfer.getData('booking');
                              if (bookingData) {
                                const droppedBooking = JSON.parse(bookingData);
@@ -1361,10 +1574,10 @@ const AdvancedCalendarView = () => {
                                   moveMode ? "cursor-move" : "cursor-pointer"
                                 )}
                                  style={{ 
-                                   backgroundColor: `${getServiceLaneColor(booking.service_id)}40`,
-                                   borderLeftColor: getServiceLaneColor(booking.service_id),
-                                   color: getServiceLaneColor(booking.service_id),
-                                    height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
+                                   backgroundColor: `${(getStatusHex(booking.status) || getServiceLaneColor(booking.service_id))}40`,
+                                   borderLeftColor: getStatusHex(booking.status) || getServiceLaneColor(booking.service_id),
+                                   color: getStatusHex(booking.status) || getServiceLaneColor(booking.service_id),
+                                   height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
                                    minHeight: '24px'
                                  }}
                                draggable={moveMode}
@@ -1564,7 +1777,7 @@ const AdvancedCalendarView = () => {
 
   const bookingModal = showBookingModal ? (
     <>
-      <AppModal open={true} onClose={() => setShowBookingModal(false)} maxWidth={520} mobileMaxWidth={360} maxHeight={720}>
+      <AppModal open={true} onClose={() => setShowBookingModal(false)} maxWidth={520} mobileMaxWidth={360} maxHeight={720} centered={false} positionOverride={modalPosition}>
         <div className="bg-background rounded-xl shadow-2xl border border-border/60 overflow-hidden flex flex-col w-full max-h-full">
           <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background relative">
             <button
@@ -1780,7 +1993,7 @@ const AdvancedCalendarView = () => {
 
   const editBookingModal = showEditModal && editingBooking ? (
     <>
-      <AppModal open={true} onClose={() => { setShowEditModal(false); setEditingBooking(null); }} maxWidth={520} mobileMaxWidth={360} maxHeight={720}>
+      <AppModal open={true} onClose={() => { setShowEditModal(false); setEditingBooking(null); }} maxWidth={520} mobileMaxWidth={360} maxHeight={720} centered={false} positionOverride={modalPosition}>
         <div className="flex flex-col h-full max-h-[95vh]">
           <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background">
             <h3 className="text-xl font-semibold">Editar Reserva</h3>
@@ -1863,7 +2076,7 @@ const AdvancedCalendarView = () => {
               <div className="space-y-2">
                 <Label htmlFor="payment">Estado de pago</Label>
                 <Select value={editPaymentStatus} onValueChange={(v) => setEditPaymentStatus(v as any)}>
-                  <SelectTrigger>
+                  <SelectTrigger disabled={!paymentEditUnlocked} className={!paymentEditUnlocked ? 'opacity-70 cursor-not-allowed' : ''}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent 
@@ -1882,6 +2095,64 @@ const AdvancedCalendarView = () => {
                     <SelectItem value="partial_refund">Reembolso Parcial</SelectItem>
                   </SelectContent>
                 </Select>
+                {!paymentEditUnlocked && (
+                  <div className="text-xs text-muted-foreground">
+                    Automático. No editable. 
+                    <button
+                      type="button"
+                      className="underline ml-1"
+                      onClick={() => setShowPaymentConfirm1(true)}
+                    >
+                      Editar manualmente
+                    </button>
+                  </div>
+                )}
+                {paymentEditUnlocked && (
+                  <div className="text-xs text-amber-600">
+                    Edición manual habilitada. Se solicitará guardar para aplicar cambios.
+                  </div>
+                )}
+
+                {/* Doble confirmación para desbloquear edición */}
+                <AlertDialog open={showPaymentConfirm1} onOpenChange={setShowPaymentConfirm1}>
+                  <AlertDialogContent className="mx-4 sm:mx-auto">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Permitir edición manual?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Los estados de pago se actualizan automáticamente. Solo desbloquea si necesitas corregir un error.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="w-full sm:w-auto"
+                        onClick={() => { setShowPaymentConfirm1(false); setShowPaymentConfirm2(true); }}
+                      >
+                        Sí, continuar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                <AlertDialog open={showPaymentConfirm2} onOpenChange={setShowPaymentConfirm2}>
+                  <AlertDialogContent className="mx-4 sm:mx-auto">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmación adicional</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        ¿Seguro que quieres habilitar la edición manual del estado de pago?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="w-full sm:w-auto"
+                        onClick={() => { setShowPaymentConfirm2(false); setPaymentEditUnlocked(true); toast({ title: 'Edición habilitada', description: 'Ahora puedes editar el estado de pago.' }); }}
+                      >
+                        Sí, habilitar edición
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
               
               <div className="space-y-2">
@@ -2021,7 +2292,7 @@ const AdvancedCalendarView = () => {
                   size="sm" 
                   variant="outline" 
                   className="flex-1"
-                  onClick={() => { setShowEditModal(false); setEditingBooking(null); }}
+                  onClick={() => { setShowEditModal(false); setEditingBooking(null); setPaymentEditUnlocked(false); }}
                 >
                   <X className="h-4 w-4 mr-2" /> Cancelar
                 </Button>

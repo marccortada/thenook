@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, CreditCard, CheckCircle, TrendingUp, Users, DollarSign } from "lucide-react";
+import { Calendar as CalendarIcon, CreditCard, CheckCircle, TrendingUp, Users, DollarSign, Maximize2, Minimize2 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -241,18 +241,37 @@ const fetchPeriodStats = async () => {
   };
 
   const selectedPeriodInfo = formatSelectedPeriod();
+  const [isFullScreen, setIsFullScreen] = useState(true);
 
   return (
     <>
-      <AppModal open={isOpen} onClose={closeModal} maxWidth={500} mobileMaxWidth={350} maxHeight={600}>
-            <div className="p-6 border-b">
-              <div className="flex items-center gap-2 text-xl">
-                <CalendarIcon className="h-6 w-6 text-primary" />
-                Comparar Períodos - Datos Reales
+      <AppModal 
+        open={isOpen} 
+        onClose={closeModal}
+        maxWidth={isFullScreen ? 4000 : 980}
+        mobileMaxWidth={isFullScreen ? 4000 : 380}
+        maxHeight={isFullScreen ? 10000 : 720}
+        viewportPadding={isFullScreen ? 0 : 20}
+        fullScreen={isFullScreen}
+      >
+            <div className="h-full flex flex-col">
+            <div className="p-4 sm:p-6 border-b flex-shrink-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-lg sm:text-xl">
+                  <CalendarIcon className="h-6 w-6 text-primary" />
+                  <span>Comparar Períodos - Datos Reales</span>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setIsFullScreen(v => !v)}>
+                  {isFullScreen ? (
+                    <><Minimize2 className="h-4 w-4 mr-2" />Salir de pantalla completa</>
+                  ) : (
+                    <><Maximize2 className="h-4 w-4 mr-2" />Pantalla completa</>
+                  )}
+                </Button>
               </div>
             </div>
 
-<div className="space-y-6">
+<div className="space-y-6 p-4 sm:p-6 flex-1 overflow-auto min-h-[60vh]">
   <div className="flex flex-wrap items-end gap-4">
     <div className="space-y-1">
       <span className="text-sm font-medium">Centro</span>
@@ -279,19 +298,19 @@ const fetchPeriodStats = async () => {
             </TabsList>
 
             <TabsContent value="day" className="space-y-4">
-              <Card>
+              <Card className="h-[56vh] flex flex-col">
                 <CardHeader>
                   <CardTitle>Seleccionar Período - Pulsa dos fechas</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Primera fecha: inicio del período | Segunda fecha: fin del período
                   </p>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1 overflow-auto">
                   <Calendar
                     mode="range"
                     selected={selectedRange}
                     onSelect={handleDaySelection}
-                    numberOfMonths={2}
+                    numberOfMonths={isMobile ? 1 : 2}
                     className="pointer-events-auto"
                     locale={es}
                   />
@@ -300,12 +319,12 @@ const fetchPeriodStats = async () => {
             </TabsContent>
 
             <TabsContent value="month" className="space-y-4">
-              <Card>
+              <Card className="h-[56vh] flex flex-col">
                 <CardHeader>
                   <CardTitle>Seleccionar Mes</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                <CardContent className="flex-1 overflow-auto">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {months.map((month) => (
                       <Button
                         key={month.label}
@@ -328,11 +347,11 @@ const fetchPeriodStats = async () => {
             </TabsContent>
 
             <TabsContent value="quarter" className="space-y-4">
-              <Card>
+              <Card className="h-[56vh] flex flex-col">
                 <CardHeader>
                   <CardTitle>Seleccionar Trimestre</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1 overflow-auto">
                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                      {quarters.map((quarter) => {
                        const isSelected = selectedRange?.from?.getTime() === quarter.start.getTime();
@@ -374,11 +393,11 @@ const fetchPeriodStats = async () => {
             </TabsContent>
 
             <TabsContent value="year" className="space-y-4">
-              <Card>
+              <Card className="h-[56vh] flex flex-col">
                 <CardHeader>
                   <CardTitle>Seleccionar Año</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1 overflow-auto">
                   <div className="grid grid-cols-2 gap-4">
                     {years.map((year) => (
                       <Button
@@ -485,11 +504,8 @@ const fetchPeriodStats = async () => {
             </Card>
           )}
 
-          {/* Close Button */}
-          <div className="flex justify-end">
-            <Button onClick={closeModal}>
-              Cerrar
-            </Button>
+          <div className="flex justify-end pt-2 border-t flex-shrink-0">
+            <Button onClick={closeModal}>Cerrar</Button>
           </div>
         </div>
       </AppModal>

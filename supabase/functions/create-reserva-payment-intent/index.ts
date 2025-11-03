@@ -17,6 +17,7 @@ type Body = {
     payment_method_id: string; // del Payment Element (stripe.createPaymentMethod)
     extended_authorizations?: boolean; // si true y la fecha > 7 días, usar SetupIntent
   };
+  booking_id?: string; // opcional, para enlazar reservas con bookings
 };
 
 function isBeyond7Days(iso?: string) {
@@ -33,7 +34,7 @@ serve(async (req) => {
     const supabase = createClient(Deno.env.get('SUPABASE_URL') || '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '');
 
     const body = (await req.json()) as Body;
-    const { cliente, reserva } = body || {} as Body;
+    const { cliente, reserva, booking_id } = body || {} as Body;
     if (!cliente?.email || !reserva?.importe_total || !reserva?.payment_method_id) {
       return new Response(JSON.stringify({ ok: false, error: 'Campos requeridos: cliente.email, reserva.importe_total, reserva.payment_method_id' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
     }
@@ -78,6 +79,11 @@ serve(async (req) => {
       .single();
     const reservaId = reservaRow?.id as string;
 
+    // Si viene un booking_id, enlazarlo
+    if (booking_id && reservaId) {
+      try { await supabase.from('bookings').update({ reserva_id: reservaId }).eq('id', booking_id); } catch { /* ignore */ }
+    }
+
     // 3) Si extended y >7 días, usar SetupIntent para guardar tarjeta y cobrar el día del servicio
     const useSetupIntent = !!reserva.extended_authorizations && isBeyond7Days(reserva.fecha);
     if (useSetupIntent) {
@@ -115,4 +121,3 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: (e as Error).message }), { headers: { ...cors, 'Content-Type': 'application/json' }, status: 200 });
   }
 });
-

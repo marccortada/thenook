@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import AppModal from '@/components/ui/app-modal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from '@/components/ui/calendar';
@@ -36,6 +36,9 @@ import { usePackages } from '@/hooks/useDatabase';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ClientSelector from '@/components/ClientSelector';
+import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const PackageManagement = () => {
   const [selectedClient, setSelectedClient] = useState<string>('');
@@ -46,6 +49,11 @@ const PackageManagement = () => {
   const [editingGiftCard, setEditingGiftCard] = useState<GiftCard | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [searchTerm, setSearchTerm] = useState('');
+  const [confirmUseFor, setConfirmUseFor] = useState<string | null>(null);
+  const [confirmChecked, setConfirmChecked] = useState(false);
+  const [confirmNote, setConfirmNote] = useState('');
+  const [processingUse, setProcessingUse] = useState(false);
+  const { toast } = useToast();
   
   // Hooks para bonos
   const { packages, loading, error, refetch, createPackage, usePackageSession, cancelPackage, updatePackageNotes } = useClientPackages(selectedClient);
@@ -98,11 +106,10 @@ const PackageManagement = () => {
     return Math.round(((initial - remaining) / initial) * 100);
   };
 
-  const handleUseSession = async (packageId: string) => {
+  const handleUseSession = async (packageId: string, note?: string) => {
+    // Mantengo la función antigua por compatibilidad, pero el flujo nuevo usa edge function con auditoría
     const success = await usePackageSession(packageId);
-    if (success) {
-      refetch();
-    }
+    if (success) refetch();
   };
 
   const handleCancelPackage = async (packageId: string) => {
@@ -267,44 +274,13 @@ const PackageManagement = () => {
                             <Button 
                               size="sm" 
                               className="whitespace-nowrap w-full sm:w-auto"
-                              onClick={() => handleUseSession(pkg.id)}
+                              disabled={pkg.used_sessions >= pkg.total_sessions}
+                              onClick={() => { setConfirmUseFor(pkg.id); setConfirmChecked(false); setConfirmNote(''); }}
                             >
-                              Restar 1 sesión
+                              Usar sesión
                             </Button>
                           )}
-                          {pkg.status !== 'active' && (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="whitespace-nowrap"
-                              onClick={() => startEditingNotes(pkg.id, pkg.notes || '')}
-                            >
-                              <Edit3 className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {pkg.status === 'active' && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="destructive" className="whitespace-nowrap">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Cancelar bono?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta acción no se puede deshacer. El bono será marcado como cancelado.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleCancelPackage(pkg.id)}>
-                                    Confirmar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
+                          {/* Acciones de edición/cancelación ocultas para hacer la vista consultiva */}
                         </div>
                       </div>
                       
@@ -399,9 +375,10 @@ const PackageManagement = () => {
                         <Button 
                           size="sm" 
                           className="whitespace-nowrap w-full sm:w-auto"
-                          onClick={() => handleUseSession(pkg.id)}
+                          disabled={pkg.used_sessions >= pkg.total_sessions}
+                          onClick={() => { setConfirmUseFor(pkg.id); setConfirmChecked(false); setConfirmNote(''); }}
                         >
-                          Restar 1 sesión
+                          Usar sesión
                         </Button>
                       </div>
                     </div>
@@ -421,6 +398,75 @@ const PackageManagement = () => {
         </TabsContent>
 
       </Tabs>
+      {/* Modal confirmación usar sesión (AppModal centrado) */}
+      <AppModal open={!!confirmUseFor} onClose={() => setConfirmUseFor(null)} maxWidth={520} mobileMaxWidth={360} maxHeight={600}>
+        {(() => {
+            const pkg = packages.find(p => p.id === confirmUseFor);
+            if (!pkg) return null;
+            const nextUsed = pkg.used_sessions + 1;
+            return (
+              <div className="p-6 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Confirmar uso de sesión</h3>
+                  <p className="text-sm text-muted-foreground">Marcar una sesión como usada es irreversible.</p>
+                </div>
+                <div className="text-sm space-y-1">
+                  <div><span className="font-medium">Cliente:</span> {pkg.profiles?.first_name} {pkg.profiles?.last_name} ({pkg.profiles?.email})</div>
+                  <div><span className="font-medium">Bono:</span> {pkg.packages?.name}</div>
+                  <div><span className="font-medium">Código:</span> <span className="font-mono">{pkg.voucher_code}</span></div>
+                  <div><span className="font-medium">Sesiones:</span> {pkg.used_sessions}/{pkg.total_sessions} → {nextUsed}/{pkg.total_sessions}</div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Checkbox id="chk-confirm" checked={confirmChecked} onCheckedChange={(v) => setConfirmChecked(!!v)} />
+                  <label htmlFor="chk-confirm" className="text-sm">Entiendo y confirmo que deseo usar 1 sesión de este bono.</label>
+                </div>
+                <div className="space-y-1">
+                  <Label>Nota interna (obligatoria)</Label>
+                  <Textarea value={confirmNote} onChange={(e) => setConfirmNote(e.target.value)} placeholder="Escribe tu nombre y, si quieres, una nota" />
+                  <div className="text-xs text-muted-foreground">Debes indicar tu nombre para auditar quién usó la sesión.</div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setConfirmUseFor(null)}>Cancelar</Button>
+                  <Button disabled={!confirmChecked || processingUse || !confirmNote.trim()} onClick={async () => {
+                    if (!confirmUseFor) return;
+                    try {
+                      setProcessingUse(true);
+                      let ok = false; let remaining = 0; let total = 0; let errMsg: string | null = null;
+                      const { data, error } = await (supabase as any).functions.invoke('use-voucher-session', {
+                        body: { voucher_id: confirmUseFor, note: confirmNote }
+                      });
+                      if (!error && data?.ok) { ok = true; remaining = data.remaining; total = data.total; }
+                      if (!ok) {
+                        const rpc = await (supabase as any).rpc('use_client_package_session', { package_id: confirmUseFor });
+                        if (!rpc.error && rpc.data) {
+                          // Anexar nota manual manteniendo lo existente
+                          const { data: existing } = await (supabase as any)
+                            .from('client_packages')
+                            .select('notes')
+                            .eq('id', confirmUseFor)
+                            .single();
+                          const newNotes = ((existing?.notes ?? '') + (existing?.notes ? ' | ' : '') + `Uso manual: ${confirmNote}`).slice(0, 2000);
+                          await (supabase as any).from('client_packages').update({ notes: newNotes }).eq('id', confirmUseFor);
+                          ok = true;
+                        } else {
+                          errMsg = rpc.error?.message || data?.error || error?.message || 'No se pudo usar la sesión';
+                        }
+                      }
+                      if (!ok) throw new Error(errMsg || 'No se pudo usar la sesión');
+                      setConfirmUseFor(null);
+                      toast({ title: 'Sesión registrada' });
+                      await refetch();
+                    } catch (e: any) {
+                      toast({ title: 'Error', description: e.message || 'No se pudo usar la sesión', variant: 'destructive' });
+                    } finally {
+                      setProcessingUse(false);
+                    }
+                  }}>Confirmar</Button>
+                </div>
+              </div>
+            );
+          })()}
+      </AppModal>
     </div>
   );
 };

@@ -21,6 +21,7 @@ interface Booking {
   total_price_cents: number;
   status: string;
   payment_status: string;
+  reserva_id?: string | null;
   payment_method?: string;
   payment_notes?: string;
   notes?: string;
@@ -73,6 +74,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showChargeOptions, setShowChargeOptions] = useState(false);
   const [generatedCheckoutUrl, setGeneratedCheckoutUrl] = useState<string | null>(null);
+  const [captureAmountInput, setCaptureAmountInput] = useState<string>(
+    booking?.total_price_cents ? (booking.total_price_cents / 100).toFixed(2) : ''
+  );
   const [selectedBookingCodes, setSelectedBookingCodes] = useState<string[]>(booking.booking_codes || []);
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -102,6 +106,19 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         {statusConfig.label}
       </Badge>
     );
+  };
+
+  const getReservaStatusBadge = () => {
+    const estado = (booking as any).reserva?.estado_reserva as string | undefined;
+    if (!estado) return null;
+    const map: Record<string, { label: string; className: string }> = {
+      'retenido': { label: 'Retenido', className: 'bg-amber-100 text-amber-800' },
+      'capturado_total': { label: 'Cobrado', className: 'bg-green-100 text-green-800' },
+      'capturado_parcial': { label: 'Cobro parcial', className: 'bg-blue-100 text-blue-800' },
+      'cancelado': { label: 'Cancelado', className: 'bg-red-100 text-red-800' },
+    };
+    const conf = map[estado] || { label: estado, className: 'bg-gray-100 text-gray-800' };
+    return <Badge className={conf.className}>{conf.label}</Badge>;
   };
 
   const updateBookingStatus = async (status: string) => {
@@ -153,12 +170,16 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       // Si marcamos como pagada, primero cobramos a la tarjeta guardada
       if (status === 'paid' && paymentStatus !== 'paid') {
         setIsProcessingPayment(true);
-        const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
-          body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
-        });
-        if (error || !data?.ok) {
-          await sendPaymentLinkFallback((error as any)?.message || data?.error);
-          return;
+        if (booking.reserva_id) {
+          const { data, error } = await (supabase as any).functions.invoke('capture-payment', {
+            body: { reserva_id: booking.reserva_id, amount_to_capture: booking.total_price_cents }
+          });
+          if (error || !data?.ok) { await sendPaymentLinkFallback((error as any)?.message || data?.error); return; }
+        } else {
+          const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
+            body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
+          });
+          if (error || !data?.ok) { await sendPaymentLinkFallback((error as any)?.message || data?.error); return; }
         }
       }
 
@@ -325,9 +346,27 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   };
 
   // Cobrar tarjeta guardada vía Edge Function (Stripe)
-  const chargeSavedCard = async () => {
+  const chargeSavedCard = async (overrideAmountCents?: number) => {
     try {
       setIsProcessingPayment(true);
+      if (booking.reserva_id) {
+        const amountCents = typeof overrideAmountCents === 'number' && overrideAmountCents > 0
+          ? Math.round(overrideAmountCents)
+          : booking.total_price_cents;
+        const min = Math.max(50, amountCents || 0);
+        const { data, error } = await (supabase as any).functions.invoke('capture-payment', {
+          body: { reserva_id: booking.reserva_id, amount_to_capture: min }
+        });
+        if (error || !data?.ok) throw new Error(error?.message || data?.error || 'No se pudo capturar el pago');
+        await supabase
+          .from('bookings')
+          .update({ payment_status: 'paid', payment_method: 'tarjeta', payment_notes: `Capturado vía reservas` })
+          .eq('id', booking.id);
+        setPaymentStatus('paid');
+        toast({ title: 'Pago capturado', description: 'Se ha cobrado la reserva correctamente' });
+        onBookingUpdated();
+        return;
+      }
       const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
         body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
       });
@@ -490,9 +529,15 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
             }`}>
               {(booking.total_price_cents / 100).toFixed(2)}€
             </div>
-            <div className="flex gap-1 sm:gap-2 items-center justify-end">
+            <div className="flex gap-1 sm:gap-2 items-center justify-end flex-wrap">
               {getStatusBadge(bookingStatus)}
               {getPaymentBadge(paymentStatus)}
+              {getReservaStatusBadge()}
+              {booking.reserva && typeof (booking.reserva as any).amount_capturable === 'number' && (booking.reserva as any).amount_capturable > 0 && (
+                <Badge className="bg-amber-100 text-amber-800">
+                  Retenido {(((booking.reserva as any).amount_capturable || 0) / 100).toFixed(2)}€
+                </Badge>
+              )}
               {paymentStatus === 'pending' && (
                 <Button
                   size="sm"
@@ -720,8 +765,35 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                       {/* Botón de cobro con tarjeta guardada (Stripe) */}
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Cobrar ahora</Label>
+                        {booking.reserva_id && (
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Importe a cobrar (€)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={captureAmountInput}
+                              onChange={(e) => setCaptureAmountInput(e.target.value)}
+                              placeholder={(booking.total_price_cents/100).toFixed(2)}
+                            />
+                            <p className="text-[11px] text-muted-foreground">Deja vacío para cobrar el total. Mínimo 0,50€.</p>
+                          </div>
+                        )}
                         <Button
-                          onClick={() => setShowChargeOptions(true)}
+                          onClick={() => {
+                            // Si hay reserva retenida, usar captura (parcial o total)
+                            if (booking.reserva_id) {
+                              const amount = parseFloat(captureAmountInput.replace(',', '.'));
+                              const amountCents = isNaN(amount) ? booking.total_price_cents : Math.round(amount * 100);
+                              if (amountCents < 50) {
+                                toast({ title: 'Importe inválido', description: 'El mínimo es 0,50€', variant: 'destructive' });
+                                return;
+                              }
+                              chargeSavedCard(amountCents);
+                            } else {
+                              setShowChargeOptions(true);
+                            }
+                          }}
                           disabled={isProcessingPayment}
                           className="w-full"
                           size="sm"

@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.create-reserva-payment-intent]
 verify_jwt = false
+
+[functions.use-voucher-session]
+verify_jwt = true

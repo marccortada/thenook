@@ -26,6 +26,8 @@ import InternalCodesManagement from "@/components/InternalCodesManagement";
 import PackageManagement from "@/components/PackageManagement";
 import GiftCardManagement from "@/components/GiftCardManagement";
 import { useToast } from "@/hooks/use-toast";
+import InlineLeafletMap from "@/components/InlineLeafletMap";
+import { geocodeAddress, reverseGeocode } from "@/lib/geocoding";
 import { useWorkingHours } from "@/hooks/useWorkingHours";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -45,6 +47,10 @@ const AdminSettings = () => {
   });
   const [loadingGeneral, setLoadingGeneral] = useState(false);
 
+  // Mapa: coordenadas de cada ubicación
+  const [zurbaranCoords, setZurbaranCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [conchaCoords, setConchaCoords] = useState<{ lat: number; lng: number } | null>(null);
+
   const [pricingPolicies, setPricingPolicies] = useState([]);
   const [loadingPolicies, setLoadingPolicies] = useState(false);
 
@@ -56,7 +62,8 @@ const AdminSettings = () => {
       setLoadingGeneral(true);
       const { data, error } = await supabase
         .from('centers')
-        .select('name, phone, email, whatsapp, website, address_zurbaran, address_concha_espina')
+        // select * para intentar incluir posibles columnas lat/lng si existen
+        .select('*')
         .eq('active', true)
         .limit(1);
 
@@ -66,7 +73,7 @@ const AdminSettings = () => {
       }
 
       if (data && data.length > 0) {
-        const centerData = data[0];
+        const centerData: any = data[0];
         setGeneralSettings(prev => ({
           ...prev,
           businessName: centerData?.name || "",
@@ -77,6 +84,16 @@ const AdminSettings = () => {
           addressZurbaran: (centerData as any)?.address_zurbaran || "C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid",
           addressConchaEspina: (centerData as any)?.address_concha_espina || "C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid"
         }));
+        // Intenta leer coordenadas si existen en la tabla
+        const zLat = centerData.zurbaran_lat ?? centerData.location_zurbaran_lat ?? null;
+        const zLng = centerData.zurbaran_lng ?? centerData.location_zurbaran_lng ?? null;
+        const cLat = centerData.concha_espina_lat ?? centerData.concha_lat ?? centerData.location_concha_espina_lat ?? null;
+        const cLng = centerData.concha_espina_lng ?? centerData.concha_lng ?? centerData.location_concha_espina_lng ?? null;
+        if (typeof zLat === 'number' && typeof zLng === 'number') setZurbaranCoords({ lat: zLat, lng: zLng });
+        if (typeof cLat === 'number' && typeof cLng === 'number') setConchaCoords({ lat: cLat, lng: cLng });
+        // Si faltan coords, geocodificar en background para inicializar mapas
+        if (!zLat || !zLng) geocodeAddress((centerData as any)?.address_zurbaran || '').then((pos) => pos && setZurbaranCoords(pos));
+        if (!cLat || !cLng) geocodeAddress((centerData as any)?.address_concha_espina || '').then((pos) => pos && setConchaCoords(pos));
       }
     } catch (error) {
       console.error('Error loading general settings:', error);
@@ -88,10 +105,48 @@ const AdminSettings = () => {
   const handleSaveSettings = async () => {
     try {
       setLoadingGeneral(true);
-      
-      const { error } = await supabase
-        .from('centers')
-        .update({
+      // 1) Geocodificar direcciones para colocar el pin automáticamente
+      const [zPos, cPos] = await Promise.all([
+        geocodeAddress(generalSettings.addressZurbaran),
+        geocodeAddress(generalSettings.addressConchaEspina)
+      ]);
+
+      if (zPos) setZurbaranCoords(zPos);
+      if (cPos) setConchaCoords(cPos);
+
+      // 2) Intentar guardar direcciones + posibles columnas lat/lng
+      const baseUpdate: any = {
+        name: generalSettings.businessName,
+        phone: generalSettings.phone,
+        email: generalSettings.email,
+        website: generalSettings.website,
+        whatsapp: generalSettings.whatsapp,
+        address_zurbaran: generalSettings.addressZurbaran,
+        address_concha_espina: generalSettings.addressConchaEspina,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (zPos) {
+        baseUpdate.zurbaran_lat = zPos.lat;
+        baseUpdate.zurbaran_lng = zPos.lng;
+        baseUpdate.location_zurbaran_lat = zPos.lat;
+        baseUpdate.location_zurbaran_lng = zPos.lng;
+      }
+      if (cPos) {
+        baseUpdate.concha_espina_lat = cPos.lat;
+        baseUpdate.concha_espina_lng = cPos.lng;
+        baseUpdate.concha_lat = cPos.lat;
+        baseUpdate.concha_lng = cPos.lng;
+        baseUpdate.location_concha_espina_lat = cPos.lat;
+        baseUpdate.location_concha_espina_lng = cPos.lng;
+      }
+
+      let { error } = await supabase.from('centers').update(baseUpdate).eq('active', true);
+
+      // Fallback: si falla por columnas inexistentes, reintentar solo con direcciones
+      if (error) {
+        console.warn('Update with lat/lng failed. Retrying with addresses only.', error);
+        const { error: e2 } = await supabase.from('centers').update({
           name: generalSettings.businessName,
           phone: generalSettings.phone,
           email: generalSettings.email,
@@ -99,9 +154,10 @@ const AdminSettings = () => {
           whatsapp: generalSettings.whatsapp,
           address_zurbaran: generalSettings.addressZurbaran,
           address_concha_espina: generalSettings.addressConchaEspina,
-          updated_at: new Date().toISOString()
-        })
-        .eq('active', true);
+          updated_at: new Date().toISOString(),
+        }).eq('active', true);
+        error = e2 || null as any;
+      }
 
       if (error) {
         console.error('Error saving general settings:', error);
@@ -126,6 +182,48 @@ const AdminSettings = () => {
       });
     } finally {
       setLoadingGeneral(false);
+    }
+  };
+
+  // Guardar tras mover el pin (reverse geocoding incluido)
+  const updateLocationAfterDrag = async (kind: 'zurbaran' | 'concha', lat: number, lng: number) => {
+    try {
+      const humanAddr = await reverseGeocode(lat, lng);
+      if (kind === 'zurbaran') {
+        setZurbaranCoords({ lat, lng });
+        if (humanAddr) setGeneralSettings(prev => ({ ...prev, addressZurbaran: humanAddr }));
+      } else {
+        setConchaCoords({ lat, lng });
+        if (humanAddr) setGeneralSettings(prev => ({ ...prev, addressConchaEspina: humanAddr }));
+      }
+
+      const update: any = {
+        updated_at: new Date().toISOString(),
+      };
+      if (kind === 'zurbaran') {
+        update.address_zurbaran = humanAddr || generalSettings.addressZurbaran;
+        update.zurbaran_lat = lat; update.zurbaran_lng = lng;
+        update.location_zurbaran_lat = lat; update.location_zurbaran_lng = lng;
+      } else {
+        update.address_concha_espina = humanAddr || generalSettings.addressConchaEspina;
+        update.concha_espina_lat = lat; update.concha_espina_lng = lng;
+        update.concha_lat = lat; update.concha_lng = lng;
+        update.location_concha_espina_lat = lat; update.location_concha_espina_lng = lng;
+      }
+
+      let { error } = await supabase.from('centers').update(update).eq('active', true);
+      if (error) {
+        // Fallback sin lat/lng
+        const addrOnly = kind === 'zurbaran'
+          ? { address_zurbaran: humanAddr || generalSettings.addressZurbaran }
+          : { address_concha_espina: humanAddr || generalSettings.addressConchaEspina };
+        const { error: e2 } = await supabase.from('centers').update({ ...addrOnly, updated_at: new Date().toISOString() }).eq('active', true);
+        if (e2) throw e2;
+      }
+      toast({ title: 'Ubicación actualizada', description: 'Se ha guardado la nueva posición en el mapa.' });
+    } catch (e) {
+      console.error('Error updating location after drag', e);
+      toast({ title: 'Error', description: 'No se pudo guardar la nueva ubicación', variant: 'destructive' });
     }
   };
 
@@ -319,6 +417,46 @@ const AdminSettings = () => {
                     />
                   </div>
                 </div>
+
+                {/* Ubicaciones de los Centros */}
+                <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-2"><MapPin className="h-4 w-4" /> Ubicación Zurbarán</Label>
+                    <Input
+                      value={generalSettings.addressZurbaran}
+                      onChange={(e) => setGeneralSettings(prev => ({ ...prev, addressZurbaran: e.target.value }))}
+                      placeholder="Dirección completa"
+                      className="h-10 sm:h-11"
+                    />
+                    <div className="rounded-md overflow-hidden border">
+                      <InlineLeafletMap
+                        lat={zurbaranCoords?.lat ?? 40.43002}
+                        lng={zurbaranCoords?.lng ?? -3.69162}
+                        onMarkerMoved={(lat, lng) => updateLocationAfterDrag('zurbaran', lat, lng)}
+                        height={240}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Arrastra el pin para ajustar. Al soltar, guardamos lat/lng y actualizamos la dirección.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-2"><MapPin className="h-4 w-4" /> Ubicación Concha Espina</Label>
+                    <Input
+                      value={generalSettings.addressConchaEspina}
+                      onChange={(e) => setGeneralSettings(prev => ({ ...prev, addressConchaEspina: e.target.value }))}
+                      placeholder="Dirección completa"
+                      className="h-10 sm:h-11"
+                    />
+                    <div className="rounded-md overflow-hidden border">
+                      <InlineLeafletMap
+                        lat={conchaCoords?.lat ?? 40.44962561648345}
+                        lng={conchaCoords?.lng ?? -3.6771259067454367}
+                        onMarkerMoved={(lat, lng) => updateLocationAfterDrag('concha', lat, lng)}
+                        height={240}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Arrastra el pin para ajustar. Al soltar, guardamos lat/lng y actualizamos la dirección.</p>
+                  </div>
+                </div>
                 <Button 
                   onClick={handleSaveSettings} 
                   className="w-full sm:w-auto"
@@ -508,7 +646,11 @@ const AdminSettings = () => {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div>
                             <h4 className="font-medium text-sm sm:text-base">{policy.policy_name}</h4>
-                            <p className="text-xs sm:text-sm text-muted-foreground">{policy.description}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">
+                              {policy.policy_type === 'cancellation' && policy.window_hours
+                                ? `Porcentaje a cobrar por cancelaciones tardías (menos de ${policy.window_hours}h)`
+                                : policy.description}
+                            </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Input
@@ -528,11 +670,34 @@ const AdminSettings = () => {
                             <span className="text-sm text-muted-foreground">%</span>
                           </div>
                         </div>
+                        {policy.policy_type === 'cancellation' && (
+                          <div className="mt-3 flex items-center gap-2">
+                            <label className="text-xs text-muted-foreground">Ventana tardía (horas)</label>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              defaultValue={policy.window_hours || 24}
+                              className="w-24 h-8 text-sm"
+                              onBlur={async (e) => {
+                                const hours = parseInt(e.target.value || '24', 10);
+                                if (hours && hours !== (policy.window_hours || 24)) {
+                                  await (supabase as any)
+                                    .from('pricing_policies')
+                                    .update({ window_hours: hours })
+                                    .eq('id', policy.id);
+                                  loadPricingPolicies();
+                                  toast({ title: 'Guardado', description: 'Ventana de cancelación actualizada' });
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
                         {policy.policy_type === 'no_show' && (
                           <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
                             <p className="text-xs text-blue-800">
-                              <strong>Stripe Integration:</strong> Si el cliente no se presenta y el porcentaje es mayor a 0%, 
-                              se cobrará automáticamente este porcentaje del precio del servicio a la tarjeta guardada en Stripe.
+                              <strong>Stripe:</strong> Si el cliente no se presenta y el porcentaje es &gt; 0%, 
+                              se capturará automáticamente ese porcentaje del importe retenido. Si es 0%, no se capturará automáticamente.
                             </p>
                           </div>
                         )}
@@ -549,9 +714,9 @@ const AdminSettings = () => {
                       y las tarjetas de los clientes estén guardadas durante el proceso de reserva.
                     </p>
                     <ul className="text-xs text-yellow-600 space-y-1">
-                      <li>• <strong>No Show (0%):</strong> No se cobra nada aunque haya tarjeta guardada</li>
-                      <li>• <strong>No Show (&gt;0%):</strong> Se cobra el porcentaje automáticamente</li>
-                      <li>• <strong>Cancelaciones:</strong> Se aplicarán según las políticas configuradas</li>
+                      <li>• <strong>No Show (0%):</strong> No se captura automáticamente; puedes cobrar manualmente desde Administración.</li>
+                      <li>• <strong>No Show (&gt;0%):</strong> Se capturará automáticamente ese porcentaje del importe retenido (si existe).</li>
+                      <li>• <strong>Cancelaciones:</strong> Se aplican según el porcentaje y la ventana (horas) configurados.</li>
                     </ul>
                   </div>
                 </div>

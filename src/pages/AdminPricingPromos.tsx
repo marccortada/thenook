@@ -82,7 +82,8 @@ export default function AdminPricingPromos() {
     center_id: '',
     has_discount: false,
     discount_price_cents: 0,
-  show_online: true
+  show_online: true,
+  group_id: '' as string
 });
 const [editingService, setEditingService] = useState<any>(null);
 const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
@@ -103,75 +104,60 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
     { value: 'package' as const, label: 'Paquete' }
   ];
 
-  // Group services using the same logic as client reservation selector
+  // Group services: primero por group_id (explícito), si no existe, usar heurística
   const groupedServices = useMemo(() => {
-    const groups = {
-      'masajes-individuales': {
-        id: 'masajes-individuales',
-        name: 'Masajes Individuales',
-        color: '#3B82F6',
-        services: [] as any[],
-      },
-      'masajes-pareja': {
-        id: 'masajes-pareja',
-        name: 'Masajes para Dos',
-        color: '#10B981',
-        services: [] as any[],
-      },
-      'masajes-cuatro-manos': {
-        id: 'masajes-cuatro-manos',
-        name: 'Masajes a Cuatro Manos',
-        color: '#F59E0B',
-        services: [] as any[],
-      },
-      'rituales': {
-        id: 'rituales',
-        name: 'Rituales Individuales',
-        color: '#8B5CF6',
-        services: [] as any[],
-      },
-      'rituales-pareja': {
-        id: 'rituales-pareja',
-        name: 'Rituales para Dos',
-        color: '#EC4899',
-        services: [] as any[],
-      }
+    type Group = { id: string; name: string; color: string; services: any[] };
+    const map: Record<string, Group> = {};
+
+    // 1) Grupos explícitos desde BD (treatment_groups)
+    (treatmentGroups || []).forEach((g: any) => {
+      map[g.id] = { id: g.id, name: g.name, color: g.color || '#64748B', services: [] };
+    });
+
+    // 2) Grupos heurísticos como fallback
+    const heuristics: Record<string, Group> = {
+      'masajes-individuales': { id: 'masajes-individuales', name: 'Masajes Individuales', color: '#3B82F6', services: [] },
+      'masajes-pareja': { id: 'masajes-pareja', name: 'Masajes para Dos', color: '#10B981', services: [] },
+      'masajes-cuatro-manos': { id: 'masajes-cuatro-manos', name: 'Masajes a Cuatro Manos', color: '#F59E0B', services: [] },
+      'rituales': { id: 'rituales', name: 'Rituales Individuales', color: '#8B5CF6', services: [] },
+      'rituales-pareja': { id: 'rituales-pareja', name: 'Rituales para Dos', color: '#EC4899', services: [] }
     };
 
-    console.log('AdminPricingPromos classification debug:');
-    console.log('Total services:', services.length);
-    
+    console.log('AdminPricingPromos grouping: services=', services.length, 'treatmentGroups=', (treatmentGroups||[]).length);
+
     services.forEach(service => {
-      const name = service.name.toLowerCase();
+      // Si el servicio tiene group_id válido, usarlo
+      if (service.group_id && map[service.group_id]) {
+        map[service.group_id].services.push(service);
+        return;
+      }
+
+      // Fallback heurístico por nombre/descripcion
+      const name = (service.name || '').toLowerCase();
       const description = (service.description || '').toLowerCase();
       const isRitualService = name.includes('ritual') || description.includes('ritual');
       const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo') || name.includes('two') || description.includes('dos personas') || description.includes('pareja') || description.includes('para dos');
-      
-      console.log(`AdminPricingPromos - Service "${service.name}": isRitual=${isRitualService}, isDuo=${isDuoService}, name="${name}", description="${description}"`);
-      
+
       if (name.includes('cuatro manos')) {
-        console.log(`-> Clasificando "${service.name}" como cuatro manos`);
-        groups['masajes-cuatro-manos'].services.push(service);
+        heuristics['masajes-cuatro-manos'].services.push(service);
       } else if (isRitualService && isDuoService) {
-        console.log(`-> Clasificando "${service.name}" como ritual para dos`);
-        groups['rituales-pareja'].services.push(service);
+        heuristics['rituales-pareja'].services.push(service);
       } else if (isDuoService) {
-        console.log(`-> Clasificando "${service.name}" como masaje para dos`);
-        groups['masajes-pareja'].services.push(service);
+        heuristics['masajes-pareja'].services.push(service);
       } else if (isRitualService && !isDuoService) {
-        console.log(`-> Clasificando "${service.name}" como ritual individual`);
-        groups['rituales'].services.push(service);
+        heuristics['rituales'].services.push(service);
       } else {
-        console.log(`-> Clasificando "${service.name}" como masaje individual`);
-        groups['masajes-individuales'].services.push(service);
+        heuristics['masajes-individuales'].services.push(service);
       }
     });
 
-    const result = Object.values(groups).filter(group => group.services.length > 0);
+    // Combinar grupos explícitos + heurísticos con contenido
+    const explicit = Object.values(map).filter(g => g.services.length > 0);
+    const heuristicFilled = Object.values(heuristics).filter(g => g.services.length > 0);
+    const result = [...explicit, ...heuristicFilled];
     console.log('AdminPricingPromos - Final groups result:', result.map(g => ({ name: g.name, services: g.services.length })));
-    
     return result;
-  }, [services]);
+  }, [services, treatmentGroups]);
 
   const createService = async () => {
     if (!newService.name || !newService.duration_minutes || !newService.price_cents) {
@@ -190,7 +176,8 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
         has_discount: newService.has_discount,
         discount_price_cents: newService.discount_price_cents,
         show_online: newService.show_online,
-        center_id: newService.center_id || null
+        center_id: newService.center_id || null,
+        group_id: newService.group_id || null
       });
 
       if (error) {
@@ -207,7 +194,8 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
           center_id: '',
           has_discount: false,
           discount_price_cents: 0,
-          show_online: true
+          show_online: true,
+          group_id: ''
         });
         refetchServices();
       }
@@ -349,6 +337,16 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
 
       if (error) {
         console.error('Supabase delete error:', error);
+        // Fallback seguro: si hay restricciones (reservas/relaciones), desactivar servicio
+        const msg = (error as any)?.message?.toLowerCase() || '';
+        if (msg.includes('foreign key') || msg.includes('violates') || msg.includes('constraint')) {
+          const { error: updErr } = await supabase.from('services').update({ active: false }).eq('id', serviceId);
+          if (!updErr) {
+            toast({ title: 'Servicio desactivado', description: 'No se pudo eliminar por tener relaciones activas. Se ha dejado como Inactivo.' });
+            refetchServices();
+            return;
+          }
+        }
         toast({ title: 'Error', description: `No se pudo eliminar el servicio: ${error.message}`, variant: 'destructive' });
       } else {
         console.log('Service deleted successfully');
@@ -932,15 +930,16 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
               )}
             </Card>
 
-            {/* Formulario para crear nuevo servicio */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  Crear Nuevo Servicio
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            {/* Formulario para crear nuevo servicio (acordeón) */}
+            <Accordion type="single" collapsible defaultValue="create-service">
+              <AccordionItem value="create-service" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    <span className="text-lg font-semibold">Crear Nuevo Servicio</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6 space-y-6">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <Label htmlFor="service-name">Nombre *</Label>
@@ -1033,6 +1032,23 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label>Grupo de Tratamientos</Label>
+                    <Select
+                      value={newService.group_id || 'none'}
+                      onValueChange={(value) => setNewService({ ...newService, group_id: value === 'none' ? '' : value })}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecciona grupo" />
+                      </SelectTrigger>
+                      <SelectContent position="item-aligned">
+                        <SelectItem value="none">Sin grupo</SelectItem>
+                        {treatmentGroups.map((g: any) => (
+                          <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="sm:col-span-2 lg:col-span-3">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <input 
@@ -1075,8 +1091,9 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                     Crear Servicio
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
             {/* Modal/Form para editar servicio */}
             {editingService && (
@@ -1678,15 +1695,6 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-4 space-y-6">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleDeleteAllGiftOptions}
-                    >
-                      Eliminar todas
-                    </Button>
-                  </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {giftOptions.map((opt) => {
                       const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active, show_online: opt.show_online ?? true, sessions_count: opt.sessions_count ?? 0 };

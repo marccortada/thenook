@@ -15,6 +15,9 @@ type AppModalProps = {
   zIndex?: number; // container z-index (overlay will be slightly lower)
   overlayZIndex?: number; // optional explicit overlay z-index
   centered?: boolean; // use transform centering strategy
+  fullScreen?: boolean; // force 100vw x 100vh
+  // Optional explicit top/left in pixels (when centered=false)
+  positionOverride?: { top: number; left: number };
 };
 
 export const AppModal: React.FC<AppModalProps> = ({
@@ -29,6 +32,8 @@ export const AppModal: React.FC<AppModalProps> = ({
   zIndex = 50,
   overlayZIndex,
   centered = true,
+  fullScreen = false,
+  positionOverride,
 }) => {
   const isMobile = useIsMobile();
   const [position, setPosition] = React.useState({ top: 0, left: 0, width: 0, height: 0 });
@@ -86,12 +91,16 @@ export const AppModal: React.FC<AppModalProps> = ({
         role="dialog"
         aria-modal="true"
         style={{
-          top: centered ? "50%" : `${position.top}px`,
-          left: centered ? "50%" : `${position.left}px`,
-          transform: centered ? "translate(-50%, -50%)" : undefined,
-          width: position.width ? `${position.width}px` : "min(90vw, 520px)",
-          maxHeight: position.height ? `${position.height}px` : "min(85vh, 720px)",
-          overflowY: "auto",
+          top: fullScreen ? 0 : (centered ? "50%" : `${positionOverride?.top ?? position.top}px`),
+          left: fullScreen ? 0 : (centered ? "50%" : `${positionOverride?.left ?? position.left}px`),
+          transform: fullScreen ? undefined : (centered ? "translate(-50%, -50%)" : undefined),
+          width: fullScreen ? "100vw" : (position.width ? `${position.width}px` : "min(90vw, 520px)"),
+          height: fullScreen ? "100vh" : undefined,
+          maxHeight: fullScreen ? "100vh" : (position.height ? `${position.height}px` : "min(85vh, 720px)"),
+          overflowY: fullScreen ? "hidden" : "auto",
+          overflowX: "hidden",
+          display: fullScreen ? "flex" as const : undefined,
+          flexDirection: fullScreen ? "column" as const : undefined,
           zIndex,
         }}
         onClick={(e) => e.stopPropagation()}

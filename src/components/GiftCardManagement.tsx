@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import AppModal from '@/components/ui/app-modal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from '@/components/ui/calendar';
@@ -29,6 +30,9 @@ import {
   Search
 } from 'lucide-react';
 import { useGiftCards, type GiftCard } from '@/hooks/useGiftCards';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ClientSelector from '@/components/ClientSelector';
@@ -39,12 +43,17 @@ const GiftCardManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCard, setEditingCard] = useState<GiftCard | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [confirmUseFor, setConfirmUseFor] = useState<string | null>(null);
+  const [confirmChecked, setConfirmChecked] = useState(false);
+  const [confirmNote, setConfirmNote] = useState('');
+  const [processingUse, setProcessingUse] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [giftCardImage, setGiftCardImage] = useState<File | null>(null);
   const [giftCardImageCrop, setGiftCardImageCrop] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   
   const { giftCards, loading, error, refetch, createGiftCard, updateGiftCard, deactivateGiftCard } = useGiftCards(searchTerm);
   const [createClientId, setCreateClientId] = useState<string>('');
+  const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -211,8 +220,9 @@ const GiftCardManagement = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1">
           <TabsTrigger value="all" className="text-xs sm:text-sm px-2 py-2">Todas</TabsTrigger>
+          <TabsTrigger value="sessions" className="text-xs sm:text-sm px-2 py-2">Con sesiones</TabsTrigger>
           <TabsTrigger value="active" className="text-xs sm:text-sm px-2 py-2">Activas</TabsTrigger>
         </TabsList>
 
@@ -240,42 +250,19 @@ const GiftCardManagement = () => {
                             {getStatusLabel(card.status)}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2 self-end sm:self-auto">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => {
-                              setEditingCard({ ...card });
-                              setIsEditDialogOpen(true);
-                            }}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit3 className="h-3 w-3" />
-                          </Button>
-                          {card.status === 'active' && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="destructive" className="h-8 w-8 p-0">
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="max-w-md mx-auto">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Desactivar tarjeta regalo?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta acción marcará la tarjeta como expirada. El saldo restante se perderá.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                                  <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeactivateGiftCard(card.id)} className="w-full sm:w-auto">
-                                    Confirmar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
+                        {/* Acciones: solo usar sesión en tarjetas con sesiones */}
+                        {(card.status === 'active' && (card.total_sessions ?? 0) > 0) && (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              className="whitespace-nowrap"
+                              disabled={(card.remaining_sessions ?? 0) <= 0}
+                              onClick={() => { setConfirmUseFor(card.id); setConfirmChecked(false); setConfirmNote(''); }}
+                            >
+                              Usar sesión
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="mt-3 space-y-2 sm:mt-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0">
@@ -321,18 +308,18 @@ const GiftCardManagement = () => {
                               <div className="flex items-center space-x-2">
                                 <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                 <span className="text-xs sm:text-sm font-medium truncate">
-                                  {(card.remaining_sessions ?? 0)} / {(card.total_sessions ?? 0)} sesiones
+                                  {(card.total_sessions ?? 0) - (card.remaining_sessions ?? 0)} / {(card.total_sessions ?? 0)} sesiones
                                 </span>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                   <div
                                     className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${100 - getSessionUsagePercentage(card.remaining_sessions, card.total_sessions)}%` }}
+                                    style={{ width: `${getSessionUsagePercentage(card.remaining_sessions, card.total_sessions)}%` }}
                                   />
                                 </div>
                                 <span className="text-xs text-muted-foreground flex-shrink-0">
-                                  {100 - getSessionUsagePercentage(card.remaining_sessions, card.total_sessions)}%
+                                  {getSessionUsagePercentage(card.remaining_sessions, card.total_sessions)}%
                                 </span>
                               </div>
                             </div>
@@ -353,6 +340,54 @@ const GiftCardManagement = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="sessions">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tarjetas con Sesiones</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {giftCards.filter(card => (card.total_sessions ?? 0) > 0).map((card) => (
+                  <div key={card.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center space-x-4 min-w-0">
+                        <div className="text-sm font-medium truncate">Código: <span className="font-mono">{card.code}</span></div>
+                        <Badge className={getStatusColor(card.status)}>
+                          {getStatusLabel(card.status)}
+                        </Badge>
+                      </div>
+                      {card.status === 'active' && (
+                        <Button
+                          size="sm"
+                          className="whitespace-nowrap"
+                          disabled={(card.remaining_sessions ?? 0) <= 0}
+                          onClick={() => { setConfirmUseFor(card.id); setConfirmChecked(false); setConfirmNote(''); }}
+                        >
+                          Usar sesión
+                        </Button>
+                      )}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <div className="text-sm truncate">
+                        {card.profiles ? (
+                          <>
+                            {card.profiles.first_name} {card.profiles.last_name}
+                          </>
+                        ) : (
+                          <>{card.purchased_by_name || ''}</>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground flex-shrink-0">
+                        {(card.total_sessions ?? 0) - (card.remaining_sessions ?? 0)}/{(card.total_sessions ?? 0)} sesiones
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
 
         <TabsContent value="active">
           <Card>
@@ -361,31 +396,42 @@ const GiftCardManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {giftCards.filter(card => card.status === 'active').map((card) => (
+                {giftCards.filter(card => card.status === 'active' && (card.total_sessions ?? 0) > 0).map((card) => (
                   <div key={card.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="text-sm font-medium">Código: <span className="font-mono">{card.code}</span></div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center space-x-4 min-w-0">
+                        <div className="text-sm font-medium truncate">Código: <span className="font-mono">{card.code}</span></div>
                         <Badge className={getStatusColor(card.status)}>
                           {getStatusLabel(card.status)}
                         </Badge>
                       </div>
+                      {(card.total_sessions ?? 0) > 0 && (
+                        <Button
+                          size="sm"
+                          className="whitespace-nowrap"
+                          disabled={(card.remaining_sessions ?? 0) <= 0}
+                          onClick={() => { setConfirmUseFor(card.id); setConfirmChecked(false); setConfirmNote(''); }}
+                        >
+                          Usar sesión
+                        </Button>
+                      )}
                     </div>
-                    <div className="mt-2 flex items-center justify-between">
-                      <div className="text-sm">
-                        Saldo: €{(card.remaining_balance_cents / 100).toFixed(2)}
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <div className="text-sm truncate">
+                        {card.profiles ? (
+                          <>
+                            {card.profiles.first_name} {card.profiles.last_name}
+                          </>
+                        ) : (
+                          <>{card.purchased_by_name || ''}</>
+                        )}
                       </div>
-                      {card.profiles && (
-                        <div className="text-sm">
-                          {card.profiles.first_name} {card.profiles.last_name}
+                      {(card.total_sessions ?? 0) > 0 && (
+                        <div className="text-sm text-muted-foreground flex-shrink-0">
+                          {(card.total_sessions ?? 0) - (card.remaining_sessions ?? 0)}/{(card.total_sessions ?? 0)} sesiones
                         </div>
                       )}
                     </div>
-                    {(card.total_sessions ?? 0) > 0 && (
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        Sesiones restantes: {(card.remaining_sessions ?? 0)} / {(card.total_sessions ?? 0)}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -393,6 +439,63 @@ const GiftCardManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal confirmación usar sesión (tarjetas) */}
+      <AppModal open={!!confirmUseFor} onClose={() => setConfirmUseFor(null)} maxWidth={520} mobileMaxWidth={360} maxHeight={600}>
+        {(() => {
+          const card = giftCards.find(c => c.id === confirmUseFor);
+          if (!card) return null;
+          const nextRemaining = Math.max(0, (card.remaining_sessions ?? 0) - 1);
+          return (
+            <div className="p-6 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Confirmar uso de sesión</h3>
+                <p className="text-sm text-muted-foreground">Marcar una sesión como usada es irreversible.</p>
+              </div>
+              <div className="text-sm space-y-1">
+                <div><span className="font-medium">Cliente:</span> {card.profiles?.first_name} {card.profiles?.last_name} ({card.profiles?.email || card.purchased_by_email})</div>
+                <div><span className="font-medium">Tarjeta:</span> Saldo €{(card.remaining_balance_cents/100).toFixed(2)}</div>
+                <div><span className="font-medium">Código:</span> <span className="font-mono">{card.code}</span></div>
+                <div><span className="font-medium">Sesiones:</span> {(card.remaining_sessions ?? 0)}/{(card.total_sessions ?? 0)} → {nextRemaining}/{(card.total_sessions ?? 0)}</div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox id="chk-confirm-gift" checked={confirmChecked} onCheckedChange={(v) => setConfirmChecked(!!v)} />
+                <label htmlFor="chk-confirm-gift" className="text-sm">Entiendo y confirmo que deseo usar 1 sesión de esta tarjeta regalo.</label>
+              </div>
+              <div className="space-y-1">
+                <Label>Nota interna (obligatoria)</Label>
+                <Textarea value={confirmNote} onChange={(e) => setConfirmNote(e.target.value)} placeholder="Escribe tu nombre y, si quieres, una nota" />
+                <div className="text-xs text-muted-foreground">Debes indicar tu nombre para auditar quién usó la sesión.</div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setConfirmUseFor(null)}>Cancelar</Button>
+                <Button disabled={!confirmChecked || processingUse || !confirmNote.trim()} onClick={async () => {
+                  if (!confirmUseFor) return;
+                  try {
+                    setProcessingUse(true);
+                    const current = giftCards.find(c => c.id === confirmUseFor);
+                    if (!current) throw new Error('Tarjeta no encontrada');
+                    const newRemaining = Math.max(0, (current.remaining_sessions ?? 0) - 1);
+                    const newStatus = newRemaining === 0 ? 'used_up' : current.status;
+                    const { error } = await (supabase as any)
+                      .from('gift_cards')
+                      .update({ remaining_sessions: newRemaining, status: newStatus })
+                      .eq('id', confirmUseFor);
+                    if (error) throw error;
+                    setConfirmUseFor(null);
+                    toast({ title: 'Sesión registrada' });
+                    await refetch();
+                  } catch (e: any) {
+                    toast({ title: 'Error', description: e.message || 'No se pudo usar la sesión', variant: 'destructive' });
+                  } finally {
+                    setProcessingUse(false);
+                  }
+                }}>Confirmar</Button>
+              </div>
+            </div>
+          );
+        })()}
+      </AppModal>
 
       {/* Edit Dialog */}
       <Dialog

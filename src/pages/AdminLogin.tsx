@@ -99,6 +99,8 @@ const AdminLogin = () => {
         description: "Ocurrió un error. Intenta de nuevo.",
         variant: "destructive",
       });
+    } finally {
+      // Garantiza que el botón nunca quede bloqueado
       setLoading(false);
     }
   };
@@ -225,6 +227,7 @@ const AdminLogin = () => {
           </div>
         </CardContent>
       </Card>
+      {/* Dev force access removed as requested */}
     </div>
   );
 };

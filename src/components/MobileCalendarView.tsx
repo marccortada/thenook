@@ -204,8 +204,22 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   };
 
   // Convert hex color to Tailwind classes
-  const getBookingColorClasses = (serviceId: string) => {
-    const color = getServiceLaneColor(serviceId);
+  const getStatusHex = (status?: string) => {
+    switch (status) {
+      case 'confirmed': return '#10B981';
+      case 'pending': return '#F59E0B';
+      case 'cancelled': return '#EF4444';
+      case 'completed': return '#3B82F6';
+      case 'requested': return '#8B5CF6';
+      case 'new': return '#06B6D4';
+      case 'online': return '#14B8A6';
+      case 'no_show': return '#9CA3AF';
+      default: return undefined;
+    }
+  };
+
+  const getBookingColorClasses = (serviceId: string, status?: string) => {
+    const color = getStatusHex(status) || getServiceLaneColor(serviceId);
     // Return inline styles instead of Tailwind classes for dynamic colors
     return {
       backgroundColor: `${color}20`,
@@ -778,7 +792,7 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                               draggedBooking?.id === booking.id && "opacity-70 z-50 scale-105 shadow-lg"
                             )}
                             style={{
-                              ...getBookingColorClasses(booking.service_id),
+                              ...getBookingColorClasses(booking.service_id, (booking as any).status),
                               height: `${((booking.duration_minutes || 60) / 5) * 40}px`,
                               zIndex: draggedBooking?.id === booking.id ? 50 : 10,
                               transform: draggedBooking?.id === booking.id ? 'scale(1.05)' : 'scale(1)',

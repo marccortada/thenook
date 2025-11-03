@@ -113,40 +113,39 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   const groupedServices = useMemo(() => {
-    const groups = {
-      'masajes-individuales': {
-        name: 'Masajes Individuales',
-        services: [] as Service[],
-        packages: [] as Package[]
-      },
-      'masajes-pareja': {
-        name: 'Masajes para Dos',
-        services: [] as Service[],
-        packages: [] as Package[]
-      },
-      'masajes-cuatro-manos': {
-        name: 'Masajes a Cuatro Manos',
-        services: [] as Service[],
-        packages: [] as Package[]
-      },
-      'rituales': {
-        name: 'Rituales',
-        services: [] as Service[],
-        packages: [] as Package[]
-      }
+    const groups: Record<string, { name: string; services: Service[]; packages: Package[] }> = {
+      'masajes-individuales': { name: 'Masajes Individuales', services: [], packages: [] },
+      'masajes-pareja': { name: 'Masajes para Dos', services: [], packages: [] },
+      'masajes-cuatro-manos': { name: 'Masajes a Cuatro Manos', services: [], packages: [] },
+      'rituales': { name: 'Rituales Individuales', services: [], packages: [] },
+      'rituales-pareja': { name: 'Rituales para Dos', services: [], packages: [] },
     };
 
-    services.forEach(service => {
-      const name = service.name.toLowerCase();
+    services.forEach((service) => {
+      // Prioridad absoluta: si el servicio tiene group_id y coincide con grupos conocidos, usarlo
+      const groupId = (service as any).group_id as string | undefined;
+      const groupFromId = groupId &&
+        (service as any).group_name &&
+        ((service as any).group_name.toLowerCase().includes('rituales para dos') ? 'rituales-pareja'
+          : (service as any).group_name.toLowerCase().includes('rituales') ? 'rituales'
+          : undefined);
+      if (groupFromId && groups[groupFromId]) {
+        groups[groupFromId].services.push(service);
+        return;
+      }
+
+      const name = (service.name || '').toLowerCase();
       const description = (service.description || '').toLowerCase();
-      const isRitualService = name.includes('ritual') || description.includes('ritual');
-      const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo');
-      
+      const isRitual = name.includes('ritual') || description.includes('ritual');
+      const isDuo = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo');
+
       if (name.includes('cuatro manos')) {
         groups['masajes-cuatro-manos'].services.push(service);
-      } else if (isDuoService) {
+      } else if (isRitual && isDuo) {
+        groups['rituales-pareja'].services.push(service);
+      } else if (isDuo) {
         groups['masajes-pareja'].services.push(service);
-      } else if (isRitualService) {
+      } else if (isRitual) {
         groups['rituales'].services.push(service);
       } else {
         groups['masajes-individuales'].services.push(service);
@@ -154,7 +153,7 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
     });
 
     return Object.entries(groups)
-      .filter(([_, group]) => group.services.length > 0)
+      .filter(([, group]) => group.services.length > 0)
       .map(([key, group]) => ({ key, ...group }));
   }, [services]);
 

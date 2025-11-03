@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import MobileResponsiveLayout from "@/components/MobileResponsiveLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -15,6 +16,8 @@ interface Booking {
   total_price_cents: number;
   status: string;
   payment_status: string;
+  reserva_id?: string | null;
+  reserva?: { amount_capturable: number; estado_reserva: string } | null;
   notes?: string;
   booking_codes?: string[];
   services?: { name: string };
@@ -47,7 +50,8 @@ export default function BookingManagement() {
           *,
           services (name),
           centers (name),
-          profiles (id, first_name, last_name, email, phone)
+          profiles (id, first_name, last_name, email, phone),
+          reserva:reservas!bookings_reserva_id_fkey (amount_capturable, estado_reserva)
         `)
         .order('booking_datetime', { ascending: false });
 
@@ -120,11 +124,22 @@ export default function BookingManagement() {
   }, [activeTab, upcomingGroups.length, historicalGroups.length]);
 
   const renderGroups = (groups: { key: string; bookings: Booking[] }[]) =>
-    groups.map(({ key, bookings }) => (
+    groups.map(({ key, bookings }) => {
+      const retenidas = bookings.filter(b => (b as any).reserva?.estado_reserva === 'retenido' || ((b as any).reserva?.amount_capturable || 0) > 0).length;
+      const parciales = bookings.filter(b => (b as any).reserva?.estado_reserva === 'capturado_parcial').length;
+      const cobradas = bookings.filter(b => (b as any).reserva?.estado_reserva === 'capturado_total' || b.payment_status === 'paid').length;
+      return (
       <div key={key} className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground border-b pb-2">
-          {key} ({bookings.length} {bookings.length === 1 ? 'cita' : 'citas'})
-        </h2>
+        <div className="flex items-center justify-between border-b pb-2">
+          <h2 className="text-lg font-semibold text-foreground">
+            {key} ({bookings.length} {bookings.length === 1 ? 'cita' : 'citas'})
+          </h2>
+          <div className="flex gap-2 text-xs">
+            {retenidas > 0 && <Badge className="bg-amber-100 text-amber-800">Retenidas {retenidas}</Badge>}
+            {parciales > 0 && <Badge className="bg-blue-100 text-blue-800">Parciales {parciales}</Badge>}
+            {cobradas > 0 && <Badge className="bg-green-100 text-green-800">Cobradas {cobradas}</Badge>}
+          </div>
+        </div>
         <div className="space-y-3">
           {bookings.map((booking) => (
             <BookingCardWithModal
@@ -135,7 +150,7 @@ export default function BookingManagement() {
           ))}
         </div>
       </div>
-    ));
+    )});
 
   if (loading) {
     return (
