@@ -491,6 +491,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   };
 
   return (
+    <>
     <MobileCard 
       className={`booking-card ${isVipBooking() ? 'ring-2 ring-yellow-400' : isPriorityBooking() ? 'ring-2 ring-orange-400' : ''}`} 
       padding="sm"
@@ -853,7 +854,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       </div>
      </MobileCard>
      {/* Modal para elegir método de cobro rápido */}
-     <AppModal isOpen={showChargeOptions} onClose={() => setShowChargeOptions(false)}>
+     <AppModal open={showChargeOptions} onClose={() => setShowChargeOptions(false)}>
        <div className="p-4 space-y-3">
          <h3 className="font-semibold text-lg">Cobrar Cita</h3>
          <p className="text-sm text-muted-foreground">Elige cómo quieres cobrar esta cita.</p>
@@ -869,5 +870,6 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
          )}
        </div>
      </AppModal>
+  </>
   );
 }
