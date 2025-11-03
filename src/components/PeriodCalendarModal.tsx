@@ -508,6 +508,7 @@ const fetchPeriodStats = async () => {
             <Button onClick={closeModal}>Cerrar</Button>
           </div>
         </div>
+      </div>
       </AppModal>
     </>
   );
