@@ -11,7 +11,7 @@ import { buildMailtoUrl, buildMessage, buildWhatsAppUrl, MessageContext, Message
 type Props = {
   open: boolean;
   onClose: () => void;
-  ctx: MessageContext & { bookingId?: string; totalPriceCents?: number };
+  ctx: MessageContext & { bookingId?: string; totalPriceCents?: number; centerId?: string | null };
 };
 
 export default function MessageGeneratorModal({ open, onClose, ctx }: Props) {
@@ -24,16 +24,35 @@ export default function MessageGeneratorModal({ open, onClose, ctx }: Props) {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(ctx.paymentUrl || null);
+  const [centerAddress, setCenterAddress] = useState<string | null>(ctx.centerAddress || null);
+
+  // Cargar dirección del centro si no vino en el contexto
+  useEffect(() => {
+    (async () => {
+      try {
+        if (centerAddress || !ctx.centerId) return;
+        const { data, error } = await (supabase as any)
+          .from('centers')
+          .select('address, address_zurbaran, address_concha_espina')
+          .eq('id', ctx.centerId)
+          .maybeSingle();
+        if (!error && data) {
+          const addr = (data as any).address || (data as any).address_zurbaran || (data as any).address_concha_espina || null;
+          if (addr) setCenterAddress(addr);
+        }
+      } catch { /* ignore */ }
+    })();
+  }, [ctx.centerId, centerAddress]);
 
   // Compose message base
   const baseMessage = useMemo(() => {
     const buildCtx: MessageContext = {
       ...ctx,
       paymentUrl: includePayment ? paymentUrl : null,
-      centerAddress: includeMap ? ctx.centerAddress : null,
+      centerAddress: includeMap ? (centerAddress || ctx.centerAddress || null) : null,
     };
     return buildMessage(kind, buildCtx, lang);
-  }, [kind, lang, includePayment, includeMap, paymentUrl, ctx]);
+  }, [kind, lang, includePayment, includeMap, paymentUrl, ctx, centerAddress]);
 
   useEffect(() => { setText(baseMessage); }, [baseMessage]);
 
@@ -138,4 +157,3 @@ export default function MessageGeneratorModal({ open, onClose, ctx }: Props) {
     </AppModal>
   );
 }
-

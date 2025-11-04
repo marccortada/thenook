@@ -878,6 +878,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         ctx={{
           bookingId: booking.id,
           totalPriceCents: booking.total_price_cents,
+          centerId: booking.center_id,
           clientName: `${booking.profiles?.first_name || ''} ${booking.profiles?.last_name || ''}`.trim() || null,
           clientEmail: booking.profiles?.email || null,
           clientPhone: booking.profiles?.phone || null,
