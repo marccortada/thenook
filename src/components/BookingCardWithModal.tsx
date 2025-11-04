@@ -13,6 +13,7 @@ import MobileCard from "@/components/MobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import AppModal from "@/components/ui/app-modal";
 import { useInternalCodes } from "@/hooks/useInternalCodes";
+import MessageGeneratorModal from "@/components/MessageGeneratorModal";
 
 interface Booking {
   id: string;
@@ -78,6 +79,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
     booking?.total_price_cents ? (booking.total_price_cents / 100).toFixed(2) : ''
   );
   const [selectedBookingCodes, setSelectedBookingCodes] = useState<string[]>(booking.booking_codes || []);
+  const [showMessages, setShowMessages] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -544,6 +546,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                   {isProcessingPayment ? 'Cobrando…' : 'Cobrar'}
                 </Button>
               )}
+              <Button size="sm" variant="outline" onClick={() => setShowMessages(true)} className="h-7">
+                Generar mensaje
+              </Button>
             </div>
           </div>
         </div>
@@ -846,7 +851,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                 </div>
               </div>
         </AppModal>
-      </div>
+     </div>
      </MobileCard>
      {/* Modal para elegir método de cobro rápido */}
      <AppModal open={showChargeOptions} onClose={() => setShowChargeOptions(false)}>
@@ -865,6 +870,23 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
          )}
        </div>
      </AppModal>
+
+      {/* Mensajes inteligentes */}
+      <MessageGeneratorModal
+        open={showMessages}
+        onClose={() => setShowMessages(false)}
+        ctx={{
+          bookingId: booking.id,
+          totalPriceCents: booking.total_price_cents,
+          clientName: `${booking.profiles?.first_name || ''} ${booking.profiles?.last_name || ''}`.trim() || null,
+          clientEmail: booking.profiles?.email || null,
+          clientPhone: booking.profiles?.phone || null,
+          centerName: booking.centers?.name || null,
+          centerAddress: (booking as any).centers?.address || (booking as any).centers?.address_zurbaran || (booking as any).centers?.address_concha_espina || null,
+          serviceName: booking.services?.name || null,
+          bookingDate: new Date(booking.booking_datetime),
+        }}
+      />
   </>
   );
 }
