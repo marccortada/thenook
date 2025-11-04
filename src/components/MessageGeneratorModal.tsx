@@ -59,12 +59,20 @@ export default function MessageGeneratorModal({ open, onClose, ctx }: Props) {
   const requestPaymentLink = async () => {
     try {
       setLoading(true);
-      const amount = ctx.totalPriceCents && ctx.totalPriceCents > 0 ? ctx.totalPriceCents : 0;
+      const amount = Math.max(50, ctx.totalPriceCents && ctx.totalPriceCents > 0 ? ctx.totalPriceCents : 0);
+      // 1) try create-checkout (Checkout Session)
       const { data, error } = await (supabase as any).functions.invoke('create-checkout', {
         body: { intent: 'booking_payment', booking_payment: { booking_id: ctx.bookingId, amount_cents: amount }, currency: 'eur' }
       });
-      const checkoutUrl: string | null = data?.url || (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
-      if (error || !checkoutUrl) throw new Error(error?.message || 'No se pudo generar el link de pago');
+      let checkoutUrl: string | null = data?.url || (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
+      // 2) fallback to send-payment-link (server builds URL)
+      if ((error || !checkoutUrl) && ctx.bookingId) {
+        const { data: d2, error: e2 } = await (supabase as any).functions.invoke('send-payment-link', {
+          body: { booking_id: ctx.bookingId, amount_cents: amount }
+        });
+        if (!e2 && d2?.url) checkoutUrl = d2.url as string;
+      }
+      if (!checkoutUrl) throw new Error(error?.message || 'No se pudo generar el link de pago');
       setPaymentUrl(checkoutUrl);
       setIncludePayment(true);
       toast({ title: 'Link de pago generado', description: checkoutUrl });
@@ -72,6 +80,14 @@ export default function MessageGeneratorModal({ open, onClose, ctx }: Props) {
       toast({ title: 'Error', description: e.message || 'No se pudo generar el link', variant: 'destructive' });
     } finally { setLoading(false); }
   };
+
+  // Si el usuario marca "Incluir enlace de pago" y no hay link todavía, generarlo automáticamente
+  useEffect(() => {
+    if (includePayment && !paymentUrl && ctx.bookingId && !loading) {
+      requestPaymentLink();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includePayment]);
 
   const improveWithAI = async () => {
     if (!improve) return;
