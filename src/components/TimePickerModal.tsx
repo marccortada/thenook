@@ -80,7 +80,7 @@ export const TimePickerModal = ({
                     className={cn(
                       "h-12 text-sm font-medium transition-all duration-200",
                       disabled
-                        ? "bg-muted text-muted-foreground opacity-70 cursor-not-allowed"
+                        ? "bg-gray-300 text-gray-700 opacity-100 cursor-not-allowed border border-gray-300"
                         : selected === time
                           ? "bg-primary text-primary-foreground shadow-md scale-105"
                           : "hover:bg-accent hover:text-accent-foreground hover:scale-105"
