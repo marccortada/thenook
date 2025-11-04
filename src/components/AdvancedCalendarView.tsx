@@ -438,17 +438,25 @@ const AdvancedCalendarView = () => {
       .sort((a, b) => a.name.localeCompare(b.name));
   };
 
-  // Check if a lane is at full capacity for a given slot
+  // Check if a lane is at full capacity for a given slot (con +5 min de margen)
   const isLaneAtTimeFull = (centerId: string, laneId: string, timeSlot: Date) => {
     const lane = lanes.find(l => l.id === laneId);
     const capacity = (lane as any)?.capacity ?? 1;
     const count = bookings.filter(b => {
       if (b.center_id !== centerId || b.lane_id !== laneId || !b.booking_datetime) return false;
       const start = parseISO(b.booking_datetime);
-      const end = addMinutes(start, b.duration_minutes || 60);
+      const end = addMinutes(start, (b.duration_minutes || 60) + 5);
       return timeSlot >= start && timeSlot < end; // overlaps that 5-min slot
     }).length;
     return count >= capacity;
+  };
+
+  // No permitir seleccionar horas pasadas del día actual
+  const isPastSlot = (date: Date, slot: Date) => {
+    const now = new Date();
+    const sameDay = now.getFullYear() === date.getFullYear() && now.getMonth() === date.getMonth() && now.getDate() === date.getDate();
+    if (!sameDay) return false;
+    return slot.getTime() < now.getTime();
   };
 
   // Get booking for specific slot - now with filtering
@@ -855,7 +863,7 @@ const AdvancedCalendarView = () => {
 
       // 2) Validación de capacidad/ocupación del carril en el rango
       const durationMinutes = selectedService.duration_minutes || 60;
-      const bookingEndTime = addMinutes(bookingDateTime, durationMinutes);
+      const bookingEndTime = addMinutes(bookingDateTime, durationMinutes + 5);
       const laneCapacity = (clickedLane as any)?.capacity ?? 1;
       const overlappingOnLane = bookings.filter(b =>
         b.center_id === bookingForm.centerId &&
@@ -1302,6 +1310,7 @@ const AdvancedCalendarView = () => {
                      const isFull = isLaneAtTimeFull(selectedCenter, lane.id, slotTime);
                      const isFirstSlotOfBooking = booking &&
                       format(slotTime, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
+                     const isPast = isPastSlot(selectedDate, slotTime);
 
                        const blockStart = block ? new Date(block.start_datetime) : null;
                        const blockEnd = block ? new Date(block.end_datetime) : null;
@@ -1316,15 +1325,15 @@ const AdvancedCalendarView = () => {
                             key={lane.id}
                             className={cn(
                               "relative h-6 border-r border-b transition-colors",
-                              !booking && !isBlocked && !isFull && "cursor-pointer hover:bg-muted/20",
-                              (isBlocked || isFull) && !booking && "bg-muted/40 opacity-60 cursor-not-allowed",
+                              !booking && !isBlocked && !isFull && !isPast && "cursor-pointer hover:bg-muted/20",
+                              (isBlocked || isFull || isPast) && !booking && "bg-muted/40 opacity-60 cursor-not-allowed",
                               block && !isBlockStart && !booking && "pointer-events-none",
                               isInDragSelection && dragMode === 'booking' && "bg-blue-200/50 border-blue-400",
                               isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400"
                             )}
-                            onMouseDown={(e) => { if (isBlocked || isFull) return; handleSlotMouseDown(selectedCenter, lane.id, selectedDate, slotTime, e); }}
-                            onMouseEnter={() => { if (isBlocked || isFull) return; handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, slotTime); }}
-                            onMouseUp={() => { if (isBlocked || isFull) return; handleSlotMouseUp(selectedCenter, lane.id, selectedDate, slotTime); }}
+                            onMouseDown={(e) => { if (isBlocked || isFull || isPast) return; handleSlotMouseDown(selectedCenter, lane.id, selectedDate, slotTime, e); }}
+                            onMouseEnter={() => { if (isBlocked || isFull || isPast) return; handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, slotTime); }}
+                            onMouseUp={() => { if (isBlocked || isFull || isPast) return; handleSlotMouseUp(selectedCenter, lane.id, selectedDate, slotTime); }}
                             onDragOver={(e) => {
                               e.preventDefault();
                               e.dataTransfer.dropEffect = 'move';

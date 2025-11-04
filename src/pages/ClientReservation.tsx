@@ -205,20 +205,16 @@ const ClientReservation = () => {
         const [hours, minutes] = time.split(":").map(Number);
         slotDate.setHours(hours, minutes, 0, 0);
         
-        // Calculate when this slot would end based on service duration
+        // Calculate when this slot would end based on service duration (+5 min de margen)
         const slotEndDate = new Date(slotDate);
-        slotEndDate.setMinutes(slotEndDate.getMinutes() + serviceDuration);
+        slotEndDate.setMinutes(slotEndDate.getMinutes() + serviceDuration + 5);
 
         let disabled = false;
         let reason: string | undefined;
 
-        // Check if slot time has already passed (for today) 
-        // Add buffer: if service is 60 min and it's 12:00 now, block slots before 13:00
+        // Bloquear horas pasadas del día actual (sin buffer adicional)
         if (isToday) {
-          const bufferTime = new Date(now);
-          bufferTime.setMinutes(bufferTime.getMinutes() + 30); // 30 min buffer for preparation
-          
-          if (slotDate <= bufferTime) {
+          if (slotDate < now) {
             disabled = true;
             reason = "Horario pasado";
           }
@@ -245,7 +241,7 @@ const ClientReservation = () => {
               
               const bookingStart = new Date(booking.booking_datetime);
               const bookingEnd = new Date(bookingStart);
-              bookingEnd.setMinutes(bookingEnd.getMinutes() + (booking.duration_minutes || 60));
+              bookingEnd.setMinutes(bookingEnd.getMinutes() + (booking.duration_minutes || 60) + 5); // +5 min de margen
               
               // Check if there's overlap:
               // New slot starts before existing ends AND new slot ends after existing starts
