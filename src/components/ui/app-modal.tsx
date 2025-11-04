@@ -20,6 +20,9 @@ type AppModalProps = {
   positionOverride?: { top: number; left: number };
 };
 
+let modalStackCount = 0;
+let savedBodyOverflow = "";
+
 export const AppModal: React.FC<AppModalProps> = ({
   open,
   onClose,
@@ -60,10 +63,13 @@ export const AppModal: React.FC<AppModalProps> = ({
       if (e.key === "Escape") onClose();
     };
     // Prevent background scroll and fix containing block issues
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.classList.add("app-modal-open");
-    document.body.classList.add("app-modal-open");
+    modalStackCount += 1;
+    if (modalStackCount === 1) {
+      savedBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      document.documentElement.classList.add("app-modal-open");
+      document.body.classList.add("app-modal-open");
+    }
     window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("keydown", onKey);
@@ -71,9 +77,12 @@ export const AppModal: React.FC<AppModalProps> = ({
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-      document.documentElement.classList.remove("app-modal-open");
-      document.body.classList.remove("app-modal-open");
+      modalStackCount = Math.max(0, modalStackCount - 1);
+      if (modalStackCount === 0) {
+        document.body.style.overflow = savedBodyOverflow;
+        document.documentElement.classList.remove("app-modal-open");
+        document.body.classList.remove("app-modal-open");
+      }
     };
   }, [open, recalc, onClose]);
 

@@ -39,6 +39,7 @@ import { format, addDays, subDays, startOfDay, addMinutes, isSameDay, parseISO, 
 import { es } from 'date-fns/locale';
 
 import { useBookings, useCenters, useLanes, useServices } from '@/hooks/useDatabase';
+import type { Center } from '@/hooks/useDatabase';
 import { useTreatmentGroups } from '@/hooks/useTreatmentGroups';
 import { useClients } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +47,7 @@ import { supabase } from '@/integrations/supabase/client';
 import ClientSelector from '@/components/ClientSelector';
 import RepeatClientSelector from './RepeatClientSelector';
 import ClientSelectionModal from './ClientSelectionModal';
-import { useLaneBlocks } from '@/hooks/useLaneBlocks';
+import { useLaneBlocks, type LaneBlock } from '@/hooks/useLaneBlocks';
 import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { useInternalCodes } from '@/hooks/useInternalCodes';
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
@@ -94,6 +95,52 @@ interface Booking {
   };
 }
 
+const BLOCK_SLOT_MINUTES = 5;
+const BLOCK_SLOT_MS = BLOCK_SLOT_MINUTES * 60 * 1000;
+
+const isSameSlotStart = (slotTime: Date, blockStart: Date) =>
+  Math.abs(slotTime.getTime() - blockStart.getTime()) < BLOCK_SLOT_MS / 2;
+
+const getBlockSlotSpan = (block: LaneBlock): number => {
+  const start = new Date(block.start_datetime);
+  const end = new Date(block.end_datetime);
+  const durationMs = Math.max(BLOCK_SLOT_MS, end.getTime() - start.getTime());
+  return Math.max(1, Math.ceil(durationMs / BLOCK_SLOT_MS));
+};
+
+const computeFriendlyLabel = (center: Center): string => {
+  const name = center.name?.toLowerCase() || '';
+  const address = center.address?.toLowerCase() || '';
+  const combined = `${name} ${address}`;
+
+  if (
+    combined.includes('zurbar') ||
+    combined.includes('28010')
+  ) {
+    return 'Zurbarán';
+  }
+
+  if (
+    combined.includes('concha') ||
+    combined.includes('espina') ||
+    combined.includes('principe de vergara') ||
+    combined.includes('príncipe de vergara') ||
+    combined.includes('vergara') ||
+    combined.includes('28002')
+  ) {
+    return 'Concha Espina';
+  }
+
+  return center.name?.split('-').pop()?.trim() || center.name || center.address || 'Centro';
+};
+
+const normalizeLabel = (label?: string) =>
+  (label ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
 const AdvancedCalendarView = () => {
   console.log('🔍 AdvancedCalendarView RENDER - Location:', window.location.pathname);
   const { toast } = useToast();
@@ -103,7 +150,6 @@ const AdvancedCalendarView = () => {
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [selectedCenter, setSelectedCenter] = useState<string>('');
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
   const [selectedSlot, setSelectedSlot] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
   
   // Lane blocking / move state
@@ -171,6 +217,33 @@ const AdvancedCalendarView = () => {
   const { laneBlocks, createLaneBlock, deleteLaneBlock, isLaneBlocked } = useLaneBlocks();
   const { treatmentGroups } = useTreatmentGroups();
   const { codes, assignments, getAssignmentsByEntity } = useInternalCodes();
+
+  const friendlyCenterNames = React.useMemo(() => {
+    const entries = centers.map((center) => ({
+      id: center.id,
+      label: computeFriendlyLabel(center),
+    }));
+
+    if (entries.length === 2) {
+      const [first, second] = entries;
+      if (normalizeLabel(first.label) === normalizeLabel(second.label)) {
+        first.label = 'Zurbarán';
+        second.label = 'Concha Espina';
+      }
+    }
+
+    const map = new Map<string, string>();
+    entries.forEach(({ id, label }) => map.set(id, label));
+    return map;
+  }, [centers]);
+
+  const getFriendlyCenterName = React.useCallback(
+    (center?: Center | null) => {
+      if (!center) return 'Centro';
+      return friendlyCenterNames.get(center.id) ?? computeFriendlyLabel(center);
+    },
+    [friendlyCenterNames]
+  );
 
 
   // Function to get color for a lane based on its assigned treatment group (DEPRECATED - USE getServiceLaneColor instead)
@@ -485,7 +558,7 @@ const AdvancedCalendarView = () => {
     const existingBooking = getBookingForSlot(centerId, laneId, date, timeSlot);
     if (existingBooking) {
       // Abrir modal de edición
-      handleSlotClick(centerId, laneId, date, timeSlot, event);
+      handleSlotClick(centerId, laneId, date, timeSlot);
       return;
     }
 
@@ -506,67 +579,8 @@ const AdvancedCalendarView = () => {
     }
   };
 
-  const updateModalPosition = React.useCallback((target?: HTMLElement | null) => {
-    if (typeof window === 'undefined') {
-      setModalPosition({ top: 100, left: 100 });
-      return;
-    }
-
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const viewportTop = scrollTop;
-    const viewportBottom = scrollTop + windowHeight;
-
-    const modalWidth = windowWidth < 768 ? Math.max(280, windowWidth - 32) : Math.min(520, windowWidth - 48);
-    const modalHeight = Math.min(windowHeight - 40, windowWidth < 768 ? windowHeight - 32 : 720);
-
-    let top: number;
-    let left: number;
-    if (target) {
-      // Posicionar respecto al elemento clicado
-      const rect = target.getBoundingClientRect();
-      const anchorTop = rect.top + scrollTop + rect.height / 2;
-      const anchorLeft = rect.left + rect.width + 12; // a la derecha del slot
-      top = anchorTop - modalHeight / 2; // centrar verticalmente respecto al slot
-      left = anchorLeft; // abrir a la derecha
-    } else {
-      // Centrado en viewport
-      top = scrollTop + (windowHeight - modalHeight) / 2;
-      left = (windowWidth - modalWidth) / 2;
-    }
-
-    top = Math.max(viewportTop + 16, Math.min(top, viewportBottom - modalHeight - 16));
-    left = Math.max(16, Math.min(left, windowWidth - modalWidth - 16));
-
-    setModalPosition({ top, left });
-  }, []);
-
-  const getModalStyle = React.useCallback((): React.CSSProperties => {
-    if (typeof window === 'undefined') {
-      return {
-        top: `${modalPosition.top}px`,
-        left: `${modalPosition.left}px`,
-        width: '520px',
-        maxHeight: '85vh'
-      };
-    }
-
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const width = windowWidth < 768 ? Math.max(280, windowWidth - 32) : Math.min(520, windowWidth - 48);
-    const maxHeight = Math.min(windowHeight - 40, windowWidth < 768 ? windowHeight - 32 : 720);
-
-    return {
-      top: `${modalPosition.top}px`,
-      left: `${modalPosition.left}px`,
-      width: `${width}px`,
-      maxHeight: `${maxHeight}px`
-    };
-  }, [modalPosition]);
-
   // Handle mouse up for drag end
-  const handleSlotMouseUp = (centerId: string, laneId: string, date: Date, timeSlot: Date, event: React.MouseEvent) => {
+  const handleSlotMouseUp = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
     if (moveMode) return;
     if (!isDragging || !dragStart) return;
     
@@ -574,7 +588,7 @@ const AdvancedCalendarView = () => {
     
     // Si solo se hizo click sin arrastrar
     if (dragStart.timeSlot.getTime() === timeSlot.getTime()) {
-      handleSlotClick(centerId, laneId, date, timeSlot, event);
+      handleSlotClick(centerId, laneId, date, timeSlot);
       setDragStart(null);
       setDragEnd(null);
       return;
@@ -593,9 +607,6 @@ const AdvancedCalendarView = () => {
       // Crear reserva con duración calculada
       const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60) + 5; // +5 para incluir el slot final
       
-      // Calcular posición del modal
-      updateModalPosition(event?.currentTarget as HTMLElement | null);
-
       // Configurar formulario de reserva
       setSelectedSlot({ centerId, laneId, timeSlot: startTime });
       setBookingForm({
@@ -622,7 +633,7 @@ const AdvancedCalendarView = () => {
   };
 
   // Handle slot click
-  const handleSlotClick = (centerId: string, laneId: string, date: Date, timeSlot: Date, event?: React.MouseEvent) => {
+  const handleSlotClick = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
     // Si estamos en modo bloqueo
     if (blockingMode) {
       handleBlockingSlotClick(laneId, timeSlot);
@@ -632,9 +643,6 @@ const AdvancedCalendarView = () => {
     if (moveMode) {
       return;
     }
-
-    // Calcular posición del modal basada en el elemento clickeado
-    updateModalPosition(event?.currentTarget as HTMLElement | null);
 
     const existingBooking = getBookingForSlot(centerId, laneId, date, timeSlot);
     
@@ -1141,7 +1149,7 @@ const AdvancedCalendarView = () => {
     if (!selectedCenter) return null;
 
     const centerLanes = getCenterLanes(selectedCenter);
-    const centerName = centers.find(c => c.id === selectedCenter)?.name || 'Centro';
+    const centerName = getFriendlyCenterName(centers.find(c => c.id === selectedCenter));
 
     return (
       <Card className="w-full rounded-none border-0 sm:rounded-md sm:border">
@@ -1277,23 +1285,31 @@ const AdvancedCalendarView = () => {
 
                    {/* Lane slots */}
                    {centerLanes.slice(0, 4).map((lane) => {
-                     let booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, timeSlot.time);
+                     const slotTime = timeSlot.time;
+                     let booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, slotTime);
                      if (!booking && lane.id === centerLanes[0].id) {
                         const fallback = bookings.find(b => {
                           if (!b.booking_datetime || b.center_id !== selectedCenter || b.lane_id) return false;
                           const start = parseISO(b.booking_datetime);
                           const end = addMinutes(start, b.duration_minutes || 60);
                           const sameDay = isSameDay(start, selectedDate);
-                          return sameDay && timeSlot.time >= start && timeSlot.time < end;
+                          return sameDay && slotTime >= start && slotTime < end;
                         });
                        if (fallback) booking = fallback;
                      }
-                     const isBlocked = isLaneBlocked(lane.id, timeSlot.time);
-                     const isFull = isLaneAtTimeFull(selectedCenter, lane.id, timeSlot.time);
+                     const block = isLaneBlocked(lane.id, slotTime);
+                     const isBlocked = !!block;
+                     const isFull = isLaneAtTimeFull(selectedCenter, lane.id, slotTime);
                      const isFirstSlotOfBooking = booking &&
-                      format(timeSlot.time, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
+                      format(slotTime, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
 
-                       const isInDragSelection = isSlotInDragSelection(lane.id, timeSlot.time);
+                       const blockStart = block ? new Date(block.start_datetime) : null;
+                       const blockEnd = block ? new Date(block.end_datetime) : null;
+                       const isBlockStart = Boolean(blockStart && isSameSlotStart(slotTime, blockStart));
+                       const blockSpanSlots = block ? getBlockSlotSpan(block) : 0;
+                       const blockReasonRaw = block?.reason?.trim() ?? '';
+                       const blockReason = blockReasonRaw && !/^bloqueo/i.test(blockReasonRaw) ? blockReasonRaw : null;
+                       const isInDragSelection = isSlotInDragSelection(lane.id, slotTime);
                        
                        return (
                           <div
@@ -1302,12 +1318,13 @@ const AdvancedCalendarView = () => {
                               "relative h-6 border-r border-b transition-colors",
                               !booking && !isBlocked && !isFull && "cursor-pointer hover:bg-muted/20",
                               (isBlocked || isFull) && !booking && "bg-muted/40 opacity-60 cursor-not-allowed",
+                              block && !isBlockStart && !booking && "pointer-events-none",
                               isInDragSelection && dragMode === 'booking' && "bg-blue-200/50 border-blue-400",
                               isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400"
                             )}
-                            onMouseDown={(e) => { if (isBlocked || isFull) return; handleSlotMouseDown(selectedCenter, lane.id, selectedDate, timeSlot.time, e); }}
-                            onMouseEnter={() => { if (isBlocked || isFull) return; handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, timeSlot.time); }}
-                            onMouseUp={(e) => { if (isBlocked || isFull) return; handleSlotMouseUp(selectedCenter, lane.id, selectedDate, timeSlot.time, e); }}
+                            onMouseDown={(e) => { if (isBlocked || isFull) return; handleSlotMouseDown(selectedCenter, lane.id, selectedDate, slotTime, e); }}
+                            onMouseEnter={() => { if (isBlocked || isFull) return; handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, slotTime); }}
+                            onMouseUp={() => { if (isBlocked || isFull) return; handleSlotMouseUp(selectedCenter, lane.id, selectedDate, slotTime); }}
                             onDragOver={(e) => {
                               e.preventDefault();
                               e.dataTransfer.dropEffect = 'move';
@@ -1321,7 +1338,7 @@ const AdvancedCalendarView = () => {
                                 const draggedBooking = JSON.parse(bookingData);
                                 const laneCenterId = lane.center_id || draggedBooking.center_id || selectedCenter;
                                 const dropDate = new Date(selectedDate);
-                                dropDate.setHours(timeSlot.time.getHours(), timeSlot.time.getMinutes(), 0, 0);
+                                dropDate.setHours(slotTime.getHours(), slotTime.getMinutes(), 0, 0);
                                 console.log('🖱️ Drop detected (day view):', {
                                   bookingId: draggedBooking.id,
                                   targetLane: lane.id,
@@ -1333,12 +1350,12 @@ const AdvancedCalendarView = () => {
                                   laneCenterId,
                                   lane.id,
                                   dropDate,
-                                  timeSlot.time
+                                  slotTime
                                 );
                               }
                             }}
                           >
-                           {booking && isFirstSlotOfBooking && (
+                          {booking && isFirstSlotOfBooking && (
                              <div
                                 className={cn(
                                   "absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md",
@@ -1388,28 +1405,44 @@ const AdvancedCalendarView = () => {
                                  </div>
                                  {booking.payment_status === 'paid' && (
                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                 )}
-                               </div>
-                           </div>
-                         )}
-                          {isBlocked && !booking && (
-                            <div 
-                              className="absolute top-1 left-1 right-1 bottom-1 rounded bg-gray-400/40 border border-gray-500/60 flex items-center justify-center"
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onMouseEnter={(e) => e.stopPropagation()}
-                              onMouseUp={(e) => e.stopPropagation()}
-                              onClick={(e) => e.stopPropagation()}
+                                )}
+                              </div>
+                          </div>
+                        )}
+                          {block && isBlockStart && !booking && blockStart && blockEnd && (
+                            <div
+                              className="absolute left-[1px] right-[1px] top-[2px] z-30 overflow-hidden rounded-md border border-red-500 bg-red-100/90 text-red-700 shadow-sm cursor-pointer group"
+                              style={{ height: `calc(100% * ${blockSpanSlots} - 4px)` }}
+                              title={blockReason ? `Bloqueado: ${blockReason}` : 'Bloqueado'}
                             >
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-gray-700">BLOQUEADO</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 hover:bg-red-600 hover:text-white"
-                                  onClick={(e) => handleUnblockLane(isBlocked.id, e)}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
+                              <div className="flex h-full items-start justify-between px-2 py-1 gap-2">
+                                <div className="flex flex-col gap-1 pr-1">
+                                  <span className="text-[11px] font-semibold uppercase tracking-wide leading-none flex items-center gap-1">
+                                    <Ban className="h-3 w-3" />
+                                    Bloqueado
+                                  </span>
+                                  <span className="text-[10px] leading-none">
+                                    {format(blockStart, 'HH:mm')} - {format(blockEnd, 'HH:mm')}
+                                  </span>
+                                  {blockReason && (
+                                    <span className="text-[10px] text-red-600/90 leading-snug max-w-[160px] line-clamp-2">
+                                      {blockReason}
+                                    </span>
+                                  )}
+                                </div>
+                                {(isAdmin || isEmployee) && (
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="ml-1 h-6 w-6 p-0 opacity-80 group-hover:opacity-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteLaneBlock(block.id);
+                                    }}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           )}
@@ -1443,7 +1476,7 @@ const AdvancedCalendarView = () => {
 
     const weekDates = getWeekDates();
     const centerLanes = getCenterLanes(selectedCenter);
-    const centerName = centers.find(c => c.id === selectedCenter)?.name || 'Centro';
+    const centerName = getFriendlyCenterName(centers.find(c => c.id === selectedCenter));
 
     return (
       <Card className="w-full rounded-none border-0 sm:rounded-md sm:border">
@@ -1522,10 +1555,18 @@ const AdvancedCalendarView = () => {
                        slotDateTime.setHours(timeSlot.time.getHours(), timeSlot.time.getMinutes(), 0, 0);
                        
                        const booking = getBookingForSlot(selectedCenter, lane.id, date, slotDateTime);
-                       const isBlocked = isLaneBlocked(lane.id, slotDateTime);
+                       const block = isLaneBlocked(lane.id, slotDateTime);
+                       const isBlocked = !!block;
                        const isFull = isLaneAtTimeFull(selectedCenter, lane.id, slotDateTime);
                        const isFirstSlotOfBooking = booking &&
                          format(slotDateTime, 'HH:mm') === format(parseISO(booking.booking_datetime), 'HH:mm');
+                       const blockStart = block ? new Date(block.start_datetime) : null;
+                       const blockEnd = block ? new Date(block.end_datetime) : null;
+                      const isBlockStart = Boolean(blockStart && isSameSlotStart(slotDateTime, blockStart));
+                       const blockSpanSlots = block ? getBlockSlotSpan(block) : 0;
+                       const blockReasonRaw = block?.reason?.trim() ?? '';
+                       const blockReason = blockReasonRaw && !/^bloqueo/i.test(blockReasonRaw) ? blockReasonRaw : null;
+                       const isInDragSelection = isSlotInDragSelection(lane.id, slotDateTime);
 
                       const isFirstLaneOfDay = laneIdx === 0; // dibujar separador grueso al inicio de cada día
                       return (
@@ -1534,10 +1575,15 @@ const AdvancedCalendarView = () => {
                            className={cn(
                              "relative h-6 border-r border-b transition-colors",
                              !booking && !isBlocked && !isFull && "cursor-pointer hover:bg-muted/30",
-                             (isBlocked || isFull) && !booking && "bg-muted/40 opacity-60 cursor-not-allowed"
+                             (isBlocked || isFull) && !booking && "bg-muted/40 opacity-60 cursor-not-allowed",
+                             block && !isBlockStart && !booking && "pointer-events-none",
+                             isInDragSelection && dragMode === 'booking' && "bg-blue-200/50 border-blue-400",
+                             isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400"
                            )}
                            style={isFirstLaneOfDay ? { borderLeft: '3px solid #6b7280' } : undefined}
-                           onClick={(e) => { if (isBlocked || isFull) return; handleSlotClick(selectedCenter, lane.id, date, slotDateTime, e); }}
+                           onMouseDown={(e) => { if (isBlocked || isFull) return; handleSlotMouseDown(selectedCenter, lane.id, date, slotDateTime, e); }}
+                           onMouseEnter={() => { if (isBlocked || isFull) return; handleSlotMouseEnter(selectedCenter, lane.id, date, slotDateTime); }}
+                           onMouseUp={() => { if (isBlocked || isFull) return; handleSlotMouseUp(selectedCenter, lane.id, date, slotDateTime); }}
                            onDragOver={(e) => {
                              e.preventDefault();
                              e.dataTransfer.dropEffect = 'move';
@@ -1614,29 +1660,41 @@ const AdvancedCalendarView = () => {
                              </div>
                            )}
                           
-                          {isBlocked && !booking && (
-                            <div className="absolute inset-0 bg-gray-400/30 rounded-sm flex items-center justify-center">
-                              <span className="text-[8px] font-medium text-gray-600 rotate-45">BLOCK</span>
-                              {(isAdmin || isEmployee) && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="absolute top-0 right-0 w-4 h-4 p-0 hover:bg-red-100"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const block = laneBlocks.find(block => 
-                                      block.lane_id === lane.id && 
-                                      timeSlot.time >= new Date(block.start_datetime) && 
-                                      timeSlot.time < new Date(block.end_datetime)
-                                    );
-                                    if (block) {
+                          {block && isBlockStart && !booking && blockStart && blockEnd && (
+                            <div
+                              className="absolute left-[1px] right-[1px] top-[2px] z-30 overflow-hidden rounded-md border border-red-500 bg-red-100/90 text-red-700 shadow-sm cursor-pointer group"
+                              style={{ height: `calc(100% * ${blockSpanSlots} - 4px)` }}
+                              title={blockReason ? `Bloqueado: ${blockReason}` : 'Bloqueado'}
+                            >
+                              <div className="flex h-full items-start justify-between px-2 py-1 gap-2">
+                                <div className="flex flex-col gap-1 pr-1">
+                                  <span className="text-[11px] font-semibold uppercase tracking-wide leading-none flex items-center gap-1">
+                                    <Ban className="h-3 w-3" />
+                                    Bloqueado
+                                  </span>
+                                  <span className="text-[10px] leading-none">
+                                    {format(blockStart, 'HH:mm')} - {format(blockEnd, 'HH:mm')}
+                                  </span>
+                                  {blockReason && (
+                                    <span className="text-[10px] text-red-600/90 leading-snug max-w-[160px] line-clamp-2">
+                                      {blockReason}
+                                    </span>
+                                  )}
+                                </div>
+                                {(isAdmin || isEmployee) && (
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="ml-1 h-6 w-6 p-0 opacity-80 group-hover:opacity-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       deleteLaneBlock(block.id);
-                                    }
-                                  }}
-                                >
-                                  <X className="h-2 w-2" />
-                                </Button>
-                              )}
+                                    }}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1722,7 +1780,7 @@ const AdvancedCalendarView = () => {
                   >
                     <MapPin className="h-4 w-4 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="font-medium text-sm">{center.name}</p>
+                      <p className="font-medium text-sm">{getFriendlyCenterName(center)}</p>
                     </div>
                     {isSelected && (
                       <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center">
@@ -1777,7 +1835,7 @@ const AdvancedCalendarView = () => {
 
   const bookingModal = showBookingModal ? (
     <>
-      <AppModal open={true} onClose={() => setShowBookingModal(false)} maxWidth={520} mobileMaxWidth={360} maxHeight={720} centered={false} positionOverride={modalPosition}>
+      <AppModal open={true} onClose={() => setShowBookingModal(false)} maxWidth={520} mobileMaxWidth={360} maxHeight={720}>
         <div className="bg-background rounded-xl shadow-2xl border border-border/60 overflow-hidden flex flex-col w-full max-h-full">
           <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background relative">
             <button
@@ -1993,7 +2051,7 @@ const AdvancedCalendarView = () => {
 
   const editBookingModal = showEditModal && editingBooking ? (
     <>
-      <AppModal open={true} onClose={() => { setShowEditModal(false); setEditingBooking(null); }} maxWidth={520} mobileMaxWidth={360} maxHeight={720} centered={false} positionOverride={modalPosition}>
+      <AppModal open={true} onClose={() => { setShowEditModal(false); setEditingBooking(null); }} maxWidth={520} mobileMaxWidth={360} maxHeight={720}>
         <div className="flex flex-col h-full max-h-[95vh]">
           <div className="px-6 pt-6 pb-4 border-b flex-shrink-0 bg-background">
             <h3 className="text-xl font-semibold">Editar Reserva</h3>

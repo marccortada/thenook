@@ -714,7 +714,6 @@ const AdminSettings = () => {
                       y las tarjetas de los clientes estén guardadas durante el proceso de reserva.
                     </p>
                     <ul className="text-xs text-yellow-600 space-y-1">
-                      <li>• <strong>No Show (0%):</strong> No se captura automáticamente; puedes cobrar manualmente desde Administración.</li>
                       <li>• <strong>No Show (&gt;0%):</strong> Se capturará automáticamente ese porcentaje del importe retenido (si existe).</li>
                       <li>• <strong>Cancelaciones:</strong> Se aplican según el porcentaje y la ventana (horas) configurados.</li>
                     </ul>
