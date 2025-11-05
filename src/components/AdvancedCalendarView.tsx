@@ -1140,12 +1140,7 @@ const AdvancedCalendarView = () => {
           successDescription: 'El cobro se ha capturado y la reserva se ha confirmado.'
         }
       );
-      try {
-        console.log('Invocando send-booking-with-payment (advanced) para', editingBooking.id);
-        await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: editingBooking.id } });
-      } catch (e) {
-        console.warn('Fallo al invocar send-booking-with-payment (advanced charge):', e);
-      }
+      // Emails se envían desde backend con cobro exitoso; no disparar desde frontend
       return true;
     } catch (err) {
       console.error('Error charging booking:', err);
@@ -1241,13 +1236,7 @@ const AdvancedCalendarView = () => {
         title: 'Pago registrado',
         description: `Se registró el cobro (${paymentMethod}).`
       });
-
-      try {
-        console.log('Invocando send-booking-with-payment (advanced manual) para', editingBooking.id);
-        await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: editingBooking.id } });
-      } catch (e) {
-        console.warn('Fallo al invocar send-booking-with-payment (advanced manual):', e);
-      }
+      // No enviar emails de tarjeta desde frontend
 
       setShowPaymentModal(false);
       setShowEditModal(false);
