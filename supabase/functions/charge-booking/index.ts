@@ -35,7 +35,7 @@ serve(async (req) => {
 
     const { data: booking, error } = await supabase
       .from('bookings')
-      .select('id, total_price_cents, stripe_payment_method_id, stripe_customer_id, stripe_session_id, profiles!client_id(email), payment_status, status, center_id')
+      .select('id, total_price_cents, stripe_payment_method_id, stripe_customer_id, payment_intent_id, stripe_session_id, profiles!client_id(email), payment_status, status, center_id')
       .eq('id', booking_id)
       .maybeSingle();
     if (error) {
@@ -55,7 +55,7 @@ serve(async (req) => {
       id: booking.id, 
       payment_method: booking.stripe_payment_method_id, 
       customer: booking.stripe_customer_id,
-      session: booking.stripe_session_id,
+      intent: booking.payment_intent_id || booking.stripe_session_id,
       total: booking.total_price_cents 
     });
 
@@ -70,10 +70,11 @@ serve(async (req) => {
     console.log('[CHARGE-BOOKING] Amount to charge:', amount);
     
     // If we already have a PaymentIntent on the booking (manual capture flow), try to capture
-    if (booking.stripe_session_id) {
-      console.log('[CHARGE-BOOKING] Attempting to capture existing PaymentIntent:', booking.stripe_session_id);
+    const existingIntentId = booking.payment_intent_id || booking.stripe_session_id;
+    if (existingIntentId) {
+      console.log('[CHARGE-BOOKING] Attempting to capture existing PaymentIntent:', existingIntentId);
       try {
-        const existing = await stripe.paymentIntents.retrieve(booking.stripe_session_id);
+        const existing = await stripe.paymentIntents.retrieve(existingIntentId);
         console.log('[CHARGE-BOOKING] Existing PI status:', existing.status);
         
         if (existing.status === 'requires_capture') {
@@ -90,7 +91,7 @@ serve(async (req) => {
               payment_status: 'paid',
               payment_method: 'tarjeta',
               payment_notes: `Capturado Stripe PI ${pi.id}`,
-              stripe_session_id: pi.id,
+              payment_intent_id: pi.id,
               updated_at: new Date().toISOString(),
               status: 'confirmed'
             }).eq('id', booking_id);
@@ -193,11 +194,11 @@ serve(async (req) => {
           payment_status: 'paid', 
           payment_method: 'tarjeta',
           payment_notes: `Cobro automático Stripe PI ${intent.id}`,
-          stripe_session_id: intent.id,
-          stripe_customer_id: customerId,
-          updated_at: new Date().toISOString(),
-          status: 'confirmed'
-        })
+      payment_intent_id: intent.id,
+      stripe_customer_id: customerId,
+      updated_at: new Date().toISOString(),
+      status: 'confirmed'
+    })
         .eq('id', booking_id);
 
       await supabase.from('business_metrics').insert({

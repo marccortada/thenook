@@ -207,6 +207,14 @@ serve(async (req) => {
           logStep(`Created new Stripe customer`, { customerId: stripeCustomer.id });
         }
 
+        // Persist Stripe customer id on booking for later off-session charge
+        try {
+          await supabaseClient
+            .from('bookings')
+            .update({ stripe_customer_id: stripeCustomer.id })
+            .eq('id', booking.id);
+        } catch (_) {}
+
         // Create Setup Intent if not exists
         let setupIntent;
         if (booking.stripe_setup_intent_id) {
