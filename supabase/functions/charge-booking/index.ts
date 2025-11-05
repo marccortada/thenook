@@ -11,6 +11,7 @@ const cors = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
   try {
+    console.log('[CHARGE-BOOKING] Function started');
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || "", { apiVersion: '2023-10-16' });
     const supabase = createClient(Deno.env.get('SUPABASE_URL') || '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '');
 
@@ -19,7 +20,8 @@ serve(async (req) => {
     const { data: userData } = await supabaseAuth.auth.getUser();
     const user = userData?.user;
     if (!user) {
-      return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401, headers: { ...cors, 'Content-Type': 'application/json' } });
+      console.log('[CHARGE-BOOKING] Unauthorized - no user');
+      return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
     const { data: profile } = await supabase
       .from('profiles')
@@ -27,12 +29,15 @@ serve(async (req) => {
       .eq('id', user.id)
       .maybeSingle();
     if (!profile || !['admin','owner'].includes((profile as any).role)) {
-      return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), { status: 403, headers: { ...cors, 'Content-Type': 'application/json' } });
+      console.log('[CHARGE-BOOKING] Forbidden - user role:', (profile as any)?.role);
+      return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
 
     const { booking_id, amount_cents } = await req.json();
+    console.log('[CHARGE-BOOKING] Params received:', { booking_id, amount_cents });
     if (!booking_id) {
-      return new Response(JSON.stringify({ ok: false, error: 'booking_id is required' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+      console.log('[CHARGE-BOOKING] Error: booking_id is required');
+      return new Response(JSON.stringify({ ok: false, error: 'booking_id is required' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
 
     const { data: booking, error } = await supabase
@@ -41,31 +46,52 @@ serve(async (req) => {
       .eq('id', booking_id)
       .maybeSingle();
     if (error) {
-      return new Response(JSON.stringify({ ok: false, error: error.message || 'Database error fetching booking' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+      console.log('[CHARGE-BOOKING] Database error:', error);
+      return new Response(JSON.stringify({ ok: false, error: error.message || 'Database error fetching booking' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
     if (!booking) {
-      return new Response(JSON.stringify({ ok: false, error: 'Booking not found' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+      console.log('[CHARGE-BOOKING] Booking not found:', booking_id);
+      return new Response(JSON.stringify({ ok: false, error: 'Booking not found' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
     if (booking.payment_status === 'paid') {
-      return new Response(JSON.stringify({ ok: false, error: 'Already paid' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+      console.log('[CHARGE-BOOKING] Already paid:', booking_id);
+      return new Response(JSON.stringify({ ok: false, error: 'Already paid' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
+    
+    console.log('[CHARGE-BOOKING] Booking data:', { 
+      id: booking.id, 
+      payment_method: booking.stripe_payment_method_id, 
+      customer: booking.stripe_customer_id,
+      session: booking.stripe_session_id,
+      total: booking.total_price_cents 
+    });
 
     const amount = typeof amount_cents === 'number' && amount_cents > 0
       ? amount_cents
       : (booking.total_price_cents || 0);
     if (amount <= 0) {
-      return new Response(JSON.stringify({ ok: false, error: 'Amount must be greater than 0' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+      console.log('[CHARGE-BOOKING] Invalid amount:', amount);
+      return new Response(JSON.stringify({ ok: false, error: 'Amount must be greater than 0' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
+    
+    console.log('[CHARGE-BOOKING] Amount to charge:', amount);
+    
     // If we already have a PaymentIntent on the booking (manual capture flow), try to capture
     if (booking.stripe_session_id) {
+      console.log('[CHARGE-BOOKING] Attempting to capture existing PaymentIntent:', booking.stripe_session_id);
       try {
         const existing = await stripe.paymentIntents.retrieve(booking.stripe_session_id);
+        console.log('[CHARGE-BOOKING] Existing PI status:', existing.status);
+        
         if (existing.status === 'requires_capture') {
+          console.log('[CHARGE-BOOKING] Capturing PaymentIntent...');
           const pi = await stripe.paymentIntents.capture(
             existing.id,
             {},
             { idempotencyKey: `capture-booking-${booking_id}-${amount}` }
           );
+          console.log('[CHARGE-BOOKING] Capture result:', pi.status);
+          
           if (pi.status === 'succeeded') {
             await supabase.from('bookings').update({
               payment_status: 'paid',
@@ -75,6 +101,7 @@ serve(async (req) => {
               updated_at: new Date().toISOString(),
               status: 'confirmed'
             }).eq('id', booking_id);
+            
             await supabase.from('business_metrics').insert({
               metric_name: 'payment_processed',
               metric_type: 'revenue',
@@ -83,43 +110,75 @@ serve(async (req) => {
               period_end: new Date().toISOString().split('T')[0],
               metadata: { booking_id, action: 'capture', payment_intent: pi.id, amount_cents: amount, admin_user_id: user.id, org_id: (profile as any).org_id || null }
             });
-            return new Response(JSON.stringify({ ok: true, payment_intent: pi.id, status: pi.status, mode: 'capture' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+            
+            // Enviar email de cobro exitoso
+            try {
+              await supabase.functions.invoke('send-booking-with-payment', { 
+                body: { booking_id } 
+              });
+              console.log('[CHARGE-BOOKING] Payment confirmation email sent');
+            } catch (emailErr) {
+              console.warn('[CHARGE-BOOKING] Email failed but payment succeeded:', emailErr);
+            }
+            
+            console.log('[CHARGE-BOOKING] Capture successful');
+            return new Response(JSON.stringify({ ok: true, payment_intent: pi.id, status: pi.status, mode: 'capture' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
           }
-          return new Response(JSON.stringify({ ok: false, error: 'Capture did not succeed', status: pi.status }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+          
+          console.log('[CHARGE-BOOKING] Capture did not succeed, status:', pi.status);
+          return new Response(JSON.stringify({ ok: false, error: 'Capture did not succeed', status: pi.status }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
         }
-      } catch (_) {
-        // ignore and continue to off-session charge path
+      } catch (captureErr) {
+        console.log('[CHARGE-BOOKING] Capture error, will try off-session charge:', captureErr);
+        // Continue to off-session charge path
       }
     }
 
     // Off-session charge path using saved payment method
+    console.log('[CHARGE-BOOKING] No capturable intent found, trying off-session charge');
+    
     if (!booking.stripe_payment_method_id) {
-      return new Response(JSON.stringify({ ok: false, error: 'No saved payment method' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+      console.log('[CHARGE-BOOKING] No payment method saved');
+      return new Response(JSON.stringify({ ok: false, error: 'No saved payment method' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
 
     // Determine or create customer and ensure PM is attached
     let customerId = booking.stripe_customer_id || '';
     if (!customerId) {
+      console.log('[CHARGE-BOOKING] No customer ID, looking up by email');
       const clientEmail = booking.profiles?.email;
       if (!clientEmail) {
-        return new Response(JSON.stringify({ ok: false, error: 'Client email required to charge' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+        console.log('[CHARGE-BOOKING] No client email found');
+        return new Response(JSON.stringify({ ok: false, error: 'Client email required to charge' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
       }
       const existing = await stripe.customers.list({ email: clientEmail, limit: 1 });
       let customer = existing.data[0] || null;
-      if (!customer) customer = await stripe.customers.create({ email: clientEmail });
+      if (!customer) {
+        console.log('[CHARGE-BOOKING] Creating new Stripe customer');
+        customer = await stripe.customers.create({ email: clientEmail });
+      } else {
+        console.log('[CHARGE-BOOKING] Found existing Stripe customer');
+      }
       customerId = customer.id;
     }
+
+    console.log('[CHARGE-BOOKING] Using customer:', customerId);
 
     // Ensure PM is attached to customer
     try {
       const pm = await stripe.paymentMethods.retrieve(booking.stripe_payment_method_id);
       if (!pm.customer) {
+        console.log('[CHARGE-BOOKING] Attaching payment method to customer');
         await stripe.paymentMethods.attach(booking.stripe_payment_method_id, { customer: customerId });
+      } else {
+        console.log('[CHARGE-BOOKING] Payment method already attached');
       }
     } catch (attachErr) {
-      return new Response(JSON.stringify({ ok: false, error: `Unable to attach payment method: ${(attachErr as Error).message}` }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+      console.log('[CHARGE-BOOKING] Error attaching payment method:', attachErr);
+      return new Response(JSON.stringify({ ok: false, error: `Unable to attach payment method: ${(attachErr as Error).message}` }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
 
+    console.log('[CHARGE-BOOKING] Creating PaymentIntent for off-session charge');
     const intent = await stripe.paymentIntents.create({
       amount,
       currency: 'eur',
@@ -131,7 +190,10 @@ serve(async (req) => {
       metadata: { booking_id },
     }, { idempotencyKey: `charge-booking-${booking_id}-${amount}` });
 
+    console.log('[CHARGE-BOOKING] PaymentIntent created, status:', intent.status);
+
     if (intent.status === 'succeeded') {
+      console.log('[CHARGE-BOOKING] Payment succeeded, updating database');
       await supabase
         .from('bookings')
         .update({ 
@@ -154,16 +216,30 @@ serve(async (req) => {
         metadata: { booking_id, action: 'off_session_charge', payment_intent: intent.id, amount_cents: amount, admin_user_id: user.id, org_id: (profile as any).org_id || null }
       });
 
-      return new Response(JSON.stringify({ ok: true, payment_intent: intent.id, status: intent.status, mode: 'charge' }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+      // Enviar email de cobro exitoso
+      try {
+        await supabase.functions.invoke('send-booking-with-payment', { 
+          body: { booking_id } 
+        });
+        console.log('[CHARGE-BOOKING] Payment confirmation email sent');
+      } catch (emailErr) {
+        console.warn('[CHARGE-BOOKING] Email failed but payment succeeded:', emailErr);
+      }
+
+      console.log('[CHARGE-BOOKING] Off-session charge successful');
+      return new Response(JSON.stringify({ ok: true, payment_intent: intent.id, status: intent.status, mode: 'charge' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
 
     // If requires action / authentication, report back but do not mark paid
     if (intent.status === 'requires_action' || intent.status === 'requires_payment_method' || intent.next_action) {
-      return new Response(JSON.stringify({ ok: false, requires_action: true, status: intent.status, payment_intent: intent.id }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+      console.log('[CHARGE-BOOKING] Payment requires action:', intent.status);
+      return new Response(JSON.stringify({ ok: false, requires_action: true, status: intent.status, payment_intent: intent.id, error: 'Payment requires customer authentication' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
 
-    return new Response(JSON.stringify({ ok: false, error: `Payment failed with status ${intent.status}`, status: intent.status, payment_intent: intent.id }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+    console.log('[CHARGE-BOOKING] Payment failed with status:', intent.status);
+    return new Response(JSON.stringify({ ok: false, error: `Payment failed with status ${intent.status}`, status: intent.status, payment_intent: intent.id }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
   } catch (e) {
+    console.error('[CHARGE-BOOKING] Error:', e);
     return new Response(JSON.stringify({ ok: false, error: (e as Error).message }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
   }
 });
