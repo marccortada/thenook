@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from "https://esm.sh/stripe@14.21.0";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,10 +30,95 @@ serve(async (req) => {
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || "", { 
       apiVersion: "2023-10-16" 
     });
+    const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'The Nook Madrid <reservas@gnerai.com>';
+    const internalNotificationEmail = (Deno.env.get('THENOOK_NOTIFICATION_EMAIL') ?? 'reservas@thenookmadrid.com').trim();
 
     logStep('Services initialized');
 
-    // Get pending booking confirmations with payment
+    // If booking_id is provided in body, send immediate confirmation emails (client + admin)
+    try {
+      const body = await req.json().catch(() => null);
+      const bookingId = body?.booking_id as string | undefined;
+      if (bookingId) {
+        logStep('Immediate email path for booking_id', { bookingId });
+
+        const { data: bookingRow, error: bookingErr } = await supabaseClient
+          .from('bookings')
+          .select(`
+            id, booking_datetime, total_price_cents, services(name), centers(name, address_concha_espina, address_zurbaran),
+            profiles!client_id(email, first_name, last_name)
+          `)
+          .eq('id', bookingId)
+          .maybeSingle();
+
+        if (bookingErr || !bookingRow) {
+          logStep('Booking not found for immediate email', { error: bookingErr?.message });
+          return new Response(
+            JSON.stringify({ ok: false, error: 'Booking not found' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+          );
+        }
+
+        const client = bookingRow.profiles;
+        if (!client?.email) {
+          return new Response(
+            JSON.stringify({ ok: false, error: 'Client has no email' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+
+        const center = bookingRow.centers;
+        const isZurbaran = center?.name?.toLowerCase().includes('zurbaran') || center?.name?.toLowerCase().includes('zurbarán');
+        const centerLocation = isZurbaran ? 'ZURBARÁN' : 'CONCHA ESPINA';
+        const centerAddress = isZurbaran 
+          ? (center?.address_zurbaran || 'C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid')
+          : (center?.address_concha_espina || 'C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante \"La Ancha\"');
+        const centerMetroInfo = isZurbaran
+          ? '(Metro Iglesia, salida C. de Zurbarán)'
+          : '(Metro Concha Espina, salida Plaza de Cataluña)';
+        const mapsLink = isZurbaran
+          ? 'https://maps.app.goo.gl/your-zurbaran-link'
+          : 'https://goo.gl/maps/zHuPpdHATcJf6QWX8';
+
+        const subject = 'Confirmación de reserva PAGADA - THE NOOK';
+        const html = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color:#111827;">
+            <h2>¡Reserva confirmada y pagada!</h2>
+            <p>Hola <strong>${client.first_name || ''} ${client.last_name || ''}</strong>,</p>
+            <p>Tu reserva en <strong>THE NOOK</strong> ha quedado confirmada y pagada. Detalles:</p>
+            <ul>
+              <li><strong>Tratamiento:</strong> ${bookingRow.services?.name || 'Tratamiento'}</li>
+              <li><strong>Fecha y hora:</strong> ${bookingRow.booking_datetime ? new Date(bookingRow.booking_datetime).toLocaleString('es-ES') : ''}</li>
+              <li><strong>Centro:</strong> THE NOOK ${centerLocation}</li>
+            </ul>
+            <p>
+              Dirección:<br>
+              ${centerAddress}<br>
+              ${centerMetroInfo}
+            </p>
+            <p>Mapa: <a href="${mapsLink}" target="_blank" rel="noopener noreferrer">${mapsLink}</a></p>
+          </div>
+        `;
+
+        const sendTo: string[] = [client.email];
+        if (internalNotificationEmail && internalNotificationEmail.toLowerCase() !== client.email.toLowerCase()) {
+          sendTo.push(internalNotificationEmail);
+        }
+
+        await resend.emails.send({ from: fromEmail, to: sendTo, subject, html });
+        logStep('Immediate confirmation emails sent', { sendTo });
+
+        return new Response(
+          JSON.stringify({ ok: true, emailed: sendTo }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (_) {
+      // ignore JSON parse errors and fall through to queue processing
+    }
+
+    // Get pending booking confirmations with payment (queued mode)
     const { data: notifications, error: fetchError } = await supabaseClient
       .from('automated_notifications')
       .select(`
