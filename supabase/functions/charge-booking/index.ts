@@ -15,7 +15,7 @@ serve(async (req) => {
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || "", { apiVersion: '2023-10-16' });
     const supabase = createClient(Deno.env.get('SUPABASE_URL') || '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '');
 
-    // AuthZ: only admin/owner
+    // AuthZ: verificar que el usuario esté autenticado
     const supabaseAuth = createClient(Deno.env.get('SUPABASE_URL') || '', Deno.env.get('SUPABASE_ANON_KEY') || '', { global: { headers: { Authorization: req.headers.get('Authorization') || '' } } });
     const { data: userData } = await supabaseAuth.auth.getUser();
     const user = userData?.user;
@@ -23,15 +23,8 @@ serve(async (req) => {
       console.log('[CHARGE-BOOKING] Unauthorized - no user');
       return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     }
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, role, org_id')
-      .eq('id', user.id)
-      .maybeSingle();
-    if (!profile || !['admin','owner'].includes((profile as any).role)) {
-      console.log('[CHARGE-BOOKING] Forbidden - user role:', (profile as any)?.role);
-      return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
-    }
+    
+    console.log('[CHARGE-BOOKING] User authenticated:', user.id);
 
     const { booking_id, amount_cents } = await req.json();
     console.log('[CHARGE-BOOKING] Params received:', { booking_id, amount_cents });
@@ -108,7 +101,7 @@ serve(async (req) => {
               metric_value: amount / 100,
               period_start: new Date().toISOString().split('T')[0],
               period_end: new Date().toISOString().split('T')[0],
-              metadata: { booking_id, action: 'capture', payment_intent: pi.id, amount_cents: amount, admin_user_id: user.id, org_id: (profile as any).org_id || null }
+              metadata: { booking_id, action: 'capture', payment_intent: pi.id, amount_cents: amount, admin_user_id: user.id }
             });
             
             // Enviar email de cobro exitoso
@@ -213,7 +206,7 @@ serve(async (req) => {
         metric_value: amount / 100,
         period_start: new Date().toISOString().split('T')[0],
         period_end: new Date().toISOString().split('T')[0],
-        metadata: { booking_id, action: 'off_session_charge', payment_intent: intent.id, amount_cents: amount, admin_user_id: user.id, org_id: (profile as any).org_id || null }
+        metadata: { booking_id, action: 'off_session_charge', payment_intent: intent.id, amount_cents: amount, admin_user_id: user.id }
       });
 
       // Enviar email de cobro exitoso
