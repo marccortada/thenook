@@ -21,8 +21,7 @@ export async function chargeBooking(bookingId: string): Promise<ChargeResult> {
     // Try Supabase Edge Function first
     try {
       const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
-        body: { booking_id: bookingId },
-        headers: { 'Idempotency-Key': idempotencyKey }
+        body: { booking_id: bookingId }
       });
       if (error) return { ok: false, error: error.message };
       const status = data?.status || data?.paymentIntent?.status;
@@ -52,4 +51,3 @@ export async function chargeBooking(bookingId: string): Promise<ChargeResult> {
     console.info('[chargeBooking] end', { bookingId });
   }
 }
-

@@ -316,6 +316,11 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
     setIsProcessingPayment(true);
     try {
       if (paymentMethod === 'tarjeta') {
+        const { data: authData } = await (supabase as any).auth.getUser();
+        if (!authData?.user) {
+          toast({ title: 'Inicia sesión', description: 'Debes iniciar sesión para cobrar.', variant: 'destructive' });
+          return;
+        }
         const res = await chargeBooking(booking.id);
         if (!res.ok) {
           if (res.requires_action) {
@@ -371,6 +376,11 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       setIsProcessingPayment(true);
       if (paymentStatus === 'paid') {
         toast({ title: 'Pago ya registrado', description: 'Esta reserva ya está pagada.' });
+        return;
+      }
+      const { data: authData } = await (supabase as any).auth.getUser();
+      if (!authData?.user) {
+        toast({ title: 'Inicia sesión', description: 'Debes iniciar sesión para cobrar.', variant: 'destructive' });
         return;
       }
       const res = await chargeBooking(booking.id);
