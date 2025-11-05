@@ -238,46 +238,28 @@ const ReservationSystem = () => {
         // Admin/Employee or guest user - use form data for client
         clientEmail = formData.clientEmail || `cliente_${Date.now()}@temp.com`;
         
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('email', clientEmail)
-          .maybeSingle();
+        const [firstName, ...restNameParts] = (formData.clientName || '').trim().split(' ').filter(Boolean);
 
-        if (existingProfile) {
-          // Update existing profile with new information if provided
-          const updatedProfile = {
-            first_name: formData.clientName.split(' ')[0] || existingProfile.first_name,
-            last_name: formData.clientName.split(' ').slice(1).join(' ') || existingProfile.last_name,
-            phone: formData.clientPhone || existingProfile.phone,
-          };
-
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update(updatedProfile)
-            .eq('id', existingProfile.id);
-
-          if (updateError) throw updateError;
-          profileToUse = { ...existingProfile, ...updatedProfile };
-        } else {
-          // Create new client profile with role 'client'
-          const { data: newProfile, error: profileError } = await supabase
-            .from('profiles')
-            .upsert([{
+        const { data: profileResult, error: profileInvokeError } = await supabase
+          .functions
+          .invoke('create-client-profile', {
+            body: {
               email: clientEmail,
-              first_name: formData.clientName.split(' ')[0],
-              last_name: formData.clientName.split(' ').slice(1).join(' ') || '',
-              phone: formData.clientPhone,
-              role: 'client'  // Explicitly set role as client
-            }], {
-              onConflict: 'email'
-            })
-            .select()
-            .single();
+              first_name: firstName || undefined,
+              last_name: restNameParts.join(' ') || undefined,
+              phone: formData.clientPhone || undefined,
+            },
+          });
 
-          if (profileError) throw profileError;
-          profileToUse = newProfile;
+        if (profileInvokeError) {
+          throw profileInvokeError;
         }
+
+        if (!profileResult?.profile) {
+          throw new Error('No se pudo obtener el perfil del cliente');
+        }
+
+        profileToUse = profileResult.profile;
       }
 
       // Get service or package details for pricing
