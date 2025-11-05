@@ -237,7 +237,8 @@ const SimpleCenterCalendar = () => {
           booking_datetime: bookingDate.toISOString(),
           duration_minutes: newBookingForm.duration,
           total_price_cents: selectedService.price_cents,
-          status: 'confirmed' as const,
+          // Crear siempre como 'pending' (confirmación sólo tras cobro)
+          status: 'pending' as const,
           channel: 'web' as const,
           notes: newBookingForm.notes || null,
           payment_status: 'pending' as const
@@ -247,7 +248,7 @@ const SimpleCenterCalendar = () => {
 
       toast({
         title: "✅ Reserva Creada",
-        description: `Reserva para ${newBookingForm.clientName} confirmada exitosamente.`,
+        description: `Reserva creada como pendiente. Confirma al cobrar.`,
       });
 
       setShowNewBookingModal(false);

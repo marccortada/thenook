@@ -197,6 +197,12 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
 
       if (updErr) throw updErr;
 
+      if (status === 'paid') {
+        // Confirmar y enviar email cuando se marca pagada desde el selector
+        try { await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id); setBookingStatus('confirmed'); } catch {}
+        try { await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } }); } catch (e) { console.warn('send-booking-with-payment fallo (updatePaymentStatus):', e); }
+      }
+
       toast({
         title: "Pago actualizado",
         description: status === 'paid' ? 'Se ha cobrado la reserva correctamente' : 'El estado del pago ha sido actualizado'
@@ -285,6 +291,11 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       return;
     }
 
+    if (paymentStatus === 'paid') {
+      toast({ title: 'Pago ya registrado', description: 'Esta reserva ya está pagada.' });
+      return;
+    }
+
     setIsProcessingPayment(true);
     try {
       const { error } = await supabase
@@ -326,6 +337,21 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         console.error('Error sending analytics data:', analyticsError);
       }
 
+      // Marcar como confirmada tras cobrar manualmente
+      try {
+        await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id);
+        setBookingStatus('confirmed');
+      } catch (e) {
+        console.warn('No se pudo marcar como confirmada tras pago manual:', e);
+      }
+
+      // Enviar emails de confirmación sólo al cobrar
+      try {
+        await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } });
+      } catch (e) {
+        console.warn('Fallo al invocar send-booking-with-payment (manual):', e);
+      }
+
       toast({
         title: "💰 Pago procesado exitosamente",
         description: `Cita cobrada por ${PAYMENT_METHODS.find(m => m.value === paymentMethod)?.label} - ${(booking.total_price_cents / 100).toFixed(2)}€`
@@ -352,6 +378,10 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   const chargeSavedCard = async (overrideAmountCents?: number) => {
     try {
       setIsProcessingPayment(true);
+      if (paymentStatus === 'paid') {
+        toast({ title: 'Pago ya registrado', description: 'Esta reserva ya está pagada.' });
+        return;
+      }
       if (booking.reserva_id) {
         const amountCents = typeof overrideAmountCents === 'number' && overrideAmountCents > 0
           ? Math.round(overrideAmountCents)
@@ -366,6 +396,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
           .update({ payment_status: 'paid', payment_method: 'tarjeta', payment_notes: `Capturado vía reservas` })
           .eq('id', booking.id);
         setPaymentStatus('paid');
+        // Confirmar y enviar email
+        try { await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id); setBookingStatus('confirmed'); } catch {}
+        try { await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } }); } catch (e) { console.warn('send-booking-with-payment fallo (captura):', e); }
         toast({ title: 'Pago capturado', description: 'Se ha cobrado la reserva correctamente' });
         onBookingUpdated();
         return;
@@ -383,6 +416,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         .update({ payment_status: 'paid', payment_method: 'tarjeta', payment_notes: `Cobro automático Stripe` })
         .eq('id', booking.id);
       setPaymentStatus('paid');
+      // Confirmar y enviar email
+      try { await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id); setBookingStatus('confirmed'); } catch {}
+      try { await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } }); } catch (e) { console.warn('send-booking-with-payment fallo (tarjeta):', e); }
       toast({ title: 'Pago procesado', description: 'Se ha cobrado la reserva correctamente' });
       onBookingUpdated();
     } catch (e) {
@@ -448,6 +484,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         .eq('id', booking.id);
       if (error) throw error;
       setPaymentStatus('paid');
+      // Confirmar y enviar email
+      try { await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id); setBookingStatus('confirmed'); } catch {}
+      try { await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } }); } catch (e) { console.warn('send-booking-with-payment fallo (efectivo):', e); }
       toast({ title: 'Pago registrado', description: 'Marcado como cobrado en efectivo' });
       onBookingUpdated();
       setShowChargeOptions(false);

@@ -35,6 +35,15 @@ type TimeSlotOption = {
 const ClientReservation = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+
+  const friendlyCenterName = (center?: { name?: string | null; address?: string | null }) => {
+    if (!center) return '';
+    const name = center.name || '';
+    const addr = (center.address || '').toLowerCase();
+    if (/zurbar[aá]n/.test(name) || /zurbar[aá]n/.test(addr)) return 'Zurbarán';
+    if (/concha\s*espina/i.test(name) || /vergara/.test(addr) || /concha\s*espina/i.test(addr)) return 'Concha Espina';
+    return name;
+  };
   const { centers } = useCenters();
   const { employees } = useEmployees();
   const { lanes } = useLanes();
@@ -173,6 +182,22 @@ const ClientReservation = () => {
           laneIdsToCheck.includes(lane.id)
         );
         lanesToUse = specificLanes.length > 0 ? specificLanes : centerLanes;
+      }
+
+      // Fallback por posiciones si seguimos con todos los carriles (no hay allowed ni lane_ids)
+      if (lanesToUse.length === centerLanes.length && selectedService) {
+        const groupName = (() => {
+          const g = treatmentGroups.find(tg => tg.id === selectedService.group_id);
+          return g?.name || '';
+        })();
+        const idsByIndex = centerLanes.map(l => l.id);
+        if (/tratamient/i.test(groupName)) {
+          lanesToUse = centerLanes.filter((_, idx) => idx === 0 || idx === 1);
+        } else if (/ritual/i.test(groupName)) {
+          lanesToUse = centerLanes.filter((_, idx) => idx === 2);
+        } else if (/cuatro\s*manos/i.test(groupName)) {
+          lanesToUse = centerLanes.filter((_, idx) => idx === 3);
+        }
       }
 
       const startOfDay = new Date(selectedDate);
@@ -805,7 +830,7 @@ const ClientReservation = () => {
                       <span>📍 {t('center_selection')}</span>
                       {formData.center && (
                         <span className="text-sm text-muted-foreground ml-2">
-                          ({centers.find(c => c.id === formData.center)?.name})
+                          ({friendlyCenterName(centers.find(c => c.id === formData.center))})
                         </span>
                       )}
                     </div>
@@ -847,7 +872,7 @@ const ClientReservation = () => {
                               >
                                 <MapPin className="h-4 w-4 flex-shrink-0" />
                                 <div className="flex-1">
-                                  <p className="font-medium text-sm">{center.name}</p>
+                                  <p className="font-medium text-sm">{friendlyCenterName(center)}</p>
                                   {center.address && (
                                     <p className="text-xs text-muted-foreground">{center.address}</p>
                                   )}

@@ -342,17 +342,7 @@ export const useBookings = () => {
         throw error;
       }
       
-      console.log('Booking created successfully:', data);
-      // Disparar envío de emails de confirmación (función edge)
-      try {
-        // No necesitamos esperar a que termine; ejecutar en background
-        (supabase as any).functions
-          .invoke('send-booking-confirmation')
-          .then(() => console.log('send-booking-confirmation invoked'))
-          .catch((e: any) => console.warn('send-booking-confirmation failed', e));
-      } catch (e) {
-        console.warn('Could not invoke send-booking-confirmation:', e);
-      }
+      console.log('Booking created successfully (no emails sent at creation):', data);
       await fetchBookings(); // Refresh the list
       return data;
     } catch (err) {
