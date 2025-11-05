@@ -535,7 +535,7 @@ async function processPackageVoucher(args: {
             <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
             <p><strong>THE NOOK ${location}</strong><br>
               911 481 474 / 622 360 922<br>
-              <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@gnerai.com</a>
+              <a href="mailto:reservas@gnerai.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a>
             </p>
 
           </td>
