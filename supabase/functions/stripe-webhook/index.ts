@@ -69,11 +69,18 @@ interface PackageVoucherPayload {
   notes?: string;
 }
 
+type BookingConfirmationSource =
+  | { type: "session"; session: Stripe.Checkout.Session }
+  | { type: "payment_intent"; paymentIntent: Stripe.PaymentIntent };
+
 async function sendBookingConfirmationEmail(args: {
   bookingId: string;
-  session: Stripe.Checkout.Session;
+  source: BookingConfirmationSource;
 }) {
-  const { bookingId, session } = args;
+  const { bookingId, source } = args;
+  const session = source.type === "session" ? source.session : null;
+  const paymentIntent = source.type === "payment_intent" ? source.paymentIntent : null;
+  const isManualCapture = source.type === "payment_intent";
   const { data: booking, error } = await supabaseAdmin
     .from("bookings")
     .select(`
@@ -100,8 +107,11 @@ async function sendBookingConfirmationEmail(args: {
     return;
   }
 
-  const customerDetails = session.customer_details;
-  const clientEmail = booking.profiles?.email || customerDetails?.email;
+  const charge = paymentIntent?.charges?.data?.[0] || null;
+  const billingDetails = charge?.billing_details;
+  const customerDetails = session?.customer_details;
+  const clientEmail =
+    booking.profiles?.email || customerDetails?.email || billingDetails?.email;
   if (!clientEmail) {
     console.warn("[stripe-webhook] Missing client email for booking:", bookingId);
     return;
@@ -114,19 +124,26 @@ async function sendBookingConfirmationEmail(args: {
     .filter(Boolean)
     .join(" ")
     || customerDetails?.name
+    || billingDetails?.name
     || "Cliente";
 
   const serviceName =
     booking.services?.name ||
-    session.metadata?.service_name ||
-    (session as any).display_items?.[0]?.custom?.name ||
+    session?.metadata?.service_name ||
+    (session as any)?.display_items?.[0]?.custom?.name ||
+    paymentIntent?.metadata?.service_name ||
     "Tratamiento";
 
   const bookingDateTime = booking.booking_datetime
     ? DateTime.fromISO(booking.booking_datetime, { zone: "utc" }).setZone("Europe/Madrid")
     : null;
 
-  const rawLanguage = (session.metadata?.language || session.locale || "").toLowerCase();
+  const rawLanguage = (
+    session?.metadata?.language ||
+    session?.locale ||
+    paymentIntent?.metadata?.language ||
+    ""
+  ).toLowerCase();
   const language = rawLanguage.startsWith("en") ? "en" : "es";
   const isSpanish = language === "es";
   const langAttr = isSpanish ? "es" : "en";
@@ -242,9 +259,10 @@ async function sendBookingConfirmationEmail(args: {
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
   const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@gnerai.com>";
 
-  const alreadyProcessed =
+  const deliveryToken = session?.id ?? paymentIntent?.id ?? null;
+  const alreadyProcessed = !isManualCapture &&
     booking.email_status === "sent" &&
-    booking.stripe_session_id === session.id;
+    (deliveryToken ? booking.stripe_session_id === deliveryToken : true);
 
   if (alreadyProcessed) {
     console.log("[stripe-webhook] Booking email already sent, skipping:", bookingId);
@@ -268,11 +286,14 @@ async function sendBookingConfirmationEmail(args: {
 
   const updates: Record<string, unknown> = {
     payment_status: "paid",
-    stripe_session_id: session.id,
     email_status: "sent",
     email_sent_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
+
+  if (deliveryToken) {
+    updates.stripe_session_id = deliveryToken;
+  }
 
   await supabaseAdmin.from("bookings").update(updates).eq("id", bookingId);
 
@@ -1174,7 +1195,7 @@ serve(async (req) => {
           if (booking_id) {
             await sendBookingConfirmationEmail({
               bookingId: booking_id,
-              session,
+              source: { type: "session", session },
             });
           } else {
             console.warn("[stripe-webhook] booking_id not found in payload");
@@ -1184,25 +1205,85 @@ serve(async (req) => {
         // Flow: setup mode to only save payment method (no immediate charge)
         // booking_id can come in metadata or inside the SetupIntent
         let bookingIdFromMeta = session.metadata?.booking_id as string | undefined;
+        let setupIntent: Stripe.SetupIntent | null = null;
+
         try {
-          if (!bookingIdFromMeta && session.setup_intent) {
-            if (typeof session.setup_intent === 'string') {
-              // Retrieve the SetupIntent to read metadata
-              const si = await stripe.setupIntents.retrieve(session.setup_intent);
-              bookingIdFromMeta = (si.metadata as any)?.booking_id as string | undefined;
-              console.log('[stripe-webhook] Retrieved SetupIntent metadata booking_id:', bookingIdFromMeta);
+          if (session.setup_intent) {
+            if (typeof session.setup_intent === "string") {
+              setupIntent = await stripe.setupIntents.retrieve(session.setup_intent);
             } else {
-              const siObj = session.setup_intent as Stripe.SetupIntent;
-              bookingIdFromMeta = (siObj.metadata as any)?.booking_id as string | undefined;
+              setupIntent = session.setup_intent as Stripe.SetupIntent;
             }
           }
+
+          if (!bookingIdFromMeta && setupIntent?.metadata) {
+            bookingIdFromMeta = (setupIntent.metadata as any)?.booking_id as string | undefined;
+            console.log("[stripe-webhook] Retrieved booking_id from SetupIntent metadata:", bookingIdFromMeta);
+          }
         } catch (e) {
-          console.warn('[stripe-webhook] Could not read SetupIntent metadata:', e);
+          console.warn("[stripe-webhook] Could not read SetupIntent metadata:", e);
         }
-        if (bookingIdFromMeta) {
-          await sendBookingConfirmationEmail({ bookingId: bookingIdFromMeta, session });
+
+        if (!bookingIdFromMeta) {
+          console.warn("[stripe-webhook] booking_setup without booking_id in metadata");
         } else {
-          console.warn('[stripe-webhook] booking_setup without booking_id in metadata');
+          const paymentMethodId =
+            typeof setupIntent?.payment_method === "string"
+              ? setupIntent.payment_method
+              : (setupIntent?.payment_method as Stripe.PaymentMethod | undefined)?.id || null;
+
+          const setupStatus = setupIntent?.status || "succeeded";
+          const currentTimestamp = new Date().toISOString();
+          const setupIntentId =
+            typeof session.setup_intent === "string"
+              ? session.setup_intent
+              : (session.setup_intent as Stripe.SetupIntent | undefined)?.id || null;
+
+          const updates: Record<string, unknown> = {
+            payment_method_status: setupStatus,
+            updated_at: currentTimestamp,
+          };
+          if (paymentMethodId) {
+            updates["stripe_payment_method_id"] = paymentMethodId;
+          }
+
+          try {
+            await supabaseAdmin
+              .from("bookings")
+              .update(updates)
+              .eq("id", bookingIdFromMeta);
+          } catch (updateErr) {
+            console.error("[stripe-webhook] Failed to update booking for setup intent:", updateErr);
+          }
+
+          if (setupIntentId) {
+            try {
+              await supabaseAdmin
+                .from("booking_payment_intents")
+                .upsert(
+                  {
+                    booking_id: bookingIdFromMeta,
+                    stripe_setup_intent_id: setupIntentId,
+                    stripe_payment_method_id: paymentMethodId,
+                    status: setupStatus,
+                    updated_at: currentTimestamp,
+                  },
+                  { onConflict: "stripe_setup_intent_id" },
+                );
+            } catch (upiErr) {
+              console.error("[stripe-webhook] Failed to upsert booking_payment_intents for setup intent:", upiErr);
+            }
+          }
+
+          if (setupStatus === "succeeded" && paymentMethodId) {
+            try {
+              await supabaseAdmin.rpc("send_payment_setup_confirmation", {
+                p_booking_id: bookingIdFromMeta,
+              });
+            } catch (emailErr) {
+              console.warn("[stripe-webhook] Failed to schedule setup confirmation email:", emailErr);
+            }
+          }
         }
       } else if (intent === "package_voucher") {
         const payloadRaw = session.metadata?.pv_payload;
@@ -1231,6 +1312,21 @@ serve(async (req) => {
         }
       } else {
         console.log("[stripe-webhook] checkout.session.completed ignored for intent:", intent);
+      }
+    } else if (event.type === "payment_intent.succeeded") {
+      const intent = event.data.object as Stripe.PaymentIntent;
+      const bookingId = intent.metadata?.booking_id;
+      const intentKind = (intent.metadata?.intent || "").toLowerCase();
+
+      if (intentKind === "booking_payment") {
+        console.log("[stripe-webhook] payment_intent.succeeded for checkout flow already handled via session", intent.id);
+      } else if (!bookingId) {
+        console.warn("[stripe-webhook] payment_intent.succeeded without booking_id metadata", intent.id);
+      } else {
+        await sendBookingConfirmationEmail({
+          bookingId,
+          source: { type: "payment_intent", paymentIntent: intent },
+        });
       }
     } else {
       console.log("[stripe-webhook] Ignoring event:", event.type);

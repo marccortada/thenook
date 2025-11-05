@@ -30,7 +30,9 @@ import {
   CheckCircle2,
   Ban,
   Trash2,
-  Move
+  Move,
+  CreditCard,
+  DollarSign
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -183,6 +185,11 @@ const AdvancedCalendarView = () => {
   const [paymentEditUnlocked, setPaymentEditUnlocked] = useState(false);
   const [showPaymentConfirm1, setShowPaymentConfirm1] = useState(false);
   const [showPaymentConfirm2, setShowPaymentConfirm2] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string>('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   
   // Form state
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
@@ -900,7 +907,7 @@ const AdvancedCalendarView = () => {
           booking_datetime: bookingDateTime.toISOString(),
           duration_minutes: selectedService.duration_minutes,
           total_price_cents: selectedService.price_cents,
-          status: 'confirmed' as const,
+          status: 'pending' as const,
           channel: 'web' as const,
           notes: bookingForm.notes || null,
           payment_status: 'pending' as const
@@ -1019,7 +1026,10 @@ const AdvancedCalendarView = () => {
 
 
   // Edit existing booking
-  const saveBookingEdits = async (overrides?: { paymentStatus?: typeof editPaymentStatus; bookingStatus?: typeof editBookingStatus }) => {
+  const saveBookingEdits = async (
+    overrides?: { paymentStatus?: typeof editPaymentStatus; bookingStatus?: typeof editBookingStatus },
+    options?: { successMessage?: string; successDescription?: string }
+  ) => {
     try {
       if (!editingBooking) return;
 
@@ -1072,7 +1082,10 @@ const AdvancedCalendarView = () => {
       if (overrides?.paymentStatus) setEditPaymentStatus(overrides.paymentStatus);
       if (overrides?.bookingStatus) setEditBookingStatus(overrides.bookingStatus);
 
-      toast({ title: 'Reserva actualizada', description: 'Los cambios se han guardado correctamente.' });
+      toast({
+        title: options?.successMessage ?? 'Reserva actualizada',
+        description: options?.successDescription ?? 'Los cambios se han guardado correctamente.'
+      });
       setShowEditModal(false);
       setEditingBooking(null);
       setPaymentEditUnlocked(false);
@@ -1080,6 +1093,178 @@ const AdvancedCalendarView = () => {
     } catch (err) {
       console.error('Error updating booking', err);
       toast({ title: 'Error', description: 'No se pudo actualizar la reserva.', variant: 'destructive' });
+    }
+  };
+
+  const attemptChargeBooking = async (): Promise<boolean> => {
+    if (!editingBooking) return false;
+    if (!editingBooking.stripe_payment_method_id) {
+      toast({
+        title: 'Sin tarjeta guardada',
+        description: 'Genera un enlace de pago o registra el cobro manualmente.',
+        variant: 'destructive'
+      });
+        return false;
+    }
+
+    const amountCents = editingBooking.total_price_cents || 0;
+    if (!amountCents || amountCents <= 0) {
+      toast({
+        title: 'Importe no válido',
+        description: 'La reserva no tiene un importe válido para cobrar.',
+        variant: 'destructive'
+      });
+      return false;
+    }
+
+    try {
+      setPaymentLoading(true);
+      const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
+        body: { booking_id: editingBooking.id, amount_cents: amountCents }
+      });
+
+      const functionError = error?.message || data?.error;
+      if (functionError || !data?.ok) {
+        toast({
+          title: 'Cobro no realizado',
+          description: functionError || 'No se pudo procesar el cobro con la tarjeta guardada.',
+          variant: 'destructive'
+        });
+        return false;
+      }
+
+      await saveBookingEdits(
+        { paymentStatus: 'paid', bookingStatus: 'confirmed' },
+        {
+          successMessage: 'Pago registrado',
+          successDescription: 'El cobro se ha capturado y la reserva se ha confirmado.'
+        }
+      );
+      return true;
+    } catch (err) {
+      console.error('Error charging booking:', err);
+      toast({
+        title: 'Cobro no realizado',
+        description: err instanceof Error ? err.message : 'Error desconocido al procesar el cobro.',
+        variant: 'destructive'
+      });
+      return false;
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const sendPaymentLinkFallback = async (amountOverrideCents?: number) => {
+    if (!editingBooking) return;
+
+    try {
+      setPaymentLoading(true);
+      const baseCents = typeof amountOverrideCents === 'number' && amountOverrideCents > 0
+        ? Math.round(amountOverrideCents)
+        : (editingBooking.total_price_cents || 0);
+      const minCents = Math.max(50, baseCents);
+
+      const { data, error } = await (supabase as any).functions.invoke('create-checkout', {
+        body: { intent: 'booking_payment', booking_payment: { booking_id: editingBooking.id, amount_cents: minCents }, currency: 'eur' }
+      });
+
+      const checkoutUrl: string | null = data?.url || (data?.client_secret ? `https://checkout.stripe.com/c/pay/${data.client_secret}` : null);
+      if (error || !checkoutUrl) throw new Error(error?.message || 'No se pudo generar el enlace de pago');
+
+      const to = editingBooking.profiles?.email;
+      if (to) {
+        const message = `Hola,\n\nHemos generado un enlace de pago para tu cita en The Nook Madrid.\nImporte: ${(minCents / 100).toFixed(2)}€.\n\nPor favor completa el pago aquí: ${checkoutUrl}\n\nGracias.`;
+        try {
+          await (supabase as any).functions.invoke('send-email', {
+            body: { to, subject: 'Enlace de pago de tu cita - The Nook Madrid', message }
+          });
+        } catch (mailErr) {
+          console.warn('No se pudo enviar el email con el link de pago:', mailErr);
+        }
+      }
+
+      try { await navigator.clipboard.writeText(checkoutUrl); } catch {}
+
+      toast({
+        title: 'Link de pago generado',
+        description: `${to ? `Enviado a ${to}. ` : ''}También se copió al portapapeles.`
+      });
+
+      setShowPaymentModal(false);
+    } catch (err) {
+      console.error('Error generating payment link', err);
+      toast({
+        title: 'No se pudo generar el link',
+        description: err instanceof Error ? err.message : 'Error desconocido al generar el enlace de pago.',
+        variant: 'destructive'
+      });
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const processManualPayment = async () => {
+    if (!editingBooking) return;
+    if (!paymentMethod) {
+      toast({ title: 'Selecciona forma de pago', description: 'Elige cómo se cobró la reserva.', variant: 'destructive' });
+      return;
+    }
+
+    const amountCents = Math.round((paymentAmount || ((editingBooking.total_price_cents || 0) / 100)) * 100);
+
+    if (paymentMethod === 'online') {
+      await sendPaymentLinkFallback(amountCents);
+      return;
+    }
+
+    try {
+      setPaymentLoading(true);
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          payment_status: 'paid',
+          payment_method: paymentMethod,
+          payment_notes: paymentNotes || null,
+          status: 'confirmed'
+        })
+        .eq('id', editingBooking.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Pago registrado',
+        description: `Se registró el cobro (${paymentMethod}).`
+      });
+
+      setShowPaymentModal(false);
+      setShowEditModal(false);
+      setEditingBooking(null);
+      setPaymentMethod('');
+      setPaymentNotes('');
+      await refetchBookings();
+    } catch (err) {
+      console.error('Error registrando el pago', err);
+      toast({
+        title: 'No se pudo registrar el pago',
+        description: err instanceof Error ? err.message : 'Error desconocido al registrar el pago.',
+        variant: 'destructive'
+      });
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const startPaymentFlow = async () => {
+    if (!editingBooking) return;
+
+    const defaultAmount = Number(((editingBooking.total_price_cents || 0) / 100).toFixed(2));
+    setPaymentAmount(defaultAmount);
+    setPaymentMethod('');
+    setPaymentNotes('');
+
+    const success = await attemptChargeBooking();
+    if (!success) {
+      setShowPaymentModal(true);
     }
   };
 
@@ -1319,6 +1504,7 @@ const AdvancedCalendarView = () => {
                        const blockReasonRaw = block?.reason?.trim() ?? '';
                        const blockReason = blockReasonRaw && !/^bloqueo/i.test(blockReasonRaw) ? blockReasonRaw : null;
                        const isInDragSelection = isSlotInDragSelection(lane.id, slotTime);
+                       const suppressInteraction = !booking && (isBlocked || isFull || isPast);
                        
                        return (
                           <div
@@ -1326,14 +1512,23 @@ const AdvancedCalendarView = () => {
                             className={cn(
                               "relative h-6 border-r border-b transition-colors",
                               !booking && !isBlocked && !isFull && !isPast && "cursor-pointer hover:bg-muted/20",
-                              (isBlocked || isFull || isPast) && !booking && "bg-muted/40 opacity-60 cursor-not-allowed",
+                              suppressInteraction && "bg-muted/40 opacity-60 cursor-not-allowed",
                               block && !isBlockStart && !booking && "pointer-events-none",
                               isInDragSelection && dragMode === 'booking' && "bg-blue-200/50 border-blue-400",
                               isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400"
                             )}
-                            onMouseDown={(e) => { if (isBlocked || isFull || isPast) return; handleSlotMouseDown(selectedCenter, lane.id, selectedDate, slotTime, e); }}
-                            onMouseEnter={() => { if (isBlocked || isFull || isPast) return; handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, slotTime); }}
-                            onMouseUp={() => { if (isBlocked || isFull || isPast) return; handleSlotMouseUp(selectedCenter, lane.id, selectedDate, slotTime); }}
+                            onMouseDown={(e) => {
+                              if (suppressInteraction) return;
+                              handleSlotMouseDown(selectedCenter, lane.id, selectedDate, slotTime, e);
+                            }}
+                            onMouseEnter={() => {
+                              if (suppressInteraction) return;
+                              handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, slotTime);
+                            }}
+                            onMouseUp={() => {
+                              if (suppressInteraction) return;
+                              handleSlotMouseUp(selectedCenter, lane.id, selectedDate, slotTime);
+                            }}
                             onDragOver={(e) => {
                               e.preventDefault();
                               e.dataTransfer.dropEffect = 'move';
@@ -1576,6 +1771,8 @@ const AdvancedCalendarView = () => {
                        const blockReasonRaw = block?.reason?.trim() ?? '';
                        const blockReason = blockReasonRaw && !/^bloqueo/i.test(blockReasonRaw) ? blockReasonRaw : null;
                        const isInDragSelection = isSlotInDragSelection(lane.id, slotDateTime);
+                       const isPast = isPastSlot(date, slotDateTime);
+                       const suppressInteraction = !booking && (isBlocked || isFull || isPast);
 
                       const isFirstLaneOfDay = laneIdx === 0; // dibujar separador grueso al inicio de cada día
                       return (
@@ -1583,16 +1780,25 @@ const AdvancedCalendarView = () => {
                            key={`${date.toISOString()}-${lane.id}`}
                            className={cn(
                              "relative h-6 border-r border-b transition-colors",
-                             !booking && !isBlocked && !isFull && "cursor-pointer hover:bg-muted/30",
-                             (isBlocked || isFull) && !booking && "bg-muted/40 opacity-60 cursor-not-allowed",
+                             !booking && !isBlocked && !isFull && !isPast && "cursor-pointer hover:bg-muted/30",
+                             suppressInteraction && "bg-muted/40 opacity-60 cursor-not-allowed",
                              block && !isBlockStart && !booking && "pointer-events-none",
                              isInDragSelection && dragMode === 'booking' && "bg-blue-200/50 border-blue-400",
                              isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400"
                            )}
                            style={isFirstLaneOfDay ? { borderLeft: '3px solid #6b7280' } : undefined}
-                           onMouseDown={(e) => { if (isBlocked || isFull) return; handleSlotMouseDown(selectedCenter, lane.id, date, slotDateTime, e); }}
-                           onMouseEnter={() => { if (isBlocked || isFull) return; handleSlotMouseEnter(selectedCenter, lane.id, date, slotDateTime); }}
-                           onMouseUp={() => { if (isBlocked || isFull) return; handleSlotMouseUp(selectedCenter, lane.id, date, slotDateTime); }}
+                           onMouseDown={(e) => {
+                             if (suppressInteraction) return;
+                             handleSlotMouseDown(selectedCenter, lane.id, date, slotDateTime, e);
+                           }}
+                           onMouseEnter={() => {
+                             if (suppressInteraction) return;
+                             handleSlotMouseEnter(selectedCenter, lane.id, date, slotDateTime);
+                           }}
+                           onMouseUp={() => {
+                             if (suppressInteraction) return;
+                             handleSlotMouseUp(selectedCenter, lane.id, date, slotDateTime);
+                           }}
                            onDragOver={(e) => {
                              e.preventDefault();
                              e.dataTransfer.dropEffect = 'move';
@@ -2058,6 +2264,103 @@ const AdvancedCalendarView = () => {
     </>
   ) : null;
 
+  const paymentModal = showPaymentModal && editingBooking ? (
+    <AppModal
+      open={true}
+      onClose={() => { if (!paymentLoading) setShowPaymentModal(false); }}
+      maxWidth={420}
+      mobileMaxWidth={360}
+      maxHeight={600}
+    >
+      <div className="flex flex-col h-full">
+        <div className="px-6 pt-6 pb-4 border-b bg-background">
+          <h3 className="text-xl font-semibold flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-primary" />
+            Registrar pago
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Reserva del {format(parseISO(editingBooking.booking_datetime), "d 'de' MMMM a las HH:mm", { locale: es })}
+          </p>
+          {!editingBooking.stripe_payment_method_id && (
+            <p className="text-xs text-amber-600 mt-2">
+              No hay tarjeta guardada para esta reserva. Genera un enlace o registra el cobro manualmente.
+            </p>
+          )}
+        </div>
+
+        <div className="px-6 py-5 space-y-4 overflow-y-auto">
+          <div className="space-y-2">
+            <Label htmlFor="paymentAmount">Importe a cobrar (€)</Label>
+            <Input
+              id="paymentAmount"
+              type="number"
+              min={0}
+              step={0.01}
+              value={paymentAmount}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value);
+                setPaymentAmount(Number.isFinite(value) ? value : 0);
+              }}
+              disabled={paymentLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="paymentMethod">Forma de pago</Label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={paymentLoading}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar forma de cobro" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="efectivo">💰 Efectivo</SelectItem>
+                <SelectItem value="tarjeta">💳 Terminal tarjeta</SelectItem>
+                <SelectItem value="bizum">📱 Bizum</SelectItem>
+                <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
+                <SelectItem value="online">🌐 Enviar link de pago</SelectItem>
+              </SelectContent>
+            </Select>
+            {paymentMethod === 'online' && (
+              <p className="text-xs text-muted-foreground">
+                Se generará un enlace de pago con Stripe y se enviará por email si hay correo disponible.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="paymentNotes">Notas del cobro</Label>
+            <Textarea
+              id="paymentNotes"
+              rows={3}
+              placeholder="Detalle adicional (opcional)"
+              value={paymentNotes}
+              onChange={(e) => setPaymentNotes(e.target.value)}
+              disabled={paymentLoading}
+            />
+          </div>
+        </div>
+
+        <div className="px-6 pb-6 pt-4 border-t flex flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setShowPaymentModal(false)}
+            disabled={paymentLoading}
+          >
+            Cancelar
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={processManualPayment}
+            disabled={paymentLoading}
+          >
+            <DollarSign className="h-4 w-4 mr-2" />
+            {paymentLoading ? 'Procesando...' : 'Registrar pago'}
+          </Button>
+        </div>
+      </div>
+    </AppModal>
+  ) : null;
+
   const editBookingModal = showEditModal && editingBooking ? (
     <>
       <AppModal open={true} onClose={() => { setShowEditModal(false); setEditingBooking(null); }} maxWidth={520} mobileMaxWidth={360} maxHeight={720}>
@@ -2321,11 +2624,11 @@ const AdvancedCalendarView = () => {
                   size="sm" 
                   variant="default"
                   className="flex-1"
-                  onClick={() => {
-                    saveBookingEdits({ paymentStatus: 'paid', bookingStatus: 'confirmed' });
-                  }}
+                  onClick={startPaymentFlow}
+                  disabled={paymentLoading}
                 >
-                  💳 Cobrar
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  {paymentLoading ? 'Procesando...' : 'Cobrar'}
                 </Button>
                 
                 <AlertDialog>
@@ -2383,6 +2686,7 @@ const AdvancedCalendarView = () => {
       {mainView}
       {bookingModal}
       {editBookingModal}
+      {paymentModal}
     </>
   );
 };
