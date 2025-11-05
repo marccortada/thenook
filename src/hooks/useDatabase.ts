@@ -5,6 +5,8 @@ export interface Center {
   id: string;
   name: string;
   address: string;
+  address_zurbaran?: string | null;
+  address_concha_espina?: string | null;
   phone: string;
   email: string;
   active: boolean;

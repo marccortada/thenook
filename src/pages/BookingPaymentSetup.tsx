@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 // Extend Window interface for Stripe
@@ -14,8 +14,6 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Check, CreditCard, Calendar, Clock, User, MapPin, Shield } from "lucide-react";
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface BookingDetails {
   id: string;
@@ -35,17 +33,10 @@ export default function BookingPaymentSetup() {
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [stripeLoaded, setStripeLoaded] = useState(false);
 
   const setupIntentId = searchParams.get('setup_intent');
   const clientSecret = searchParams.get('client_secret');
   const bookingIdParam = searchParams.get('booking_id');
-
-
-  // Cargar Stripe (clave pública)
-  const publishableKey = (import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY || (import.meta as any).env?.VITE_STRIPE_PUBLIC_KEY || (import.meta as any).env?.VITE_STRIPE_PK;
-  const stripePromise = useMemo(() => publishableKey ? loadStripe(publishableKey) : null, [publishableKey]);
-  useEffect(() => { setStripeLoaded(!!publishableKey); }, [publishableKey]);
 
 useEffect(() => {
   if (setupIntentId || bookingIdParam) {
@@ -110,72 +101,6 @@ const fetchBookingDetails = async () => {
     setLoading(false);
   }
 };
-
-  // Formulario de tarjeta para asegurar reserva (retención manual)
-  const CardForm = () => {
-    const stripe = useStripe();
-    const elements = useElements();
-
-    const onSecure = async () => {
-      try {
-        if (!stripe || !elements || !booking) return;
-        setProcessing(true);
-        const email = booking?.profiles?.email || '';
-        const pmRes: any = await stripe.createPaymentMethod({
-          type: 'card',
-          card: elements.getElement(CardElement)!,
-          billing_details: { email },
-        });
-        if (pmRes?.error) throw pmRes.error;
-        const payment_method_id = pmRes.paymentMethod.id as string;
-        const totalCents = Math.max(50, Number(booking?.total_price_cents || 0));
-
-        const { data, error } = await (supabase as any).functions.invoke('create-reserva-payment-intent', {
-          body: {
-            cliente: { email },
-            reserva: {
-              servicio_id: undefined,
-              fecha: booking.booking_datetime,
-              importe_total: totalCents,
-              payment_method_id,
-              extended_authorizations: false,
-            },
-            booking_id: booking.id,
-          },
-        });
-        if (error || !data?.ok) throw new Error(error?.message || data?.error || 'No se pudo crear la retención');
-
-        if (data?.client_secret) {
-          const conf: any = await stripe.confirmPayment({
-            elements,
-            redirect: 'if_required',
-            confirmParams: { payment_method_data: { billing_details: { email } } },
-          });
-          if (conf?.error) throw conf.error;
-        }
-
-        toast({ title: 'Reserva asegurada', description: 'Tarjeta guardada y pago retenido correctamente.' });
-        navigate('/');
-      } catch (e: any) {
-        console.error('Secure booking error:', e);
-        toast({ title: 'Error', description: e?.message || 'No se pudo asegurar la reserva', variant: 'destructive' });
-      } finally {
-        setProcessing(false);
-      }
-    };
-
-    return (
-      <div className="space-y-3">
-        <div className="p-3 border rounded-md">
-          <CardElement options={{ hidePostalCode: true }} />
-        </div>
-        <Button disabled={!stripe || processing} onClick={onSecure} className="w-full">
-          {processing ? 'Procesando…' : 'Asegurar con tarjeta'}
-        </Button>
-        <p className="text-xs text-muted-foreground">Se realiza una retención (no cargo) y se guarda la tarjeta para cobrar el día de la cita.</p>
-      </div>
-    );
-  };
 
 const handlePaymentSetup = async () => {
   setProcessing(true);
@@ -418,26 +343,7 @@ const handlePaymentSetup = async () => {
           </CardContent>
         </Card>
 
-        {/* Asegurar con tarjeta (retención manual) */}
-        {stripePromise ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" /> Asegurar con tarjeta
-              </CardTitle>
-              <CardDescription>Pago seguro con Stripe. Se guarda la tarjeta y se retiene el importe (no se captura todavía).</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Elements stripe={stripePromise}>
-                <CardForm />
-              </Elements>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="text-sm text-red-600">Falta configurar VITE_STRIPE_PUBLISHABLE_KEY para usar el formulario de tarjeta.</div>
-        )}
-
-        {/* Acción alternativa (Checkout clásico que ya tenías) */}
+        {/* Acción principal */}
         {/* Action Buttons */}
         <div className="space-y-3">
           {!isPaymentSetup ? (

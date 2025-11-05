@@ -24,6 +24,45 @@ import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
 import AdminClientSelector from "@/components/AdminClientSelector";
 import { useNavigate } from "react-router-dom";
 
+const determineCenterLabel = (center?: { name?: string | null; address?: string | null; address_zurbaran?: string | null; address_concha_espina?: string | null }) => {
+  if (!center) return 'Centro';
+
+  const raw = [
+    center.name,
+    center.address,
+    center.address_zurbaran,
+    center.address_concha_espina,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase())
+    .join(' ');
+
+  if (raw.includes('zurbar')) {
+    return 'Zurbarán';
+  }
+
+  if (raw.includes('concha') || raw.includes('espina') || raw.includes('vergara')) {
+    return 'Concha Espina';
+  }
+
+  return center.name || 'Centro';
+};
+
+const determineCenterAddress = (center?: { address?: string | null; address_zurbaran?: string | null; address_concha_espina?: string | null }) => {
+  if (!center) return '';
+
+  const label = determineCenterLabel(center);
+  if (label === 'Zurbarán') {
+    return center.address_zurbaran || center.address || '';
+  }
+
+  if (label === 'Concha Espina') {
+    return center.address_concha_espina || center.address || '';
+  }
+
+  return center.address || '';
+};
+
 const ReservationSystem = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -628,7 +667,7 @@ const ReservationSystem = () => {
                       <span>📍 Selección de Centro</span>
                       {formData.center && (
                         <span className="text-sm text-muted-foreground ml-2">
-                          ({centers.find(c => c.id === formData.center)?.name})
+                          ({determineCenterLabel(centers.find(c => c.id === formData.center))})
                         </span>
                       )}
                     </div>
@@ -660,7 +699,14 @@ const ReservationSystem = () => {
                               >
                                 <MapPin className="h-4 w-4 flex-shrink-0" />
                                 <div className="flex-1">
-                                  <p className="font-medium text-sm">{center.name}</p>
+                                  <p className="font-medium text-sm">
+                                    {determineCenterLabel(center)}
+                                  </p>
+                                  {determineCenterAddress(center) && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {determineCenterAddress(center)}
+                                    </p>
+                                  )}
                                 </div>
                                 {isSelected && (
                                   <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center">
