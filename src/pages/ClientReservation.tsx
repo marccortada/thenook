@@ -366,50 +366,31 @@ const ClientReservation = () => {
 
     try {
       let profileToUse;
-      const clientEmail = formData.clientEmail || `cliente_${Date.now()}@temp.com`;
-      
-      // Check if client already exists by email or phone
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`email.eq.${clientEmail},phone.eq.${formData.clientPhone}`)
-        .maybeSingle();
+      const clientEmail = formData.clientEmail?.trim().toLowerCase() || `cliente_${Date.now()}@temp.com`;
 
-      if (existingProfile) {
-        // Update existing profile with any new information
-        const { data: updatedProfile, error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            first_name: formData.clientName.split(' ')[0],
-            last_name: formData.clientName.split(' ').slice(1).join(' ') || '',
-            phone: formData.clientPhone || existingProfile.phone,
-            email: clientEmail
-          })
-          .eq('id', existingProfile.id)
-          .select()
-          .single();
+      const [firstName, ...restNameParts] = (formData.clientName || '').trim().split(' ').filter(Boolean);
+      const lastName = restNameParts.join(' ');
 
-        if (updateError) throw updateError;
-        profileToUse = updatedProfile;
-      } else {
-        // Create new client profile
-        const { data: newProfile, error: profileError } = await supabase
-          .from('profiles')
-          .upsert([{
+      const { data: clientProfileResult, error: clientProfileError } = await supabase
+        .functions
+        .invoke('create-client-profile', {
+          body: {
             email: clientEmail,
-            first_name: formData.clientName.split(' ')[0],
-            last_name: formData.clientName.split(' ').slice(1).join(' ') || '',
-            phone: formData.clientPhone,
-            role: 'client'
-          }], {
-            onConflict: 'email'
-          })
-          .select()
-          .single();
+            first_name: firstName || undefined,
+            last_name: lastName || undefined,
+            phone: formData.clientPhone || undefined,
+          },
+        });
 
-        if (profileError) throw profileError;
-        profileToUse = newProfile;
+      if (clientProfileError) {
+        throw clientProfileError;
       }
+
+      if (!clientProfileResult?.profile) {
+        throw new Error('No se pudo crear/actualizar el perfil del cliente');
+      }
+
+      profileToUse = clientProfileResult.profile;
 
       // Configuración según selección de servicio
       let duration_minutes = 60;
