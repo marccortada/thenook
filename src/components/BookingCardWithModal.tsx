@@ -27,6 +27,7 @@ interface Booking {
   payment_notes?: string;
   notes?: string;
   booking_codes?: string[];
+  center_id?: string;
   services?: { name: string };
   centers?: { name: string };
   profiles?: { 
