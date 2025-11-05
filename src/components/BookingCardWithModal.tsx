@@ -177,12 +177,28 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
           const { data, error } = await (supabase as any).functions.invoke('capture-payment', {
             body: { reserva_id: booking.reserva_id, amount_to_capture: booking.total_price_cents }
           });
-          if (error || !data?.ok) { await sendPaymentLinkFallback((error as any)?.message || data?.error); return; }
+          if (error || !data?.ok) {
+            const reason = (error as any)?.message || data?.error || '';
+            if (data?.requires_action) {
+              await sendPaymentLinkFallback(reason || 'Se requiere autenticación adicional (SCA).');
+            } else {
+              toast({ title: 'Cobro no realizado', description: reason || 'No se pudo procesar el cobro.', variant: 'destructive' });
+            }
+            return;
+          }
         } else {
           const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
             body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
           });
-          if (error || !data?.ok) { await sendPaymentLinkFallback((error as any)?.message || data?.error); return; }
+          if (error || !data?.ok) {
+            const reason = (error as any)?.message || data?.error || '';
+            if (data?.requires_action) {
+              await sendPaymentLinkFallback(reason || 'Se requiere autenticación adicional (SCA).');
+            } else {
+              toast({ title: 'Cobro no realizado', description: reason || 'No se pudo procesar el cobro.', variant: 'destructive' });
+            }
+            return;
+          }
         }
       }
 
@@ -408,7 +424,11 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       });
       if (error || !data?.ok) {
         const reason = (error as any)?.message || data?.error || 'No se pudo procesar el cobro';
-        await sendPaymentLinkFallback(reason);
+        if (data?.requires_action) {
+          await sendPaymentLinkFallback(reason);
+        } else {
+          toast({ title: 'Cobro no realizado', description: reason, variant: 'destructive' });
+        }
         return;
       }
       await supabase
@@ -419,6 +439,10 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       // Confirmar y enviar email
       try { await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id); setBookingStatus('confirmed'); } catch {}
       try { await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } }); } catch (e) { console.warn('send-booking-with-payment fallo (tarjeta):', e); }
+      if (data?.status !== 'succeeded') {
+        toast({ title: 'Cobro en estado inesperado', description: `Estado: ${data?.status || 'desconocido'}`, variant: 'destructive' });
+        return;
+      }
       toast({ title: 'Pago procesado', description: 'Se ha cobrado la reserva correctamente' });
       onBookingUpdated();
     } catch (e) {
@@ -900,7 +924,6 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
          <p className="text-sm text-muted-foreground">Elige cómo quieres cobrar esta cita.</p>
          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
            <Button onClick={markCashPaid} disabled={isProcessingPayment}>💰 Efectivo</Button>
-           <Button onClick={openWhatsAppWithLink} disabled={isProcessingPayment}>💳 Tarjeta (enviar link)</Button>
          </div>
          {generatedCheckoutUrl && (
            <div className="mt-3">
