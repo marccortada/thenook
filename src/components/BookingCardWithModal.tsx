@@ -508,9 +508,8 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         .eq('id', booking.id);
       if (error) throw error;
       setPaymentStatus('paid');
-      // Confirmar y enviar email
+      // Confirmar sin enviar email de tarjeta
       try { await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id); setBookingStatus('confirmed'); } catch {}
-      try { await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } }); } catch (e) { console.warn('send-booking-with-payment fallo (efectivo):', e); }
       toast({ title: 'Pago registrado', description: 'Marcado como cobrado en efectivo' });
       onBookingUpdated();
       setShowChargeOptions(false);
@@ -922,17 +921,12 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
        <div className="p-4 space-y-3">
          <h3 className="font-semibold text-lg">Cobrar Cita</h3>
          <p className="text-sm text-muted-foreground">Elige cómo quieres cobrar esta cita.</p>
-         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-           <Button onClick={markCashPaid} disabled={isProcessingPayment}>💰 Efectivo</Button>
-         </div>
-         {generatedCheckoutUrl && (
-           <div className="mt-3">
-             <Label className="text-xs text-muted-foreground">Enlace generado</Label>
-             <p className="text-xs break-all">{generatedCheckoutUrl}</p>
-           </div>
-         )}
-       </div>
-     </AppModal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button onClick={markCashPaid} disabled={isProcessingPayment}>💰 Efectivo</Button>
+            <Button onClick={() => chargeSavedCard()} disabled={isProcessingPayment}>💳 Tarjeta (cargo directo)</Button>
+          </div>
+        </div>
+      </AppModal>
 
       {/* Mensajes inteligentes */}
       <MessageGeneratorModal
