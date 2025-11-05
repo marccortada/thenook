@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -83,6 +83,7 @@ const ClientReservation = () => {
   const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlotOption[]>(() =>
     timeSlots.map((time) => ({ time, disabled: true }))
   );
+  const lastAvailabilityRef = useRef<TimeSlotOption[] | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -98,7 +99,8 @@ const ClientReservation = () => {
       const currentSelection = selection;
 
       if (!selectedCenter || !selectedDate || !currentSelection) {
-        if (isActive) {
+        if (isActive && (!lastAvailabilityRef.current || lastAvailabilityRef.current !== baseOptions)) {
+          lastAvailabilityRef.current = baseOptions;
           setAvailableTimeSlots(baseOptions);
         }
         return;
@@ -189,9 +191,9 @@ const ClientReservation = () => {
       if (error) {
         console.error("Error al cargar disponibilidad de horarios:", error);
         if (isActive) {
-          setAvailableTimeSlots(
-            timeSlots.map((time) => ({ time, disabled: false }))
-          );
+          const fallback = timeSlots.map((time) => ({ time, disabled: false }));
+          lastAvailabilityRef.current = fallback;
+          setAvailableTimeSlots(fallback);
         }
         return;
       }
@@ -266,7 +268,23 @@ const ClientReservation = () => {
       });
 
       if (isActive) {
-        setAvailableTimeSlots(options);
+        const previous = lastAvailabilityRef.current;
+        const changed =
+          !previous ||
+          previous.length !== options.length ||
+          previous.some((prevOption, idx) => {
+            const nextOption = options[idx];
+            return (
+              prevOption.time !== nextOption.time ||
+              prevOption.disabled !== nextOption.disabled ||
+              prevOption.reason !== nextOption.reason
+            );
+          });
+
+        if (changed) {
+          lastAvailabilityRef.current = options;
+          setAvailableTimeSlots(options);
+        }
       }
     };
 
