@@ -332,8 +332,8 @@ const handlePaymentSetup = async () => {
               <div className="space-y-2">
                 <h3 className="font-semibold text-blue-900">🛡️ Seguridad garantizada</h3>
                 <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Pago seguro con Stripe</li>
-                  <li>• Conexión SSL cifrada de extremo a extremo</li>
+                  <li>• The Nook no realiza el cobro de los servicios por adelantado, el sistema te solicita una tarjeta como garantía de reserva.</li>
+                  <li>• Pasarela de pago seguro con conexión SSL cifrada de extremo a extremo</li>
                   <li>• Puedes consultar nuestras condiciones de reserva y compra en
                     {' '}<a className="underline" href="https://www.thenookmadrid.com/politica-de-cancelaciones/" target="_blank" rel="noopener noreferrer">este enlace</a>
                   </li>

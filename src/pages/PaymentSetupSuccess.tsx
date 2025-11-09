@@ -96,7 +96,7 @@ export default function PaymentSetupSuccess() {
       setConfirmed(true);
       toast({
         title: "¡Éxito!",
-        description: "Tu método de pago ha sido configurado correctamente",
+        description: "",
       });
     } catch (error: any) {
       console.error('Error confirming payment method:', error);

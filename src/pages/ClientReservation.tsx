@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search } from "lucide-react";
+import { CalendarDays, Clock, MapPin, User, CalendarIcon, Edit, X, Search, Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings } from "@/hooks/useDatabase";
@@ -69,6 +69,7 @@ const ClientReservation = () => {
 
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const [showExistingBookings, setShowExistingBookings] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Genera horarios de 10:00 a 20:35 cada 5 min
   const generateTimeSlots = (start: string, end: string, stepMin = 5) => {
@@ -378,6 +379,7 @@ const ClientReservation = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     
     // Basic validation
     if (!formData.clientName || !formData.center || !formData.date || !formData.time || !selection) {
@@ -388,6 +390,8 @@ const ClientReservation = () => {
       });
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       let profileToUse;
@@ -524,6 +528,7 @@ const ClientReservation = () => {
           description: "No hay carriles disponibles para este servicio en el horario seleccionado. Por favor, elige otra hora.",
           variant: "destructive",
         });
+        setIsSubmitting(false);
         return;
       }
       
@@ -575,6 +580,7 @@ const ClientReservation = () => {
       setExistingBookings([]);
     } catch (error: any) {
       console.error('Error creating booking:', error);
+      setIsSubmitting(false);
       
       // Check if it's a capacity error
       const errorMessage = error?.message || '';
@@ -705,7 +711,13 @@ const ClientReservation = () => {
               <span>{t('book_appointment')}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="relative p-4 sm:p-6">
+            {isSubmitting && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="mt-3 text-sm font-medium text-primary">{t('processing_booking')}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               {/* Client Information */}
               <div className="space-y-3 sm:space-y-4">
@@ -988,7 +1000,7 @@ const ClientReservation = () => {
               )}
 
               {/* Submit Button */}
-              <Button type="submit" className="w-full h-11 text-sm sm:text-base font-medium">
+              <Button type="submit" className="w-full h-11 text-sm sm:text-base font-medium" disabled={isSubmitting}>
                 Continuar
               </Button>
             </form>

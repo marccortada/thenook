@@ -149,7 +149,7 @@ export default function PublicLandingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-primary" />
-                Chamberí
+                Chamberí - Zurbarán
               </CardTitle>
               <CardDescription>
                 {MAPS.chamberi.address}
@@ -187,7 +187,7 @@ export default function PublicLandingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-primary" />
-                Chamartín
+                Chamartín - Concha Espina
               </CardTitle>
               <CardDescription>
                 {MAPS.chamartin.address}
