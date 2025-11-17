@@ -1457,6 +1457,19 @@ const translations = {
 export type Language = keyof typeof translations;
 export type TranslationKey = keyof typeof translations['es'];
 
+export const findTranslationKeyByValue = (value: string): TranslationKey | null => {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  for (const langEntries of Object.values(translations)) {
+    for (const [key, val] of Object.entries(langEntries)) {
+      if (typeof val === 'string' && val.trim().toLowerCase() === normalized) {
+        return key as TranslationKey;
+      }
+    }
+  }
+  return null;
+};
+
 // Create context
 export const TranslationContext = createContext<{
   language: Language;

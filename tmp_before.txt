@@ -200,31 +200,6 @@
                       />
                     </div>
 
-                    <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
-                      <span>O crear nueva reserva para cliente nuevo:</span>
-                      <ClientSelectionModal
-                        onSelect={(c) => {
-                          console.log('Cliente seleccionado desde modal:', c);
-                          setCreateClientId(c.id);
-                          setBookingForm((prev) => ({
-                            ...prev,
-                            clientName: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
-                            clientPhone: c.phone || '',
-                            clientEmail: c.email || '',
-                          }));
-                        }}
-                      >
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          type="button"
-                          onClick={() => console.log('Botón Ver todos los clientes clickeado')}
-                        >
-                          <User className="w-4 h-4 mr-2" />
-                          Ver todos los clientes
-                        </Button>
-                      </ClientSelectionModal>
-                    </div>
                   </>
                 )}
 

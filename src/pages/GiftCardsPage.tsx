@@ -17,7 +17,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import OptimizedImage from "@/components/OptimizedImage";
 import { StripeCheckoutModal } from "@/components/StripeCheckoutModal";
 import { PaymentMethodsInfo } from "@/components/PaymentMethodsInfo";
-import { useTranslation } from "@/hooks/useTranslation";
+import { useTranslation, findTranslationKeyByValue } from "@/hooks/useTranslation";
 
 interface CartItem {
   id: string;
@@ -218,6 +218,13 @@ const GiftCardsPage = () => {
       }
     };
 
+    const currentLang = (language || 'es') as keyof typeof translationMap[keyof typeof translationMap];
+
+    // En español usamos siempre el nombre original almacenado en la base de datos
+    if (currentLang === 'es') {
+      return cleanName;
+    }
+
     // Intentar usar el sistema de traducciones primero, con fallback al mapeo directo
     try {
       const translation = t(normalizedKey as any);
@@ -227,9 +234,13 @@ const GiftCardsPage = () => {
     } catch (error) {
       console.warn('Translation system error, using fallback');
     }
+
+    const fallbackKey = findTranslationKeyByValue(cleanName);
+    if (fallbackKey) {
+      const localized = t(fallbackKey);
+      if (localized && localized !== fallbackKey) return localized;
+    }
     
-    // Usar idioma por defecto sin llamar useTranslation nuevamente
-    const currentLang = (language || 'es') as keyof typeof translationMap[keyof typeof translationMap];
     const mapping = translationMap[normalizedKey];
     if (mapping && mapping[currentLang]) return mapping[currentLang];
     if (mapping && mapping['es']) return mapping['es'];
