@@ -228,14 +228,18 @@ const ClientReservation = () => {
       const now = new Date();
       const isToday = selectedDate.toDateString() === now.toDateString();
 
+      const PREPARATION_BUFFER_MINUTES = 15;
+
       const options = timeSlots.map<TimeSlotOption>((time) => {
         const slotDate = new Date(selectedDate);
         const [hours, minutes] = time.split(":").map(Number);
         slotDate.setHours(hours, minutes, 0, 0);
         
-        // Calculate when this slot would end based on service duration (+5 min de margen)
+        // Calculate buffer around the slot to guarantee prep time before and after
+        const slotStartWithBuffer = new Date(slotDate);
+        slotStartWithBuffer.setMinutes(slotStartWithBuffer.getMinutes() - PREPARATION_BUFFER_MINUTES);
         const slotEndDate = new Date(slotDate);
-        slotEndDate.setMinutes(slotEndDate.getMinutes() + serviceDuration + 5);
+        slotEndDate.setMinutes(slotEndDate.getMinutes() + serviceDuration + PREPARATION_BUFFER_MINUTES);
 
         let disabled = false;
         let reason: string | undefined;
@@ -268,12 +272,17 @@ const ClientReservation = () => {
               if (booking.lane_id !== lane.id) return false;
               
               const bookingStart = new Date(booking.booking_datetime);
+              const bookingStartWithBuffer = new Date(bookingStart);
+              bookingStartWithBuffer.setMinutes(bookingStartWithBuffer.getMinutes() - PREPARATION_BUFFER_MINUTES);
               const bookingEnd = new Date(bookingStart);
-              bookingEnd.setMinutes(bookingEnd.getMinutes() + (booking.duration_minutes || 60) + 5); // +5 min de margen
+              bookingEnd.setMinutes(
+                bookingEnd.getMinutes() + (booking.duration_minutes || 60) + PREPARATION_BUFFER_MINUTES
+              );
               
               // Check if there's overlap:
               // New slot starts before existing ends AND new slot ends after existing starts
-              const hasOverlap = slotDate < bookingEnd && slotEndDate > bookingStart;
+              const hasOverlap =
+                slotStartWithBuffer < bookingEnd && slotEndDate > bookingStartWithBuffer;
               
               return hasOverlap;
             });

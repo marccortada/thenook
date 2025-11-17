@@ -13,11 +13,15 @@ export default function InlineLeafletMap({ lat, lng, height = 220, onMarkerMoved
   const mapRef = React.useRef<HTMLDivElement | null>(null);
   const leafletRef = React.useRef<any>(null);
   const markerRef = React.useRef<any>(null);
+  const [leafletReady, setLeafletReady] = React.useState<boolean>(Boolean((window as any).L));
 
   // load Leaflet assets once
   React.useEffect(() => {
     const ensureLeaflet = async () => {
-      if ((window as any).L) return;
+      if ((window as any).L) {
+        setLeafletReady(true);
+        return;
+      }
       // CSS
       const link = document.createElement('link');
       link.rel = 'stylesheet';
@@ -28,7 +32,10 @@ export default function InlineLeafletMap({ lat, lng, height = 220, onMarkerMoved
         const script = document.createElement('script');
         script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
         script.async = true;
-        script.onload = () => resolve();
+        script.onload = () => {
+          setLeafletReady(true);
+          resolve();
+        };
         document.body.appendChild(script);
       });
     };
@@ -38,7 +45,7 @@ export default function InlineLeafletMap({ lat, lng, height = 220, onMarkerMoved
   // init map
   React.useEffect(() => {
     const L = (window as any).L;
-    if (!L || !mapRef.current) return;
+    if (!leafletReady || !L || !mapRef.current) return;
     if (!leafletRef.current) {
       leafletRef.current = L.map(mapRef.current).setView([lat, lng], zoom);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -54,7 +61,7 @@ export default function InlineLeafletMap({ lat, lng, height = 220, onMarkerMoved
       leafletRef.current.setView([lat, lng], leafletRef.current.getZoom());
       markerRef.current?.setLatLng([lat, lng]);
     }
-  }, [lat, lng, zoom]);
+  }, [lat, lng, zoom, leafletReady]);
 
   return (
     <div
@@ -63,4 +70,3 @@ export default function InlineLeafletMap({ lat, lng, height = 220, onMarkerMoved
     />
   );
 }
-

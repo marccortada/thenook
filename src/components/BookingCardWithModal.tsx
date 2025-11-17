@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { chargeBooking } from "@/lib/payments";
-import { Calendar, Clock, User, X, Tag } from "lucide-react";
+import { Calendar, Clock, User, X, Tag, Bot } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import MobileCard from "@/components/MobileCard";
@@ -82,6 +82,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   );
   const [selectedBookingCodes, setSelectedBookingCodes] = useState<string[]>(booking.booking_codes || []);
   const [showMessages, setShowMessages] = useState(false);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
+  const [suggestionText, setSuggestionText] = useState<string | null>(null);
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -97,6 +100,129 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       }
     }
     return Math.max(0, booking.total_price_cents || 0);
+  };
+
+  const formatTimeRange = (start: Date, durationMinutes: number) => {
+    const end = new Date(start);
+    end.setMinutes(end.getMinutes() + durationMinutes);
+    const fmt = (d: Date) => d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    return `${fmt(start)} - ${fmt(end)}`;
+  };
+
+  const suggestAlternateSlots = async () => {
+    if (!booking.center_id) {
+      setSuggestionError("La reserva no tiene centro asignado.");
+      return;
+    }
+    setSuggestionLoading(true);
+    setSuggestionError(null);
+    setSuggestionText(null);
+
+    try {
+      const targetDate = new Date(booking.booking_datetime);
+      const serviceDuration = booking.duration_minutes || 60;
+      const bufferMinutes = 15;
+      const dayStart = new Date(targetDate);
+      dayStart.setHours(9, 0, 0, 0);
+      const dayEnd = new Date(targetDate);
+      dayEnd.setHours(21, 59, 59, 999);
+
+      let query = supabase
+        .from('bookings')
+        .select('id, booking_datetime, duration_minutes, lane_id, status')
+        .eq('center_id', booking.center_id)
+        .gte('booking_datetime', dayStart.toISOString())
+        .lt('booking_datetime', dayEnd.toISOString())
+        .neq('status', 'cancelled');
+
+      const { data: dayBookings, error } = await query;
+      if (error) throw error;
+
+      const relevantBookings = (dayBookings || [])
+        .filter(b => !booking.lane_id || b.lane_id === booking.lane_id)
+        .map((b) => ({
+          start: new Date(b.booking_datetime),
+          duration: b.duration_minutes || serviceDuration,
+        }))
+        .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+      const blockedRanges = relevantBookings.map(({ start, duration }) => {
+        const paddedStart = new Date(start);
+        paddedStart.setMinutes(paddedStart.getMinutes() - bufferMinutes);
+        const paddedEnd = new Date(start);
+        paddedEnd.setMinutes(paddedEnd.getMinutes() + duration + bufferMinutes);
+        return { start: paddedStart, end: paddedEnd };
+      });
+
+      const merged: Array<{ start: Date; end: Date }> = [];
+      blockedRanges.forEach((range) => {
+        if (!merged.length) {
+          merged.push(range);
+        } else {
+          const last = merged[merged.length - 1];
+          if (range.start <= last.end) {
+            if (range.end > last.end) last.end = range.end;
+          } else {
+            merged.push(range);
+          }
+        }
+      });
+
+      const candidateRanges: Array<{ start: Date; end: Date }> = [];
+      let pointer = dayStart;
+      merged.forEach((range) => {
+        if (range.start > pointer) {
+          candidateRanges.push({ start: new Date(pointer), end: new Date(range.start) });
+        }
+        if (range.end > pointer) pointer = new Date(range.end);
+      });
+      if (pointer < dayEnd) {
+        candidateRanges.push({ start: new Date(pointer), end: dayEnd });
+      }
+
+      const minGapMs = (serviceDuration + bufferMinutes * 2) * 60 * 1000;
+      const validStarts: Date[] = [];
+      candidateRanges.forEach(({ start, end }) => {
+        if (end.getTime() - start.getTime() < minGapMs) return;
+        const slotStart = new Date(start);
+        slotStart.setMinutes(Math.ceil(slotStart.getMinutes() / 5) * 5);
+        if (slotStart.getTime() + minGapMs <= end.getTime()) {
+          validStarts.push(slotStart);
+        }
+      });
+
+      if (!validStarts.length) {
+        setSuggestionText("No hay huecos cómodos ese día. Revisa otra fecha u otra cabina.");
+        return;
+      }
+
+      const topSuggestions = validStarts.slice(0, 3);
+      const humanList = topSuggestions
+        .map((date, idx) => `Opción ${idx + 1}: ${formatTimeRange(date, serviceDuration)}${booking.lane_id ? ' (misma cabina)' : ''}`)
+        .join('\n');
+
+      const prompt = `Resumen de opciones para reubicar una cita de ${serviceDuration} minutos el ${
+        targetDate.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long' })
+      }:\n${humanList}\nReescribe este texto en tono cordial para un administrador, en español.`;
+
+      try {
+        const { data: aiData, error: aiError } = await (supabase as any).functions.invoke('rewrite-message', {
+          body: { text: prompt, tone: 'profesional', language: 'es' }
+        });
+        if (aiError || !aiData?.result) {
+          setSuggestionText(humanList);
+        } else {
+          setSuggestionText(aiData.result as string);
+        }
+      } catch {
+        setSuggestionText(humanList);
+      }
+    } catch (error: any) {
+      console.error('Error generating suggestions:', error);
+      setSuggestionError(error?.message || 'No se pudieron generar sugerencias');
+    } finally {
+      setSuggestionLoading(false);
+    }
   };
 
   const totalPriceCents = booking.total_price_cents || 0;
@@ -747,6 +873,36 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="space-y-2 border rounded-md p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Bot className="h-4 w-4 text-primary" />
+                        Sugerencias de reubicación
+                      </Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={suggestAlternateSlots}
+                        disabled={suggestionLoading}
+                      >
+                        {suggestionLoading ? 'Generando…' : 'Sugerir horarios'}
+                      </Button>
+                    </div>
+                    {suggestionError && (
+                      <p className="text-xs text-red-500">{suggestionError}</p>
+                    )}
+                    {suggestionText && (
+                      <div className="bg-muted/40 rounded-md p-2 text-sm whitespace-pre-line">
+                        {suggestionText}
+                      </div>
+                    )}
+                    {!suggestionText && !suggestionError && !suggestionLoading && (
+                      <p className="text-xs text-muted-foreground">
+                        Obtén una recomendación rápida de 2-3 huecos cómodos para mover la cita sin romper la agenda.
+                      </p>
+                    )}
                   </div>
 
                   {bookingStatus === 'no_show' && (

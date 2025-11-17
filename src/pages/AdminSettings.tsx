@@ -26,10 +26,22 @@ import InternalCodesManagement from "@/components/InternalCodesManagement";
 import PackageManagement from "@/components/PackageManagement";
 import GiftCardManagement from "@/components/GiftCardManagement";
 import { useToast } from "@/hooks/use-toast";
-import InlineLeafletMap from "@/components/InlineLeafletMap";
-import { geocodeAddress, reverseGeocode } from "@/lib/geocoding";
+import { geocodeAddress } from "@/lib/geocoding";
 import { useWorkingHours } from "@/hooks/useWorkingHours";
 import { supabase } from "@/integrations/supabase/client";
+
+const DEFAULT_ZURBARAN_ADDRESS = 'Centro de masajes Madrid Zurbarán - The Nook, C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid';
+const DEFAULT_CONCHA_ADDRESS = 'Centro de masajes Madrid Concha Espina - The Nook, C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid';
+const DEFAULT_ZURBARAN_COORDS = { lat: 40.430162857302524, lng: -3.6917834872211705 };
+const DEFAULT_CONCHA_COORDS = { lat: 40.44962561648345, lng: -3.6771259067454367 };
+
+const buildPublicEmbed = (address: string, label: string, coords?: { lat: number; lng: number }) => {
+  if (coords) {
+    const q = `${label}, ${address}`;
+    return `https://maps.google.com/maps?hl=es&q=${encodeURIComponent(q)}&ll=${coords.lat},${coords.lng}&z=18&output=embed`;
+  }
+  return `https://www.google.com/maps?hl=es&q=${encodeURIComponent(`${label}, ${address}`)}&z=17&output=embed`;
+};
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState("general");
@@ -42,14 +54,10 @@ const AdminSettings = () => {
     email: "",
     website: "",
     whatsapp: "+34 622 36 09 22",
-    addressZurbaran: "",
-    addressConchaEspina: ""
+    addressZurbaran: DEFAULT_ZURBARAN_ADDRESS,
+    addressConchaEspina: DEFAULT_CONCHA_ADDRESS
   });
   const [loadingGeneral, setLoadingGeneral] = useState(false);
-
-  // Mapa: coordenadas de cada ubicación
-  const [zurbaranCoords, setZurbaranCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [conchaCoords, setConchaCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   const [pricingPolicies, setPricingPolicies] = useState([]);
   const [loadingPolicies, setLoadingPolicies] = useState(false);
@@ -81,19 +89,10 @@ const AdminSettings = () => {
           email: centerData?.email || "",
           website: (centerData as any)?.website || "",
           whatsapp: (centerData as any)?.whatsapp || "+34 622 36 09 22",
-          addressZurbaran: (centerData as any)?.address_zurbaran || "C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid",
-          addressConchaEspina: (centerData as any)?.address_concha_espina || "C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid"
+          addressZurbaran: DEFAULT_ZURBARAN_ADDRESS,
+          addressConchaEspina: DEFAULT_CONCHA_ADDRESS
         }));
         // Intenta leer coordenadas si existen en la tabla
-        const zLat = centerData.zurbaran_lat ?? centerData.location_zurbaran_lat ?? null;
-        const zLng = centerData.zurbaran_lng ?? centerData.location_zurbaran_lng ?? null;
-        const cLat = centerData.concha_espina_lat ?? centerData.concha_lat ?? centerData.location_concha_espina_lat ?? null;
-        const cLng = centerData.concha_espina_lng ?? centerData.concha_lng ?? centerData.location_concha_espina_lng ?? null;
-        if (typeof zLat === 'number' && typeof zLng === 'number') setZurbaranCoords({ lat: zLat, lng: zLng });
-        if (typeof cLat === 'number' && typeof cLng === 'number') setConchaCoords({ lat: cLat, lng: cLng });
-        // Si faltan coords, geocodificar en background para inicializar mapas
-        if (!zLat || !zLng) geocodeAddress((centerData as any)?.address_zurbaran || '').then((pos) => pos && setZurbaranCoords(pos));
-        if (!cLat || !cLng) geocodeAddress((centerData as any)?.address_concha_espina || '').then((pos) => pos && setConchaCoords(pos));
       }
     } catch (error) {
       console.error('Error loading general settings:', error);
@@ -110,9 +109,6 @@ const AdminSettings = () => {
         geocodeAddress(generalSettings.addressZurbaran),
         geocodeAddress(generalSettings.addressConchaEspina)
       ]);
-
-      if (zPos) setZurbaranCoords(zPos);
-      if (cPos) setConchaCoords(cPos);
 
       // 2) Intentar guardar direcciones + posibles columnas lat/lng
       const baseUpdate: any = {
@@ -182,48 +178,6 @@ const AdminSettings = () => {
       });
     } finally {
       setLoadingGeneral(false);
-    }
-  };
-
-  // Guardar tras mover el pin (reverse geocoding incluido)
-  const updateLocationAfterDrag = async (kind: 'zurbaran' | 'concha', lat: number, lng: number) => {
-    try {
-      const humanAddr = await reverseGeocode(lat, lng);
-      if (kind === 'zurbaran') {
-        setZurbaranCoords({ lat, lng });
-        if (humanAddr) setGeneralSettings(prev => ({ ...prev, addressZurbaran: humanAddr }));
-      } else {
-        setConchaCoords({ lat, lng });
-        if (humanAddr) setGeneralSettings(prev => ({ ...prev, addressConchaEspina: humanAddr }));
-      }
-
-      const update: any = {
-        updated_at: new Date().toISOString(),
-      };
-      if (kind === 'zurbaran') {
-        update.address_zurbaran = humanAddr || generalSettings.addressZurbaran;
-        update.zurbaran_lat = lat; update.zurbaran_lng = lng;
-        update.location_zurbaran_lat = lat; update.location_zurbaran_lng = lng;
-      } else {
-        update.address_concha_espina = humanAddr || generalSettings.addressConchaEspina;
-        update.concha_espina_lat = lat; update.concha_espina_lng = lng;
-        update.concha_lat = lat; update.concha_lng = lng;
-        update.location_concha_espina_lat = lat; update.location_concha_espina_lng = lng;
-      }
-
-      let { error } = await supabase.from('centers').update(update).eq('active', true);
-      if (error) {
-        // Fallback sin lat/lng
-        const addrOnly = kind === 'zurbaran'
-          ? { address_zurbaran: humanAddr || generalSettings.addressZurbaran }
-          : { address_concha_espina: humanAddr || generalSettings.addressConchaEspina };
-        const { error: e2 } = await supabase.from('centers').update({ ...addrOnly, updated_at: new Date().toISOString() }).eq('active', true);
-        if (e2) throw e2;
-      }
-      toast({ title: 'Ubicación actualizada', description: 'Se ha guardado la nueva posición en el mapa.' });
-    } catch (e) {
-      console.error('Error updating location after drag', e);
-      toast({ title: 'Error', description: 'No se pudo guardar la nueva ubicación', variant: 'destructive' });
     }
   };
 
@@ -429,14 +383,17 @@ const AdminSettings = () => {
                       className="h-10 sm:h-11"
                     />
                     <div className="rounded-md overflow-hidden border">
-                      <InlineLeafletMap
-                        lat={zurbaranCoords?.lat ?? 40.43002}
-                        lng={zurbaranCoords?.lng ?? -3.69162}
-                        onMarkerMoved={(lat, lng) => updateLocationAfterDrag('zurbaran', lat, lng)}
-                        height={240}
-                      />
+                      <iframe
+                        src={buildPublicEmbed(DEFAULT_ZURBARAN_ADDRESS, 'Centro de masajes Madrid Zurbarán - The Nook', DEFAULT_ZURBARAN_COORDS)}
+                        width="100%"
+                        height="240"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Mapa Centro Zurbarán"
+                      ></iframe>
                     </div>
-                    <p className="text-xs text-muted-foreground">Arrastra el pin para ajustar. Al soltar, guardamos lat/lng y actualizamos la dirección.</p>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium flex items-center gap-2"><MapPin className="h-4 w-4" /> Ubicación Concha Espina</Label>
@@ -447,14 +404,17 @@ const AdminSettings = () => {
                       className="h-10 sm:h-11"
                     />
                     <div className="rounded-md overflow-hidden border">
-                      <InlineLeafletMap
-                        lat={conchaCoords?.lat ?? 40.44962561648345}
-                        lng={conchaCoords?.lng ?? -3.6771259067454367}
-                        onMarkerMoved={(lat, lng) => updateLocationAfterDrag('concha', lat, lng)}
-                        height={240}
-                      />
+                      <iframe
+                        src={buildPublicEmbed(DEFAULT_CONCHA_ADDRESS, 'Centro de masajes Madrid Concha Espina - The Nook', DEFAULT_CONCHA_COORDS)}
+                        width="100%"
+                        height="240"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Mapa Centro Concha Espina"
+                      ></iframe>
                     </div>
-                    <p className="text-xs text-muted-foreground">Arrastra el pin para ajustar. Al soltar, guardamos lat/lng y actualizamos la dirección.</p>
                   </div>
                 </div>
                 <Button 
@@ -552,7 +512,7 @@ const AdminSettings = () => {
                     </div>
                     <div className="rounded-lg overflow-hidden border">
                       <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.5489!2d-3.6917!3d40.4296!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd4228849b1e5263%3A0x7e1b9e3f8b3c1234!2sC.%20de%20Zurbar%C3%A1n%2C%2010%2C%20Chamber%C3%AD%2C%2028010%20Madrid!5e0!3m2!1sen!2ses!4v1234567890"
+                        src={`https://maps.google.com/maps?hl=es&q=${encodeURIComponent('Centro de masajes Madrid Zurbarán - The Nook, C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid')}&z=18&output=embed`}
                         width="100%"
                         height="200"
                         style={{ border: 0 }}
@@ -563,7 +523,7 @@ const AdminSettings = () => {
                     </div>
                     <Button variant="outline" size="sm" className="w-full" asChild>
                       <a 
-                        href="https://maps.google.com/?q=C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid" 
+                        href="https://maps.google.com/?q=Centro+de+masajes+Madrid+Zurbar%C3%A1n+-+The+Nook%2C+C.+de+Zurbar%C3%A1n%2C+10%2C+bajo+dcha%2C+Chamber%C3%AD%2C+28010+Madrid" 
                         target="_blank" 
                         rel="noopener noreferrer"
                       >
@@ -591,7 +551,7 @@ const AdminSettings = () => {
                     </div>
                     <div className="rounded-lg overflow-hidden border">
                       <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.364!2d-3.6736659!3d40.4347875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDI2JzA1LjIiTiAzwrA0MCcyNS4yIlc!5e0!3m2!1sen!2ses!4v1646123456789!5m2!1sen!2ses&q=C.+del+Príncipe+de+Vergara,+204+duplicado+posterior,+local+10,+28002+Madrid"
+                        src={`https://maps.google.com/maps?hl=es&q=${encodeURIComponent('Centro de masajes Madrid Concha Espina - The Nook, C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid')}&z=18&output=embed`}
                         width="100%"
                         height="200"
                         style={{ border: 0 }}
@@ -602,7 +562,7 @@ const AdminSettings = () => {
                     </div>
                     <Button variant="outline" size="sm" className="w-full" asChild>
                       <a 
-                        href="https://maps.google.com/?q=Centro+de+masajes+Madrid+Concha+Espina+The+Nook,+C.+del+Príncipe+de+Vergara,+204+duplicado+posterior,+local+10,+28002+Madrid" 
+                        href="https://maps.google.com/?q=Centro+de+masajes+Madrid+Concha+Espina+-+The+Nook%2C+C.+del+Pr%C3%ADncipe+de+Vergara%2C+204+duplicado+posterior%2C+local+10%2C+28002+Madrid" 
                         target="_blank" 
                         rel="noopener noreferrer"
                       >

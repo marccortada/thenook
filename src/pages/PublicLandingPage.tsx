@@ -12,14 +12,14 @@ export default function PublicLandingPage() {
   // Precise map configuration; set lat/lng when you want exact pin placement
   const MAPS = {
     chamberi: {
-      address: 'C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid',
+      address: 'Centro de masajes Madrid Zurbarán - The Nook, C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid',
       label: 'Centro de masajes Madrid Zurbarán - The Nook',
-      // lat: 40.43002, lng: -3.69162, // opcional si quieres fijar la chincheta exactamente
+      lat: 40.430162857302524,
+      lng: -3.6917834872211705,
     },
     chamartin: {
-      address: 'C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid',
+      address: 'Centro de masajes Madrid Concha Espina - The Nook, C. del Príncipe de Vergara, 204 duplicado posterior, local 10, 28002 Madrid',
       label: 'Centro de masajes Madrid Concha Espina - The Nook',
-      // Coordenadas precisas proporcionadas
       lat: 40.44962561648345,
       lng: -3.6771259067454367,
     }
@@ -28,12 +28,18 @@ export default function PublicLandingPage() {
   const buildEmbed = (cfg: { address: string; label?: string; lat?: number; lng?: number }) => {
     if (cfg.lat != null && cfg.lng != null) {
       const { lat, lng } = cfg;
-      // Forzar chincheta y texto: usa q=label y ll=lat,lng para mostrar el nombre, no las coordenadas
-      const q = cfg.label || `${lat},${lng}`;
+      const q = cfg.label ? `${cfg.label}, ${cfg.address}` : `${lat},${lng}`;
       return `https://maps.google.com/maps?hl=es&q=${encodeURIComponent(q)}&ll=${lat},${lng}&z=18&output=embed`;
     }
     const qAddr = cfg.label ? `${cfg.label}, ${cfg.address}` : cfg.address;
     return `https://www.google.com/maps?hl=es&q=${encodeURIComponent(qAddr)}&z=17&output=embed`;
+  };
+  const buildMapLink = (cfg: { address: string; label?: string; lat?: number; lng?: number }) => {
+    const q = cfg.label ? `${cfg.label}, ${cfg.address}` : cfg.address;
+    if (cfg.lat != null && cfg.lng != null) {
+      return `https://maps.google.com/?q=${encodeURIComponent(q)}&ll=${cfg.lat},${cfg.lng}&z=18`;
+    }
+    return `https://maps.google.com/?q=${encodeURIComponent(q)}`;
   };
   
   return (
@@ -169,7 +175,7 @@ export default function PublicLandingPage() {
                 <div className="mt-auto">
                   <Button variant="outline" className="w-full" asChild>
                     <a 
-                      href={`https://maps.google.com/?q=${encodeURIComponent(MAPS.chamberi.label || MAPS.chamberi.address)}&ll=${''}&z=18`}
+                      href={buildMapLink(MAPS.chamberi)}
                       target="_blank" 
                       rel="noopener noreferrer"
                     >
@@ -207,7 +213,7 @@ export default function PublicLandingPage() {
                 <div className="mt-auto">
                   <Button variant="outline" className="w-full" asChild>
                     <a 
-                      href={`https://maps.google.com/?q=${encodeURIComponent(MAPS.chamartin.label || `${MAPS.chamartin.lat},${MAPS.chamartin.lng}`)}&ll=${MAPS.chamartin.lat},${MAPS.chamartin.lng}&z=18`}
+                      href={buildMapLink(MAPS.chamartin)}
                       target="_blank" 
                       rel="noopener noreferrer"
                     >

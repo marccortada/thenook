@@ -843,29 +843,12 @@ const AdvancedCalendarView = () => {
       const clickedLane = lanes.find(l => l.id === assignedLaneId);
       const laneAllowedGroups: string[] = ((clickedLane as any)?.allowed_group_ids || []) as string[];
       const isLaneExplicitlyConfigured = laneAllowedGroups && laneAllowedGroups.length > 0;
-      if (selectedService.group_id) {
-        // Si el carril tiene grupos definidos, debe incluir el del servicio
-        if (isLaneExplicitlyConfigured && !laneAllowedGroups.includes(selectedService.group_id)) {
-          toast({ title: 'Carril no válido', description: 'Este servicio no se puede reservar en el carril seleccionado.', variant: 'destructive' });
-          return;
-        }
-        // Si no hay configuración explícita, aplicar mapeo por defecto (posición del carril)
-        const centerLanesList = getCenterLanes(bookingForm.centerId);
-        const laneIndex = Math.max(0, centerLanesList.findIndex(l => l.id === assignedLaneId));
-        const defaultAllowed: Record<number, string> = {
-          0: 'Masajes',
-          1: 'Tratamientos',
-          2: 'Rituales',
-          3: 'Cuatro Manos',
-        };
-        if (!isLaneExplicitlyConfigured) {
-          const serviceGroupName = treatmentGroups.find(tg => tg.id === selectedService.group_id)?.name || '';
-          const expected = defaultAllowed[laneIndex] || '';
-          if (expected && !serviceGroupName.includes(expected)) {
-            toast({ title: 'Carril no válido', description: `Selecciona un carril correspondiente a ${expected}.`, variant: 'destructive' });
-            return;
-          }
-        }
+      if (selectedService.group_id && isLaneExplicitlyConfigured && !laneAllowedGroups.includes(selectedService.group_id)) {
+        console.warn('⚠️ Servicio asignado a un carril fuera de la configuración permitida. Se respetará la elección manual.', {
+          service: selectedService.name,
+          lane: clickedLane?.name,
+          allowedGroups: laneAllowedGroups
+        });
       }
 
       // 2) Validación de capacidad/ocupación del carril en el rango
