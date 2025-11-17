@@ -10,18 +10,29 @@ export interface ChargeResult {
 
 const inFlight = new Set<string>();
 
-export async function chargeBooking(bookingId: string): Promise<ChargeResult> {
+export async function chargeBooking(bookingId: string, amountCents?: number): Promise<ChargeResult> {
   if (!bookingId) return { ok: false, error: 'bookingId requerido' };
   if (inFlight.has(bookingId)) return { ok: false, error: 'Cobro ya en curso' };
 
   const idempotencyKey = crypto?.randomUUID ? crypto.randomUUID() : `${bookingId}-${Date.now()}`;
+  const normalizedAmount = typeof amountCents === 'number' && !Number.isNaN(amountCents)
+    ? Math.max(0, Math.round(amountCents))
+    : undefined;
+  const buildPayload = () => {
+    const payload: Record<string, number | string> = { booking_id: bookingId };
+    if (typeof normalizedAmount === 'number') {
+      payload.amount_cents = normalizedAmount;
+    }
+    return payload;
+  };
+
   inFlight.add(bookingId);
   console.info('[chargeBooking] start', { bookingId, idempotencyKey });
   try {
     // Try Supabase Edge Function first
     try {
       const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
-        body: { booking_id: bookingId }
+        body: buildPayload()
       });
       if (error) return { ok: false, error: error.message };
       const status = data?.status || data?.paymentIntent?.status;
@@ -39,7 +50,7 @@ export async function chargeBooking(bookingId: string): Promise<ChargeResult> {
         'Content-Type': 'application/json',
         'Idempotency-Key': idempotencyKey,
       },
-      body: JSON.stringify({ booking_id: bookingId }),
+      body: JSON.stringify(buildPayload()),
       credentials: 'include'
     });
     const json = await resp.json().catch(() => ({}));

@@ -85,6 +85,27 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
+  const getDesiredChargeAmountCents = (overrideAmountCents?: number) => {
+    if (typeof overrideAmountCents === 'number' && !Number.isNaN(overrideAmountCents)) {
+      return Math.max(0, Math.round(overrideAmountCents));
+    }
+    const input = captureAmountInput?.trim();
+    if (input) {
+      const parsed = parseFloat(input.replace(',', '.'));
+      if (!Number.isNaN(parsed)) {
+        return Math.max(0, Math.round(parsed * 100));
+      }
+    }
+    return Math.max(0, booking.total_price_cents || 0);
+  };
+
+  const totalPriceCents = booking.total_price_cents || 0;
+  const penaltyPercentage = (() => {
+    if (!totalPriceCents) return 0;
+    const currentAmount = getDesiredChargeAmountCents();
+    return Math.round((currentAmount / totalPriceCents) * 100);
+  })();
+
   const baseSelectClass =
     "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -131,8 +152,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       if (status === 'completed' && paymentStatus !== 'paid') {
         try {
           setIsProcessingPayment(true);
+          const desiredAmountCents = getDesiredChargeAmountCents();
           const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
-            body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
+            body: { booking_id: booking.id, amount_cents: desiredAmountCents }
           });
           if (error || !data?.ok) throw new Error(error?.message || data?.error);
           await supabase.from('bookings').update({ payment_status: 'paid' }).eq('id', booking.id);
@@ -174,9 +196,10 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       // Si marcamos como pagada, primero cobramos a la tarjeta guardada
       if (status === 'paid' && paymentStatus !== 'paid') {
         setIsProcessingPayment(true);
+        const desiredAmountCents = getDesiredChargeAmountCents();
         if (booking.reserva_id) {
           const { data, error } = await (supabase as any).functions.invoke('capture-payment', {
-            body: { reserva_id: booking.reserva_id, amount_to_capture: booking.total_price_cents }
+            body: { reserva_id: booking.reserva_id, amount_to_capture: desiredAmountCents }
           });
           if (error || !data?.ok) {
             const reason = (error as any)?.message || data?.error || '';
@@ -189,7 +212,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
           }
         } else {
           const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
-            body: { booking_id: booking.id, amount_cents: booking.total_price_cents }
+            body: { booking_id: booking.id, amount_cents: desiredAmountCents }
           });
           if (error || !data?.ok) {
             const reason = (error as any)?.message || data?.error || '';
@@ -321,7 +344,8 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
           toast({ title: 'Inicia sesión', description: 'Debes iniciar sesión para cobrar.', variant: 'destructive' });
           return;
         }
-        const res = await chargeBooking(booking.id);
+        const desiredAmountCents = getDesiredChargeAmountCents();
+        const res = await chargeBooking(booking.id, desiredAmountCents);
         if (!res.ok) {
           if (res.requires_action) {
             toast({ title: 'Se requiere autenticación', description: 'La tarjeta requiere una acción adicional (SCA).', variant: 'destructive' });
@@ -383,7 +407,8 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         toast({ title: 'Inicia sesión', description: 'Debes iniciar sesión para cobrar.', variant: 'destructive' });
         return;
       }
-      const res = await chargeBooking(booking.id);
+      const desiredAmountCents = getDesiredChargeAmountCents(overrideAmountCents);
+      const res = await chargeBooking(booking.id, desiredAmountCents);
       if (!res.ok) {
         if (res.requires_action) {
           toast({ title: 'Se requiere autenticación', description: 'La tarjeta requiere una acción adicional (SCA).', variant: 'destructive' });
@@ -723,6 +748,31 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                       ))}
                     </select>
                   </div>
+
+                  {bookingStatus === 'no_show' && (
+                    <div className="space-y-2 border-t pt-3">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-medium">Penalización por No Show</Label>
+                        <Label className="text-xs text-muted-foreground">
+                          Define el importe parcial que deseas cobrar.
+                        </Label>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-sm font-medium">Importe a cobrar (EUR)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={captureAmountInput}
+                          onChange={(e) => setCaptureAmountInput(e.target.value)}
+                          placeholder={(booking.total_price_cents / 100).toFixed(2)}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Esto equivale aproximadamente a {penaltyPercentage}% del precio original.
+                      </p>
+                    </div>
+                  )}
 
                   {/* Códigos de la reserva */}
                   <div className="space-y-3 border-t pt-3">
