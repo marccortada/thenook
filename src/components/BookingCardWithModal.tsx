@@ -49,6 +49,17 @@ const BOOKING_STATUSES = [
   { value: 'no_show', label: 'No Show', color: 'bg-gray-100 text-gray-800' },
 ];
 
+const STATUS_BORDER_CLASSES: Record<string, string> = {
+  requested: 'border-yellow-300',
+  confirmed: 'border-blue-300',
+  new: 'border-green-300',
+  online: 'border-purple-300',
+  cancelled: 'border-red-300',
+  no_show: 'border-gray-300',
+  pending: 'border-amber-300',
+  completed: 'border-emerald-300',
+};
+
 const PAYMENT_STATUSES = [
   { value: 'pending', label: 'Pendiente de Pago', color: 'bg-orange-100 text-orange-800' },
   { value: 'paid', label: 'Pagada', color: 'bg-green-100 text-green-800' },
@@ -249,6 +260,8 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       </Badge>
     );
   };
+
+  const getStatusBorderClass = (status: string) => STATUS_BORDER_CLASSES[status] || 'border-border';
 
   const getPaymentBadge = (paymentStatus: string) => {
     const statusConfig = PAYMENT_STATUSES.find(s => s.value === paymentStatus) || PAYMENT_STATUSES[0];
@@ -660,7 +673,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   return (
     <>
     <MobileCard 
-      className={`booking-card ${isVipBooking() ? 'ring-2 ring-yellow-400' : isPriorityBooking() ? 'ring-2 ring-orange-400' : ''}`} 
+      className={`booking-card border-2 transition-colors ${getStatusBorderClass(bookingStatus)} ${isVipBooking() ? 'ring-2 ring-yellow-400' : isPriorityBooking() ? 'ring-2 ring-orange-400' : ''}`} 
       padding="sm"
     >
       <div className="space-y-3 sm:space-y-4">
