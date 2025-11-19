@@ -15,6 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings } from "@/hooks/useDatabase";
 import { useTreatmentGroups } from "@/hooks/useTreatmentGroups";
+import { useLaneBlocks } from "@/hooks/useLaneBlocks";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -49,6 +50,7 @@ const ClientReservation = () => {
   const { lanes } = useLanes();
   const { createBooking } = useBookings();
   const { treatmentGroups, getTreatmentGroupByService } = useTreatmentGroups();
+  const { laneBlocks } = useLaneBlocks();
   const isMobile = useIsMobile();
   
   const [formData, setFormData] = useState({
@@ -230,6 +232,24 @@ const ClientReservation = () => {
 
       const PREPARATION_BUFFER_MINUTES = 15;
 
+      // Function to check if a lane is blocked by a temporary block (lane_blocks table)
+      const isLaneBlockedForRange = (
+        laneId: string,
+        centerId: string,
+        startDate: Date,
+        durationMinutes: number
+      ) => {
+        const rangeStart = new Date(startDate);
+        const rangeEnd = new Date(rangeStart.getTime() + durationMinutes * 60 * 1000);
+
+        return laneBlocks.some(block => {
+          if (block.lane_id !== laneId || block.center_id !== centerId) return false;
+          const blockStart = new Date(block.start_datetime);
+          const blockEnd = new Date(block.end_datetime);
+          return blockStart < rangeEnd && blockEnd > rangeStart;
+        });
+      };
+
       const options = timeSlots.map<TimeSlotOption>((time) => {
         const slotDate = new Date(selectedDate);
         const [hours, minutes] = time.split(":").map(Number);
@@ -256,12 +276,17 @@ const ClientReservation = () => {
           let laneAvailable = false;
 
           for (const lane of lanesToUse) {
-            // Check if lane is blocked
+            // Check if lane is blocked permanently (blocked_until)
             if (lane.blocked_until) {
               const blockedUntil = new Date(lane.blocked_until);
               if (slotDate < blockedUntil) {
                 continue;
               }
+            }
+
+            // Check if lane is blocked by a temporary block (lane_blocks table)
+            if (isLaneBlockedForRange(lane.id, selectedCenter, slotDate, serviceDuration)) {
+              continue;
             }
 
             const laneCapacity = lane.capacity || 1;
@@ -471,6 +496,12 @@ const ClientReservation = () => {
             const lane = availableLanes.find(l => l.id === laneId);
             if (!lane) continue;
 
+            // Check if lane is blocked by a temporary block (lane_blocks table)
+            if (isLaneBlockedForRange(laneId, formData.center, bookingDate, duration_minutes)) {
+              console.log(`⛔ Carril ${lane.name} bloqueado en el horario seleccionado, probando el siguiente.`);
+              continue;
+            }
+
             const { data: existingBookings } = await supabase
               .from('bookings')
               .select('*')
@@ -504,6 +535,12 @@ const ClientReservation = () => {
             for (const laneId of groupLaneIdsInThisCenter) {
               const lane = availableLanes.find(l => l.id === laneId);
               if (!lane) continue;
+
+              // Check if lane is blocked by a temporary block (lane_blocks table)
+              if (isLaneBlockedForRange(laneId, formData.center, bookingDate, duration_minutes)) {
+                console.log(`⛔ Carril ${lane.name} bloqueado en el horario seleccionado, probando el siguiente.`);
+                continue;
+              }
 
               const { data: existingBookings } = await supabase
                 .from('bookings')
@@ -543,9 +580,32 @@ const ClientReservation = () => {
       
       // Fallback only if no specific lanes were configured
       if (!assignedLaneId) {
-        const randomLane = availableLanes.length > 0 ? availableLanes[Math.floor(Math.random() * availableLanes.length)] : null;
+        // Filter out blocked lanes from fallback selection
+        const unblockedLanes = availableLanes.filter(lane => {
+          if (lane.blocked_until) {
+            const blockedUntil = new Date(lane.blocked_until);
+            if (bookingDate < blockedUntil) {
+              return false;
+            }
+          }
+          return !isLaneBlockedForRange(lane.id, formData.center, bookingDate, duration_minutes);
+        });
+        
+        const randomLane = unblockedLanes.length > 0 
+          ? unblockedLanes[Math.floor(Math.random() * unblockedLanes.length)] 
+          : null;
         assignedLaneId = randomLane?.id || null;
         console.log('🎲 Asignación aleatoria de carril (no hay configuración específica)');
+        
+        if (!assignedLaneId) {
+          toast({
+            title: "Sin disponibilidad",
+            description: "No hay carriles disponibles en el horario seleccionado. Por favor, elige otra hora.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
       }
       
       const randomEmployee = availableEmployees.length > 0 ? availableEmployees[Math.floor(Math.random() * availableEmployees.length)] : null;

@@ -14,6 +14,7 @@ import { CalendarDays, Clock, MapPin, User, CalendarIcon, Users, ChevronDown } f
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useCenters, useServices, useEmployees, useLanes, useBookings, usePackages } from "@/hooks/useDatabase";
+import { useLaneBlocks } from "@/hooks/useLaneBlocks";
 import { useTreatmentGroups } from "@/hooks/useTreatmentGroups";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +71,7 @@ const ReservationSystem = () => {
   const { centers } = useCenters();
   const { employees } = useEmployees();
   const { lanes } = useLanes();
+  const { laneBlocks } = useLaneBlocks();
   const { createBooking } = useBookings();
   const { treatmentGroups, getTreatmentGroupByService } = useTreatmentGroups();
   const isMobile = useIsMobile();
@@ -151,6 +153,24 @@ const ReservationSystem = () => {
   const availableLanes = lanes.filter(lane => 
     formData.center ? lane.center_id === formData.center && lane.active : lane.active
   );
+
+  const isLaneBlockedForRange = (
+    laneId: string | null | undefined,
+    centerId: string | undefined,
+    startDate: Date,
+    durationMinutes: number
+  ) => {
+    if (!laneId || !centerId) return false;
+    const rangeStart = new Date(startDate);
+    const rangeEnd = new Date(rangeStart.getTime() + durationMinutes * 60 * 1000);
+
+    return laneBlocks.some(block => {
+      if (block.lane_id !== laneId || block.center_id !== centerId) return false;
+      const blockStart = new Date(block.start_datetime);
+      const blockEnd = new Date(block.end_datetime);
+      return blockStart < rangeEnd && blockEnd > rangeStart;
+    });
+  };
 
   // Group services by name to avoid duplicates
   const uniqueServices = services.reduce((acc, service) => {
@@ -315,6 +335,10 @@ const ReservationSystem = () => {
           for (const laneId of selectedService.lane_ids) {
             const lane = availableLanes.find(l => l.id === laneId);
             if (lane) {
+              if (isLaneBlockedForRange(laneId, formData.center, bookingDate, duration_minutes)) {
+                console.log(`⛔ Carril ${lane.name} bloqueado en el horario seleccionado, probando el siguiente.`);
+                continue;
+              }
               // Check lane capacity for the time slot
               const { data: existingBookings } = await supabase
                 .from('bookings')
@@ -354,6 +378,10 @@ const ReservationSystem = () => {
             for (const laneId of treatmentGroup.lane_ids) {
               const lane = availableLanes.find(l => l.id === laneId);
               if (lane) {
+                if (isLaneBlockedForRange(laneId, formData.center, bookingDate, duration_minutes)) {
+                  console.log(`⛔ Carril ${lane.name} bloqueado en el horario seleccionado, probando el siguiente.`);
+                  continue;
+                }
                 // Check lane capacity for the time slot
                 const { data: existingBookings } = await supabase
                   .from('bookings')
@@ -387,7 +415,33 @@ const ReservationSystem = () => {
 
       // Fallback to first available lane if no group-specific lane is available
       if (!assignedLaneId) {
-        assignedLaneId = formData.lane && formData.lane !== "any" ? formData.lane : availableLanes[0]?.id;
+        const preferredLaneIds = formData.lane && formData.lane !== "any"
+          ? [formData.lane]
+          : availableLanes.map(l => l.id);
+
+        const fallbackLane = preferredLaneIds
+          .map(id => availableLanes.find(l => l.id === id))
+          .find(lane => lane && !isLaneBlockedForRange(lane.id, formData.center, bookingDate, duration_minutes));
+
+        assignedLaneId = fallbackLane?.id || null;
+      }
+
+      if (!assignedLaneId) {
+        toast({
+          title: "Sin disponibilidad en carriles",
+          description: "Todos los carriles están bloqueados o completos en ese horario. Elige otra hora.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (isLaneBlockedForRange(assignedLaneId, formData.center, bookingDate, duration_minutes)) {
+        toast({
+          title: "Horario bloqueado",
+          description: "Ese carril está bloqueado temporalmente por administración. Selecciona otra franja.",
+          variant: "destructive",
+        });
+        return;
       }
 
       const bookingData = {

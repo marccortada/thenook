@@ -97,6 +97,7 @@ interface Booking {
 
 const BLOCK_SLOT_MINUTES = 5;
 const BLOCK_SLOT_MS = BLOCK_SLOT_MINUTES * 60 * 1000;
+const SLOT_PIXEL_HEIGHT = 24; // Matches Tailwind h-6 used for each slot cell
 
 const isSameSlotStart = (slotTime: Date, blockStart: Date) =>
   Math.abs(slotTime.getTime() - blockStart.getTime()) < BLOCK_SLOT_MS / 2;
@@ -459,8 +460,17 @@ const AdvancedCalendarView = () => {
   // No permitir seleccionar horas pasadas del día actual
   const isPastSlot = (date: Date, slot: Date) => {
     const now = new Date();
-    const sameDay = now.getFullYear() === date.getFullYear() && now.getMonth() === date.getMonth() && now.getDate() === date.getDate();
-    if (!sameDay) return false;
+    // Normalizar las fechas a medianoche para comparar solo el día
+    const dateMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Si la fecha es anterior a hoy, no es pasado (es una fecha pasada, pero no del día actual)
+    if (dateMidnight < nowMidnight) return false;
+    
+    // Si la fecha es posterior a hoy, no es pasado
+    if (dateMidnight > nowMidnight) return false;
+    
+    // Si es el mismo día, comparar la hora del slot con la hora actual
     return slot.getTime() < now.getTime();
   };
 
@@ -561,27 +571,37 @@ const AdvancedCalendarView = () => {
 
     event.preventDefault();
     
-    // Si estamos en modo bloqueo tradicional
-    if (blockingMode) {
-      handleBlockingSlotClick(laneId, timeSlot);
+    const wantsBlockAction = blockingMode || event.shiftKey;
+    const existingBooking = getBookingForSlot(centerId, laneId, date, timeSlot);
+
+    if (wantsBlockAction) {
+      if (existingBooking) {
+        toast({
+          title: 'No se puede bloquear',
+          description: 'Esta franja ya tiene una reserva activa. Mueve o cancela la cita antes de bloquear.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setIsDragging(true);
+      setDragStart({ centerId, laneId, timeSlot });
+      setDragEnd({ centerId, laneId, timeSlot });
+      setDragMode('block');
       return;
     }
 
-    // Verificar si hay una reserva existente
-    const existingBooking = getBookingForSlot(centerId, laneId, date, timeSlot);
     if (existingBooking) {
       // Abrir modal de edición
       handleSlotClick(centerId, laneId, date, timeSlot);
       return;
     }
 
-    // Iniciar drag selection
+    // Iniciar drag selection para reservas
     setIsDragging(true);
     setDragStart({ centerId, laneId, timeSlot });
     setDragEnd({ centerId, laneId, timeSlot });
-    
-    // Determinar modo de arrastre basado en las teclas modificadoras
-    setDragMode(event.shiftKey ? 'block' : 'booking');
+    setDragMode('booking');
   };
 
   // Handle mouse enter for drag
@@ -601,7 +621,19 @@ const AdvancedCalendarView = () => {
     
     // Si solo se hizo click sin arrastrar
     if (dragStart.timeSlot.getTime() === timeSlot.getTime()) {
-      handleSlotClick(centerId, laneId, date, timeSlot);
+      if (dragMode === 'block') {
+        // Click directo en modo bloqueo: crear bloqueo de 30 minutos automáticamente
+        const blockEndTime = new Date(timeSlot);
+        blockEndTime.setMinutes(blockEndTime.getMinutes() + 30);
+        createLaneBlock(selectedCenter, laneId, timeSlot, blockEndTime, 'Bloqueo manual');
+        setBlockStartSlot(null);
+        setBlockEndSlot(null);
+        if (blockingMode) {
+          setBlockingMode(false);
+        }
+      } else {
+        handleSlotClick(centerId, laneId, date, timeSlot);
+      }
       setDragStart(null);
       setDragEnd(null);
       return;
@@ -612,10 +644,15 @@ const AdvancedCalendarView = () => {
     const endTime = dragStart.timeSlot < timeSlot ? timeSlot : dragStart.timeSlot;
     
     if (dragMode === 'block') {
-      // Crear bloqueo
+      // Crear bloqueo por arrastre
       const blockEndTime = new Date(endTime);
       blockEndTime.setMinutes(blockEndTime.getMinutes() + 5); // Añadir 5 min para que sea un rango
       createLaneBlock(selectedCenter, laneId, startTime, blockEndTime, 'Bloqueo por arrastre');
+      setBlockStartSlot(null);
+      setBlockEndSlot(null);
+      if (blockingMode) {
+        setBlockingMode(false);
+      }
     } else {
       // Crear reserva con duración calculada
       const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60) + 5; // +5 para incluir el slot final
@@ -643,6 +680,7 @@ const AdvancedCalendarView = () => {
     
     setDragStart(null);
     setDragEnd(null);
+    setDragMode('booking');
   };
 
   // Handle slot click
@@ -1379,13 +1417,13 @@ const AdvancedCalendarView = () => {
           {(blockingMode || moveMode) && (
             <div className="text-xs text-muted-foreground">
               {blockingMode
-                ? 'Haz clic en una franja para empezar, luego en otra para definir el rango.'
+                ? 'Haz clic o arrastra dentro de un carril para definir el rango a bloquear.'
                 : 'Modo mover activo: arrastra una reserva y suéltala en otro carril u horario.'}
             </div>
           )}
           {!blockingMode && !moveMode && (
             <div className="text-xs text-muted-foreground">
-              💡 <strong>Click y arrastra</strong> para crear reservas o <strong>Shift + arrastra</strong> para bloquear intervalos
+              💡 <strong>Click y arrastra</strong> para crear reservas. Activa el modo Bloquear o mantén <strong>Shift</strong> para arrastrar y crear bloqueos.
             </div>
           )}
         </CardHeader>
@@ -1394,7 +1432,7 @@ const AdvancedCalendarView = () => {
             {/* Responsive grid based on number of lanes */}
             <div
               className={cn(
-                "grid gap-x-2 gap-y-0 min-w-fit select-none",
+                "grid gap-x-2 gap-y-0 min-w-fit",
                 isDragging && "cursor-grabbing",
               )}
               style={{ gridTemplateColumns: `60px repeat(${Math.min(4, centerLanes.length || 1)}, 1fr)` }}
@@ -1487,29 +1525,64 @@ const AdvancedCalendarView = () => {
                        const blockReasonRaw = block?.reason?.trim() ?? '';
                        const blockReason = blockReasonRaw && !/^bloqueo/i.test(blockReasonRaw) ? blockReasonRaw : null;
                        const isInDragSelection = isSlotInDragSelection(lane.id, slotTime);
-                       const suppressInteraction = !booking && (isBlocked || isFull || isPast);
+                       
+                       // Determinar si la celda está dentro de un bloqueo pero no es el inicio
+                       const isInBlockButNotStart = block && !isBlockStart && !booking;
+                       
+                       // Lógica simplificada: por defecto todas las celdas pueden interactuar
+                       // EXCEPTO si:
+                       // 1. Está dentro de un bloqueo (pero no el inicio) - usar pointer-events-none
+                       // 2. Está bloqueada en el inicio Y no tiene booking
+                       // 3. Está llena Y no tiene booking
+                       // NOTA: Temporalmente NO bloqueamos por isPast para permitir interacción
+                       const cannotInteract = isInBlockButNotStart || (!booking && (isBlockStart || isFull));
+                       const canInteract = !cannotInteract;
                        
                        return (
                           <div
                             key={lane.id}
                             className={cn(
                               "relative h-6 border-r border-b transition-colors",
-                              !booking && !isBlocked && !isFull && !isPast && "cursor-pointer hover:bg-muted/20",
-                              suppressInteraction && "bg-muted/40 opacity-60 cursor-not-allowed",
-                              block && !isBlockStart && !booking && "pointer-events-none",
+                              // Cursor pointer para celdas que pueden interactuar
+                              canInteract && "cursor-pointer hover:bg-muted/20",
+                              // Estilos de bloqueo para celdas que NO pueden interactuar
+                              cannotInteract && !isInBlockButNotStart && "bg-muted/40 opacity-60 cursor-not-allowed",
+                              // Las celdas dentro del bloqueo pero no el inicio no deben recibir eventos ni mostrar bordes
+                              isInBlockButNotStart && "pointer-events-none border-0",
                               isInDragSelection && dragMode === 'booking' && "bg-blue-200/50 border-blue-400",
                               isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400"
                             )}
+                            onClick={(e) => {
+                              // Si está dentro de un bloqueo pero no es el inicio, no hacer nada
+                              if (isInBlockButNotStart) return;
+                              
+                              // Solo bloquear si está bloqueada en el inicio o está llena
+                              if (!booking && (isBlockStart || isFull)) return;
+                              
+                              e.stopPropagation();
+                              e.preventDefault();
+                              
+                              // Si hay booking, abrir modal de edición
+                              if (booking) {
+                                handleSlotClick(selectedCenter, lane.id, selectedDate, slotTime);
+                                return;
+                              }
+                              
+                              // Si no hay booking, crear reserva
+                              handleSlotClick(selectedCenter, lane.id, selectedDate, slotTime);
+                            }}
                             onMouseDown={(e) => {
-                              if (suppressInteraction) return;
+                              if (cannotInteract) return;
+                              e.stopPropagation();
                               handleSlotMouseDown(selectedCenter, lane.id, selectedDate, slotTime, e);
                             }}
                             onMouseEnter={() => {
-                              if (suppressInteraction) return;
+                              if (cannotInteract) return;
                               handleSlotMouseEnter(selectedCenter, lane.id, selectedDate, slotTime);
                             }}
-                            onMouseUp={() => {
-                              if (suppressInteraction) return;
+                            onMouseUp={(e) => {
+                              if (cannotInteract) return;
+                              e.stopPropagation();
                               handleSlotMouseUp(selectedCenter, lane.id, selectedDate, slotTime);
                             }}
                             onDragOver={(e) => {
@@ -1598,9 +1671,12 @@ const AdvancedCalendarView = () => {
                         )}
                           {block && isBlockStart && !booking && blockStart && blockEnd && (
                             <div
-                              className="absolute left-[1px] right-[1px] top-[2px] z-30 overflow-hidden rounded-md border border-red-500 bg-red-100/90 text-red-700 shadow-sm cursor-pointer group"
-                              style={{ height: `calc(100% * ${blockSpanSlots} - 4px)` }}
+                              className="absolute left-0 right-0 top-0 z-10 overflow-hidden border border-red-500 bg-red-100/90 text-red-700 shadow-sm cursor-not-allowed group"
+                              style={{ height: `${blockSpanSlots * SLOT_PIXEL_HEIGHT}px` }}
                               title={blockReason ? `Bloqueado: ${blockReason}` : 'Bloqueado'}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onMouseUp={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <div className="flex h-full items-start justify-between px-2 py-1 gap-2">
                                 <div className="flex flex-col gap-1 pr-1">
@@ -1693,7 +1769,7 @@ const AdvancedCalendarView = () => {
           </CardTitle>
           {blockingMode && (
             <div className="text-xs text-muted-foreground">
-              Haz clic en una franja para empezar, luego en otra para definir el rango.
+              Haz clic o arrastra dentro de un carril para definir el rango a bloquear.
             </div>
           )}
         </CardHeader>
@@ -1755,7 +1831,18 @@ const AdvancedCalendarView = () => {
                        const blockReason = blockReasonRaw && !/^bloqueo/i.test(blockReasonRaw) ? blockReasonRaw : null;
                        const isInDragSelection = isSlotInDragSelection(lane.id, slotDateTime);
                        const isPast = isPastSlot(date, slotDateTime);
-                       const suppressInteraction = !booking && (isBlocked || isFull || isPast);
+                       
+                       // Determinar si la celda está dentro de un bloqueo pero no es el inicio
+                       const isInBlockButNotStart = block && !isBlockStart && !booking;
+                       
+                       // Lógica simplificada: por defecto todas las celdas pueden interactuar
+                       // EXCEPTO si:
+                       // 1. Está dentro de un bloqueo (pero no el inicio) - usar pointer-events-none
+                       // 2. Está bloqueada en el inicio Y no tiene booking
+                       // 3. Está llena Y no tiene booking
+                       // NOTA: Temporalmente NO bloqueamos por isPast para permitir interacción
+                       const cannotInteract = isInBlockButNotStart || (!booking && (isBlockStart || isFull));
+                       const canInteract = !cannotInteract;
 
                       const isFirstLaneOfDay = laneIdx === 0; // dibujar separador grueso al inicio de cada día
                       return (
@@ -1763,23 +1850,28 @@ const AdvancedCalendarView = () => {
                            key={`${date.toISOString()}-${lane.id}`}
                            className={cn(
                              "relative h-6 border-r border-b transition-colors",
-                             !booking && !isBlocked && !isFull && !isPast && "cursor-pointer hover:bg-muted/30",
-                             suppressInteraction && "bg-muted/40 opacity-60 cursor-not-allowed",
-                             block && !isBlockStart && !booking && "pointer-events-none",
+                             // Cursor pointer para celdas que pueden interactuar
+                             canInteract && "cursor-pointer hover:bg-muted/30",
+                             // Estilos de bloqueo para celdas que NO pueden interactuar
+                             cannotInteract && !isInBlockButNotStart && "bg-muted/40 opacity-60 cursor-not-allowed",
+                             // Las celdas dentro del bloqueo pero no el inicio no deben recibir eventos ni mostrar bordes
+                             isInBlockButNotStart && "pointer-events-none border-0",
                              isInDragSelection && dragMode === 'booking' && "bg-blue-200/50 border-blue-400",
                              isInDragSelection && dragMode === 'block' && "bg-red-200/50 border-red-400"
                            )}
-                           style={isFirstLaneOfDay ? { borderLeft: '3px solid #6b7280' } : undefined}
+                           style={isFirstLaneOfDay && !isInBlockButNotStart ? { borderLeft: '3px solid #6b7280' } : undefined}
                            onMouseDown={(e) => {
-                             if (suppressInteraction) return;
+                             if (cannotInteract) return;
+                             e.stopPropagation();
                              handleSlotMouseDown(selectedCenter, lane.id, date, slotDateTime, e);
                            }}
                            onMouseEnter={() => {
-                             if (suppressInteraction) return;
+                             if (cannotInteract) return;
                              handleSlotMouseEnter(selectedCenter, lane.id, date, slotDateTime);
                            }}
-                           onMouseUp={() => {
-                             if (suppressInteraction) return;
+                           onMouseUp={(e) => {
+                             if (cannotInteract) return;
+                             e.stopPropagation();
                              handleSlotMouseUp(selectedCenter, lane.id, date, slotDateTime);
                            }}
                            onDragOver={(e) => {
@@ -1860,9 +1952,12 @@ const AdvancedCalendarView = () => {
                           
                           {block && isBlockStart && !booking && blockStart && blockEnd && (
                             <div
-                              className="absolute left-[1px] right-[1px] top-[2px] z-30 overflow-hidden rounded-md border border-red-500 bg-red-100/90 text-red-700 shadow-sm cursor-pointer group"
-                              style={{ height: `calc(100% * ${blockSpanSlots} - 4px)` }}
+                              className="absolute left-0 right-0 top-0 z-10 overflow-hidden border border-red-500 bg-red-100/90 text-red-700 shadow-sm cursor-not-allowed group"
+                              style={{ height: `${blockSpanSlots * SLOT_PIXEL_HEIGHT}px` }}
                               title={blockReason ? `Bloqueado: ${blockReason}` : 'Bloqueado'}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onMouseUp={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <div className="flex h-full items-start justify-between px-2 py-1 gap-2">
                                 <div className="flex flex-col gap-1 pr-1">
@@ -2019,7 +2114,7 @@ const AdvancedCalendarView = () => {
         {blockingMode && (
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-700">
-              📍 Modo bloqueo activo: Haz clic en una franja para empezar, luego en otra para definir el rango.
+              📍 Modo bloqueo activo: Clic y arrastra por un carril para bloquear, o selecciona inicio y fin con clics separados.
             </p>
           </div>
         )}
@@ -2350,7 +2445,14 @@ const AdvancedCalendarView = () => {
 
             <div className="space-y-2">
               <Label htmlFor="serviceId" className="text-sm font-medium">Servicio *</Label>
-              <Select value={bookingForm.serviceId || undefined} onValueChange={(value) => setBookingForm({ ...bookingForm, serviceId: value })}>
+              <Select value={editServiceId || undefined} onValueChange={(value) => {
+                setEditServiceId(value);
+                // Actualizar duración automáticamente cuando se cambia el servicio
+                const selectedService = services.find(s => s.id === value);
+                if (selectedService) {
+                  setEditDuration(selectedService.duration_minutes || 60);
+                }
+              }}>
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder="Seleccionar servicio" />
                 </SelectTrigger>
