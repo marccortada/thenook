@@ -115,152 +115,81 @@ if (!findError && paymentIntent) {
 
     // Send confirmation email if payment method is confirmed
     if (setupIntent.status === 'succeeded') {
-      logStep('Sending payment confirmation email');
+      logStep('Payment method confirmed, sending booking confirmation email');
       
-      // Get booking details for email
-      const { data: bookingData } = await supabaseClient
-        .from('bookings')
-        .select(`
-          id,
-          booking_datetime,
-          total_price_cents,
-          duration_minutes,
-          profiles!client_id(email, first_name, last_name),
-          services(name),
-          employees(profiles!profile_id(first_name, last_name))
-        `)
-        .eq('id', bookingId)
-        .single();
+      try {
+        // Ensure notification exists in automated_notifications
+        const { data: bookingData } = await supabaseClient
+          .from('bookings')
+          .select(`
+            id,
+            client_id,
+            booking_datetime,
+            services(name),
+            centers(name, address_zurbaran, address_concha_espina)
+          `)
+          .eq('id', bookingId)
+          .single();
 
-      if (bookingData?.profiles?.email) {
-        const client = bookingData.profiles;
-        const employeeName = bookingData.employees?.profiles ? 
-          `${bookingData.employees.profiles.first_name || ''} ${bookingData.employees.profiles.last_name || ''}`.trim() :
-          'Nuestro equipo';
+        if (bookingData?.client_id) {
+          // Check if notification already exists
+          const { data: existingNotification } = await supabaseClient
+            .from('automated_notifications')
+            .select('id')
+            .eq('booking_id', bookingId)
+            .eq('type', 'appointment_confirmation')
+            .maybeSingle();
 
-        try {
-          const fromEmail = (Deno.env.get('RESEND_FROM_EMAIL') as string) || 'The Nook Madrid <reservas@gnerai.com>';
-          const subject = '✅ Tarjeta confirmada - Reserva asegurada - The Nook Madrid';
-          const htmlContent = `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-                <div style="text-align: center; margin-bottom: 30px; background-color: white; padding: 20px; border-radius: 8px;">
-                  <h1 style="color: #2c3e50; margin-bottom: 10px;">The Nook Madrid</h1>
-                  <h2 style="color: #27ae60; font-weight: normal; margin: 0;">✅ ¡Reserva Asegurada!</h2>
-                </div>
-                
-                <div style="background-color: white; padding: 25px; border-radius: 8px; margin-bottom: 20px;">
-                  <p style="margin: 0 0 20px 0; font-size: 16px; color: #333;">
-                    Hola <strong>${client.first_name || ''} ${client.last_name || ''}</strong>,
-                  </p>
-                  <p style="margin: 0 0 20px 0; color: #555; line-height: 1.6;">
-                    ¡Perfecto! Hemos confirmado tu método de pago y tu reserva está completamente asegurada. 
-                    <strong style="color: #27ae60;">El cargo se realizará automáticamente el día de tu tratamiento.</strong>
-                  </p>
-                  
-                  <div style="background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #27ae60;">
-                    <h3 style="margin: 0 0 15px 0; color: #2c3e50; font-size: 18px;">📅 Resumen de tu Tratamiento</h3>
-                    <div style="margin-bottom: 10px;">
-                      <strong>🎯 Tratamiento:</strong> ${bookingData.services?.name || 'Servicio personalizado'}
-                    </div>
-                    <div style="margin-bottom: 10px;">
-                      <strong>📅 Fecha y hora:</strong> ${
-                        bookingData.booking_datetime 
-                          ? new Date(bookingData.booking_datetime).toLocaleDateString('es-ES', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })
-                          : 'Por confirmar'
-                      }
-                    </div>
-                    <div style="margin-bottom: 10px;">
-                      <strong>⏱️ Duración:</strong> ${bookingData.duration_minutes || 60} minutos
-                    </div>
-                    <div style="margin-bottom: 10px;">
-                      <strong>👩‍⚕️ Profesional:</strong> ${employeeName}
-                    </div>
-                    <div style="margin-bottom: 0;">
-                      <strong>💰 Precio:</strong> ${
-                        bookingData.total_price_cents 
-                          ? `${(bookingData.total_price_cents / 100).toFixed(2)}€`
-                          : 'A confirmar'
-                      }
-                    </div>
-                  </div>
-                  
-                  <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                    <p style="margin: 0; font-size: 14px; color: #856404;">
-                      <strong>💳 Información de Pago:</strong><br>
-                      • Tu método de pago está confirmado y seguro<br>
-                      • El cargo se realizará automáticamente el día de tu cita<br>
-                      • Puedes cancelar hasta 24h antes sin coste alguno
-                    </p>
-                  </div>
-                  
-                  <div style="background-color: #d1ecf1; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #17a2b8;">
-                    <p style="margin: 0; font-size: 14px; color: #0c5460;">
-                      <strong>📋 Recordatorios:</strong><br>
-                      • Llega 10 minutos antes de tu cita<br>
-                      • Te enviaremos un recordatorio 24h antes<br>
-                      • Si necesitas cambios, contáctanos lo antes posible
-                    </p>
-                  </div>
-                </div>
-                
-                <div style="background-color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                  <h3 style="margin: 0 0 15px 0; color: #2c3e50;">📍 Ubicación</h3>
-                  <p style="margin: 0; color: #555;">
-                    <strong>The Nook Madrid</strong><br>
-                    📞 Teléfono: +34 XXX XXX XXX<br>
-                    📧 Email: info@thenookmadrid.com
-                  </p>
-                </div>
-                
-                <div style="text-align: center; padding: 20px; color: #666; font-size: 14px;">
-                  <p style="margin: 0 0 10px 0;">
-                    Si tienes alguna pregunta o necesitas modificar tu reserva, no dudes en contactarnos.
-                  </p>
-                  <p style="margin: 0;">
-                    ¡Nos vemos pronto en The Nook Madrid! ✨
-                  </p>
-                </div>
-              </div>
-            `;
+          // Create notification if it doesn't exist
+          if (!existingNotification) {
+            const selectedService = bookingData.services?.name || 'nuestro tratamiento';
+            const formattedDate = bookingData.booking_datetime
+              ? new Date(bookingData.booking_datetime).toLocaleString('es-ES', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
+              : 'Por confirmar';
 
-          const sendPromises = [
-            resend.emails.send({
-              from: fromEmail,
-              to: [client.email],
-              subject,
-              html: htmlContent,
-            }),
-          ];
-
-          if (internalNotificationEmail) {
-            const internalLower = internalNotificationEmail.toLowerCase();
-            const clientLower = client.email.toLowerCase();
-            if (internalLower !== clientLower) {
-              sendPromises.push(
-                resend.emails.send({
-                  from: fromEmail,
-                  to: [internalNotificationEmail],
-                  subject,
-                  html: htmlContent,
-                }),
-              );
-            }
+            await supabaseClient
+              .from('automated_notifications')
+              .insert({
+                type: 'appointment_confirmation',
+                client_id: bookingData.client_id,
+                booking_id: bookingId,
+                scheduled_for: new Date().toISOString(),
+                subject: 'Reserva asegurada en THE NOOK',
+                message: `Tu cita para ${selectedService} el ${formattedDate} ha quedado registrada. Recuerda revisar nuestra política de cancelación en https://www.thenookmadrid.com/politica-de-cancelaciones/.`,
+                metadata: {
+                  channels: ['email'],
+                  booking_id: bookingId,
+                  source: 'payment_method_confirmed'
+                },
+                status: 'pending'
+              });
+            
+            logStep('Notification created for booking confirmation');
           }
 
-          await Promise.all(sendPromises);
+          // Wait a moment for the notification to be created
+          await new Promise(resolve => setTimeout(resolve, 500));
 
-          logStep('Payment confirmation email sent successfully');
-        } catch (emailError) {
-          logStep('ERROR sending confirmation email', { error: emailError.message });
-          // Don't fail the whole operation if email fails
+          // Invoke send-booking-confirmation edge function
+          const { error: invokeError } = await supabaseClient.functions.invoke('send-booking-confirmation', {
+            body: { source: 'payment_confirmed', booking_id: bookingId }
+          });
+
+          if (invokeError) {
+            logStep('ERROR invoking send-booking-confirmation', { error: invokeError.message });
+          } else {
+            logStep('Booking confirmation email function invoked successfully');
+          }
         }
+      } catch (emailError) {
+        logStep('ERROR sending confirmation email', { error: emailError.message });
+        // Don't fail the whole operation if email fails
       }
     }
 

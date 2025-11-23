@@ -172,7 +172,7 @@ serve(async (req) => {
 
             <p>Recuerda que puedes disfrutar de tu bono en nuestro centro de <strong>${location}</strong>:</p>
             <p>${address}</p>
-            <p>Estamos aquí 👉 <a href="${mapLink}" target="_blank" style="color:#1A6AFF;">Ver mapa</a></p>
+            <p>Estamos aquí 👉 <a href="${mapLink}" target="_blank" style="color:#fff !important; text-decoration:none; background:#424CB8; padding:10px 16px; border-radius:8px; font-weight:700; display:inline-block;">Ver mapa</a></p>
 
             <p>Si crees que hay algún error en el conteo de sesiones, contáctanos respondiendo a este correo o por teléfono.</p>
 

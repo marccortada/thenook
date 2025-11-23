@@ -20,14 +20,32 @@ serve(async (req) => {
     );
 
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
-    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'The Nook Madrid <reservas@gnerai.com>';
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'The Nook Madrid <reservas@thenookmadrid.com>';
     const internalNotificationEmail = (Deno.env.get('THENOOK_NOTIFICATION_EMAIL') ?? 'reservas@thenookmadrid.com').trim();
 
-    console.log('📧 Processing booking confirmation emails...');
+    // Parse request body to check if a specific booking_id was provided
+    let requestBody: any = {};
+    try {
+      if (req.body) {
+        requestBody = await req.json();
+      }
+    } catch (e) {
+      // Ignore JSON parse errors
+    }
+
+    const specificBookingId = requestBody?.booking_id;
+    console.log('📧 Processing booking confirmation emails...', specificBookingId ? `(for booking ${specificBookingId})` : '');
+
+    // Email delivery is ahora gestionado desde stripe-webhook tras el cobro.
+    return new Response(
+      JSON.stringify({ message: 'Email handling moved to stripe-webhook (no-op here)' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
     const nowIso = new Date().toISOString();
 
-    // Get pending email notifications
-    const { data: notifications, error: fetchError } = await supabaseClient
+    // Build query for pending email notifications
+    let query = supabaseClient
       .from('automated_notifications')
       .select(`
         id,
@@ -42,8 +60,14 @@ serve(async (req) => {
       `)
       .eq('status', 'pending')
       .in('type', ['appointment_confirmation', 'booking_reminder', 'booking_confirmation_with_payment'])
-      .lte('scheduled_for', nowIso)
-      .limit(10);
+      .lte('scheduled_for', nowIso);
+
+    // If a specific booking_id was provided, filter by it
+    if (specificBookingId) {
+      query = query.eq('booking_id', specificBookingId);
+    }
+
+    const { data: notifications, error: fetchError } = await query.limit(10);
 
     if (fetchError) {
       console.error('❌ Error fetching notifications:', fetchError);
@@ -106,127 +130,82 @@ serve(async (req) => {
 
         // Determine center location
         const center = booking?.centers;
-        const isZurbaran = center?.name?.toLowerCase().includes('zurbaran') || center?.name?.toLowerCase().includes('zurbarán');
+        const isZurbaran = center?.name?.toLowerCase().includes('zurbaran') || center?.name?.toLowerCase().includes('zurbarán') || center?.address_zurbaran;
         const centerLocation = isZurbaran ? 'ZURBARÁN' : 'CONCHA ESPINA';
-        const centerAddress = isZurbaran 
-          ? (center?.address_zurbaran || 'C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid')
-          : (center?.address_concha_espina || 'C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante \'La Ancha\'');
-        const centerMetroInfo = isZurbaran
-          ? '(Metro Iglesia, salida C. de Zurbarán)'
-          : '(Metro Concha Espina, salida Plaza de Cataluña)';
+        
+        // Formatear dirección según el centro
+        let formattedAddress = '';
+        if (isZurbaran) {
+          formattedAddress = 'C/ Zurbarán 10 (Metro Alonso Martínez / Rubén Darío)';
+        } else {
+          formattedAddress = 'C/ Príncipe de Vergara 204 posterior (Metro Concha Espina, salida Plaza de Cataluña)';
+        }
+        
         const mapsLink = isZurbaran
           ? 'https://maps.app.goo.gl/your-zurbaran-link'
           : 'https://goo.gl/maps/zHuPpdHATcJf6QWX8';
 
         // Send email using Resend
-        const emailSubject = notification.subject || (notification.type === 'booking_reminder' ? 'Recordatorio de tu cita' : 'Confirmación de reserva - THE NOOK');
+        const emailSubject = 'Reserva asegurada en THE NOOK';
+        
+        // Formatear fecha: "viernes 24 de octubre 2025 a las 12:55"
+        const formattedDateTime = booking?.booking_datetime
+          ? new Date(booking.booking_datetime).toLocaleDateString('es-ES', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }) +
+            ' a las ' +
+            new Date(booking.booking_datetime).toLocaleTimeString('es-ES', {
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : 'Por confirmar';
+        
+        // Usar solo el primer nombre del cliente
+        const clientFirstName = client.first_name || '';
+
         const emailHtml = `
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Confirmación de reserva - THE NOOK</title>
+  <title>Reserva asegurada en THE NOOK</title>
   <style>
-    body { margin:0; padding:0; background-color:#f6f7fb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#111827; }
-    .email-wrap { width:100%; background-color:#f6f7fb; padding:24px 12px; }
-    .container { max-width:640px; margin:0 auto; background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 6px 18px rgba(16,24,40,0.08); }
-    .header { padding:20px 28px; background: linear-gradient(90deg,#424CB8 0%, #3F46B0 100%); color:#fff; }
-    .logo { font-weight:700; font-size:18px; letter-spacing:0.4px; }
-    .content { padding:24px 28px; line-height:1.5; color:#111827; }
-    h1 { margin:0 0 8px 0; font-size:20px; }
-    p { margin:10px 0; }
-    .details { background:#f8fafc; border-radius:8px; padding:14px; margin:14px 0; }
-    .btn { display:inline-block; text-decoration:none; padding:12px 18px; border-radius:8px; background:#424CB8; color:#fff; font-weight:600; }
-    .small { font-size:13px; color:#6b7280; }
-    .footer { padding:18px 28px; font-size:13px; color:#6b7280; border-top:1px solid #eef2ff; }
-    a { color:#424CB8; }
-    .muted { color:#6b7280; font-size:13px; }
-    .contact-row { margin-top:12px; }
-    @media (max-width:480px){
-      .content{padding:18px;}
-      .header{padding:16px;}
-    }
+    body { margin:0; padding:0; background:#f6f7fb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#111827; }
+    .wrap { width:100%; padding:24px 12px; }
+    .card { max-width:640px; margin:0 auto; background:#fff; border-radius:10px; box-shadow:0 6px 18px rgba(16,24,40,0.08); overflow:hidden; }
+    .header { padding:18px 24px; background:#f3735f; color:#fff; font-weight:700; font-size:18px; letter-spacing:0.3px; }
+    .content { padding:22px 24px; line-height:1.6; font-size:15px; }
+    a { color:#f3735f; }
   </style>
 </head>
 <body>
-  <div class="email-wrap">
-    <div class="container" role="article" aria-roledescription="email">
-      <div class="header">
-        <div class="logo">THE NOOK</div>
-      </div>
-
+  <div class="wrap">
+    <div class="card">
+      <div class="header">THE NOOK</div>
       <div class="content">
-        <h1>Hola <strong>${client.first_name || ''} ${client.last_name || ''}</strong>!</h1>
-        <p>Has reservado correctamente tu tratamiento en <strong>THE NOOK</strong>. A continuación tienes los detalles de la reserva:</p>
-
-        <div class="details" aria-labelledby="det-title">
-          <p id="det-title" style="margin:0 0 8px 0;"><strong>Servicios reservados</strong></p>
-          <p style="margin:6px 0;"><strong>Tratamiento:</strong> ${booking?.services?.name || 'Servicio personalizado'}</p>
-          <p style="margin:6px 0;"><strong>Fecha y hora:</strong> ${
-            booking?.booking_datetime 
-              ? new Date(booking.booking_datetime).toLocaleDateString('es-ES', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })
-              : 'Por confirmar'
-          }</p>
-          <p style="margin:6px 0;"><strong>Centro:</strong> THE NOOK ${centerLocation}</p>
-        </div>
-
-        <p>
-          Dirección:<br>
-          ${centerAddress}<br>
-          ${centerMetroInfo}
+        <p>Hola ${clientFirstName}!</p>
+        <p>Has reservado correctamente tu tratamiento en <strong>THE NOOK ${centerLocation}</strong>.</p>
+        <p><strong>Estos son los detalles de la reserva:</strong></p>
+        <p><strong>Tratamiento:</strong> ${booking?.services?.name || 'Servicio personalizado'}</p>
+        <p><strong>Fecha:</strong> ${formattedDateTime}</p>
+        <p>${formattedAddress}</p>
+        <p>Estamos aquí 👉 <a href="${mapsLink}" target="_blank" rel="noopener noreferrer" style="color:#fff !important; text-decoration:none; background:#424CB8; padding:10px 16px; border-radius:8px; font-weight:700;">Ver mapa</a></p>
+        <p>Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de reserva y nuestra Política de Cancelación.</p>
+        <p>Es aconsejable llegar al centro cinco minutos antes de la cita. Rogamos máxima puntualidad, al haber otras citas después de la vuestra, si llegáis tarde, quizás no podamos realizar el tratamiento completo.</p>
+        <p>En caso de estar embarazada, por favor háznoslo saber con antelación a la cita.</p>
+        <p>En este email tienes la dirección del centro reservado, la hora de la cita y el tratamiento elegido. Revisa bien esta información, The Nook no se hace responsable si acudes al centro equivocado o a una hora distinta.</p>
+        <p>Te recomendamos leer nuestras condiciones de reserva, compra y cancelación la Política de Cancelación completa aquí:</p>
+        <p><a href="https://www.thenookmadrid.com/politica-de-cancelaciones/" target="_blank" rel="noopener noreferrer">https://www.thenookmadrid.com/politica-de-cancelaciones/</a></p>
+        <p><strong>THE NOOK ${centerLocation}</strong><br/>
+           911 481 474 / 622 360 922<br/>
+           <a href="mailto:reservas@thenookmadrid.com">reservas@thenookmadrid.com</a>
         </p>
-
-        <p>
-          Estamos aquí: <a href="${mapsLink}" target="_blank" rel="noopener noreferrer">${mapsLink}</a>
-        </p>
-
-        <p class="small">
-          Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de uso y nuestra
-          <a href="https://www.thenookmadrid.com/politica-de-cancelaciones/" target="_blank" rel="noopener noreferrer"> Política de Cancelación</a>.
-        </p>
-
-        <p class="muted">
-          Es aconsejable llegar al centro cinco minutos antes de la cita. Rogamos máxima puntualidad: al haber otras citas después de la vuestra, si llegáis tarde, quizás no podamos realizaros el tratamiento completo.
-        </p>
-
-        <p class="muted">
-          En caso de estar embarazada, por favor háznoslo saber con antelación a la cita.
-        </p>
-
-        <p class="muted">
-          En este email tienes la dirección del centro reservado, la hora de la cita y el tratamiento elegido. Revisa bien esta información por si hubiera algún error — The Nook no se hace responsable si acudes al centro equivocado o a una hora distinta a la reservada.
-        </p>
-
-        <p>
-          Te recomendamos leer la Política de Cancelación: <a href="https://www.thenookmadrid.com/politica-de-cancelaciones/" target="_blank" rel="noopener noreferrer">Política de Cancelaciones de THE NOOK</a>
-        </p>
-
-        <p style="margin-top:18px;">
-          <a class="btn" href="${mapsLink}" target="_blank" rel="noopener noreferrer">Ver ubicación en el mapa</a>
-        </p>
-
-        <div class="contact-row">
-          <p style="margin:8px 0 2px 0;"><strong>Contacto</strong></p>
-          <p class="small" style="margin:2px 0;">
-            Tel: <a href="tel:+34911481474">911 481 474</a> / <a href="tel:+34622360922">622 360 922</a><br>
-            Email: <a href="mailto:reservas@gnerai.com">reservas@gnerai.com</a>
-          </p>
-        </div>
       </div>
-
-      <div class="footer">
-        <p style="margin:0 0 6px 0;">THE NOOK ${centerLocation}</p>
-        <p style="margin:0;" class="small">Si tienes alguna duda o necesitas modificar tu reserva, contacta con nosotros lo antes posible.</p>
-      </div>
-      </div>
+    </div>
   </div>
 </body>
 </html>

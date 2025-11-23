@@ -22,10 +22,10 @@ export default function PaymentSetupSuccess() {
   const setupIntentId = searchParams.get('setup_intent');
 
   useEffect(() => {
-    loadCenterData();
     if (setupIntentId) {
       fetchBookingCenter(setupIntentId).finally(() => confirmPaymentMethod());
     } else {
+      loadCenterData();
       setLoading(false);
     }
   }, [setupIntentId]);
@@ -37,14 +37,27 @@ export default function PaymentSetupSuccess() {
         .select('booking_id')
         .eq('stripe_setup_intent_id', intentId)
         .maybeSingle();
-      if (intentErr || !intentRow?.booking_id) return;
+      if (intentErr || !intentRow?.booking_id) {
+        // Si no hay reserva, cargar centro por defecto
+        loadCenterData();
+        return;
+      }
 
       const { data: booking, error: bookErr } = await (supabase as any)
         .from('bookings')
         .select('centers(name, address_zurbaran, address_concha_espina), center_id')
         .eq('id', intentRow.booking_id)
         .maybeSingle();
-      if (bookErr || !booking) return;
+      if (bookErr || !booking) {
+        // Si no hay reserva, cargar centro por defecto
+        loadCenterData();
+        return;
+      }
+
+      // Usar el centro de la reserva
+      if (booking.center_id) {
+        await loadCenterData(booking.center_id);
+      }
 
       const c = booking.centers;
       const isZurbaran = (c?.name || '').toLowerCase().includes('zurbar');
@@ -55,17 +68,24 @@ export default function PaymentSetupSuccess() {
         setCenterData((prev) => ({ ...prev, name: c?.name || prev.name, address }));
       }
     } catch (e) {
-      // ignore
+      // Si hay error, cargar centro por defecto
+      loadCenterData();
     }
   };
 
-  const loadCenterData = async () => {
+  const loadCenterData = async (centerId?: string) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('centers')
         .select('name, address, phone, email')
-        .eq('active', true)
-        .maybeSingle();
+        .eq('active', true);
+
+      // Si hay un center_id específico, usarlo; si no, usar el primero
+      if (centerId) {
+        query = query.eq('id', centerId);
+      }
+
+      const { data, error } = await query.limit(1).maybeSingle();
 
       if (error) {
         console.error('Error loading center data:', error);

@@ -631,6 +631,7 @@ const ClientReservation = () => {
       console.log('Booking successfully created:', newBooking);
 
       // Redirigir INMEDIATAMENTE para asegurar la reserva con Stripe
+      // El correo se enviará después de confirmar el método de pago
       console.log('🔀 Redirigiendo a asegurar reserva:', newBooking.id);
       window.location.href = `/asegurar-reserva?booking_id=${newBooking.id}`;
       return;

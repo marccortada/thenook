@@ -156,6 +156,51 @@ async function sendBookingConfirmationEmail(args: {
       : "Date to be confirmed";
 
   const serviceDisplay = serviceName || (isSpanish ? "Tratamiento" : "Treatment");
+  // Persist payment method/customer to allow futuros cobros/off-session
+  const paymentMethodId =
+    (paymentIntent?.payment_method as string | undefined) ||
+    (charge?.payment_method as string | undefined) ||
+    (typeof session?.payment_intent !== "string"
+      ? (session?.payment_intent as Stripe.PaymentIntent | undefined)?.payment_method as string | undefined
+      : undefined) ||
+    (session?.payment_method as string | undefined);
+
+  const stripeCustomerId =
+    (paymentIntent?.customer as string | undefined) ||
+    (session?.customer as string | undefined) ||
+    booking.stripe_customer_id ||
+    null;
+
+  try {
+    if (paymentMethodId || stripeCustomerId) {
+      await supabaseAdmin
+        .from("bookings")
+        .update({
+          stripe_payment_method_id: paymentMethodId || booking.stripe_payment_method_id,
+          stripe_customer_id: stripeCustomerId || booking.stripe_customer_id,
+          payment_status: "paid",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", bookingId);
+
+      await supabaseAdmin
+        .from("booking_payment_intents")
+        .upsert(
+          {
+            booking_id: bookingId,
+            stripe_payment_method_id: paymentMethodId || booking.stripe_payment_method_id,
+            stripe_setup_intent_id: session?.setup_intent && typeof session.setup_intent === "string"
+              ? session.setup_intent
+              : undefined,
+            status: "paid",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "booking_id" }
+        );
+    }
+  } catch (pmErr) {
+    console.warn("[stripe-webhook] Failed to persist payment method/customer:", pmErr);
+  }
 
   const center = booking.centers;
   const centerName = center?.name || "";
@@ -172,27 +217,25 @@ async function sendBookingConfirmationEmail(args: {
     : "C/ Príncipe de Vergara 204 back building (At the back of #204 - walking around the restaurant 'La Ancha') Subway: Concha Espina exit Plaza de Cataluña";
 
   const subject = isSpanish
-    ? "Reserva asegurada en THE NOOK"
+    ? "Reserva confirmada en THE NOOK"
     : "Booking confirmed at THE NOOK";
 
   const cancellationLink = "https://www.thenookmadrid.com/politica-de-cancelaciones/";
   const year = new Date().getFullYear();
 
   const spanishBody = `
-  <p>Hola <strong>${clientName}</strong>!</p>
-  <p>Has reservado correctamente tu tratamiento en ${centerHeading}.</p>
-  <p>Estos son los detalles de la reserva:</p>
-  <ul style="list-style:none; padding:0; margin:0 0 16px 0;">
-    <li><strong>Tratamiento:</strong> ${serviceDisplay}</li>
-    <li><strong>Fecha:</strong> ${formattedDate}</li>
-  </ul>
+  <p>Hola ${clientName}!</p>
+  <p>Has reservado correctamente tu tratamiento en <strong>${centerHeading}</strong>.</p>
+  <p><strong>Estos son los detalles de la reserva:</strong></p>
+  <p><strong>Tratamiento:</strong> ${serviceDisplay}<br/>
+     <strong>Fecha:</strong> ${formattedDate}</p>
   <p><strong>Dirección:</strong><br>${addressLineEs}</p>
-  <p>Estamos aquí 👉 <a href="${mapLink}" style="color:#1A6AFF;">Ver mapa</a></p>
+  <p>Estamos aquí 👉 <a href="${mapLink}" target="_blank" style="color:#fff !important; text-decoration:none; background:#424CB8; padding:10px 16px; border-radius:8px; font-weight:700; display:inline-block;">Ver ubicación en el mapa</a></p>
   <p>Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de reserva y nuestra Política de Cancelación.</p>
   <p>Es aconsejable llegar al centro cinco minutos antes de la cita. Rogamos máxima puntualidad, al haber otras citas después de la vuestra, si llegáis tarde, quizás no podamos realizar el tratamiento completo.</p>
   <p>En caso de estar embarazada, por favor háznoslo saber con antelación a la cita.</p>
   <p>En este email tienes la dirección del centro reservado, la hora de la cita y el tratamiento elegido. Revisa bien esta información, The Nook no se hace responsable si acudes al centro equivocado o a una hora distinta.</p>
-  <p>Te recomendamos leer nuestras condiciones de reserva, compra y cancelación la Política de Cancelación completa aquí:<br><a href="${cancellationLink}" style="color:#1A6AFF;">${cancellationLink}</a></p>
+  <p>Te recomendamos leer nuestras condiciones de reserva, compra y cancelación en la Política de Cancelación completa aquí:<br><a href="${cancellationLink}" style="color:#1A6AFF;">${cancellationLink}</a></p>
   <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
   <p><strong>${centerHeading}</strong><br>
   911 481 474 / 622 360 922<br>
@@ -200,18 +243,17 @@ async function sendBookingConfirmationEmail(args: {
 `;
 
   const englishBody = `
-  <p>Hi <strong>${clientName}</strong>!</p>
-  <p>Your appointment at ${centerHeading} has been successfully booked.</p>
-  <p>Here are the details of your booking:</p>
-  <ul style="list-style:none; padding:0; margin:0 0 16px 0;">
-    <li><strong>Treatment:</strong> ${serviceDisplay}</li>
-    <li><strong>Date:</strong> ${formattedDate}</li>
-  </ul>
+  <p>Hi ${clientName}!</p>
+  <p>Your appointment at <strong>${centerHeading}</strong> has been confirmed.</p>
+  <p><strong>Booking details:</strong></p>
+  <p><strong>Treatment:</strong> ${serviceDisplay}<br/>
+     <strong>Date:</strong> ${formattedDate}</p>
   <p><strong>Address:</strong><br>${addressLineEn}</p>
-  <p>We’re here 👉 <a href="${mapLink}" style="color:#1A6AFF;">View map</a></p>
-  <p>This email confirms your reservation. By completing this booking, you accept our booking terms and our Cancellation Policy.</p>  <p>Please arrive at the center five minutes before your appointment. Punctuality is important — as there are other clients after you, if you arrive late, we might not be able to perform the full treatment.</p>
+  <p>We’re here 👉 <a href="${mapLink}" target="_blank" style="color:#fff !important; text-decoration:none; background:#424CB8; padding:10px 16px; border-radius:8px; font-weight:700; display:inline-block;">View map</a></p>
+  <p>This email confirms your reservation. By completing this booking, you accept our booking terms and our Cancellation Policy.</p>
+  <p>Please arrive five minutes early. If you arrive late, we might not be able to perform the full treatment due to later bookings.</p>
   <p>If you are pregnant, please let us know in advance.</p>
-  <p>This email includes the center’s address, the time of your appointment, and the selected treatment. Please double-check all details — The Nook cannot be held responsible if you go to the wrong location or at a different time.</p>
+  <p>This email includes the center’s address, time, and treatment. Please double-check all details; The Nook is not responsible if you go to the wrong location or at a different time.</p>
   <p>We recommend reading our full booking, purchase, and cancellation terms here:<br><a href="${cancellationLink}" style="color:#1A6AFF;">${cancellationLink}</a></p>
   <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
   <p><strong>${centerHeading}</strong><br>
@@ -236,7 +278,7 @@ async function sendBookingConfirmationEmail(args: {
         <tr>
           <td style="background:linear-gradient(135deg,#424CB8,#1A6AFF); color:#fff; text-align:center; padding:24px; border-radius:12px 12px 0 0;">
             <h1 style="margin:0; font-size:22px;">
-              ${isSpanish ? "Reserva asegurada en THE NOOK" : "Booking confirmed at THE NOOK"}
+              ${isSpanish ? "Reserva confirmada en THE NOOK" : "Booking confirmed at THE NOOK"}
             </h1>
           </td>
         </tr>
@@ -256,8 +298,8 @@ async function sendBookingConfirmationEmail(args: {
 </html>
 `;
 
-  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
-  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@gnerai.com>";
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
 
   const deliveryToken = session?.id ?? paymentIntent?.id ?? null;
   const alreadyProcessed = !isManualCapture &&
@@ -289,6 +331,8 @@ async function sendBookingConfirmationEmail(args: {
     email_status: "sent",
     email_sent_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    stripe_payment_method_id: paymentMethodId || booking.stripe_payment_method_id,
+    stripe_customer_id: stripeCustomerId || booking.stripe_customer_id,
   };
 
   if (deliveryToken) {
@@ -482,8 +526,8 @@ async function processPackageVoucher(args: {
   }
 
   const year = new Date().getFullYear();
-  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
-  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@gnerai.com>";
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
 
   for (const voucher of createdVouchers) {
     const pkg = voucher.package;
@@ -545,7 +589,7 @@ async function processPackageVoucher(args: {
 
             <p>Podrás usar tu bono en nuestro centro de <strong>${location}</strong>:</p>
             <p><strong>Dirección:</strong><br>${address}</p>
-            <p>Estamos aquí 👉 <a href="${mapLink}" target="_blank" style="color:#1A6AFF;">Ver mapa</a></p>
+            <p>Estamos aquí 👉 <a href="${mapLink}" target="_blank" style="color:#1A6AFF;">${mapLink}</a></p>
 
             <p>Este email es una confirmación de tu compra. Al adquirir este bono, aceptas nuestras condiciones de uso y nuestra Política de Cancelación.</p>
 
@@ -861,8 +905,8 @@ async function processGiftCards(args: {
 
   console.log(`[stripe-webhook] 📧 Preparing ${createdGiftCards.length} gift card emails...`);
   const year = new Date().getFullYear();
-  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@gnerai.com";
-  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@gnerai.com>";
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
 
   for (const card of createdGiftCards) {
     const amountFormatted = new Intl.NumberFormat("es-ES", {
@@ -1188,20 +1232,35 @@ serve(async (req) => {
 
       if (intent === "booking_payment") {
         const payload = session.metadata?.bp_payload;
-        if (!payload) {
-          console.warn("[stripe-webhook] Missing booking payload in metadata");
-        } else {
-          const { booking_id } = JSON.parse(payload) as { booking_id: string };
-          if (booking_id) {
-            await sendBookingConfirmationEmail({
-              bookingId: booking_id,
-              source: { type: "session", session },
-            });
-          } else {
-            console.warn("[stripe-webhook] booking_id not found in payload");
+        const bookingIdMeta = session.metadata?.booking_id as string | undefined;
+        let bookingId = bookingIdMeta;
+        if (!bookingId && payload) {
+          try {
+            bookingId = (JSON.parse(payload) as { booking_id?: string })?.booking_id;
+          } catch (e) {
+            console.warn("[stripe-webhook] Error parsing bp_payload:", e);
           }
         }
-      } else if (intent === "booking_setup") {
+
+        if (bookingId) {
+          await sendBookingConfirmationEmail({
+            bookingId,
+            source: { type: "session", session },
+          });
+        } else {
+          console.warn("[stripe-webhook] booking_id not found (intent booking_payment)");
+        }
+      }
+      // Fallback: si hay booking_id pero no intent, enviar confirmación igual
+      else if (session.metadata?.booking_id) {
+        const bookingId = session.metadata.booking_id as string;
+        console.log("[stripe-webhook] booking_id presente sin intent; enviando confirmación", bookingId);
+        await sendBookingConfirmationEmail({
+          bookingId,
+          source: { type: "session", session },
+        });
+      }
+      else if (intent === "booking_setup") {
         // Flow: setup mode to only save payment method (no immediate charge)
         // booking_id can come in metadata or inside the SetupIntent
         let bookingIdFromMeta = session.metadata?.booking_id as string | undefined;
@@ -1232,19 +1291,36 @@ serve(async (req) => {
               ? setupIntent.payment_method
               : (setupIntent?.payment_method as Stripe.PaymentMethod | undefined)?.id || null;
 
-          const setupStatus = setupIntent?.status || "succeeded";
-          const currentTimestamp = new Date().toISOString();
+          // Get setup intent ID first
           const setupIntentId =
             typeof session.setup_intent === "string"
               ? session.setup_intent
               : (session.setup_intent as Stripe.SetupIntent | undefined)?.id || null;
 
+          // Retrieve the full setup intent to get the latest status
+          let finalSetupIntent = setupIntent;
+          if (setupIntentId && typeof setupIntentId === "string") {
+            try {
+              finalSetupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+              console.log("[stripe-webhook] Retrieved setup intent status:", finalSetupIntent.status);
+            } catch (retrieveErr) {
+              console.warn("[stripe-webhook] Could not retrieve setup intent:", retrieveErr);
+            }
+          }
+
+          const setupStatus = finalSetupIntent?.status || "succeeded";
+          const finalPaymentMethodId =
+            typeof finalSetupIntent?.payment_method === "string"
+              ? finalSetupIntent.payment_method
+              : (finalSetupIntent?.payment_method as Stripe.PaymentMethod | undefined)?.id || paymentMethodId;
+          const currentTimestamp = new Date().toISOString();
+
           const updates: Record<string, unknown> = {
             payment_method_status: setupStatus,
             updated_at: currentTimestamp,
           };
-          if (paymentMethodId) {
-            updates["stripe_payment_method_id"] = paymentMethodId;
+          if (finalPaymentMethodId) {
+            updates["stripe_payment_method_id"] = finalPaymentMethodId;
           }
 
           try {
@@ -1264,7 +1340,7 @@ serve(async (req) => {
                   {
                     booking_id: bookingIdFromMeta,
                     stripe_setup_intent_id: setupIntentId,
-                    stripe_payment_method_id: paymentMethodId,
+                    stripe_payment_method_id: finalPaymentMethodId,
                     status: setupStatus,
                     updated_at: currentTimestamp,
                   },
@@ -1275,13 +1351,89 @@ serve(async (req) => {
             }
           }
 
-          if (setupStatus === "succeeded" && paymentMethodId) {
+          // Send email if setup is succeeded and we have a payment method
+          if (setupStatus === "succeeded" && finalPaymentMethodId) {
+            // Send confirmation email when payment method is confirmed
             try {
-              await supabaseAdmin.rpc("send_payment_setup_confirmation", {
-                p_booking_id: bookingIdFromMeta,
-              });
+              // Ensure notification exists in automated_notifications
+              const { data: bookingData } = await supabaseAdmin
+                .from("bookings")
+                .select(`
+                  id,
+                  client_id,
+                  booking_datetime,
+                  services(name),
+                  centers(name, address_zurbaran, address_concha_espina)
+                `)
+                .eq("id", bookingIdFromMeta)
+                .single();
+
+              if (bookingData?.client_id) {
+                // Check if notification already exists
+                const { data: existingNotification } = await supabaseAdmin
+                  .from("automated_notifications")
+                  .select("id")
+                  .eq("booking_id", bookingIdFromMeta)
+                  .eq("type", "appointment_confirmation")
+                  .maybeSingle();
+
+                // Create notification if it doesn't exist
+                if (!existingNotification) {
+                  const selectedService = bookingData.services?.name || "nuestro tratamiento";
+                  const formattedDate = bookingData.booking_datetime
+                    ? new Date(bookingData.booking_datetime).toLocaleString("es-ES", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "Por confirmar";
+
+                  await supabaseAdmin
+                    .from("automated_notifications")
+                    .insert({
+                      type: "appointment_confirmation",
+                      client_id: bookingData.client_id,
+                      booking_id: bookingIdFromMeta,
+                      scheduled_for: new Date().toISOString(),
+                      subject: "Reserva asegurada en THE NOOK",
+                      message: `Tu cita para ${selectedService} el ${formattedDate} ha quedado registrada. Recuerda revisar nuestra política de cancelación en https://www.thenookmadrid.com/politica-de-cancelaciones/.`,
+                      metadata: {
+                        channels: ["email"],
+                        booking_id: bookingIdFromMeta,
+                        source: "stripe_webhook_setup_confirmed",
+                      },
+                      status: "pending",
+                    });
+
+                  console.log("[stripe-webhook] Notification created for booking confirmation");
+                }
+
+                // Wait a moment for the notification to be created
+                await new Promise((resolve) => setTimeout(resolve, 500));
+
+                // Invoke send-booking-confirmation edge function
+                const { error: invokeError } = await supabaseAdmin.functions.invoke(
+                  "send-booking-confirmation",
+                  {
+                    body: { source: "stripe_webhook", booking_id: bookingIdFromMeta },
+                  },
+                );
+
+                if (invokeError) {
+                  console.error(
+                    "[stripe-webhook] ERROR invoking send-booking-confirmation",
+                    invokeError,
+                  );
+                } else {
+                  console.log(
+                    "[stripe-webhook] Booking confirmation email function invoked successfully",
+                  );
+                }
+              }
             } catch (emailErr) {
-              console.warn("[stripe-webhook] Failed to schedule setup confirmation email:", emailErr);
+              console.error("[stripe-webhook] Failed to send setup confirmation email:", emailErr);
             }
           }
         }
@@ -1312,6 +1464,130 @@ serve(async (req) => {
         }
       } else {
         console.log("[stripe-webhook] checkout.session.completed ignored for intent:", intent);
+      }
+    } else if (event.type === "setup_intent.succeeded") {
+      // Handle setup_intent.succeeded event specifically
+      const setupIntent = event.data.object as Stripe.SetupIntent;
+      const bookingId = (setupIntent.metadata as any)?.booking_id as string | undefined;
+
+      console.log("[stripe-webhook] setup_intent.succeeded", {
+        setupIntentId: setupIntent.id,
+        bookingId,
+        paymentMethod: setupIntent.payment_method,
+      });
+
+      if (!bookingId) {
+        console.warn("[stripe-webhook] setup_intent.succeeded without booking_id in metadata", setupIntent.id);
+      } else {
+        const paymentMethodId =
+          typeof setupIntent.payment_method === "string"
+            ? setupIntent.payment_method
+            : (setupIntent.payment_method as Stripe.PaymentMethod | undefined)?.id || null;
+
+        if (paymentMethodId) {
+          // Update booking with payment method
+          try {
+            await supabaseAdmin
+              .from("bookings")
+              .update({
+                stripe_payment_method_id: paymentMethodId,
+                payment_method_status: "succeeded",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", bookingId);
+
+            // Update payment intent record
+            await supabaseAdmin
+              .from("booking_payment_intents")
+              .update({
+                stripe_payment_method_id: paymentMethodId,
+                status: "succeeded",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("stripe_setup_intent_id", setupIntent.id);
+          } catch (updateErr) {
+            console.error("[stripe-webhook] Failed to update booking for setup_intent.succeeded:", updateErr);
+          }
+
+          // Send confirmation email
+          try {
+            // Ensure notification exists
+            const { data: bookingData } = await supabaseAdmin
+              .from("bookings")
+              .select(`
+                id,
+                client_id,
+                booking_datetime,
+                services(name),
+                centers(name, address_zurbaran, address_concha_espina)
+              `)
+              .eq("id", bookingId)
+              .single();
+
+            if (bookingData?.client_id) {
+              const { data: existingNotification } = await supabaseAdmin
+                .from("automated_notifications")
+                .select("id")
+                .eq("booking_id", bookingId)
+                .eq("type", "appointment_confirmation")
+                .maybeSingle();
+
+              if (!existingNotification) {
+                const selectedService = bookingData.services?.name || "nuestro tratamiento";
+                const formattedDate = bookingData.booking_datetime
+                  ? new Date(bookingData.booking_datetime).toLocaleString("es-ES", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "Por confirmar";
+
+                await supabaseAdmin
+                  .from("automated_notifications")
+                  .insert({
+                    type: "appointment_confirmation",
+                    client_id: bookingData.client_id,
+                    booking_id: bookingId,
+                    scheduled_for: new Date().toISOString(),
+                    subject: "Reserva asegurada en THE NOOK",
+                    message: `Tu cita para ${selectedService} el ${formattedDate} ha quedado registrada. Recuerda revisar nuestra política de cancelación en https://www.thenookmadrid.com/politica-de-cancelaciones/.`,
+                    metadata: {
+                      channels: ["email"],
+                      booking_id: bookingId,
+                      source: "stripe_webhook_setup_intent_succeeded",
+                    },
+                    status: "pending",
+                  });
+              }
+
+              // Wait a moment for the notification to be created
+              await new Promise((resolve) => setTimeout(resolve, 500));
+
+              // Invoke send-booking-confirmation
+              const { error: invokeError } = await supabaseAdmin.functions.invoke(
+                "send-booking-confirmation",
+                {
+                  body: { source: "stripe_webhook_setup_intent", booking_id: bookingId },
+                },
+              );
+
+              if (invokeError) {
+                console.error(
+                  "[stripe-webhook] ERROR invoking send-booking-confirmation from setup_intent.succeeded",
+                  invokeError,
+                );
+              } else {
+                console.log(
+                  "[stripe-webhook] Booking confirmation email function invoked successfully from setup_intent.succeeded",
+                );
+              }
+            }
+          } catch (emailErr) {
+            console.error("[stripe-webhook] Failed to send email from setup_intent.succeeded:", emailErr);
+          }
+        }
       }
     } else if (event.type === "payment_intent.succeeded") {
       const intent = event.data.object as Stripe.PaymentIntent;
