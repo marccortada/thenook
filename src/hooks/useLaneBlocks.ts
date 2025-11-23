@@ -119,6 +119,43 @@ export const useLaneBlocks = () => {
     }
   };
 
+  const updateLaneBlock = async (
+    blockId: string,
+    newCenterId: string,
+    newLaneId: string,
+    newStartDateTime: Date,
+    newEndDateTime: Date
+  ) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('lane_blocks')
+        .update({
+          center_id: newCenterId,
+          lane_id: newLaneId,
+          start_datetime: newStartDateTime.toISOString(),
+          end_datetime: newEndDateTime.toISOString()
+        })
+        .eq('id', blockId);
+
+      if (error) throw error;
+
+      toast({
+        title: '✅ Bloqueo movido',
+        description: 'El bloqueo se ha movido correctamente'
+      });
+
+      await fetchLaneBlocks();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error moviendo bloqueo';
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive'
+      });
+      throw err;
+    }
+  };
+
   const isLaneBlocked = (laneId: string, dateTime: Date): LaneBlock | null => {
     return laneBlocks.find(block => 
       block.lane_id === laneId &&
@@ -150,6 +187,7 @@ export const useLaneBlocks = () => {
     refetch: fetchLaneBlocks,
     createLaneBlock,
     deleteLaneBlock,
+    updateLaneBlock,
     isLaneBlocked,
     getBlocksForLaneAndDate
   };

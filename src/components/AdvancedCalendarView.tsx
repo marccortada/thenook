@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileCalendarView from '@/components/MobileCalendarView';
 import { Button } from '@/components/ui/button';
@@ -143,7 +143,7 @@ const normalizeLabel = (label?: string) =>
     .trim();
 
 const AdvancedCalendarView = () => {
-  console.log('🔍 AdvancedCalendarView RENDER - Location:', window.location.pathname);
+  // Removed console.log for performance
   const { toast } = useToast();
   const { isAdmin, isEmployee } = useSimpleAuth();
   const isMobile = useIsMobile();
@@ -164,6 +164,7 @@ const AdvancedCalendarView = () => {
   const [dragStart, setDragStart] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
   const [dragEnd, setDragEnd] = useState<{ centerId: string; laneId: string; timeSlot: Date } | null>(null);
   const [dragMode, setDragMode] = useState<'booking' | 'block'>('booking'); // Modo de arrastre
+  const isDraggingRef = useRef(false); // Para detectar si hubo arrastre y evitar onClick
 
   const [createClientId, setCreateClientId] = useState<string | null>(null);
 
@@ -211,17 +212,13 @@ const AdvancedCalendarView = () => {
 
   const { bookings, loading: bookingsLoading, refetch: refetchBookings } = useBookings();
   
-  // Debug bookings
-  useEffect(() => {
-    console.log('AdvancedCalendarView - Bookings loaded:', bookings.length, bookings);
-    console.log('AdvancedCalendarView - Selected center:', selectedCenter);
-  }, [bookings, selectedCenter]);
+  // Removed debug console.logs for performance
   const { centers } = useCenters();
-  const { lanes } = useLanes();
+  const { lanes, refetch: refetchLanes } = useLanes();
   const { services } = useServices();
   const { updateClient } = useClients();
-  const { laneBlocks, createLaneBlock, deleteLaneBlock, isLaneBlocked } = useLaneBlocks();
-  const { treatmentGroups } = useTreatmentGroups();
+  const { laneBlocks, createLaneBlock, deleteLaneBlock, updateLaneBlock, isLaneBlocked } = useLaneBlocks();
+  const { treatmentGroups, updateTreatmentGroup, fetchTreatmentGroups } = useTreatmentGroups();
   const { codes, assignments, getAssignmentsByEntity } = useInternalCodes();
 
   const friendlyCenterNames = React.useMemo(() => {
@@ -319,10 +316,83 @@ const AdvancedCalendarView = () => {
 
   const toggleLaneAllowedGroup = async (laneId: string, groupId: string, checked: boolean) => {
     const lane = lanes.find(l => l.id === laneId);
-    if (!lane) return;
-    const current: string[] = ((lane as any).allowed_group_ids || []) as string[];
-    const updated = checked ? Array.from(new Set([...current, groupId])) : current.filter(id => id !== groupId);
-    await (supabase as any).from('lanes').update({ allowed_group_ids: updated }).eq('id', laneId);
+    if (!lane) {
+      console.error('Lane not found:', laneId);
+      return;
+    }
+
+    try {
+      // 1. Actualizar allowed_group_ids del carril
+      const currentLaneGroups: string[] = ((lane as any).allowed_group_ids || []) as string[];
+      const updatedLaneGroups = checked 
+        ? Array.from(new Set([...currentLaneGroups, groupId])) 
+        : currentLaneGroups.filter(id => id !== groupId);
+      
+      console.log('Updating lane allowed_group_ids:', { laneId, updatedLaneGroups });
+      // Asegurarse de que el array esté en el formato correcto para PostgreSQL UUID[]
+      // Si está vacío, usar array vacío explícito, si no, enviar el array de UUIDs
+      const updatePayload: any = {
+        allowed_group_ids: updatedLaneGroups.length > 0 ? updatedLaneGroups : []
+      };
+      
+      const { error: laneError } = await (supabase as any)
+        .from('lanes')
+        .update(updatePayload)
+        .eq('id', laneId);
+      
+      if (laneError) {
+        console.error('Error updating lane:', laneError);
+        console.error('Lane update data:', { laneId, updatedLaneGroups });
+        // Mostrar el error completo al usuario
+        toast({
+          title: 'Error al actualizar carril',
+          description: laneError.message || 'No se pudo actualizar la configuración del carril. Verifica los permisos.',
+          variant: 'destructive'
+        });
+        throw laneError;
+      }
+
+      // 2. Actualizar lane_ids del grupo de tratamiento (sincronización bidireccional)
+      const group = treatmentGroups.find((g: any) => g.id === groupId);
+      if (group && updateTreatmentGroup) {
+        const currentGroupLanes: string[] = (group.lane_ids || []) as string[];
+        const updatedGroupLanes = checked
+          ? Array.from(new Set([...currentGroupLanes, laneId]))
+          : currentGroupLanes.filter(id => id !== laneId);
+        
+        console.log('Updating group lane_ids:', { groupId, updatedGroupLanes });
+        await updateTreatmentGroup(groupId, {
+          lane_ids: updatedGroupLanes,
+          name: group.name,
+          color: group.color,
+          center_id: group.center_id
+        });
+      } else {
+        console.warn('Group not found or updateTreatmentGroup not available:', { groupId, group, updateTreatmentGroup });
+      }
+
+      // 3. Refrescar datos
+      if (refetchLanes) {
+        await refetchLanes();
+      }
+      if (fetchTreatmentGroups) {
+        await fetchTreatmentGroups();
+      }
+
+      toast({
+        title: '✅ Actualizado',
+        description: checked 
+          ? 'Grupo asignado al carril correctamente' 
+          : 'Grupo desasignado del carril',
+      });
+    } catch (error) {
+      console.error('Error actualizando grupos permitidos del carril:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar la configuración',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Function to get lane color for a specific service (based on its treatment group)
@@ -371,6 +441,87 @@ const AdvancedCalendarView = () => {
       console.log('🏢 Setting initial center:', firstCenter, centers[0].name);
     }
   }, [centers, selectedCenter]);
+
+  // Sincronizar automáticamente allowed_group_ids de carriles con lane_ids de grupos
+  useEffect(() => {
+    if (!treatmentGroups.length || !lanes.length) return;
+
+    const syncLaneGroups = async () => {
+      const PREDEFINED_GROUP_NAMES = [
+        'Masaje Individual',
+        'Masaje para Dos',
+        'Masaje a Cuatro Manos',
+        'Rituales',
+        'Rituales para Dos'
+      ];
+
+      // Filtrar solo grupos predefinidos válidos
+      const validGroups = treatmentGroups.filter((g: any) => 
+        PREDEFINED_GROUP_NAMES.includes(g.name)
+      );
+
+      // Crear un mapa de qué grupos deberían estar en cada carril
+      const laneGroupMap: Record<string, Set<string>> = {};
+      
+      // Inicializar el mapa para todos los carriles
+      lanes.forEach(lane => {
+        laneGroupMap[lane.id] = new Set();
+      });
+
+      // Para cada grupo, agregar su ID a los carriles asignados
+      for (const group of validGroups) {
+        const groupId = group.id;
+        const assignedLaneIds = (group.lane_ids || []) as string[];
+
+        // Si el grupo tiene carriles asignados, agregar el grupo a esos carriles
+        if (assignedLaneIds.length > 0) {
+          for (const laneId of assignedLaneIds) {
+            if (laneGroupMap[laneId]) {
+              laneGroupMap[laneId].add(groupId);
+            }
+          }
+        }
+      }
+
+      // Actualizar cada carril con los grupos que debería tener
+      for (const lane of lanes) {
+        const expectedGroups = Array.from(laneGroupMap[lane.id] || []);
+        const currentAllowedGroups: string[] = ((lane as any).allowed_group_ids || []) as string[];
+        
+        // Solo actualizar si hay diferencias
+        const currentSet = new Set(currentAllowedGroups);
+        const expectedSet = new Set(expectedGroups);
+        
+        const needsUpdate = 
+          expectedGroups.length !== currentAllowedGroups.length ||
+          expectedGroups.some(id => !currentSet.has(id)) ||
+          currentAllowedGroups.some(id => !expectedSet.has(id) && validGroups.some(g => g.id === id));
+
+        if (needsUpdate) {
+          try {
+            // Mantener solo los grupos válidos predefinidos que están asignados
+            const finalGroups = expectedGroups.length > 0 
+              ? expectedGroups 
+              : []; // Si no hay grupos asignados, dejar vacío (acepta todos)
+            
+            await (supabase as any)
+              .from('lanes')
+              .update({ allowed_group_ids: finalGroups })
+              .eq('id', lane.id);
+            
+            console.log(`✅ Sincronizado: Carril ${lane.name} ahora permite grupos:`, finalGroups.map((id: string) => {
+              const g = validGroups.find((gr: any) => gr.id === id);
+              return g?.name || id;
+            }).join(', ') || 'Todos (ninguno marcado)');
+          } catch (error) {
+            console.error(`Error sincronizando carril ${lane.name}:`, error);
+          }
+        }
+      }
+    };
+
+    syncLaneGroups();
+  }, [treatmentGroups, lanes]);
 
   // Reset drag state when dragging stops globally
   useEffect(() => {
@@ -476,8 +627,6 @@ const AdvancedCalendarView = () => {
 
   // Get booking for specific slot - now with filtering
   const getBookingForSlot = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
-    console.log('Looking for booking:', { centerId, laneId, date: date.toISOString(), timeSlot: timeSlot.toISOString() });
-    console.log('Available bookings:', bookings.length);
     
     const booking = bookings.find(booking => {
       if (!booking.booking_datetime || booking.center_id !== centerId) {
@@ -531,7 +680,7 @@ const AdvancedCalendarView = () => {
       return currentLaneIndex === expectedLaneIndex;
     });
 
-    console.log('Found booking:', booking ? booking.id : 'none');
+    // Removed debug log for performance
 
     // Always show all bookings
     return booking;
@@ -584,7 +733,9 @@ const AdvancedCalendarView = () => {
         return;
       }
 
+      // Iniciar arrastre para bloqueo
       setIsDragging(true);
+      isDraggingRef.current = false; // Resetear, se establecerá a true si hay movimiento
       setDragStart({ centerId, laneId, timeSlot });
       setDragEnd({ centerId, laneId, timeSlot });
       setDragMode('block');
@@ -599,6 +750,7 @@ const AdvancedCalendarView = () => {
 
     // Iniciar drag selection para reservas
     setIsDragging(true);
+    isDraggingRef.current = false; // Resetear, se establecerá a true si hay movimiento
     setDragStart({ centerId, laneId, timeSlot });
     setDragEnd({ centerId, laneId, timeSlot });
     setDragMode('booking');
@@ -608,6 +760,10 @@ const AdvancedCalendarView = () => {
   const handleSlotMouseEnter = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
     if (moveMode) return;
     if (isDragging && dragStart && dragStart.laneId === laneId) {
+      // Si el mouse se mueve a otra celda, es un arrastre
+      if (dragStart.timeSlot.getTime() !== timeSlot.getTime()) {
+        isDraggingRef.current = true;
+      }
       setDragEnd({ centerId, laneId, timeSlot });
     }
   };
@@ -617,10 +773,11 @@ const AdvancedCalendarView = () => {
     if (moveMode) return;
     if (!isDragging || !dragStart) return;
     
+    const hadDragMovement = isDraggingRef.current;
     setIsDragging(false);
     
-    // Si solo se hizo click sin arrastrar
-    if (dragStart.timeSlot.getTime() === timeSlot.getTime()) {
+    // Si solo se hizo click sin arrastrar (mismo slot y sin movimiento)
+    if (dragStart.timeSlot.getTime() === timeSlot.getTime() && !hadDragMovement) {
       if (dragMode === 'block') {
         // Click directo en modo bloqueo: crear bloqueo de 30 minutos automáticamente
         const blockEndTime = new Date(timeSlot);
@@ -632,14 +789,16 @@ const AdvancedCalendarView = () => {
           setBlockingMode(false);
         }
       } else {
-        handleSlotClick(centerId, laneId, date, timeSlot);
+        // Permitir que onClick maneje el clic simple para reservas
+        // No llamamos handleSlotClick aquí para evitar doble ejecución
       }
       setDragStart(null);
       setDragEnd(null);
+      isDraggingRef.current = false;
       return;
     }
 
-    // Determinar rango de tiempo
+    // Hubo arrastre - determinar rango de tiempo
     const startTime = dragStart.timeSlot < timeSlot ? dragStart.timeSlot : timeSlot;
     const endTime = dragStart.timeSlot < timeSlot ? timeSlot : dragStart.timeSlot;
     
@@ -681,6 +840,7 @@ const AdvancedCalendarView = () => {
     setDragStart(null);
     setDragEnd(null);
     setDragMode('booking');
+    isDraggingRef.current = false;
   };
 
   // Handle slot click
@@ -1040,6 +1200,41 @@ const AdvancedCalendarView = () => {
     } catch (error) {
       console.error('Error moving booking:', error);
       toast({ title: 'Error', description: 'No se pudo mover la reserva.', variant: 'destructive' });
+    }
+  };
+
+  // Move block to new slot
+  const moveBlock = async (blockId: string, newCenterId: string, newLaneId: string, newDate: Date, newTime: Date) => {
+    try {
+      const block = laneBlocks.find(b => b.id === blockId);
+      if (!block) {
+        toast({ title: 'Error', description: 'Bloqueo no encontrado.', variant: 'destructive' });
+        return;
+      }
+
+      // Calculate the duration of the original block
+      const originalStart = parseISO(block.start_datetime);
+      const originalEnd = parseISO(block.end_datetime);
+      const durationMs = originalEnd.getTime() - originalStart.getTime();
+
+      // Create the new start datetime
+      const newStartDateTime = new Date(newDate);
+      newStartDateTime.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
+
+      // Calculate the new end datetime maintaining the same duration
+      const newEndDateTime = new Date(newStartDateTime.getTime() + durationMs);
+
+      console.log('📍 Moving block:', {
+        blockId,
+        from: { start: block.start_datetime, end: block.end_datetime },
+        to: { start: newStartDateTime.toISOString(), end: newEndDateTime.toISOString() },
+        lane: newLaneId
+      });
+
+      await updateLaneBlock(blockId, newCenterId, newLaneId, newStartDateTime, newEndDateTime);
+    } catch (error) {
+      console.error('Error moving block:', error);
+      toast({ title: 'Error', description: 'No se pudo mover el bloqueo.', variant: 'destructive' });
     }
   };
 
@@ -1443,51 +1638,72 @@ const AdvancedCalendarView = () => {
                   Hora
                 </div>
               </div>
-              {centerLanes.slice(0, 4).map((lane, laneIdx) => (
+              {centerLanes.slice(0, 4).map((lane, laneIdx) => {
+                // Calcular el color del grupo asignado al carril (solo desde lane_ids de grupos)
+                const PREDEFINED_GROUP_NAMES = [
+                  'Masaje Individual',
+                  'Masaje para Dos',
+                  'Masaje a Cuatro Manos',
+                  'Rituales',
+                  'Rituales para Dos'
+                ];
+                const validGroups = (treatmentGroups || []).filter((g: any) => 
+                  PREDEFINED_GROUP_NAMES.includes(g.name)
+                );
+                // Solo grupos que tienen este carril en su lane_ids (desde "Grupos de Tratamientos")
+                const groupsWithThisLane = validGroups.filter((g: any) => 
+                  (g.lane_ids || []).includes(lane.id)
+                );
+                const primaryGroup = groupsWithThisLane.length > 0 
+                  ? groupsWithThisLane[0]
+                  : null;
+                const laneColor = primaryGroup?.color || '#6b7280';
+                
+                return (
                 <div key={lane.id} className="sticky top-0 z-10 bg-background border-b">
                   <div 
                     className="p-2 text-center font-medium border-r"
-                    style={{ backgroundColor: `#f1f5f920`, borderLeft: `4px solid #6b7280` }}
+                    style={{ backgroundColor: `${laneColor}15`, borderLeft: `4px solid ${laneColor}` }}
                   >
                     <div className="flex items-center justify-center gap-2">
                       <div className="font-semibold text-sm">{(lane.name || '').replace(/ra[ií]l/gi, 'Carril')}</div>
                       <LaneIcons index={laneIdx} />
-                      {/* Configurar grupos permitidos */}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-6 px-2 text-[10px]">Grupos</Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-56">
-                          <div className="space-y-2">
-                            <div className="text-xs font-semibold">Grupos reservables</div>
-                            {treatmentGroups.map((g: any) => {
-                              const list: string[] = ((lane as any).allowed_group_ids || []) as string[];
-                              const checked = list.includes(g.id);
-                              return (
-                                <label key={g.id} className="flex items-center gap-2 text-sm">
-                                  <Checkbox checked={checked} onCheckedChange={(v) => toggleLaneAllowedGroup(lane.id, g.id, !!v)} />
-                                  <span>{g.name}</span>
-                                </label>
-                              );
-                            })}
-                            <div className="text-[11px] text-muted-foreground">Si no marcas ninguno, el carril acepta todos los grupos.</div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
                     </div>
                     <div className="text-xs text-muted-foreground">Cap: {lane.capacity}</div>
-                    {/* Mostrar grupos permitidos si existen; si no, no mostrar texto */}
+                    {/* Mostrar grupos asignados desde "Grupos de Tratamientos" (solo lane_ids) */}
                     <div className="mt-1 flex flex-wrap justify-center gap-1">
-                      {(((lane as any).allowed_group_ids || []) as string[]).length > 0 ? (
-                        (((lane as any).allowed_group_ids || []) as string[]).map(id => {
-                          const g = treatmentGroups.find((tg: any) => tg.id === id);
-                          return g ? <Badge key={id} className="text-[10px]" variant="secondary">{g.name}</Badge> : null;
-                        })
-                      ) : null}
+                      {(() => {
+                        const PREDEFINED_GROUP_NAMES = [
+                          'Masaje Individual',
+                          'Masaje para Dos',
+                          'Masaje a Cuatro Manos',
+                          'Rituales',
+                          'Rituales para Dos'
+                        ];
+                        
+                        const validGroups = (treatmentGroups || []).filter((g: any) => 
+                          PREDEFINED_GROUP_NAMES.includes(g.name)
+                        );
+                        
+                        // Solo mostrar grupos que tienen este carril en su lane_ids (desde "Grupos de Tratamientos")
+                        const groupsWithThisLane = validGroups.filter((g: any) => 
+                          (g.lane_ids || []).includes(lane.id)
+                        );
+                        
+                        // Mostrar badges solo si hay grupos asignados
+                        if (groupsWithThisLane.length === 0) {
+                          return null;
+                        }
+                        
+                        return groupsWithThisLane.map((g: any) => (
+                          <Badge key={g.id} className="text-[10px]" variant="secondary">{g.name}</Badge>
+                        ));
+                      })()}
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
 
               {/* Time slots */}
               {timeSlots.map((timeSlot, timeIndex) => (
@@ -1556,6 +1772,15 @@ const AdvancedCalendarView = () => {
                               // Si está dentro de un bloqueo pero no es el inicio, no hacer nada
                               if (isInBlockButNotStart) return;
                               
+                              // Don't handle click if it was a drag operation
+                              if ((e.target as HTMLElement).closest('[draggable="true"]')) return;
+                              
+                              // No ejecutar onClick si hubo un arrastre
+                              if (isDraggingRef.current) {
+                                isDraggingRef.current = false; // Resetear para el próximo clic
+                                return;
+                              }
+                              
                               // Solo bloquear si está bloqueada en el inicio o está llena
                               if (!booking && (isBlockStart || isFull)) return;
                               
@@ -1573,6 +1798,8 @@ const AdvancedCalendarView = () => {
                             }}
                             onMouseDown={(e) => {
                               if (cannotInteract) return;
+                              // Don't interfere with drag operations
+                              if ((e.target as HTMLElement).closest('[draggable="true"]')) return;
                               e.stopPropagation();
                               handleSlotMouseDown(selectedCenter, lane.id, selectedDate, slotTime, e);
                             }}
@@ -1590,9 +1817,33 @@ const AdvancedCalendarView = () => {
                               e.dataTransfer.dropEffect = 'move';
                             }}
                             onDrop={(e) => {
-                              if (!moveMode) return;
                               e.preventDefault();
                               if (isBlocked || isFull) return;
+                              
+                              // Check if it's a block being dragged
+                              const blockData = e.dataTransfer.getData('block');
+                              if (blockData) {
+                                const draggedBlock = JSON.parse(blockData);
+                                const laneCenterId = lane.center_id || draggedBlock.center_id || selectedCenter;
+                                const dropDate = new Date(selectedDate);
+                                dropDate.setHours(slotTime.getHours(), slotTime.getMinutes(), 0, 0);
+                                console.log('🖱️ Block drop detected (day view):', {
+                                  blockId: draggedBlock.id,
+                                  targetLane: lane.id,
+                                  targetCenter: laneCenterId,
+                                  dropDate: dropDate.toISOString()
+                                });
+                                moveBlock(
+                                  draggedBlock.id,
+                                  laneCenterId,
+                                  lane.id,
+                                  dropDate,
+                                  slotTime
+                                );
+                                return;
+                              }
+                              
+                              // Check if it's a booking being dragged
                               const bookingData = e.dataTransfer.getData('booking');
                               if (bookingData) {
                                 const draggedBooking = JSON.parse(bookingData);
@@ -1619,7 +1870,7 @@ const AdvancedCalendarView = () => {
                              <div
                                 className={cn(
                                   "absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md",
-                                  moveMode ? "cursor-move" : "cursor-pointer"
+                                  "cursor-move"
                                 )}
                                  style={{ 
                                    backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
@@ -1628,9 +1879,9 @@ const AdvancedCalendarView = () => {
                                    height: `${((booking.duration_minutes || 60) / 5) * 24}px`,
                                    zIndex: 2
                                  }}
-                                draggable={moveMode}
+                                draggable={true}
                                 onDragStart={(e) => {
-                                  if (!moveMode) return;
+                                  e.stopPropagation(); // Prevent parent handlers from interfering
                                   // Store both booking data and the original time slot for reference
                                   const dragData = {
                                     ...booking,
@@ -1641,6 +1892,12 @@ const AdvancedCalendarView = () => {
                                   e.dataTransfer.effectAllowed = 'move';
                                   // Set drag image to be the booking card itself for better visual feedback
                                   e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 10, 10);
+                                }}
+                                onClick={(e) => {
+                                  // Only open edit modal if it wasn't a drag
+                                  if (e.defaultPrevented) return;
+                                  e.stopPropagation();
+                                  handleSlotClick(selectedCenter, lane.id, selectedDate, slotTime);
                                 }}
                              >
                                <div className="flex items-start">
@@ -1671,12 +1928,37 @@ const AdvancedCalendarView = () => {
                         )}
                           {block && isBlockStart && !booking && blockStart && blockEnd && (
                             <div
-                              className="absolute left-0 right-0 top-0 z-10 overflow-hidden border border-red-500 bg-red-100/90 text-red-700 shadow-sm cursor-not-allowed group"
+                              className="absolute left-0 right-0 top-0 z-10 overflow-hidden border border-red-500 bg-red-100/90 text-red-700 shadow-sm cursor-move group"
                               style={{ height: `${blockSpanSlots * SLOT_PIXEL_HEIGHT}px` }}
                               title={blockReason ? `Bloqueado: ${blockReason}` : 'Bloqueado'}
-                              onMouseDown={(e) => e.stopPropagation()}
+                              draggable={true}
+                              onDragStart={(e) => {
+                                e.stopPropagation(); // Prevent parent handlers from interfering
+                                const dragData = {
+                                  id: block.id,
+                                  lane_id: block.lane_id,
+                                  center_id: block.center_id,
+                                  start_datetime: block.start_datetime,
+                                  end_datetime: block.end_datetime,
+                                  originalTimeSlot: timeSlot.time.toISOString()
+                                };
+                                e.dataTransfer.setData('block', JSON.stringify(dragData));
+                                e.dataTransfer.setData('text/plain', block.id);
+                                e.dataTransfer.effectAllowed = 'move';
+                                e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 10, 10);
+                              }}
+                              onMouseDown={(e) => {
+                                // Only stop propagation if not starting a drag
+                                if (!(e.target as HTMLElement).closest('button')) {
+                                  e.stopPropagation();
+                                }
+                              }}
                               onMouseUp={(e) => e.stopPropagation()}
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                // Don't handle click if it was a drag
+                                if (e.defaultPrevented) return;
+                                e.stopPropagation();
+                              }}
                             >
                               <div className="flex h-full items-start justify-between px-2 py-1 gap-2">
                                 <div className="flex flex-col gap-1 pr-1">
@@ -1862,6 +2144,8 @@ const AdvancedCalendarView = () => {
                            style={isFirstLaneOfDay && !isInBlockButNotStart ? { borderLeft: '3px solid #6b7280' } : undefined}
                            onMouseDown={(e) => {
                              if (cannotInteract) return;
+                             // Don't interfere with drag operations on draggable elements
+                             if ((e.target as HTMLElement).closest('[draggable="true"]')) return;
                              e.stopPropagation();
                              handleSlotMouseDown(selectedCenter, lane.id, date, slotDateTime, e);
                            }}
@@ -1879,9 +2163,32 @@ const AdvancedCalendarView = () => {
                              e.dataTransfer.dropEffect = 'move';
                            }}
                            onDrop={(e) => {
-                             if (!moveMode) return;
                              e.preventDefault();
                              if (isBlocked || isFull) return;
+                             
+                             // Check if it's a block being dragged
+                             const blockData = e.dataTransfer.getData('block');
+                             if (blockData) {
+                               const draggedBlock = JSON.parse(blockData);
+                               const laneCenterId = lane.center_id || draggedBlock.center_id || selectedCenter;
+                               console.log('🖱️ Block drop detected (week view):', {
+                                 blockId: draggedBlock.id,
+                                 targetLane: lane.id,
+                                 targetCenter: laneCenterId,
+                                 date: date.toISOString(),
+                                 time: slotDateTime.toISOString()
+                               });
+                               moveBlock(
+                                 draggedBlock.id,
+                                 laneCenterId,
+                                 lane.id,
+                                 date,
+                                 slotDateTime
+                               );
+                               return;
+                             }
+                             
+                             // Check if it's a booking being dragged
                              const bookingData = e.dataTransfer.getData('booking');
                              if (bookingData) {
                                const droppedBooking = JSON.parse(bookingData);
@@ -1907,7 +2214,7 @@ const AdvancedCalendarView = () => {
                               <div
                                 className={cn(
                                   "absolute inset-0 rounded-sm text-[8px] p-0.5 border-l-2 truncate z-10",
-                                  moveMode ? "cursor-move" : "cursor-pointer"
+                                  "cursor-move"
                                 )}
                                  style={{ 
                                    backgroundColor: `${(getStatusHex(booking.status) || getServiceLaneColor(booking.service_id))}40`,
@@ -1916,12 +2223,18 @@ const AdvancedCalendarView = () => {
                                    height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
                                    minHeight: '24px'
                                  }}
-                               draggable={moveMode}
+                               draggable={true}
                                onDragStart={(e) => {
-                                 if (!moveMode) return;
+                                 e.stopPropagation(); // Prevent parent handlers from interfering
                                  e.dataTransfer.setData('booking', JSON.stringify(booking));
                                  e.dataTransfer.setData('text/plain', booking.id);
                                  e.dataTransfer.effectAllowed = 'move';
+                               }}
+                               onClick={(e) => {
+                                 // Only open edit modal if it wasn't a drag
+                                 if (e.defaultPrevented) return;
+                                 e.stopPropagation();
+                                 handleSlotClick(selectedCenter, lane.id, date, slotDateTime);
                                }}
                              >
                                <div className="flex justify-between items-start h-full">
@@ -1952,9 +2265,28 @@ const AdvancedCalendarView = () => {
                           
                           {block && isBlockStart && !booking && blockStart && blockEnd && (
                             <div
-                              className="absolute left-0 right-0 top-0 z-10 overflow-hidden border border-red-500 bg-red-100/90 text-red-700 shadow-sm cursor-not-allowed group"
+                              className={cn(
+                                "absolute left-0 right-0 top-0 z-10 overflow-hidden border border-red-500 bg-red-100/90 text-red-700 shadow-sm group",
+                                "cursor-move"
+                              )}
                               style={{ height: `${blockSpanSlots * SLOT_PIXEL_HEIGHT}px` }}
                               title={blockReason ? `Bloqueado: ${blockReason}` : 'Bloqueado'}
+                              draggable={true}
+                              onDragStart={(e) => {
+                                e.stopPropagation(); // Prevent parent handlers from interfering
+                                const dragData = {
+                                  id: block.id,
+                                  lane_id: block.lane_id,
+                                  center_id: block.center_id,
+                                  start_datetime: block.start_datetime,
+                                  end_datetime: block.end_datetime,
+                                  originalTimeSlot: slotDateTime.toISOString()
+                                };
+                                e.dataTransfer.setData('block', JSON.stringify(dragData));
+                                e.dataTransfer.setData('text/plain', block.id);
+                                e.dataTransfer.effectAllowed = 'move';
+                                e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 10, 10);
+                              }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onMouseUp={(e) => e.stopPropagation()}
                               onClick={(e) => e.stopPropagation()}
@@ -2682,17 +3014,6 @@ const AdvancedCalendarView = () => {
 
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button 
-                  size="sm" 
-                  variant="default"
-                  className="flex-1"
-                  onClick={startPaymentFlow}
-                  disabled={paymentLoading}
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  {paymentLoading ? 'Procesando...' : 'Cobrar'}
-                </Button>
-                
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button size="sm" variant="destructive" className="flex-1">

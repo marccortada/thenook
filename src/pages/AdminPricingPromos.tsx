@@ -27,6 +27,95 @@ import AppModal from "@/components/ui/app-modal";
 
 const currency = (euros?: number) => typeof euros === 'number' ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(euros) : "-";
 
+// Grupos permitidos para servicios (solo estos cinco)
+const PREDEFINED_GROUP_NAMES = [
+  'Masaje Individual',
+  'Masaje para Dos',
+  'Masaje a Cuatro Manos',
+  'Rituales',
+  'Rituales para Dos'
+];
+
+// Función para normalizar labels (igual que en AdvancedCalendarView)
+const normalizeLabel = (label?: string) =>
+  (label ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+// Función base para calcular el label de un centro (sin lógica de duplicados)
+const computeBaseCenterLabel = (center?: { name?: string | null; address?: string | null; address_zurbaran?: string | null; address_concha_espina?: string | null }): string => {
+  if (!center) return 'Sin centro asignado';
+  
+  const name = center.name?.toLowerCase() || '';
+  const address = center.address?.toLowerCase() || '';
+  const combined = `${name} ${address}`;
+
+  if (
+    combined.includes('zurbar') ||
+    combined.includes('28010') ||
+    center.address_zurbaran
+  ) {
+    return 'Zurbarán';
+  }
+
+  if (
+    combined.includes('concha') ||
+    combined.includes('espina') ||
+    combined.includes('principe de vergara') ||
+    combined.includes('príncipe de vergara') ||
+    combined.includes('vergara') ||
+    combined.includes('28002') ||
+    center.address_concha_espina
+  ) {
+    return 'Concha Espina';
+  }
+
+  return center.name?.split('-').pop()?.trim() || center.name || center.address || 'Centro';
+};
+
+// Función para obtener un nombre único del centro basado en su dirección
+const computeFriendlyCenterName = (center?: { name?: string | null; address?: string | null; address_zurbaran?: string | null; address_concha_espina?: string | null; id?: string }, allCenters?: any[]): string => {
+  if (!center) return 'Sin centro asignado';
+  
+  let label = computeBaseCenterLabel(center);
+
+  // Si hay 2 centros y ambos tienen el mismo nombre, asignar nombres únicos
+  if (allCenters && allCenters.length === 2 && center.id) {
+    const entries = allCenters.map((c) => ({
+      id: c.id,
+      label: computeBaseCenterLabel(c),
+    }));
+
+    if (entries.length === 2) {
+      const [first, second] = entries;
+      if (normalizeLabel(first.label) === normalizeLabel(second.label)) {
+        // Asignar nombres únicos basándose en la dirección
+        const firstCenter = allCenters.find(c => c.id === first.id);
+        const secondCenter = allCenters.find(c => c.id === second.id);
+        
+        const firstAddr = ((firstCenter?.address?.toLowerCase() || '') + (firstCenter?.address_zurbaran || '')).toLowerCase();
+        const secondAddr = ((secondCenter?.address?.toLowerCase() || '') + (secondCenter?.address_concha_espina || '')).toLowerCase();
+        
+        if (firstAddr.includes('zurbar') || firstAddr.includes('28010')) {
+          if (center.id === first.id) return 'Zurbarán';
+          if (center.id === second.id) return 'Concha Espina';
+        } else if (secondAddr.includes('zurbar') || secondAddr.includes('28010')) {
+          if (center.id === second.id) return 'Zurbarán';
+          if (center.id === first.id) return 'Concha Espina';
+        } else {
+          // Fallback: asignar por orden
+          if (center.id === first.id) return 'Zurbarán';
+          if (center.id === second.id) return 'Concha Espina';
+        }
+      }
+    }
+  }
+
+  return label;
+};
+
 export default function AdminPricingPromos() {
   const { services, refetch: refetchServices } = useServices();
   const { packages, refetch: refetchPackages } = usePackages();
@@ -34,6 +123,13 @@ export default function AdminPricingPromos() {
   const { treatmentGroups } = useTreatmentGroups();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const allowedTreatmentGroups = useMemo(
+    () =>
+      PREDEFINED_GROUP_NAMES.map(name =>
+        (treatmentGroups || []).find((g: any) => g.name === name)
+      ).filter((g): g is any => Boolean(g)),
+    [treatmentGroups]
+  );
 
   const selectPopoverProps = {
     position: "popper" as const,
@@ -82,79 +178,91 @@ export default function AdminPricingPromos() {
     center_id: '',
     has_discount: false,
     discount_price_cents: 0,
-  show_online: true,
-  group_id: '' as string
-});
-const [editingService, setEditingService] = useState<any>(null);
-const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+    show_online: true,
+    group_id: '' as string
+  });
+  const [editingService, setEditingService] = useState<any>(null);
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
 
-const [newPackage, setNewPackage] = useState({
-  name: '',
-  service_ids: [] as string[],
-  sessions_count: 1,
-  price_euros: 0,
-  center_id: 'all',
-  description: '',
-});
-const [isCreatingPackage, setIsCreatingPackage] = useState(false);
-
-  const serviceTypes = [
-    { value: 'massage' as const, label: 'Masaje' },
-    { value: 'treatment' as const, label: 'Tratamiento' },
-    { value: 'package' as const, label: 'Paquete' }
-  ];
+  const [newPackage, setNewPackage] = useState({
+    name: '',
+    service_ids: [] as string[],
+    sessions_count: 1,
+    price_euros: 0,
+    center_id: 'all',
+    description: '',
+  });
+  const [isCreatingPackage, setIsCreatingPackage] = useState(false);
 
   // Group services: primero por group_id (explícito), si no existe, usar heurística
   const groupedServices = useMemo(() => {
     type Group = { id: string; name: string; color: string; services: any[] };
-    const map: Record<string, Group> = {};
-
-    // 1) Grupos explícitos desde BD (treatment_groups)
-    (treatmentGroups || []).forEach((g: any) => {
-      map[g.id] = { id: g.id, name: g.name, color: g.color || '#64748B', services: [] };
+    
+    // Crear un mapa de grupos predefinidos (mismos que en "Grupos de Tratamientos")
+    // Buscar en treatmentGroups los grupos que coincidan con los predefinidos por nombre
+    const predefinedGroupsMap: Record<string, Group> = {};
+    
+    // Mapear los grupos de la BD a los predefinidos por nombre
+    PREDEFINED_GROUP_NAMES.forEach(predefinedName => {
+      const dbGroup = (treatmentGroups || []).find((g: any) => g.name === predefinedName);
+      if (dbGroup) {
+        predefinedGroupsMap[dbGroup.id] = {
+          id: dbGroup.id,
+          name: dbGroup.name, // Usar el nombre exacto de la BD
+          color: dbGroup.color || '#64748B',
+          services: []
+        };
+      }
     });
 
-    // 2) Grupos heurísticos como fallback
-    const heuristics: Record<string, Group> = {
-      'masajes-individuales': { id: 'masajes-individuales', name: 'Masajes Individuales', color: '#3B82F6', services: [] },
-      'masajes-pareja': { id: 'masajes-pareja', name: 'Masajes para Dos', color: '#10B981', services: [] },
-      'masajes-cuatro-manos': { id: 'masajes-cuatro-manos', name: 'Masajes a Cuatro Manos', color: '#F59E0B', services: [] },
-      'rituales': { id: 'rituales', name: 'Rituales Individuales', color: '#8B5CF6', services: [] },
-      'rituales-pareja': { id: 'rituales-pareja', name: 'Rituales para Dos', color: '#EC4899', services: [] }
-    };
-
-    console.log('AdminPricingPromos grouping: services=', services.length, 'treatmentGroups=', (treatmentGroups||[]).length);
-
-    services.forEach(service => {
-      // Si el servicio tiene group_id válido, usarlo
-      if (service.group_id && map[service.group_id]) {
-        map[service.group_id].services.push(service);
-        return;
+    // Función para clasificar servicios (misma lógica que en TreatmentGroupsManagement)
+    const classifyService = (service: any): string | null => {
+      // Si el servicio ya tiene group_id y está en nuestros grupos predefinidos, usarlo
+      if (service.group_id && predefinedGroupsMap[service.group_id]) {
+        return service.group_id;
       }
 
-      // Fallback heurístico por nombre/descripcion
+      // Clasificación heurística basada en nombre/descripción (misma lógica que TreatmentGroupsManagement)
       const name = (service.name || '').toLowerCase();
       const description = (service.description || '').toLowerCase();
       const isRitualService = name.includes('ritual') || description.includes('ritual');
       const isDuoService = name.includes('dos personas') || name.includes('pareja') || name.includes('para dos') || name.includes('2 personas') || name.includes('duo') || name.includes('two') || description.includes('dos personas') || description.includes('pareja') || description.includes('para dos');
 
+      // Buscar el grupo correspondiente por nombre
+      let targetGroupName = '';
       if (name.includes('cuatro manos')) {
-        heuristics['masajes-cuatro-manos'].services.push(service);
+        targetGroupName = 'Masaje a Cuatro Manos';
       } else if (isRitualService && isDuoService) {
-        heuristics['rituales-pareja'].services.push(service);
+        targetGroupName = 'Rituales para Dos';
       } else if (isDuoService) {
-        heuristics['masajes-pareja'].services.push(service);
+        targetGroupName = 'Masaje para Dos';
       } else if (isRitualService && !isDuoService) {
-        heuristics['rituales'].services.push(service);
+        targetGroupName = 'Rituales';
       } else {
-        heuristics['masajes-individuales'].services.push(service);
+        targetGroupName = 'Masaje Individual';
+      }
+
+      // Encontrar el ID del grupo en la BD que coincida con el nombre
+      const targetGroup = (treatmentGroups || []).find((g: any) => g.name === targetGroupName);
+      return targetGroup?.id || null;
+    };
+
+    // Clasificar y asignar servicios
+    services.forEach(service => {
+      const groupId = classifyService(service);
+      if (groupId && predefinedGroupsMap[groupId]) {
+        predefinedGroupsMap[groupId].services.push(service);
       }
     });
 
-    // Combinar grupos explícitos + heurísticos con contenido
-    const explicit = Object.values(map).filter(g => g.services.length > 0);
-    const heuristicFilled = Object.values(heuristics).filter(g => g.services.length > 0);
-    const result = [...explicit, ...heuristicFilled];
+    // Ordenar grupos según el orden predefinido y solo mostrar los que tienen servicios
+    const result = PREDEFINED_GROUP_NAMES
+      .map(name => {
+        const dbGroup = (treatmentGroups || []).find((g: any) => g.name === name);
+        return dbGroup ? predefinedGroupsMap[dbGroup.id] : null;
+      })
+      .filter((g): g is Group => g !== null && g.services.length > 0);
+
     console.log('AdminPricingPromos - Final groups result:', result.map(g => ({ name: g.name, services: g.services.length })));
     return result;
   }, [services, treatmentGroups]);
@@ -552,7 +660,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
 
   // Tarjetas regalo - opciones de importes (sin duplicados) con visibilidad online
   const [giftOptions, setGiftOptions] = useState<any[]>([]);
-  const [giftEdits, setGiftEdits] = useState<Record<string, { amount_euros: number; active: boolean; show_online: boolean; sessions_count: number }>>({});
+  const [giftEdits, setGiftEdits] = useState<Record<string, { amount_euros: number; active: boolean; show_online: boolean; sessions_count: number; group?: string }>>({});
   const [newGiftCard, setNewGiftCard] = useState({
     name: '',
     description: '',
@@ -560,24 +668,55 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
     active: true,
     show_online: true,
     sessions_count: 1,
+    group: 'individual',
     image: null as File | null,
     imageCrop: null as { x: number; y: number; width: number; height: number } | null
   });
   const giftDenoms = [5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 200, 250, 300];
 
+  const giftGroups = [
+    { value: 'individual', label: 'Masaje Individual' },
+    { value: 'pareja', label: 'Masaje para Dos' },
+    { value: 'cuatro', label: 'Masaje a Cuatro Manos' },
+    { value: 'ritual_individual', label: 'Rituales Individuales' },
+    { value: 'ritual_dos', label: 'Rituales para Dos' },
+    { value: 'multi', label: 'Bonos varias sesiones' },
+  ];
+
+  const parseGiftGroup = (description?: string) => {
+    const regex = /\[GROUP:([a-zA-Z0-9_-]+)\]/i;
+    const match = description?.match(regex);
+    const cleanDescription = (description || '').replace(regex, '').trim();
+    return {
+      group: match?.[1] || 'individual',
+      cleanDescription
+    };
+  };
+
+  const applyGiftGroup = (group: string, description?: string) => {
+    const regex = /\[GROUP:([a-zA-Z0-9_-]+)\]/i;
+    const clean = (description || '').replace(regex, '').trim();
+    return `[GROUP:${group}] ${clean}`.trim();
+  };
+
   const fetchGiftOptions = async () => {
     const { data } = await supabase.from('gift_card_options').select('*').order('amount_cents');
-    setGiftOptions((data || []).map((opt: any) => ({
-      ...opt,
-      sessions_count: typeof opt.sessions_count === 'number' ? opt.sessions_count : parseInt(opt.sessions_count || '0', 10) || 0,
-    })));
+    setGiftOptions((data || []).map((opt: any) => {
+      const parsed = parseGiftGroup(opt.description);
+      return {
+        ...opt,
+        sessions_count: typeof opt.sessions_count === 'number' ? opt.sessions_count : parseInt(opt.sessions_count || '0', 10) || 0,
+        group: parsed.group,
+        base_description: parsed.cleanDescription
+      };
+    }));
   };
 
   useEffect(() => {
     fetchGiftOptions();
   }, []);
 
-  const handleGiftChange = (id: string, field: 'amount_euros'|'active'|'show_online'|'sessions_count', value: any) => {
+  const handleGiftChange = (id: string, field: 'amount_euros'|'active'|'show_online'|'sessions_count'|'group', value: any) => {
     setGiftEdits((prev) => {
       const option = giftOptions.find((opt) => opt.id === id);
       const base = {
@@ -585,6 +724,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
         active: prev[id]?.active ?? (option?.is_active ?? true),
         show_online: prev[id]?.show_online ?? (option?.show_online ?? true),
         sessions_count: prev[id]?.sessions_count ?? (option?.sessions_count ?? 1),
+        group: prev[id]?.group ?? (option as any)?.group ?? 'individual',
       };
 
       return {
@@ -602,6 +742,9 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
     if (!edit) return;
 
     const amountCents = Math.round(edit.amount_euros * 100);
+    const option = giftOptions.find((g) => g.id === id);
+    const descriptionWithGroup = applyGiftGroup(edit.group || (option as any)?.group || 'individual', (option as any)?.base_description);
+
     const { error } = await supabase
       .from('gift_card_options')
       .update({
@@ -609,6 +752,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
         is_active: edit.active,
         show_online: edit.show_online,
         sessions_count: edit.sessions_count,
+        description: descriptionWithGroup,
       })
       .eq('id', id);
 
@@ -700,7 +844,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
       
       const insertData = {
         name: newGiftCard.name,
-        description: newGiftCard.description || null,
+        description: applyGiftGroup(newGiftCard.group, newGiftCard.description || null),
         image_url: imageUrl,
         amount_cents: Math.round(newGiftCard.amount_euros * 100),
         is_active: newGiftCard.active,
@@ -718,16 +862,17 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
       } else {
         console.log('Gift card option created successfully:', data);
         toast({ title: 'Creada', description: 'Opción de tarjeta regalo creada exitosamente' });
-        setNewGiftCard({
-          name: '',
-          description: '',
-          amount_euros: 0,
-          active: true,
-          show_online: true,
-          sessions_count: 1,
-          image: null,
-          imageCrop: null
-        });
+      setNewGiftCard({
+        name: '',
+        description: '',
+        amount_euros: 0,
+        active: true,
+        show_online: true,
+        sessions_count: 1,
+        group: 'individual',
+        image: null,
+        imageCrop: null
+      });
         fetchGiftOptions();
       }
     } catch (error) {
@@ -789,6 +934,23 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
           </TabsList>
 
           <TabsContent value="manage-services" className="mt-6 space-y-4">
+            {/* Advertencia si hay servicios sin grupo asignado */}
+            {groupedServices.some(g => g.id === 'sin-grupo' && g.services.length > 0) && (
+              <Card className="border-amber-200 bg-amber-50">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-amber-800">
+                        ⚠️ Hay {groupedServices.find(g => g.id === 'sin-grupo')?.services.length || 0} servicio(s) sin grupo asignado
+                      </p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Estos servicios aparecen en "Sin grupo asignado". Para organizarlos correctamente, ve a la pestaña "Grupos de Tratamientos" y asígnales un grupo.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {/* Todos los servicios en una sola vista */}
             <Card>
               <CardHeader>
@@ -853,7 +1015,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                       {service.active ? 'Activo' : 'Inactivo'}
                                     </span>
                                     <span className="text-muted-foreground">
-                                      {centers.find(c => c.id === service.center_id)?.name || 'Todos los centros'}
+                                      {service.center_id ? computeFriendlyCenterName(centers.find(c => c.id === service.center_id), centers) : 'Todos los centros'}
                                     </span>
                                   </div>
                                 </div>
@@ -951,24 +1113,6 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                     />
                   </div>
                   <div>
-                    <Label htmlFor="service-type">Tipo</Label>
-                    <Select
-                      value={newService.type}
-                      onValueChange={(value: any) => setNewService({ ...newService, type: value })}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                       <SelectContent position="popper" side="bottom" align="center" sideOffset={2} collisionPadding={8} sticky="always" className="z-[9999] bg-popover border shadow-md min-w-[var(--radix-select-trigger-width)]">
-                        {serviceTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
                     <Label htmlFor="service-duration">Duración (min) *</Label>
                     <Input
                       id="service-duration"
@@ -1011,7 +1155,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                          <SelectItem value="all">Todos los centros</SelectItem>
                          {centers.map((center) => (
                            <SelectItem key={center.id} value={center.id}>
-                             {center.name}
+                             {computeFriendlyCenterName(center, centers)}
                            </SelectItem>
                          ))}
                        </SelectContent>
@@ -1043,7 +1187,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       </SelectTrigger>
                       <SelectContent position="item-aligned">
                         <SelectItem value="none">Sin grupo</SelectItem>
-                        {treatmentGroups.map((g: any) => (
+                        {allowedTreatmentGroups.map((g: any) => (
                           <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                         ))}
                       </SelectContent>
@@ -1131,21 +1275,6 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                           />
                         </div>
                         <div>
-                          <Label htmlFor="edit-service-type" className={isMobile ? 'text-xs' : ''}>Tipo</Label>
-                          <select
-                            id="edit-service-type"
-                            value={editingService.type}
-                            onChange={(e) => setEditingService({ ...editingService, type: e.target.value })}
-                            className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 ring-offset-background file:border-0 file:bg-transparent file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isMobile ? 'text-sm' : 'text-sm'}`}
-                          >
-                            {serviceTypes.map((type) => (
-                              <option key={type.value} value={type.value}>
-                                {type.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
                           <Label htmlFor="edit-service-duration" className={isMobile ? 'text-xs' : ''}>Duración (min) *</Label>
                           <Input
                             id="edit-service-duration"
@@ -1205,7 +1334,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                             <option value="all">Ambos centros</option>
                             {centers.map((center) => (
                               <option key={center.id} value={center.id}>
-                                {center.name}
+                                {computeFriendlyCenterName(center, centers)}
                               </option>
                             ))}
                           </select>
@@ -1430,7 +1559,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                         <option value="all">Todos los centros</option>
                         {centers.map((center) => (
                           <option key={center.id} value={center.id}>
-                            {center.name}
+                            {computeFriendlyCenterName(center, centers)}
                           </option>
                         ))}
                       </select>
@@ -1621,6 +1750,14 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                       />
                     </div>
                     <div>
+                      <Label>Grupo</Label>
+                      <InlineSelect
+                        value={newGiftCard.group}
+                        onChange={(v) => setNewGiftCard(prev => ({ ...prev, group: v }))}
+                        options={giftGroups.map((g) => ({ label: g.label, value: g.value }))}
+                      />
+                    </div>
+                    <div>
                       <Label htmlFor="giftcard-status">Estado</Label>
                       <InlineSelect
                         value={String(newGiftCard.active)}
@@ -1697,7 +1834,7 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                 <AccordionContent className="px-6 pb-4 space-y-6">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {giftOptions.map((opt) => {
-                      const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active, show_online: opt.show_online ?? true, sessions_count: opt.sessions_count ?? 0 };
+                      const edit = giftEdits[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active, show_online: opt.show_online ?? true, sessions_count: opt.sessions_count ?? 0, group: (opt as any)?.group || 'individual' };
                       return (
                         <div key={opt.id} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
@@ -1723,6 +1860,20 @@ const [isCreatingPackage, setIsCreatingPackage] = useState(false);
                                  value={String(edit.active)}
                                  onChange={(v) => handleGiftChange(opt.id, 'active', v === 'true')}
                                  options={[{ label: 'Activo', value: 'true' }, { label: 'Inactivo', value: 'false' }]}
+                               />
+                             </div>
+                             <div>
+                               <Label>Grupo</Label>
+                               <InlineSelect
+                                 value={edit.group || (opt as any)?.group || 'individual'}
+                                 onChange={(v) => setGiftEdits(prev => ({
+                                   ...prev,
+                                   [opt.id]: {
+                                     ...(prev[opt.id] || { amount_euros: opt.amount_cents / 100, active: opt.is_active, show_online: opt.show_online ?? true, sessions_count: opt.sessions_count ?? 0 }),
+                                     group: v
+                                   }
+                                 }))}
+                                 options={giftGroups.map((g) => ({ label: g.label, value: g.value }))}
                                />
                              </div>
                              <div>

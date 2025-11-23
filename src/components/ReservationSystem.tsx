@@ -144,6 +144,30 @@ const ReservationSystem = () => {
   };
 
   const timeSlots = generateTimeSlots("10:00", "22:00", 5);
+  const filteredTimeSlots = useMemo(() => {
+    if (!formData.date) return timeSlots;
+
+    const now = new Date();
+    const selected = new Date(formData.date);
+    const isSameDay =
+      now.getFullYear() === selected.getFullYear() &&
+      now.getMonth() === selected.getMonth() &&
+      now.getDate() === selected.getDate();
+
+    if (!isSameDay) return timeSlots;
+
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    return timeSlots.filter((slot) => {
+      const [h, m] = slot.split(":").map(Number);
+      return h * 60 + m >= currentMinutes;
+    });
+  }, [formData.date, timeSlots]);
+
+  useEffect(() => {
+    if (formData.time && !filteredTimeSlots.includes(formData.time)) {
+      setFormData((prev) => ({ ...prev, time: "" }));
+    }
+  }, [filteredTimeSlots, formData.time]);
 
   // Filter employees and lanes based on selected center
   const availableEmployees = employees.filter(emp => 
@@ -301,6 +325,21 @@ const ReservationSystem = () => {
       const bookingDate = new Date(formData.date!);
       const [hours, minutes] = formData.time.split(':');
       bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+      // Prevent booking earlier than current time when booking today
+      const now = new Date();
+      const isToday =
+        bookingDate.getFullYear() === now.getFullYear() &&
+        bookingDate.getMonth() === now.getMonth() &&
+        bookingDate.getDate() === now.getDate();
+      if (isToday && bookingDate < now) {
+        toast({
+          title: "Hora inválida",
+          description: "No puedes reservar en una hora pasada.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Check employee availability before creating booking
       if (formData.employee && formData.employee !== "any") {
@@ -837,38 +876,45 @@ const ReservationSystem = () => {
                                    <DrawerTitle className="text-lg font-semibold">Seleccionar Fecha</DrawerTitle>
                                  </DrawerHeader>
                                  <div className="px-4 pb-6 overflow-y-auto flex-1">
-                                   <div className="flex justify-center">
-                                     <Calendar
-                                       mode="single"
-                                       selected={formData.date}
-                                       onSelect={(date) => {
-                                         console.log('Fecha seleccionada:', date);
-                                         setFormData({ ...formData, date });
-                                       }}
-                                       disabled={(date) => date < new Date()}
-                                       locale={es}
-                                       className="w-full max-w-sm mx-auto"
-                                       classNames={{
-                                         months: "flex flex-col space-y-4 w-full",
-                                         month: "space-y-4 w-full",
-                                         caption: "flex justify-center pt-1 relative items-center w-full",
-                                         caption_label: "text-base font-semibold text-foreground",
-                                         nav: "space-x-1 flex items-center",
-                                         nav_button: "h-9 w-9 bg-transparent p-0 opacity-70 hover:opacity-100 border border-input hover:bg-accent hover:text-accent-foreground rounded-md",
-                                         nav_button_previous: "absolute left-4",
-                                         nav_button_next: "absolute right-4",
-                                         table: "w-full border-collapse space-y-1",
-                                         head_row: "flex w-full",
-                                         head_cell: "text-muted-foreground rounded-md w-10 font-normal text-sm flex items-center justify-center py-2",
-                                         row: "flex w-full mt-2",
-                                         cell: "text-center text-sm p-0 relative w-10 h-10 flex items-center justify-center",
-                                         day: "h-9 w-9 p-0 font-normal text-sm cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors flex items-center justify-center",
-                                         day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                                         day_today: "bg-accent text-accent-foreground font-semibold",
-                                         day_outside: "text-muted-foreground opacity-50",
-                                         day_disabled: "text-muted-foreground opacity-30 cursor-not-allowed",
-                                         day_hidden: "invisible",
-                                       }}
+                                    <div className="flex justify-center">
+                                      <Calendar
+                                        mode="single"
+                                        selected={formData.date}
+                                        onSelect={(date) => {
+                                          console.log('Fecha seleccionada:', date);
+                                          setFormData({ ...formData, date });
+                                        }}
+                                        disabled={(date) => {
+                                          if (!date) return true;
+                                          const today = new Date();
+                                          today.setHours(0, 0, 0, 0);
+                                          const d = new Date(date);
+                                          d.setHours(0, 0, 0, 0);
+                                          return d < today;
+                                        }}
+                                        locale={es}
+                                        className="w-full max-w-sm mx-auto"
+                                        classNames={{
+                                          months: "flex flex-col space-y-4 w-full",
+                                          month: "space-y-4 w-full",
+                                          caption: "flex justify-center pt-1 relative items-center w-full",
+                                          caption_label: "text-base font-semibold text-foreground",
+                                          nav: "space-x-1 flex items center",
+                                          nav_button: "h-9 w-9 bg-transparent p-0 opacity-70 hover:opacity-100 border border-input hover:bg-accent hover:text-accent-foreground rounded-md",
+                                          nav_button_previous: "absolute left-4",
+                                          nav_button_next: "absolute right-4",
+                                          table: "w-full border-collapse space-y-1",
+                                          head_row: "flex w-full",
+                                          head_cell: "text-muted-foreground rounded-md w-10 font-normal text-sm flex items-center justify-center py-2",
+                                          row: "flex w-full mt-2",
+                                          cell: "text-center text-sm p-0 relative w-10 h-10 flex items-center justify-center",
+                                          day: "h-9 w-9 p-0 font-normal text-sm cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors flex items-center justify-center",
+                                          day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                                          day_today: "bg-accent text-accent-foreground font-semibold",
+                                          day_outside: "text-muted-foreground opacity-50",
+                                          day_disabled: "text-muted-foreground opacity-30 cursor-not-allowed",
+                                          day_hidden: "invisible",
+                                        }}
                                      />
                                    </div>
                                  </div>
@@ -908,7 +954,14 @@ const ReservationSystem = () => {
                                      console.log('Fecha seleccionada:', date);
                                      setFormData({ ...formData, date });
                                    }}
-                                   disabled={(date) => date < new Date()}
+                                   disabled={(date) => {
+                                     if (!date) return true;
+                                     const today = new Date();
+                                     today.setHours(0, 0, 0, 0);
+                                     const d = new Date(date);
+                                     d.setHours(0, 0, 0, 0);
+                                     return d < today;
+                                   }}
                                    initialFocus
                                    className="p-2 sm:p-3 touch-manipulation pointer-events-auto"
                                    classNames={{
@@ -963,7 +1016,7 @@ const ReservationSystem = () => {
                                  </DrawerHeader>
                                  <div className="px-4 pb-6 overflow-y-auto flex-1">
                                    <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
-                                     {timeSlots.map((time) => (
+                                     {filteredTimeSlots.map((time) => (
                                        <Button
                                          key={time}
                                          variant={formData.time === time ? "default" : "outline"}
@@ -1001,7 +1054,7 @@ const ReservationSystem = () => {
                                  avoidCollisions={true}
                                  collisionPadding={16}
                                >
-                                 {timeSlots.map((time) => (
+                                 {filteredTimeSlots.map((time) => (
                                    <SelectItem 
                                      key={time} 
                                      value={time} 
@@ -1166,7 +1219,14 @@ const ReservationSystem = () => {
                                           console.log('Fecha seleccionada:', date);
                                           setFormData({ ...formData, date });
                                         }}
-                                        disabled={(date) => date < new Date()}
+                                        disabled={(date) => {
+                                          if (!date) return true;
+                                          const today = new Date();
+                                          today.setHours(0, 0, 0, 0);
+                                          const d = new Date(date);
+                                          d.setHours(0, 0, 0, 0);
+                                          return d < today;
+                                        }}
                                         locale={es}
                                         className="w-full max-w-sm mx-auto p-3 pointer-events-auto"
                                         classNames={{
@@ -1263,7 +1323,7 @@ const ReservationSystem = () => {
                                   </DrawerHeader>
                                   <div className="px-6 pb-8 overflow-y-auto flex-1">
                                     <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
-                                      {timeSlots.map((time) => (
+                                      {filteredTimeSlots.map((time) => (
                                         <Button
                                           key={time}
                                           variant={formData.time === time ? "default" : "outline"}
@@ -1301,7 +1361,7 @@ const ReservationSystem = () => {
                                  avoidCollisions={true}
                                  collisionPadding={16}
                                >
-                                 {timeSlots.map((time) => (
+                                 {filteredTimeSlots.map((time) => (
                                    <SelectItem 
                                      key={time} 
                                      value={time} 

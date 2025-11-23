@@ -276,6 +276,13 @@ export const useBookings = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
+      // Optimize: Only fetch bookings from the last 30 days and next 60 days
+      const now = new Date();
+      const startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 30);
+      const endDate = new Date(now);
+      endDate.setDate(endDate.getDate() + 60);
+      
       const { data, error } = await (supabase as any)
         .from('bookings')
         .select(`
@@ -294,30 +301,18 @@ export const useBookings = () => {
             name
           )
         `)
+        .gte('booking_datetime', startDate.toISOString())
+        .lte('booking_datetime', endDate.toISOString())
         .order('booking_datetime', { ascending: true });
 
       if (error) throw error;
 
-      // Para cada booking, obtener la última nota interna del cliente
-      const bookingsWithNotes = await Promise.all(
-        (data || []).map(async (booking) => {
-          if (booking.client_id) {
-            const { data: clientNotes } = await supabase
-              .from('client_notes')
-              .select('id, title, content, is_alert, priority, created_at')
-              .eq('client_id', booking.client_id)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-            
-            return {
-              ...booking,
-              client_notes: clientNotes ? [clientNotes] : []
-            };
-          }
-          return booking;
-        })
-      );
+      // Optimize: Load client notes only when needed (lazy loading)
+      // For now, set empty array - notes will be loaded on-demand
+      const bookingsWithNotes = (data || []).map((booking: any) => ({
+        ...booking,
+        client_notes: [] // Will be loaded on-demand when viewing booking details
+      }));
 
       setBookings(bookingsWithNotes);
     } catch (err) {

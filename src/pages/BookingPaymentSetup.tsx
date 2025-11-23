@@ -210,7 +210,6 @@ const handlePaymentSetup = async () => {
                 <Check className="h-6 w-6" />
                 <div>
                   <h3 className="font-semibold">¡Reserva asegurada!</h3>
-                  <p className="text-sm">Tu método de pago ha sido configurado correctamente.</p>
                 </div>
               </div>
             </CardContent>

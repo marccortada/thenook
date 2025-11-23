@@ -97,6 +97,25 @@ const ClientReservation = () => {
   );
   const lastAvailabilityRef = useRef<TimeSlotOption[] | null>(null);
 
+  // Function to check if a lane is blocked by a temporary block (lane_blocks table)
+  // Moved outside useEffect so it's available in handleSubmit
+  const isLaneBlockedForRange = (
+    laneId: string,
+    centerId: string,
+    startDate: Date,
+    durationMinutes: number
+  ) => {
+    const rangeStart = new Date(startDate);
+    const rangeEnd = new Date(rangeStart.getTime() + durationMinutes * 60 * 1000);
+
+    return laneBlocks.some(block => {
+      if (block.lane_id !== laneId || block.center_id !== centerId) return false;
+      const blockStart = new Date(block.start_datetime);
+      const blockEnd = new Date(block.end_datetime);
+      return blockStart < rangeEnd && blockEnd > rangeStart;
+    });
+  };
+
   useEffect(() => {
     let isActive = true;
 
@@ -231,24 +250,6 @@ const ClientReservation = () => {
       const isToday = selectedDate.toDateString() === now.toDateString();
 
       const PREPARATION_BUFFER_MINUTES = 15;
-
-      // Function to check if a lane is blocked by a temporary block (lane_blocks table)
-      const isLaneBlockedForRange = (
-        laneId: string,
-        centerId: string,
-        startDate: Date,
-        durationMinutes: number
-      ) => {
-        const rangeStart = new Date(startDate);
-        const rangeEnd = new Date(rangeStart.getTime() + durationMinutes * 60 * 1000);
-
-        return laneBlocks.some(block => {
-          if (block.lane_id !== laneId || block.center_id !== centerId) return false;
-          const blockStart = new Date(block.start_datetime);
-          const blockEnd = new Date(block.end_datetime);
-          return blockStart < rangeEnd && blockEnd > rangeStart;
-        });
-      };
 
       const options = timeSlots.map<TimeSlotOption>((time) => {
         const slotDate = new Date(selectedDate);
@@ -669,7 +670,11 @@ const ClientReservation = () => {
     }
   };
 
-  const selectedCenter = centers.find(c => c.id === formData.center);
+  // Calculate selected center using useMemo to ensure it updates when formData.center or centers change
+  const selectedCenter = useMemo(() => {
+    if (!formData.center) return null;
+    return centers.find(c => c.id === formData.center) || null;
+  }, [formData.center, centers]);
 
   const cancelBooking = async (bookingId: string) => {
     try {
@@ -1007,7 +1012,14 @@ const ClientReservation = () => {
                          onOpenChange={setShowCalendar}
                          selected={formData.date}
                          onSelect={(date) => setFormData({ ...formData, date })}
-                         disabled={(date) => date < new Date()}
+                         disabled={(date) => {
+                           // Solo deshabilitar fechas anteriores a hoy (comparar solo fechas, sin horas)
+                           const today = new Date();
+                           today.setHours(0, 0, 0, 0);
+                           const dateToCheck = new Date(date);
+                           dateToCheck.setHours(0, 0, 0, 0);
+                           return dateToCheck < today;
+                         }}
                          placeholder={t('select_date')}
                        />
                      </div>
@@ -1046,9 +1058,17 @@ const ClientReservation = () => {
                 <div className="p-4 bg-accent/20 border border-primary/20 rounded-lg space-y-3">
                   <h4 className="font-medium text-sm sm:text-base">{t('booking_summary')}</h4>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">{t('center')}:</span>
-                      <span className="font-medium">{selectedCenter?.name}</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">{t('center')}:</span>
+                        <span className="font-medium">{friendlyCenterName(selectedCenter || undefined)}</span>
+                      </div>
+                      {selectedCenter?.address && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground text-xs">{t('address') || 'Dirección'}:</span>
+                          <span className="font-medium text-xs">{selectedCenter.address}</span>
+                        </div>
+                      )}
                     </div>
                     {selection.kind === 'service' && (
                       <div className="flex justify-between items-center">
@@ -1070,7 +1090,14 @@ const ClientReservation = () => {
 
               {/* Submit Button */}
               <Button type="submit" className="w-full h-11 text-sm sm:text-base font-medium" disabled={isSubmitting}>
-                Continuar
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  "Continuar"
+                )}
               </Button>
             </form>
           </CardContent>

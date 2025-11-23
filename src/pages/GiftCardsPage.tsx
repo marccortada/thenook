@@ -35,6 +35,8 @@ interface GiftCardItem {
   priceCents?: number; // only for fixed
   imageUrl?: string | null;
   description?: string;
+  sessionsCount?: number;
+  groupKey?: string | null;
 }
 
 const euro = (cents: number) =>
@@ -303,24 +305,78 @@ const GiftCardsPage = () => {
   }, []);
 
   const normalize = (s: string) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
+  const parseGiftGroup = (description?: string) => {
+    const regex = /\[GROUP:([a-zA-Z0-9_-]+)\]/i;
+    const match = description?.match(regex);
+    const cleanDescription = (description || '').replace(regex, '').trim();
+    return {
+      group: match?.[1] || null,
+      cleanDescription
+    };
+  };
+
   const giftItems: GiftCardItem[] = useMemo(() => {
     return (giftOptions || []).map((option: any) => ({
       id: option.id,
       name: option.name,
       type: 'fixed' as GiftType,
       priceCents: option.amount_cents,
-      description: option.description,
-      imageUrl: option.image_url || DEFAULT_GIFT_IMAGE
+      ...(() => {
+        const parsed = parseGiftGroup(option.description);
+        return {
+          description: parsed.cleanDescription,
+          groupKey: parsed.group
+        };
+      })(),
+      imageUrl: option.image_url || DEFAULT_GIFT_IMAGE,
+      sessionsCount: typeof option.sessions_count === 'number'
+        ? option.sessions_count
+        : parseInt(option.sessions_count || '0', 10) || 0
     }));
   }, [giftOptions]);
 
   const groups = useMemo(() => {
-    const individuales = giftItems.filter((i) => i.type === "fixed" && !isCuatroManos(i.name) && !isRitual(i.name) && !isDuo(i.name));
-    const cuatro = giftItems.filter((i) => i.type === "fixed" && isCuatroManos(i.name));
-    const rituales = giftItems.filter((i) => i.type === "fixed" && isRitual(i.name) && !isDuo(i.name));
-    const ritualesParaDos = giftItems.filter((i) => i.type === "fixed" && isRitual(i.name) && isDuo(i.name));
-    const paraDos = giftItems.filter((i) => i.type === "fixed" && isDuo(i.name) && !isRitual(i.name));
-    return { individuales, cuatro, rituales, ritualesParaDos, paraDos };
+    const buckets: Record<string, GiftCardItem[]> = {
+      individual: [],
+      pareja: [],
+      cuatro: [],
+      ritual_individual: [],
+      ritual_dos: [],
+      multi: [],
+    };
+
+    giftItems.forEach((item: any) => {
+      const key = item.groupKey as string | null;
+      const name = item.name;
+      const assign = (bucket: keyof typeof buckets) => buckets[bucket].push(item);
+
+      if (key) {
+        switch (key) {
+          case 'individual': return assign('individual');
+          case 'pareja': return assign('pareja');
+          case 'cuatro': return assign('cuatro');
+          case 'ritual_individual': return assign('ritual_individual');
+          case 'ritual_dos': return assign('ritual_dos');
+          case 'multi': return assign('multi');
+          default: break;
+        }
+      }
+
+      if (isCuatroManos(name)) return assign('cuatro');
+      if (isRitual(name) && isDuo(name)) return assign('ritual_dos');
+      if (isRitual(name)) return assign('ritual_individual');
+      if (isDuo(name)) return assign('pareja');
+      return assign('individual');
+    });
+
+    return {
+      individuales: buckets.individual,
+      paraDos: buckets.pareja,
+      cuatro: buckets.cuatro,
+      rituales: buckets.ritual_individual,
+      ritualesParaDos: buckets.ritual_dos,
+      multiSession: buckets.multi
+    };
   }, [giftItems]);
 
   const { items, add, remove, clear, totalCents } = useLocalCart();
@@ -835,7 +891,6 @@ const GiftCardsPage = () => {
             <DialogContent className="max-w-[520px] top-[5vh] translate-y-0 max-h-[90vh] overflow-hidden flex flex-col">
               <DialogHeader className="flex-shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b bg-background">
                 <DialogTitle>{t('complete_payment')}</DialogTitle>
-                <DialogDescription>{t('secure_payment_info')}</DialogDescription>
               </DialogHeader>
               <div className="flex-1 overflow-y-auto min-h-0">
                 {stripeClientSecret && (
@@ -901,14 +956,66 @@ const GiftCardsPage = () => {
                          </Card>
                        ))}
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
+              </AccordionContent>
+            </AccordionItem>
+          )}
 
-              {groups.paraDos.length > 0 && (
-                <AccordionItem value="tarjetas-dos-personas" className="border rounded-lg">
-                  <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                     <h2 className="text-lg font-semibold">{t('gift_card_group_couples')}</h2>
+          <AccordionItem value="tarjetas-multisesion" className="border rounded-lg">
+            <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+              <h2 className="text-lg font-semibold">{t('gift_card_group_multi_sessions')}</h2>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              {groups.multiSession.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay tarjetas en este grupo todavía.</p>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                  {groups.multiSession.map((item: any) => (
+                    <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                      <OptimizedImage
+                        src={item.imageUrl || DEFAULT_GIFT_IMAGE}
+                        alt={translatePackageName(item.name)}
+                        className="aspect-[4/3]"
+                        width={GIFT_IMAGE_PROPS.width}
+                        height={GIFT_IMAGE_PROPS.height}
+                        quality={GIFT_IMAGE_PROPS.quality}
+                      />
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base leading-tight">{translatePackageName(item.name)}</CardTitle>
+                        <p className="text-sm text-muted-foreground uppercase tracking-wide">
+                          {t('gift_cards').toUpperCase()}
+                        </p>
+                      </CardHeader>
+                      <CardContent className="pb-2">
+                        <p className="text-2xl font-bold text-primary">{euro(item.priceCents!)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t('sessions')}: {(item as any).sessionsCount || 0}
+                        </p>
+                      </CardContent>
+                      <CardFooter className="pt-2">
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          onClick={() =>
+                            handleAddToCart({
+                              name: translatePackageName(item.name),
+                              priceCents: item.priceCents!
+                            })
+                          }
+                        >
+                          {t('add_to_cart')}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+
+          {groups.paraDos.length > 0 && (
+            <AccordionItem value="tarjetas-dos-personas" className="border rounded-lg">
+              <AccordionTrigger className="px-3 py-2 sm:px-4 sm:py-3 hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                 <h2 className="text-lg font-semibold">{t('gift_card_group_couples')}</h2>
                    </AccordionTrigger>
                    <AccordionContent className="px-4 pb-4">
                      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">

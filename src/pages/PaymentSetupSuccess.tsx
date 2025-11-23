@@ -148,7 +148,6 @@ export default function PaymentSetupSuccess() {
               <Check className="h-8 w-8 text-green-600" />
             </div>
             <p className="text-green-800 text-lg font-semibold">¡Reserva confirmada!</p>
-            <p className="text-green-700 text-sm">Tu método de pago ha sido configurado correctamente.</p>
           </div>
         </Card>
 

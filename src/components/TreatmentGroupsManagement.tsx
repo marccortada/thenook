@@ -73,6 +73,86 @@ const PREDEFINED_GROUPS = [
   }
 ];
 
+// Función para normalizar labels (igual que en AdvancedCalendarView)
+const normalizeLabel = (label?: string) =>
+  (label ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+// Función base para calcular el label de un centro (sin lógica de duplicados)
+const computeBaseCenterLabel = (center?: { name?: string | null; address?: string | null; address_zurbaran?: string | null; address_concha_espina?: string | null }): string => {
+  if (!center) return 'Sin centro asignado';
+  
+  const name = center.name?.toLowerCase() || '';
+  const address = center.address?.toLowerCase() || '';
+  const combined = `${name} ${address}`;
+
+  if (
+    combined.includes('zurbar') ||
+    combined.includes('28010') ||
+    center.address_zurbaran
+  ) {
+    return 'Zurbarán';
+  }
+
+  if (
+    combined.includes('concha') ||
+    combined.includes('espina') ||
+    combined.includes('principe de vergara') ||
+    combined.includes('príncipe de vergara') ||
+    combined.includes('vergara') ||
+    combined.includes('28002') ||
+    center.address_concha_espina
+  ) {
+    return 'Concha Espina';
+  }
+
+  return center.name?.split('-').pop()?.trim() || center.name || center.address || 'Centro';
+};
+
+// Función para obtener un nombre único del centro basado en su dirección
+const computeFriendlyCenterName = (center?: { name?: string | null; address?: string | null; address_zurbaran?: string | null; address_concha_espina?: string | null; id?: string }, allCenters?: any[]): string => {
+  if (!center) return 'Sin centro asignado';
+  
+  let label = computeBaseCenterLabel(center);
+
+  // Si hay 2 centros y ambos tienen el mismo nombre, asignar nombres únicos
+  if (allCenters && allCenters.length === 2 && center.id) {
+    const entries = allCenters.map((c) => ({
+      id: c.id,
+      label: computeBaseCenterLabel(c),
+    }));
+
+    if (entries.length === 2) {
+      const [first, second] = entries;
+      if (normalizeLabel(first.label) === normalizeLabel(second.label)) {
+        // Asignar nombres únicos basándose en la dirección
+        const firstCenter = allCenters.find(c => c.id === first.id);
+        const secondCenter = allCenters.find(c => c.id === second.id);
+        
+        const firstAddr = ((firstCenter?.address?.toLowerCase() || '') + (firstCenter?.address_zurbaran || '')).toLowerCase();
+        const secondAddr = ((secondCenter?.address?.toLowerCase() || '') + (secondCenter?.address_concha_espina || '')).toLowerCase();
+        
+        if (firstAddr.includes('zurbar') || firstAddr.includes('28010')) {
+          if (center.id === first.id) return 'Zurbarán';
+          if (center.id === second.id) return 'Concha Espina';
+        } else if (secondAddr.includes('zurbar') || secondAddr.includes('28010')) {
+          if (center.id === second.id) return 'Zurbarán';
+          if (center.id === first.id) return 'Concha Espina';
+        } else {
+          // Fallback: asignar por orden
+          if (center.id === first.id) return 'Zurbarán';
+          if (center.id === second.id) return 'Concha Espina';
+        }
+      }
+    }
+  }
+
+  return label;
+};
+
 const TreatmentGroupsManagement: React.FC = () => {
   const { services, refetch: refetchServices } = useServices();
   const { lanes } = useLanes();
@@ -80,6 +160,9 @@ const TreatmentGroupsManagement: React.FC = () => {
   const { treatmentGroups, createTreatmentGroup, updateTreatmentGroup, fetchTreatmentGroups, loading: groupsLoading } = useTreatmentGroups();
   const { toast } = useToast();
   const didInit = React.useRef(false);
+  
+  // Estado para el centro seleccionado para filtrar carriles
+  const [filterCenterId, setFilterCenterId] = useState<string>('');
 
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -297,15 +380,19 @@ const TreatmentGroupsManagement: React.FC = () => {
     setModalPosition({ top, left });
     setIsPositionCalculated(true);
     
+    const centerId = group.center_id || '';
     setEditingGroup(group.id);
     setFormData({
       name: group.name,
       color: group.dbGroup?.color || group.color,
       lane_id: group.lane_id || '',
       lane_ids: group.lane_ids || [],
-      center_id: group.center_id || '',
+      center_id: centerId,
       active: true,
     });
+    
+    // Establecer el filtro de centro para mostrar solo los carriles de ese centro
+    setFilterCenterId(centerId === 'all' ? '' : centerId);
     
     
     // Abrir el modal solo después de calcular la posición
@@ -399,6 +486,8 @@ const TreatmentGroupsManagement: React.FC = () => {
       center_id: '',
       active: true,
     });
+    // Resetear el filtro de centro al crear un nuevo grupo
+    setFilterCenterId('');
     // AppModal se centra solo; no necesitamos cálculos
     setIsPositionCalculated(true);
     setIsDialogOpen(true);
@@ -693,17 +782,22 @@ const TreatmentGroupsManagement: React.FC = () => {
                   <select
                     className={`${baseSelectClass} mt-1`}
                     value={formData.center_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, center_id: e.target.value }))}
+                    onChange={(e) => {
+                      const newCenterId = e.target.value;
+                      setFormData(prev => ({ ...prev, center_id: newCenterId }));
+                      // Actualizar el filtro de carriles cuando se cambia el centro
+                      setFilterCenterId(newCenterId === 'all' ? '' : newCenterId);
+                    }}
                   >
                     <option value="">
                       Seleccionar centro
                     </option>
                     <option value="all">Todos los centros</option>
-                    {centers
+                      {centers
                       .filter(center => center.id && center.id.trim() !== '')
                       .map(center => (
                         <option key={center.id} value={center.id}>
-                          {center.name}
+                          {computeFriendlyCenterName(center, centers)}
                         </option>
                       ))}
                   </select>
@@ -711,6 +805,9 @@ const TreatmentGroupsManagement: React.FC = () => {
 
                 <div>
                   <Label className="text-sm font-medium">Carriles Asignados (Múltiple selección)</Label>
+                  <p className="text-xs text-muted-foreground mt-1 mb-2">
+                    Los servicios de este grupo solo se podrán reservar en los carriles que selecciones aquí. Si no seleccionas ningún carril, el sistema usará cualquier carril disponible.
+                  </p>
                   <div className="mt-1 space-y-2">
                     <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[40px]">
                       {(!formData.lane_ids || formData.lane_ids.length === 0) ? (
@@ -718,10 +815,18 @@ const TreatmentGroupsManagement: React.FC = () => {
                       ) : (
                         formData.lane_ids.map(laneId => {
                           const lane = lanes.find(l => l.id === laneId);
-                          const center = centers.find(c => c.id === lane?.center_id);
-                          return lane ? (
+                          if (!lane) return null;
+                          
+                          const center = centers.find(c => c.id === lane.center_id);
+                          const centerName = computeFriendlyCenterName(center, centers);
+                          const laneDisplayName = lane.name.replace(/ra[ií]l/gi, 'Carril');
+                          // Mostrar el nombre del carril con el nombre específico del centro
+                          const displayName = lane.center_id && center
+                            ? `${laneDisplayName} - ${centerName}`
+                            : `${laneDisplayName} (${centerName})`;
+                          return (
                             <Badge key={laneId} variant="secondary" className="text-xs">
-                              {lane.name} - {center?.name}
+                              {displayName}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -734,7 +839,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                                 <X className="w-3 h-3" />
                               </Button>
                             </Badge>
-                          ) : null;
+                          );
                         })
                       )}
                     </div>
@@ -758,12 +863,39 @@ const TreatmentGroupsManagement: React.FC = () => {
                       </option>
                       <option value="none">Limpiar todos los carriles</option>
                       {lanes
-                        .filter(lane => lane.id && lane.id.trim() !== '' && !formData.lane_ids?.includes(lane.id))
-                        .map(lane => (
-                          <option key={lane.id} value={lane.id}>
-                            {lane.name} - {centers.find(c => c.id === lane.center_id)?.name}
-                          </option>
-                        ))}
+                        .filter(lane => {
+                          // Filtrar por centro seleccionado si hay uno
+                          if (filterCenterId && lane.center_id !== filterCenterId) {
+                            return false;
+                          }
+                          return lane.id && lane.id.trim() !== '' && !formData.lane_ids?.includes(lane.id);
+                        })
+                        .sort((a, b) => {
+                          // Ordenar primero por nombre de centro, luego por nombre de carril
+                          const centerA = centers.find(c => c.id === a.center_id);
+                          const centerB = centers.find(c => c.id === b.center_id);
+                          const centerNameA = computeFriendlyCenterName(centerA, centers);
+                          const centerNameB = computeFriendlyCenterName(centerB, centers);
+                          
+                          if (centerNameA !== centerNameB) {
+                            return centerNameA.localeCompare(centerNameB);
+                          }
+                          return a.name.localeCompare(b.name);
+                        })
+                        .map(lane => {
+                          const center = centers.find(c => c.id === lane.center_id);
+                          const centerName = computeFriendlyCenterName(center, centers);
+                          const laneDisplayName = lane.name.replace(/ra[ií]l/gi, 'Carril');
+                          // Mostrar el nombre del carril con el nombre específico del centro
+                          const displayName = lane.center_id && center
+                            ? `${laneDisplayName} - ${centerName}`
+                            : `${laneDisplayName} (${centerName})`;
+                          return (
+                            <option key={lane.id} value={lane.id}>
+                              {displayName}
+                            </option>
+                          );
+                        })}
                     </select>
                   </div>
                 </div>
