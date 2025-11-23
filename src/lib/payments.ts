@@ -10,7 +10,7 @@ export interface ChargeResult {
 
 const inFlight = new Set<string>();
 
-export async function chargeBooking(bookingId: string, amountCents?: number): Promise<ChargeResult> {
+export async function chargeBooking(bookingId: string, amountCents?: number, skipEmail?: boolean): Promise<ChargeResult> {
   if (!bookingId) return { ok: false, error: 'bookingId requerido' };
   if (inFlight.has(bookingId)) return { ok: false, error: 'Cobro ya en curso' };
 
@@ -19,9 +19,12 @@ export async function chargeBooking(bookingId: string, amountCents?: number): Pr
     ? Math.max(0, Math.round(amountCents))
     : undefined;
   const buildPayload = () => {
-    const payload: Record<string, number | string> = { booking_id: bookingId };
+    const payload: Record<string, number | string | boolean> = { booking_id: bookingId };
     if (typeof normalizedAmount === 'number') {
       payload.amount_cents = normalizedAmount;
+    }
+    if (skipEmail === true) {
+      payload.skip_email = true;
     }
     return payload;
   };

@@ -521,11 +521,12 @@ export default function AdminPricingPromos() {
   };
 
   // Bonos (paquetes) - edición de precio/sesiones/estado/visibilidad online + alta (agrupados sin duplicados entre centros)
-  const [packageEdits, setPackageEdits] = useState<Record<string, { price_euros: number; sessions_count: number; active: boolean; show_online: boolean }>>({});
-  const handlePackageChange = (id: string, field: 'price_euros'|'sessions_count'|'active'|'show_online', value: any) => {
+  const [packageEdits, setPackageEdits] = useState<Record<string, { name: string; price_euros: number; sessions_count: number; active: boolean; show_online: boolean }>>({});
+  const handlePackageChange = (id: string, field: 'name'|'price_euros'|'sessions_count'|'active'|'show_online', value: any) => {
     setPackageEdits((prev) => ({
       ...prev,
       [id]: { 
+        name: prev[id]?.name ?? '', 
         price_euros: prev[id]?.price_euros ?? 0, 
         sessions_count: prev[id]?.sessions_count ?? 1, 
         active: prev[id]?.active ?? true, 
@@ -569,9 +570,15 @@ export default function AdminPricingPromos() {
     const edit = packageEdits[key];
     if (!edit) return;
 
+    if (!edit.name || edit.name.trim().length === 0) {
+      toast({ title: 'Error', description: 'El nombre del bono es obligatorio', variant: 'destructive' });
+      return;
+    }
+
     const priceCents = Math.round(edit.price_euros * 100);
     for (const id of ids) {
       await supabase.from('packages').update({ 
+        name: edit.name.trim(),
         price_cents: priceCents, 
         sessions_count: edit.sessions_count,
         active: edit.active,
@@ -584,6 +591,40 @@ export default function AdminPricingPromos() {
     delete packageEdits[key];
     setPackageEdits({ ...packageEdits });
     refetchPackages();
+  };
+
+  const deletePackage = async (key: string, ids: string[]) => {
+    const packageName = packageEdits[key]?.name || uniquePackages.find(p => p.key === key)?.name || 'este bono';
+    
+    if (!confirm(`¿Estás seguro de que quieres eliminar "${packageName}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      // Primero eliminar las relaciones en package_services
+      for (const id of ids) {
+        await supabase.from('package_services').delete().eq('package_id', id);
+      }
+      
+      // Luego eliminar los paquetes
+      const { error } = await supabase.from('packages').delete().in('id', ids);
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({ title: 'Eliminado', description: `Bono "${packageName}" eliminado exitosamente` });
+      delete packageEdits[key];
+      setPackageEdits({ ...packageEdits });
+      refetchPackages();
+    } catch (err: any) {
+      console.error('Error deleting package:', err);
+      toast({ 
+        title: 'Error', 
+        description: `No se pudo eliminar el bono: ${err?.message || 'Error desconocido'}`, 
+        variant: 'destructive' 
+      });
+    }
   };
 
   const isPackageFormValid =
@@ -1601,6 +1642,7 @@ export default function AdminPricingPromos() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {uniquePackages.map((g) => {
                        const edit = packageEdits[g.key] || { 
+                         name: g.name,
                          price_euros: g.price_euros, 
                          sessions_count: g.sessions_count, 
                          active: g.allActive,
@@ -1610,8 +1652,10 @@ export default function AdminPricingPromos() {
                       return (
                         <div key={g.key} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <div className="font-medium">{g.name}</div>
+                            <div className="flex-1">
+                              <div className="font-medium mb-1">
+                                {edit.name || g.name}
+                              </div>
                               <div className="text-xs text-muted-foreground">
                                 {g.service_names && g.service_names.length > 0 ? (
                                   <span>
@@ -1622,11 +1666,20 @@ export default function AdminPricingPromos() {
                                 )}
                               </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right ml-4">
                               <div className="text-sm font-semibold">{currency(finalPrice)}</div>
                             </div>
                           </div>
                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4 items-end">
+                             <div className="sm:col-span-2 xl:col-span-4">
+                               <Label>Nombre del Bono *</Label>
+                               <Input 
+                                 type="text" 
+                                 value={edit.name || g.name} 
+                                 onChange={(e) => handlePackageChange(g.key, 'name', e.target.value)}
+                                 placeholder="Ej: Bono 5 Masajes"
+                               />
+                             </div>
                              <div>
                                <Label>Precio (€)</Label>
                                <Input type="number" step="0.01" value={edit.price_euros} onChange={(e) => handlePackageChange(g.key, 'price_euros', parseFloat(e.target.value || '0'))} />
@@ -1678,8 +1731,17 @@ export default function AdminPricingPromos() {
                                  </p>
                                </div>
                              )}
-                            <div className="sm:col-span-2 md:col-span-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                            <div className="sm:col-span-2 xl:col-span-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
                               <Button size="sm" onClick={() => savePackage(g.key, g.ids)}>Guardar</Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive" 
+                                onClick={() => deletePackage(g.key, g.ids)}
+                                className="flex items-center gap-2"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Eliminar
+                              </Button>
                             </div>
                           </div>
                         </div>

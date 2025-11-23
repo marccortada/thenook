@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { Service, Package } from "@/hooks/useDatabase";
 import { usePromotions } from "@/hooks/usePromotions";
 import { useSimpleAuth } from "@/hooks/useSimpleAuth";
+import { useTranslation, translateServiceName } from "@/hooks/useTranslation";
 import { cn } from "@/lib/utils";
 import { Star, Clock, Users, Sparkles, Percent, Tag, X, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -40,6 +41,8 @@ const ServiceCard: React.FC<{
   centerId?: string;
 }> = ({ service, active, onClick, centerId }) => {
   const { calculatePriceWithPromotions } = usePromotions();
+  const { language, t } = useTranslation();
+  const translatedServiceName = translateServiceName(service.name, language, t);
   
   // Calcular precio considerando descuentos de servicio Y promociones
   let basePrice = service.price_cents;
@@ -81,7 +84,7 @@ const ServiceCard: React.FC<{
               "font-semibold text-sm sm:text-base truncate",
               active && "text-primary"
             )}>
-              {service.name}
+              {translatedServiceName}
             </h4>
             {showDiscount && (
               <Badge variant="secondary" className="bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-600 border-orange-300/30">

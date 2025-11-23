@@ -45,6 +45,7 @@ import type { Center } from '@/hooks/useDatabase';
 import { useTreatmentGroups } from '@/hooks/useTreatmentGroups';
 import { useClients } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation, translateServiceName } from '@/hooks/useTranslation';
 import { supabase } from '@/integrations/supabase/client';
 import RepeatClientSelector from './RepeatClientSelector';
 import { useLaneBlocks, type LaneBlock } from '@/hooks/useLaneBlocks';
@@ -147,6 +148,7 @@ const AdvancedCalendarView = () => {
   const { toast } = useToast();
   const { isAdmin, isEmployee } = useSimpleAuth();
   const isMobile = useIsMobile();
+  const { language, t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [selectedCenter, setSelectedCenter] = useState<string>('');
@@ -189,6 +191,8 @@ const AdvancedCalendarView = () => {
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [captureAmountInput, setCaptureAmountInput] = useState<string>('');
+  const [penaltyPercentage, setPenaltyPercentage] = useState<number>(100);
   const [paymentLoading, setPaymentLoading] = useState(false);
   
   // Form state
@@ -1333,8 +1337,14 @@ const AdvancedCalendarView = () => {
 
     try {
       setPaymentLoading(true);
+      // Skip email if this is a no_show booking
+      const skipEmail = editBookingStatus === 'no_show' || editingBooking.status === 'no_show';
       const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
-        body: { booking_id: editingBooking.id, amount_cents: amountCents }
+        body: { 
+          booking_id: editingBooking.id, 
+          amount_cents: amountCents,
+          skip_email: skipEmail
+        }
       });
 
       const functionError = error?.message || data?.error;
@@ -1418,51 +1428,166 @@ const AdvancedCalendarView = () => {
     }
   };
 
+  // Helper function to get desired charge amount (similar to BookingCardWithModal)
+  const getDesiredChargeAmountCents = (overrideAmountCents?: number) => {
+    if (typeof overrideAmountCents === 'number' && !Number.isNaN(overrideAmountCents)) {
+      return Math.max(0, Math.round(overrideAmountCents));
+    }
+    
+    // If no_show, use percentage if set
+    if (editBookingStatus === 'no_show' && editingBooking?.total_price_cents) {
+      const totalCents = editingBooking.total_price_cents;
+      const percentageAmount = Math.round((totalCents * penaltyPercentage) / 100);
+      if (percentageAmount > 0) {
+        return percentageAmount;
+      }
+    }
+    
+    const input = captureAmountInput?.trim();
+    if (input) {
+      const parsed = parseFloat(input.replace(',', '.'));
+      if (!Number.isNaN(parsed)) {
+        return Math.max(0, Math.round(parsed * 100));
+      }
+    }
+    // Use paymentAmount if set, otherwise use booking total
+    if (paymentAmount > 0) {
+      return Math.round(paymentAmount * 100);
+    }
+    return Math.max(0, editingBooking?.total_price_cents || 0);
+  };
+
   const processManualPayment = async () => {
-    if (!editingBooking) return;
-    if (!paymentMethod) {
-      toast({ title: 'Selecciona forma de pago', description: 'Elige cómo se cobró la reserva.', variant: 'destructive' });
-      return;
-    }
-
-    const amountCents = Math.round((paymentAmount || ((editingBooking.total_price_cents || 0) / 100)) * 100);
-
-    if (paymentMethod === 'online') {
-      await sendPaymentLinkFallback(amountCents);
-      return;
-    }
-
     try {
-      setPaymentLoading(true);
-      const { error } = await supabase
-        .from('bookings')
-        .update({
+      if (!editingBooking) {
+        toast({ title: 'Error', description: 'No hay reserva seleccionada.', variant: 'destructive' });
+        return;
+      }
+      
+      if (!paymentMethod) {
+        toast({ title: 'Selecciona forma de pago', description: 'Elige cómo se cobró la reserva.', variant: 'destructive' });
+        return;
+      }
+
+      const desiredAmountCents = getDesiredChargeAmountCents();
+      
+      if (desiredAmountCents < 50) {
+        toast({ title: 'Importe inválido', description: 'El mínimo es 0,50€', variant: 'destructive' });
+        return;
+      }
+
+      // Don't allow online payment for no_show bookings
+      if (paymentMethod === 'online') {
+        if (editBookingStatus === 'no_show') {
+          toast({ 
+            title: 'Método no permitido', 
+            description: 'Para reservas con No Show solo se permite cobro en efectivo o con tarjeta.', 
+            variant: 'destructive' 
+          });
+          return;
+        }
+        await sendPaymentLinkFallback(desiredAmountCents);
+        return;
+      }
+
+      // If staff selects tarjeta, try to charge saved card
+      if (paymentMethod === 'tarjeta') {
+        // Check if booking has reserva_id (for capture-payment) or use charge-booking
+        if ((editingBooking as any).reserva_id) {
+          // Use capture-payment for bookings with reserva_id (allows partial capture)
+          const { data, error: fnErr } = await (supabase as any).functions.invoke('capture-payment', {
+            body: { reserva_id: (editingBooking as any).reserva_id, amount_to_capture: desiredAmountCents }
+          });
+          if (fnErr || !data?.ok) {
+            const reason = (fnErr as any)?.message || data?.error || '';
+            if (data?.requires_action) {
+              await sendPaymentLinkFallback(desiredAmountCents);
+            } else {
+              toast({ 
+                title: 'Cobro no realizado', 
+                description: reason || 'No se pudo procesar el cobro.', 
+                variant: 'destructive' 
+              });
+            }
+            return;
+          }
+        } else {
+          // Use charge-booking for regular bookings
+          // Skip email if this is a no_show booking
+          const skipEmail = editBookingStatus === 'no_show';
+          const { data, error: fnErr } = await (supabase as any).functions.invoke('charge-booking', {
+            body: { 
+              booking_id: editingBooking.id, 
+              amount_cents: desiredAmountCents,
+              skip_email: skipEmail
+            }
+          });
+          if (fnErr || !data?.ok) {
+            const reason = (fnErr as any)?.message || data?.error || '';
+            if (data?.requires_action) {
+              await sendPaymentLinkFallback(desiredAmountCents);
+            } else {
+              // Fallback: send payment link with the same amount
+              await sendPaymentLinkFallback(desiredAmountCents);
+            }
+            return;
+          }
+        }
+        // Mark as paid by card
+        const updateData: any = { 
+          payment_status: 'paid', 
+          payment_method: 'tarjeta', 
+          payment_notes: paymentNotes || 'Cobro automático Stripe' 
+        };
+        // If status is no_show, keep it as no_show after payment
+        if (editBookingStatus === 'no_show') {
+          updateData.status = 'no_show';
+        }
+        const { error } = await supabase
+          .from('bookings')
+          .update(updateData)
+          .eq('id', editingBooking.id);
+        if (error) throw error;
+      } else {
+        // Manual methods: efectivo/bizum/transferencia
+        const updateData: any = {
           payment_status: 'paid',
           payment_method: paymentMethod,
-          payment_notes: paymentNotes || null,
-          status: 'confirmed'
-        })
-        .eq('id', editingBooking.id);
+          payment_notes: paymentNotes || null
+        };
+        // If status is no_show, keep it as no_show after payment, otherwise confirm
+        if (editBookingStatus === 'no_show') {
+          updateData.status = 'no_show';
+        } else {
+          updateData.status = 'confirmed';
+        }
+        const { error } = await supabase
+          .from('bookings')
+          .update(updateData)
+          .eq('id', editingBooking.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
       toast({
         title: 'Pago registrado',
         description: `Se registró el cobro (${paymentMethod}).`
       });
-      // No enviar emails de tarjeta desde frontend
 
       setShowPaymentModal(false);
       setShowEditModal(false);
       setEditingBooking(null);
       setPaymentMethod('');
       setPaymentNotes('');
+      setPaymentAmount(0);
+      setCaptureAmountInput('');
+      setPenaltyPercentage(100);
       await refetchBookings();
-    } catch (err) {
-      console.error('Error registrando el pago', err);
+    } catch (error) {
+      console.error('Error processing payment:', error);
       toast({
-        title: 'No se pudo registrar el pago',
-        description: err instanceof Error ? err.message : 'Error desconocido al registrar el pago.',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo procesar el pago.',
         variant: 'destructive'
       });
     } finally {
@@ -1904,7 +2029,7 @@ const AdvancedCalendarView = () => {
                                  <div className="flex-1">
                                    <div className="text-sm font-semibold truncate">{booking.profiles?.first_name} {booking.profiles?.last_name}</div>
                                    <div className="text-xs text-muted-foreground truncate">
-                                     {booking.services?.name}
+                                     {booking.services?.name ? translateServiceName(booking.services.name, language, t) : ''}
                                    </div>
                                    <div className="text-xs font-medium">
                                      €{((booking.total_price_cents || 0) / 100).toFixed(0)} - {format(parseISO(booking.booking_datetime), 'HH:mm')}
@@ -2666,7 +2791,7 @@ const AdvancedCalendarView = () => {
             Registrar pago
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Reserva del {format(parseISO(editingBooking.booking_datetime), "d 'de' MMMM a las HH:mm", { locale: es })}
+            Reserva del {format(parseISO(editingBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
           </p>
           {!editingBooking.stripe_payment_method_id && (
             <p className="text-xs text-amber-600 mt-2">
@@ -2676,6 +2801,81 @@ const AdvancedCalendarView = () => {
         </div>
 
         <div className="px-6 py-5 space-y-4 overflow-y-auto">
+          {/* Show penalty field if status is no_show */}
+          {editBookingStatus === 'no_show' && editPaymentStatus !== 'paid' && (
+            <div className="space-y-2 border border-amber-200 bg-amber-50 rounded-lg p-4">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium text-amber-900">Penalización por No Show</Label>
+                <Label className="text-xs text-amber-700">
+                  Selecciona el porcentaje del precio que deseas cobrar.
+                </Label>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-amber-900">Porcentaje a cobrar</Label>
+                <Select 
+                  value={String(penaltyPercentage)} 
+                  onValueChange={(v) => {
+                    const percentage = parseInt(v, 10);
+                    setPenaltyPercentage(percentage);
+                    // Auto-calculate amount from percentage
+                    if (editingBooking?.total_price_cents) {
+                      const amount = (editingBooking.total_price_cents * percentage) / 100 / 100;
+                      setCaptureAmountInput(amount.toFixed(2));
+                    }
+                  }}
+                  disabled={paymentLoading}
+                >
+                  <SelectTrigger className="bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0% - No cobrar</SelectItem>
+                    <SelectItem value="25">25%</SelectItem>
+                    <SelectItem value="50">50%</SelectItem>
+                    <SelectItem value="75">75%</SelectItem>
+                    <SelectItem value="100">100% - Cobro total</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {editingBooking?.total_price_cents && (
+                <div className="space-y-1">
+                  <Label className="text-xs text-amber-700">Importe calculado:</Label>
+                  <p className="text-sm font-semibold text-amber-900">
+                    {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(
+                      ((editingBooking.total_price_cents || 0) * penaltyPercentage) / 100 / 100
+                    )}
+                  </p>
+                </div>
+              )}
+              <div className="space-y-1">
+                <Label className="text-xs text-amber-700">O ingresa un importe manual (opcional):</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  value={captureAmountInput}
+                  onChange={(e) => {
+                    setCaptureAmountInput(e.target.value);
+                    // Update percentage if manual amount is entered
+                    if (editingBooking?.total_price_cents && e.target.value) {
+                      const parsed = parseFloat(e.target.value.replace(',', '.'));
+                      if (!isNaN(parsed)) {
+                        const originalPrice = (editingBooking.total_price_cents || 0) / 100;
+                        const calculatedPercentage = Math.round((parsed / originalPrice) * 100);
+                        setPenaltyPercentage(calculatedPercentage);
+                      }
+                    }
+                  }}
+                  placeholder={editingBooking?.total_price_cents 
+                    ? ((editingBooking.total_price_cents || 0) / 100).toFixed(2) 
+                    : '0.00'}
+                  className="bg-white"
+                  disabled={paymentLoading}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="paymentAmount">Importe a cobrar (€)</Label>
             <Input
@@ -2683,13 +2883,20 @@ const AdvancedCalendarView = () => {
               type="number"
               min={0}
               step={0.01}
-              value={paymentAmount}
+              value={paymentAmount || (editingBooking ? (editingBooking.total_price_cents || 0) / 100 : 0)}
               onChange={(e) => {
                 const value = parseFloat(e.target.value);
                 setPaymentAmount(Number.isFinite(value) ? value : 0);
               }}
-              disabled={paymentLoading}
+              disabled={paymentLoading || (editBookingStatus === 'no_show' && captureAmountInput.trim() !== '')}
             />
+            {editBookingStatus === 'no_show' && (
+              <p className="text-xs text-muted-foreground">
+                {captureAmountInput.trim() !== '' 
+                  ? 'El importe de penalización se usará para el cobro.' 
+                  : 'Usa el campo de penalización arriba o este campo para definir el importe.'}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -2701,14 +2908,23 @@ const AdvancedCalendarView = () => {
               <SelectContent>
                 <SelectItem value="efectivo">💰 Efectivo</SelectItem>
                 <SelectItem value="tarjeta">💳 Terminal tarjeta</SelectItem>
-                <SelectItem value="bizum">📱 Bizum</SelectItem>
-                <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
-                <SelectItem value="online">🌐 Enviar link de pago</SelectItem>
+                {editBookingStatus !== 'no_show' && (
+                  <>
+                    <SelectItem value="bizum">📱 Bizum</SelectItem>
+                    <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
+                    <SelectItem value="online">🌐 Enviar link de pago</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
-            {paymentMethod === 'online' && (
+            {paymentMethod === 'online' && editBookingStatus !== 'no_show' && (
               <p className="text-xs text-muted-foreground">
                 Se generará un enlace de pago con Stripe y se enviará por email si hay correo disponible.
+              </p>
+            )}
+            {editBookingStatus === 'no_show' && (
+              <p className="text-xs text-amber-600">
+                Para reservas con No Show solo se permite cobro en efectivo o con tarjeta.
               </p>
             )}
           </div>
@@ -2799,7 +3015,7 @@ const AdvancedCalendarView = () => {
                 >
                   {services.filter(s => s.center_id === (editingBooking?.center_id || bookingForm.centerId) || !s.center_id).map((service) => (
                     <SelectItem key={service.id} value={service.id}>
-                      {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
+                      {translateServiceName(service.name, language, t)} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)} ({service.duration_minutes} min)
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -2944,6 +3160,11 @@ const AdvancedCalendarView = () => {
                     <SelectItem value="no_show">No Show</SelectItem>
                   </SelectContent>
                 </Select>
+                {editBookingStatus === 'no_show' && editPaymentStatus !== 'paid' && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    💡 Puedes cobrar una penalización parcial usando el botón "Cobrar Cita"
+                  </p>
+                )}
               </div>
             </div>
 
@@ -3013,7 +3234,34 @@ const AdvancedCalendarView = () => {
             </div>
 
             <div className="space-y-3">
+              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  size="sm" 
+                  onClick={() => {
+                    try {
+                      // Reset payment state when opening payment modal
+                      setPaymentAmount(editingBooking?.total_price_cents ? (editingBooking.total_price_cents / 100) : 0);
+                      setCaptureAmountInput('');
+                      setPenaltyPercentage(100);
+                      setPaymentMethod('');
+                      setPaymentNotes('');
+                      setShowPaymentModal(true);
+                    } catch (error) {
+                      console.error('Error opening payment modal:', error);
+                      toast({
+                        title: 'Error',
+                        description: 'No se pudo abrir el modal de pago.',
+                        variant: 'destructive'
+                      });
+                    }
+                  }}
+                  className="flex-1"
+                  disabled={editPaymentStatus === 'paid'}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  {editPaymentStatus === 'paid' ? 'Ya Pagado' : 'Cobrar Cita'}
+                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button size="sm" variant="destructive" className="flex-1">

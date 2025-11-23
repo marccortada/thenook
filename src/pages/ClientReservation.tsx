@@ -22,7 +22,7 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import ServiceSelectorGrouped from "@/components/ServiceSelectorGrouped";
-import { useTranslation } from "@/hooks/useTranslation";
+import { useTranslation, translateServiceName } from "@/hooks/useTranslation";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { DatePickerModal } from "@/components/DatePickerModal";
 import { TimePickerModal } from "@/components/TimePickerModal";
@@ -35,7 +35,7 @@ type TimeSlotOption = {
 
 const ClientReservation = () => {
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const friendlyCenterName = (center?: { name?: string | null; address?: string | null }) => {
     if (!center) return '';
@@ -146,7 +146,7 @@ const ClientReservation = () => {
           setAvailableTimeSlots(
             baseOptions.map((slot) => ({
               ...slot,
-              reason: "Sin carriles disponibles",
+              reason: t('no_lanes_available'),
             }))
           );
         }
@@ -269,7 +269,7 @@ const ClientReservation = () => {
         if (isToday) {
           if (slotDate < now) {
             disabled = true;
-            reason = "Horario pasado";
+            reason = t('past_time');
           }
         }
 
@@ -321,7 +321,7 @@ const ClientReservation = () => {
 
           if (!laneAvailable) {
             disabled = true;
-            reason = "Sin disponibilidad";
+            reason = t('no_availability_simple');
           }
         }
 
@@ -571,8 +571,8 @@ const ClientReservation = () => {
       // If specific lanes are assigned but none are available, show error
       if (noAvailabilityInAssignedLanes) {
         toast({
-          title: "Sin disponibilidad",
-          description: "No hay carriles disponibles para este servicio en el horario seleccionado. Por favor, elige otra hora.",
+          title: t('no_availability'),
+          description: t('no_availability_message'),
           variant: "destructive",
         });
         setIsSubmitting(false);
@@ -600,8 +600,8 @@ const ClientReservation = () => {
         
         if (!assignedLaneId) {
           toast({
-            title: "Sin disponibilidad",
-            description: "No hay carriles disponibles en el horario seleccionado. Por favor, elige otra hora.",
+            title: t('no_availability'),
+            description: t('no_availability_message'),
             variant: "destructive",
           });
           setIsSubmitting(false);
@@ -657,14 +657,14 @@ const ClientReservation = () => {
       const errorMessage = error?.message || '';
       if (errorMessage.includes('Capacidad máxima alcanzada')) {
         toast({
-          title: "Capacidad Completa",
-          description: "Esta franja horaria ya tiene el máximo de 4 reservas. Por favor, elige otro horario.",
+          title: t('full_capacity'),
+          description: t('full_capacity_message'),
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Error",
-          description: "No se pudo crear la reserva. Inténtalo de nuevo.",
+          title: t('error'),
+          description: t('booking_error'),
           variant: "destructive",
         });
       }
@@ -687,16 +687,16 @@ const ClientReservation = () => {
       if (error) throw error;
 
       toast({
-        title: "Reserva Cancelada",
-        description: "La reserva ha sido cancelada exitosamente.",
+        title: t('booking_cancelled'),
+        description: t('booking_cancelled_success'),
       });
 
       // Refresh existing bookings
       checkExistingBookings();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "No se pudo cancelar la reserva.",
+        title: t('error'),
+        description: t('cancel_booking_error'),
         variant: "destructive",
       });
     }
@@ -722,8 +722,8 @@ const ClientReservation = () => {
           }));
           
           toast({
-            title: "Cliente encontrado",
-            description: "Datos del cliente cargados automáticamente",
+            title: t('client_found'),
+            description: t('client_data_loaded'),
           });
         }
       } catch (error) {
@@ -877,7 +877,7 @@ const ClientReservation = () => {
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-sm flex items-center space-x-2">
                       <Search className="h-4 w-4" />
-                      <span>Reservas Existentes</span>
+                      <span>{t('existing_bookings')}</span>
                     </h4>
                     <Button
                       type="button"
@@ -1066,7 +1066,7 @@ const ClientReservation = () => {
                       </div>
                       {selectedCenter?.address && (
                         <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground text-xs">{t('address') || 'Dirección'}:</span>
+                          <span className="text-muted-foreground text-xs">{t('address')}:</span>
                           <span className="font-medium text-xs">{selectedCenter.address}</span>
                         </div>
                       )}
@@ -1074,7 +1074,7 @@ const ClientReservation = () => {
                     {selection.kind === 'service' && (
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">{t('service')}:</span>
-                        <span className="font-medium">{services.find(s => s.id === selection.id)?.name}</span>
+                        <span className="font-medium">{services.find(s => s.id === selection.id) ? translateServiceName(services.find(s => s.id === selection.id)!.name, language, t) : ''}</span>
                       </div>
                     )}
                     <div className="flex justify-between items-center">
@@ -1094,10 +1094,10 @@ const ClientReservation = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Procesando...
+                    {t('processing')}
                   </>
                 ) : (
-                  "Continuar"
+                  t('continue')
                 )}
               </Button>
             </form>
@@ -1121,7 +1121,7 @@ const ClientReservation = () => {
               </a>
             </div>
             <p className="text-sm text-muted-foreground mt-3">
-              © GnerAI 2025 · Todos los derechos reservados
+              {t('copyright')}
             </p>
           </div>
         </div>

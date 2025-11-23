@@ -155,7 +155,7 @@ export default function PublicLandingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-primary" />
-                Chamberí - Zurbarán
+                {t('chamberi_zurbaran')}
               </CardTitle>
               <CardDescription>
                 {MAPS.chamberi.address}
@@ -193,7 +193,7 @@ export default function PublicLandingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-primary" />
-                Chamartín - Concha Espina
+                {t('chamartin_concha_espina')}
               </CardTitle>
               <CardDescription>
                 {MAPS.chamartin.address}
@@ -246,7 +246,7 @@ export default function PublicLandingPage() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
-            © THE NOOK Madrid 2025 · Todos los derechos reservados
+            {t('copyright')}
           </p>
         </div>
       </footer>

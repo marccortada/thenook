@@ -30,10 +30,12 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useBookings, useCenters, useEmployees, useServices } from '@/hooks/useDatabase';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation, translateServiceName } from '@/hooks/useTranslation';
 import { supabase } from '@/integrations/supabase/client';
 
 const SimpleCenterCalendar = () => {
   const { toast } = useToast();
+  const { language, t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState(new Date('2025-08-06'));
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -46,6 +48,7 @@ const SimpleCenterCalendar = () => {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [captureAmountInput, setCaptureAmountInput] = useState<string>('');
   const [newBookingDate, setNewBookingDate] = useState(new Date());
   const [newBookingTime, setNewBookingTime] = useState('');
   
@@ -182,6 +185,11 @@ const SimpleCenterCalendar = () => {
   const handleBookingClick = (booking: any) => {
     setSelectedBooking(booking);
     setShowEditBookingModal(true);
+    // Reset payment modal state when opening booking
+    setPaymentAmount(0);
+    setCaptureAmountInput('');
+    setPaymentMethod('');
+    setPaymentNotes('');
   };
 
   // Create new booking
@@ -301,13 +309,21 @@ const SimpleCenterCalendar = () => {
 
       if (error) throw error;
 
+      // Update selectedBooking state to reflect the new status
+      if (selectedBooking && selectedBooking.id === bookingId) {
+        setSelectedBooking({ ...selectedBooking, status });
+      }
+
       toast({
         title: "✅ Estado Actualizado",
         description: `Estado de la reserva actualizado a ${status}.`,
       });
 
       refetchBookings();
-      setShowEditBookingModal(false);
+      // Don't close modal if status is no_show, so user can immediately charge
+      if (status !== 'no_show') {
+        setShowEditBookingModal(false);
+      }
     } catch (error) {
       console.error('Error updating booking status:', error);
       toast({
@@ -354,36 +370,105 @@ const SimpleCenterCalendar = () => {
     }
   };
 
+  // Helper function to get desired charge amount (similar to BookingCardWithModal)
+  const getDesiredChargeAmountCents = (overrideAmountCents?: number) => {
+    if (typeof overrideAmountCents === 'number' && !Number.isNaN(overrideAmountCents)) {
+      return Math.max(0, Math.round(overrideAmountCents));
+    }
+    const input = captureAmountInput?.trim();
+    if (input) {
+      const parsed = parseFloat(input.replace(',', '.'));
+      if (!Number.isNaN(parsed)) {
+        return Math.max(0, Math.round(parsed * 100));
+      }
+    }
+    // Use paymentAmount if set, otherwise use booking total
+    if (paymentAmount > 0) {
+      return Math.round(paymentAmount * 100);
+    }
+    return Math.max(0, selectedBooking?.total_price_cents || 0);
+  };
+
   // Process payment
   const processPayment = async () => {
     try {
-      const amountCents = Math.round((paymentAmount > 0 ? paymentAmount : ((selectedBooking.total_price_cents || 0) / 100)) * 100);
+      if (!paymentMethod) {
+        toast({ 
+          title: 'Selecciona forma de pago', 
+          description: 'Elige cómo se cobró la reserva.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      const desiredAmountCents = getDesiredChargeAmountCents();
 
       // If staff selects tarjeta, try to charge saved card
       if (paymentMethod === 'tarjeta') {
-        const { data, error: fnErr } = await (supabase as any).functions.invoke('charge-booking', {
-          body: { booking_id: selectedBooking.id, amount_cents: amountCents }
-        });
-        if (fnErr || !data?.ok) {
-          // Fallback: send payment link with the same amount (min 0.50€)
-          await sendPaymentLinkFallback(amountCents);
-          return;
+        // Check if booking has reserva_id (for capture-payment) or use charge-booking
+        if (selectedBooking?.reserva_id) {
+          // Use capture-payment for bookings with reserva_id (allows partial capture)
+          const { data, error: fnErr } = await (supabase as any).functions.invoke('capture-payment', {
+            body: { reserva_id: selectedBooking.reserva_id, amount_to_capture: desiredAmountCents }
+          });
+          if (fnErr || !data?.ok) {
+            const reason = (fnErr as any)?.message || data?.error || '';
+            if (data?.requires_action) {
+              await sendPaymentLinkFallback(desiredAmountCents);
+            } else {
+              toast({ 
+                title: 'Cobro no realizado', 
+                description: reason || 'No se pudo procesar el cobro.', 
+                variant: 'destructive' 
+              });
+            }
+            return;
+          }
+        } else {
+          // Use charge-booking for regular bookings
+          // Skip email if this is a no_show booking
+          const skipEmail = selectedBooking?.status === 'no_show';
+          const { data, error: fnErr } = await (supabase as any).functions.invoke('charge-booking', {
+            body: { 
+              booking_id: selectedBooking.id, 
+              amount_cents: desiredAmountCents,
+              skip_email: skipEmail
+            }
+          });
+          if (fnErr || !data?.ok) {
+            const reason = (fnErr as any)?.message || data?.error || '';
+            if (data?.requires_action) {
+              await sendPaymentLinkFallback(desiredAmountCents);
+            } else {
+              // Fallback: send payment link with the same amount (min 0.50€)
+              await sendPaymentLinkFallback(desiredAmountCents);
+            }
+            return;
+          }
         }
         // Mark as paid by card
         const { error } = await supabase
           .from('bookings')
-          .update({ payment_status: 'paid', payment_method: 'tarjeta', payment_notes: paymentNotes || 'Cobro automático Stripe' })
+          .update({ 
+            payment_status: 'paid', 
+            payment_method: 'tarjeta', 
+            payment_notes: paymentNotes || 'Cobro automático Stripe' 
+          })
           .eq('id', selectedBooking.id);
         if (error) throw error;
       } else if (paymentMethod === 'online') {
         // Generate link and keep booking pending until paid (use amount from input if provided)
-        await sendPaymentLinkFallback(amountCents);
+        await sendPaymentLinkFallback(desiredAmountCents);
         return;
       } else {
         // Manual methods: efectivo/bizum/transferencia
         const { error } = await supabase
           .from('bookings')
-          .update({ payment_status: 'paid', payment_method: paymentMethod, payment_notes: paymentNotes })
+          .update({ 
+            payment_status: 'paid', 
+            payment_method: paymentMethod, 
+            payment_notes: paymentNotes || null 
+          })
           .eq('id', selectedBooking.id);
         if (error) throw error;
       }
@@ -399,6 +484,7 @@ const SimpleCenterCalendar = () => {
       setPaymentMethod('');
       setPaymentNotes('');
       setPaymentAmount(0);
+      setCaptureAmountInput('');
     } catch (error) {
       console.error('Error processing payment:', error);
       // Last resort
@@ -609,7 +695,7 @@ const SimpleCenterCalendar = () => {
                                 {booking.profiles?.first_name} {booking.profiles?.last_name}
                               </div>
                               <div className="text-xs text-muted-foreground truncate hidden sm:block">
-                                {booking.services?.name}
+                                {booking.services?.name ? translateServiceName(booking.services.name, language, t) : ''}
                               </div>
                               <div className="flex items-center gap-1 sm:gap-2 mt-1">
                                 <Badge variant="secondary" className="text-xs px-1 py-0">
@@ -726,7 +812,7 @@ const SimpleCenterCalendar = () => {
                         .filter(service => service.center_id === activeTab || !service.center_id)
                         .map((service) => (
                         <SelectItem key={service.id} value={service.id}>
-                           {service.name} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)}
+                           {translateServiceName(service.name, language, t)} - {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(service.price_cents / 100)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -799,8 +885,8 @@ const SimpleCenterCalendar = () => {
 
       {/* Edit Booking Modal */}
       <Dialog open={showEditBookingModal} onOpenChange={setShowEditBookingModal}>
-        <DialogContent className="max-w-[640px] overflow-hidden flex flex-col">
-          <DialogHeader className="px-4 sm:px-6 pt-4 pb-3 border-b bg-background sticky top-0 z-10">
+        <DialogContent className="max-w-[640px] overflow-hidden flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 sm:px-6 pt-4 pb-3 border-b bg-background flex-shrink-0">
             <DialogTitle>Gestionar Reserva</DialogTitle>
             <DialogDescription>
               Gestión completa de la reserva seleccionada
@@ -828,7 +914,7 @@ const SimpleCenterCalendar = () => {
                       {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format((selectedBooking.total_price_cents || 0) / 100)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {selectedBooking.services?.name}
+                      {selectedBooking.services?.name ? translateServiceName(selectedBooking.services.name, language, t) : ''}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {format(parseISO(selectedBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
@@ -854,7 +940,7 @@ const SimpleCenterCalendar = () => {
               <div>
                 <Label htmlFor="editStatus">Cambiar Estado</Label>
                 <Select 
-                  defaultValue={selectedBooking.status} 
+                  value={selectedBooking.status} 
                   onValueChange={(value: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'requested' | 'new' | 'online') => updateBookingStatus(selectedBooking.id, value)}
                 >
                   <SelectTrigger>
@@ -871,6 +957,11 @@ const SimpleCenterCalendar = () => {
                     <SelectItem value="no_show">❌ No Show</SelectItem>
                   </SelectContent>
                 </Select>
+                {selectedBooking.status === 'no_show' && selectedBooking.payment_status !== 'paid' && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    💡 Puedes cobrar una penalización parcial usando el botón "Cobrar Cita"
+                  </p>
+                )}
               </div>
 
               {/* Employee Assignment */}
@@ -897,18 +988,28 @@ const SimpleCenterCalendar = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Action Buttons */}
+            </div>
+          )}
+          </div>
+          {/* Action Buttons - Fixed at bottom */}
+          {selectedBooking && (
+            <div className="flex-shrink-0 px-4 sm:px-6 py-4 border-t bg-background">
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   onClick={(e) => {
                     e.stopPropagation();
+                    // Reset payment state when opening payment modal
+                    setPaymentAmount(selectedBooking?.total_price_cents ? (selectedBooking.total_price_cents / 100) : 0);
+                    setCaptureAmountInput('');
+                    setPaymentMethod('');
+                    setPaymentNotes('');
                     setShowPaymentModal(true);
                   }} 
-                  className="flex items-center"
+                  className="flex items-center justify-center"
+                  disabled={selectedBooking?.payment_status === 'paid'}
                 >
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Cobrar Cita
+                  {selectedBooking?.payment_status === 'paid' ? 'Ya Pagado' : 'Cobrar Cita'}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -917,18 +1018,18 @@ const SimpleCenterCalendar = () => {
                     setNewBookingTime(format(parseISO(selectedBooking.booking_datetime), 'HH:mm'));
                     setShowRescheduleModal(true);
                   }}
-                  className="flex items-center"
+                  className="flex items-center justify-center"
                 >
                   <Calendar className="h-4 w-4 mr-2" />
                   Reagendar
                 </Button>
-                <Button variant="outline" onClick={() => setShowEditBookingModal(false)}>
+                <Button variant="outline" onClick={() => setShowEditBookingModal(false)} className="flex items-center justify-center">
                   <Edit className="h-4 w-4 mr-2" />
                   Cerrar
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="flex items-center">
+                    <Button variant="destructive" className="flex items-center justify-center">
                       <Trash2 className="h-4 w-4 mr-2" />
                       Borrar
                     </Button>
@@ -962,7 +1063,6 @@ const SimpleCenterCalendar = () => {
               </div>
             </div>
           )}
-          </div>
         </DialogContent>
       </Dialog>
 
@@ -977,6 +1077,45 @@ const SimpleCenterCalendar = () => {
           </DialogHeader>
           
           <div className="space-y-4">
+            {/* Show penalty field if status is no_show */}
+            {selectedBooking?.status === 'no_show' && (
+              <div className="space-y-2 border border-amber-200 bg-amber-50 rounded-lg p-4">
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium text-amber-900">Penalización por No Show</Label>
+                  <Label className="text-xs text-amber-700">
+                    Define el importe parcial que deseas cobrar.
+                  </Label>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium text-amber-900">Importe a cobrar (EUR)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={captureAmountInput}
+                    onChange={(e) => setCaptureAmountInput(e.target.value)}
+                    placeholder={(selectedBooking?.total_price_cents || 0) / 100 > 0 
+                      ? ((selectedBooking.total_price_cents || 0) / 100).toFixed(2) 
+                      : '0.00'}
+                    className="bg-white"
+                  />
+                </div>
+                {selectedBooking?.total_price_cents && captureAmountInput && (() => {
+                  const parsed = parseFloat(captureAmountInput.replace(',', '.'));
+                  const originalPrice = (selectedBooking.total_price_cents || 0) / 100;
+                  if (!isNaN(parsed) && originalPrice > 0) {
+                    const percentage = Math.round((parsed / originalPrice) * 100);
+                    return (
+                      <p className="text-xs text-amber-700">
+                        Esto equivale aproximadamente a {percentage}% del precio original.
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
+
             <div>
               <Label htmlFor="paymentAmount">Importe a cobrar (€)</Label>
               <Input
@@ -985,11 +1124,19 @@ const SimpleCenterCalendar = () => {
                 min={0}
                 step={0.01}
                 value={paymentAmount || (selectedBooking ? (selectedBooking.total_price_cents || 0) / 100 : 0)}
-                onChange={(e) => setPaymentAmount(parseFloat(e.target.value))}
+                onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                disabled={selectedBooking?.status === 'no_show' && captureAmountInput.trim() !== ''}
               />
+              {selectedBooking?.status === 'no_show' && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {captureAmountInput.trim() !== '' 
+                    ? 'El importe de penalización se usará para el cobro.' 
+                    : 'Usa el campo de penalización arriba o este campo para definir el importe.'}
+                </p>
+              )}
             </div>
             <div>
-              <Label htmlFor="paymentMethod">Forma de Pago</Label>
+              <Label htmlFor="paymentMethod">Forma de Pago *</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar forma de pago" />
@@ -1016,7 +1163,11 @@ const SimpleCenterCalendar = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowPaymentModal(false)} className="flex-1">
+              <Button variant="outline" onClick={() => {
+                setShowPaymentModal(false);
+                setCaptureAmountInput('');
+                setPaymentAmount(0);
+              }} className="flex-1">
                 Cancelar
               </Button>
               <Button onClick={processPayment} className="flex-1">

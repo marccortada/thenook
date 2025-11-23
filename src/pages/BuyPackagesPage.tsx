@@ -569,7 +569,7 @@ const BuyPackagesPage = () => {
                         );
                       });
                       if (!pkg?.id) {
-                        throw new Error("No se encontró el bono seleccionado. Actualiza la página e inténtalo nuevamente.");
+                        throw new Error(t('package_not_found'));
                       }
                       return {
                         package_id: pkg.id,
@@ -596,7 +596,7 @@ const BuyPackagesPage = () => {
                     if (!checkoutUrl) throw new Error('No se pudo iniciar el pago.');
 
                     window.location.href = checkoutUrl;
-                    toast.success('Redirigiendo a Stripe...');
+                    toast.success(t('redirecting_to_stripe'));
                     setIsCartOpen(false);
 
                     clear();

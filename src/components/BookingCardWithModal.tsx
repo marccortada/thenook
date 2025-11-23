@@ -15,6 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import AppModal from "@/components/ui/app-modal";
 import { useInternalCodes } from "@/hooks/useInternalCodes";
 import MessageGeneratorModal from "@/components/MessageGeneratorModal";
+import { useTranslation, translateServiceName } from "@/hooks/useTranslation";
 
 interface Booking {
   id: string;
@@ -97,6 +98,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   const [suggestionText, setSuggestionText] = useState<string | null>(null);
   const [suggestionError, setSuggestionError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { language, t } = useTranslation();
   const isMobile = useIsMobile();
 
   const getDesiredChargeAmountCents = (overrideAmountCents?: number) => {
@@ -292,8 +294,14 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         try {
           setIsProcessingPayment(true);
           const desiredAmountCents = getDesiredChargeAmountCents();
+          // Skip email if this is a no_show booking
+          const skipEmail = bookingStatus === 'no_show';
           const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
-            body: { booking_id: booking.id, amount_cents: desiredAmountCents }
+            body: { 
+              booking_id: booking.id, 
+              amount_cents: desiredAmountCents,
+              skip_email: skipEmail
+            }
           });
           if (error || !data?.ok) throw new Error(error?.message || data?.error);
           await supabase.from('bookings').update({ payment_status: 'paid' }).eq('id', booking.id);
@@ -350,8 +358,14 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
             return;
           }
         } else {
+          // Skip email if this is a no_show booking
+          const skipEmail = bookingStatus === 'no_show';
           const { data, error } = await (supabase as any).functions.invoke('charge-booking', {
-            body: { booking_id: booking.id, amount_cents: desiredAmountCents }
+            body: { 
+              booking_id: booking.id, 
+              amount_cents: desiredAmountCents,
+              skip_email: skipEmail
+            }
           });
           if (error || !data?.ok) {
             const reason = (error as any)?.message || data?.error || '';
@@ -377,9 +391,14 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
       if (updErr) throw updErr;
 
       if (status === 'paid') {
-        // Confirmar y enviar email cuando se marca pagada desde el selector
-        try { await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id); setBookingStatus('confirmed'); } catch {}
-        try { await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } }); } catch (e) { console.warn('send-booking-with-payment fallo (updatePaymentStatus):', e); }
+        // Confirmar y enviar email cuando se marca pagada desde el selector (solo si no es no_show)
+        if (bookingStatus !== 'no_show') {
+          try { await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id); setBookingStatus('confirmed'); } catch {}
+          try { await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } }); } catch (e) { console.warn('send-booking-with-payment fallo (updatePaymentStatus):', e); }
+        } else {
+          // Para no_show, mantener el status como no_show
+          try { await supabase.from('bookings').update({ status: 'no_show' as any }).eq('id', booking.id); } catch {}
+        }
       }
 
       toast({
@@ -547,7 +566,9 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         return;
       }
       const desiredAmountCents = getDesiredChargeAmountCents(overrideAmountCents);
-      const res = await chargeBooking(booking.id, desiredAmountCents);
+      // Skip email if this is a no_show booking
+      const skipEmail = bookingStatus === 'no_show';
+      const res = await chargeBooking(booking.id, desiredAmountCents, skipEmail);
       if (!res.ok) {
         if (res.requires_action) {
           toast({ title: 'Se requiere autenticación', description: 'La tarjeta requiere una acción adicional (SCA).', variant: 'destructive' });
@@ -738,7 +759,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
           <div>
             <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Servicio</Label>
             <p className="font-medium text-sm sm:text-base truncate">
-              {booking.services?.name || 'Sin servicio'}
+              {booking.services?.name ? translateServiceName(booking.services.name, language, t) : 'Sin servicio'}
             </p>
           </div>
           <div>
@@ -851,7 +872,7 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
                   <div className="space-y-2 text-sm text-muted-foreground border-b pb-3">
                     <p>Cliente: {booking.profiles?.first_name} {booking.profiles?.last_name}</p>
                     <p>Fecha: {format(new Date(booking.booking_datetime), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
-                    <p>Servicio: {booking.services?.name || 'Sin servicio'}</p>
+                    <p>Servicio: {booking.services?.name ? translateServiceName(booking.services.name, language, t) : 'Sin servicio'}</p>
                     <p>Precio: {(booking.total_price_cents / 100).toFixed(2)}€</p>
                   </div>
 

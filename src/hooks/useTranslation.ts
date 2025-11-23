@@ -273,6 +273,28 @@ const translations = {
      "active_packages": "Paquetes Activos",
      "all_packages": "Todos los Paquetes",
      "inactive_packages": "Paquetes Inactivos",
+     
+     // Additional missing translations
+     "existing_bookings": "Reservas Existentes",
+     "processing": "Procesando...",
+     "continue": "Continuar",
+     "no_availability": "Sin disponibilidad",
+     "no_availability_message": "No hay carriles disponibles para este servicio en el horario seleccionado. Por favor, elige otra hora.",
+     "full_capacity": "Capacidad Completa",
+     "full_capacity_message": "Esta franja horaria ya tiene el máximo de 4 reservas. Por favor, elige otro horario.",
+     "address": "Dirección",
+     "copyright": "© THE NOOK Madrid 2025 · Todos los derechos reservados",
+     "redirecting_to_stripe": "Redirigiendo a Stripe...",
+     "package_not_found": "No se encontró el bono seleccionado. Actualiza la página e inténtalo nuevamente.",
+     "individual_massages_label": "🧘 Masajes Individuales",
+     "four_hands_massages_label": "✋ Masajes a Cuatro Manos",
+     "rituals_label": "🌸 Rituales",
+     "for_two_people_label": "💑 Para Dos Personas",
+     "no_lanes_available": "Sin carriles disponibles",
+     "past_time": "Horario pasado",
+     "no_availability_simple": "Sin disponibilidad",
+     "chamberi_zurbaran": "Chamberí - Zurbarán",
+     "chamartin_concha_espina": "Chamartín - Concha Espina",
   },
   
   en: {
@@ -557,6 +579,28 @@ const translations = {
      "active_packages": "Active Packages",
      "all_packages": "All Packages",
      "inactive_packages": "Inactive Packages",
+     
+     // Additional missing translations
+     "existing_bookings": "Existing Bookings",
+     "processing": "Processing...",
+     "continue": "Continue",
+     "no_availability": "No Availability",
+     "no_availability_message": "No lanes available for this service at the selected time. Please choose another time.",
+     "full_capacity": "Full Capacity",
+     "full_capacity_message": "This time slot already has the maximum of 4 bookings. Please choose another time.",
+     "address": "Address",
+     "copyright": "© THE NOOK Madrid 2025 · All rights reserved",
+     "redirecting_to_stripe": "Redirecting to Stripe...",
+     "package_not_found": "Selected package not found. Please refresh the page and try again.",
+     "individual_massages_label": "🧘 Individual Massages",
+     "four_hands_massages_label": "✋ Four Hands Massages",
+     "rituals_label": "🌸 Rituals",
+     "for_two_people_label": "💑 For Two People",
+     "no_lanes_available": "No lanes available",
+     "past_time": "Past time",
+     "no_availability_simple": "No availability",
+     "chamberi_zurbaran": "Chamberí - Zurbarán",
+     "chamartin_concha_espina": "Chamartín - Concha Espina",
   },
   
   fr: {
@@ -632,8 +676,30 @@ const translations = {
     "other_value_label": "Autre montant (€)",
     "add": "Ajouter",
     "value_min_max_note": "Minimum : 10€ - Maximum : 500€",
-    "customize_gift_card_title": "Personnaliser la Carte Cadeau",
-    "customize_gift_card_description_prefix": "Sélectionnez le montant de la carte cadeau pour",
+     "customize_gift_card_title": "Personnaliser la Carte Cadeau",
+     "customize_gift_card_description_prefix": "Sélectionnez le montant de la carte cadeau pour",
+     
+     // Additional missing translations
+     "existing_bookings": "Réservations Existantes",
+     "processing": "Traitement en cours...",
+     "continue": "Continuer",
+     "no_availability": "Pas de disponibilité",
+     "no_availability_message": "Aucun couloir disponible pour ce service à l'heure sélectionnée. Veuillez choisir une autre heure.",
+     "full_capacity": "Capacité Complète",
+     "full_capacity_message": "Ce créneau horaire a déjà atteint le maximum de 4 réservations. Veuillez choisir un autre créneau.",
+     "address": "Adresse",
+     "copyright": "© THE NOOK Madrid 2025 · Tous droits réservés",
+     "redirecting_to_stripe": "Redirection vers Stripe...",
+     "package_not_found": "Le forfait sélectionné n'a pas été trouvé. Veuillez actualiser la page et réessayer.",
+     "individual_massages_label": "🧘 Massages Individuels",
+     "four_hands_massages_label": "✋ Massages à Quatre Mains",
+     "rituals_label": "🌸 Rituels",
+     "for_two_people_label": "💑 Pour Deux Personnes",
+     "no_lanes_available": "Aucun couloir disponible",
+     "past_time": "Heure passée",
+     "no_availability_simple": "Pas de disponibilité",
+     "chamberi_zurbaran": "Chamberí - Zurbarán",
+     "chamartin_concha_espina": "Chamartín - Concha Espina",
     
     // Landing page widgets
     "book_description": "Réservez votre rendez-vous de massage relaxant",
@@ -907,6 +973,28 @@ const translations = {
     "value_min_max_note": "Minimum: 10 € – Maximum: 500 €",
     "customize_gift_card_title": "Geschenkkarte anpassen",
     "customize_gift_card_description_prefix": "Wählen Sie den Betrag der Geschenkkarte für",
+    
+    // Additional missing translations
+    "existing_bookings": "Bestehende Buchungen",
+    "processing": "Wird verarbeitet...",
+    "continue": "Fortfahren",
+    "no_availability": "Keine Verfügbarkeit",
+    "no_availability_message": "Keine Gänge verfügbar für diesen Service zur ausgewählten Zeit. Bitte wählen Sie eine andere Zeit.",
+    "full_capacity": "Volle Kapazität",
+    "full_capacity_message": "Dieser Zeitraum hat bereits das Maximum von 4 Buchungen erreicht. Bitte wählen Sie einen anderen Zeitraum.",
+    "address": "Adresse",
+    "copyright": "© THE NOOK Madrid 2025 · Alle Rechte vorbehalten",
+    "redirecting_to_stripe": "Weiterleitung zu Stripe...",
+    "package_not_found": "Das ausgewählte Paket wurde nicht gefunden. Bitte aktualisieren Sie die Seite und versuchen Sie es erneut.",
+    "individual_massages_label": "🧘 Einzelmassagen",
+    "four_hands_massages_label": "✋ Vier-Hände-Massagen",
+    "rituals_label": "🌸 Rituale",
+    "for_two_people_label": "💑 Für Zwei Personen",
+    "no_lanes_available": "Keine Gänge verfügbar",
+    "past_time": "Vergangene Zeit",
+    "no_availability_simple": "Keine Verfügbarkeit",
+    "chamberi_zurbaran": "Chamberí - Zurbarán",
+    "chamartin_concha_espina": "Chamartín - Concha Espina",
   },
   
   it: {
@@ -1079,7 +1167,29 @@ const translations = {
     "add": "Aggiungi",
     "value_min_max_note": "Minimo: €10 – Massimo: €500",
     "customize_gift_card_title": "Personalizza Carta Regalo",
-    "customize_gift_card_description_prefix": "Seleziona l’importo della carta regalo per",
+    "customize_gift_card_description_prefix": "Seleziona l'importo della carta regalo per",
+    
+    // Additional missing translations
+    "existing_bookings": "Prenotazioni Esistenti",
+    "processing": "Elaborazione...",
+    "continue": "Continua",
+    "no_availability": "Nessuna Disponibilità",
+    "no_availability_message": "Nessun corridoio disponibile per questo servizio nell'orario selezionato. Si prega di scegliere un altro orario.",
+    "full_capacity": "Capacità Completa",
+    "full_capacity_message": "Questo slot orario ha già raggiunto il massimo di 4 prenotazioni. Si prega di scegliere un altro slot.",
+    "address": "Indirizzo",
+    "copyright": "© THE NOOK Madrid 2025 · Tutti i diritti riservati",
+    "redirecting_to_stripe": "Reindirizzamento a Stripe...",
+    "package_not_found": "Il pacchetto selezionato non è stato trovato. Si prega di aggiornare la pagina e riprovare.",
+    "individual_massages_label": "🧘 Massaggi Individuali",
+    "four_hands_massages_label": "✋ Massaggi a Quattro Mani",
+    "rituals_label": "🌸 Rituali",
+    "for_two_people_label": "💑 Per Due Persone",
+    "no_lanes_available": "Nessun corridoio disponibile",
+    "past_time": "Orario passato",
+    "no_availability_simple": "Nessuna disponibilità",
+    "chamberi_zurbaran": "Chamberí - Zurbarán",
+    "chamartin_concha_espina": "Chamartín - Concha Espina",
   },
   
   pt: {
@@ -1253,6 +1363,28 @@ const translations = {
     "value_min_max_note": "Mínimo: 10 € – Máximo: 500 €",
     "customize_gift_card_title": "Personalizar Cartão‑Presente",
     "customize_gift_card_description_prefix": "Seleciona o valor do cartão‑presente para",
+    
+    // Additional missing translations
+    "existing_bookings": "Reservas Existentes",
+    "processing": "Processando...",
+    "continue": "Continuar",
+    "no_availability": "Sem Disponibilidade",
+    "no_availability_message": "Nenhum corredor disponível para este serviço no horário selecionado. Por favor, escolha outro horário.",
+    "full_capacity": "Capacidade Completa",
+    "full_capacity_message": "Este horário já atingiu o máximo de 4 reservas. Por favor, escolha outro horário.",
+    "address": "Endereço",
+    "copyright": "© THE NOOK Madrid 2025 · Todos os direitos reservados",
+    "redirecting_to_stripe": "Redirecionando para Stripe...",
+    "package_not_found": "O pacote selecionado não foi encontrado. Por favor, atualize a página e tente novamente.",
+    "individual_massages_label": "🧘 Massagens Individuais",
+    "four_hands_massages_label": "✋ Massagens a Quatro Mãos",
+    "rituals_label": "🌸 Rituais",
+    "for_two_people_label": "💑 Para Duas Pessoas",
+    "no_lanes_available": "Nenhum corredor disponível",
+    "past_time": "Horário passado",
+    "no_availability_simple": "Sem disponibilidade",
+    "chamberi_zurbaran": "Chamberí - Zurbarán",
+    "chamartin_concha_espina": "Chamartín - Concha Espina",
   },
   zh: {
     // Header / Landing
@@ -1357,6 +1489,28 @@ const translations = {
     "booking_summary": "预订摘要",
     "method_card": "银行卡",
     "secure_payment_with_stripe": "通过 Stripe 处理的 100% 安全支付",
+    
+    // Additional missing translations
+    "existing_bookings": "现有预订",
+    "processing": "处理中...",
+    "continue": "继续",
+    "no_availability": "无可用性",
+    "no_availability_message": "所选时间没有可用的服务通道。请选择其他时间。",
+    "full_capacity": "已满",
+    "full_capacity_message": "此时段已达到最多4个预订。请选择其他时段。",
+    "address": "地址",
+    "copyright": "© THE NOOK Madrid 2025 · 版权所有",
+    "redirecting_to_stripe": "正在重定向到 Stripe...",
+    "package_not_found": "未找到所选套餐。请刷新页面并重试。",
+    "individual_massages_label": "🧘 单人按摩",
+    "four_hands_massages_label": "✋ 四手按摩",
+    "rituals_label": "🌸 仪式",
+    "for_two_people_label": "💑 双人",
+    "no_lanes_available": "无可用通道",
+    "past_time": "已过时间",
+    "no_availability_simple": "无可用性",
+    "chamberi_zurbaran": "Chamberí - Zurbarán",
+    "chamartin_concha_espina": "Chamartín - Concha Espina",
   },
   ar: {
     // Header / Landing
@@ -1459,6 +1613,28 @@ const translations = {
     "booking_summary": "ملخص الحجز",
     "method_card": "بطاقة",
     "secure_payment_with_stripe": "دفع آمن 100٪ تتم معالجته عبر Stripe",
+    
+    // Additional missing translations
+    "existing_bookings": "الحجوزات الموجودة",
+    "processing": "جاري المعالجة...",
+    "continue": "متابعة",
+    "no_availability": "لا يوجد توفر",
+    "no_availability_message": "لا توجد ممرات متاحة لهذه الخدمة في الوقت المحدد. يرجى اختيار وقت آخر.",
+    "full_capacity": "القدرة الكاملة",
+    "full_capacity_message": "هذا الفترة الزمنية قد وصلت بالفعل إلى الحد الأقصى من 4 حجوزات. يرجى اختيار فترة أخرى.",
+    "address": "العنوان",
+    "copyright": "© THE NOOK Madrid 2025 · جميع الحقوق محفوظة",
+    "redirecting_to_stripe": "إعادة التوجيه إلى Stripe...",
+    "package_not_found": "لم يتم العثور على الباقة المحددة. يرجى تحديث الصفحة والمحاولة مرة أخرى.",
+    "individual_massages_label": "🧘 تدليك فردي",
+    "four_hands_massages_label": "✋ تدليك بأربع أيادٍ",
+    "rituals_label": "🌸 طقوس",
+    "for_two_people_label": "💑 لشخصين",
+    "no_lanes_available": "لا توجد ممرات متاحة",
+    "past_time": "وقت مضى",
+    "no_availability_simple": "لا يوجد توفر",
+    "chamberi_zurbaran": "Chamberí - Zurbarán",
+    "chamartin_concha_espina": "Chamartín - Concha Espina",
   }
 } as const;
 
@@ -1490,6 +1666,209 @@ export const TranslationContext = createContext<{
 });
 
 // Custom hook to use translations
+// Helper function to translate service names
+export const translateServiceName = (serviceName: string, language: string, t: (key: string) => string): string => {
+  // En español, devolver el nombre original
+  if (language === 'es') {
+    return serviceName;
+  }
+
+  // Primero, buscar si el nombre exacto está en las traducciones
+  const findTranslationKeyByValue = (value: string): string | null => {
+    if (!value) return null;
+    const normalized = value.trim().toLowerCase();
+    // Buscar en todas las traducciones
+    for (const langKey of Object.keys(translations)) {
+      const langTranslations = (translations as any)[langKey];
+      for (const [key, val] of Object.entries(langTranslations)) {
+        if (typeof val === 'string' && val.trim().toLowerCase() === normalized) {
+          return key;
+        }
+      }
+    }
+    return null;
+  };
+
+  // Mapeo de nombres comunes a claves de traducción
+  const nameToTranslationKey: Record<string, string> = {
+    'masaje relajante': 'relaxing_massage',
+    'masaje_relajante': 'relaxing_massage',
+    'masaje descontracturante': 'therapeutic_massage',
+    'masaje_descontracturante': 'therapeutic_massage',
+    'reflexología podal': 'foot_reflexology',
+    'reflexologia podal': 'foot_reflexology',
+    'reflexologia_podal': 'foot_reflexology',
+    'masaje deportivo': 'sports_massage',
+    'masaje_deportivo': 'sports_massage',
+    'masaje para dos personas': 'couples_massage',
+    'masaje_para_dos_personas': 'couples_massage',
+    'ritual romántico': 'romantic_ritual',
+    'ritual_romantico': 'romantic_ritual',
+    'ritual sakura': 'sakura_ritual',
+    'ritual_sakura': 'sakura_ritual',
+    'ritual del kobido': 'kobido_ritual',
+    'ritual_del_kobido': 'kobido_ritual',
+    'ritual energizante': 'energizing_ritual',
+    'ritual_energizante': 'energizing_ritual',
+    'ritual beauty': 'beauty_ritual',
+    'ritual_beauty': 'beauty_ritual',
+    'masaje con piedras calientes': 'hot_stones',
+    'masaje_con_piedras_calientes': 'hot_stones',
+    'bambuterapia': 'bamboo_therapy',
+  };
+
+  // Normalizar para matching (sin acentos)
+  const normalizeForMatching = (str: string) => str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  
+  // Primero, buscar si el nombre exacto está en las traducciones
+  const foundTranslationKey = findTranslationKeyByValue(serviceName);
+  if (foundTranslationKey) {
+    try {
+      const translation = t(foundTranslationKey as any);
+      if (translation && translation !== foundTranslationKey) {
+        return translation;
+      }
+    } catch (error) {
+      // Continuar con otros métodos
+    }
+  }
+
+  // Normalizar el nombre para usar como clave de traducción
+  const normalizedKey = serviceName
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/'/g, '')
+    .replace(/[^\w_]/g, '')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+
+  // Intentar usar el sistema de traducciones con la clave normalizada
+  try {
+    const translation = t(normalizedKey as any);
+    if (translation && translation !== normalizedKey) {
+      return translation;
+    }
+  } catch (error) {
+    // Si falla, continuar con otros métodos
+  }
+  
+  // Buscar coincidencia exacta o parcial en el mapeo
+  const serviceNameNormalized = normalizeForMatching(serviceName);
+  let translationKey: string | null = null;
+
+  // Buscar coincidencia exacta
+  const exactMatch = Object.keys(nameToTranslationKey).find(key => normalizeForMatching(key) === serviceNameNormalized);
+  if (exactMatch) {
+    translationKey = nameToTranslationKey[exactMatch];
+  } else {
+    // Buscar coincidencia parcial
+    for (const [key, value] of Object.entries(nameToTranslationKey)) {
+      const keyNormalized = normalizeForMatching(key);
+      if (serviceNameNormalized.includes(keyNormalized) || keyNormalized.includes(serviceNameNormalized)) {
+        translationKey = value;
+        break;
+      }
+    }
+  }
+
+  // Si encontramos una clave de traducción, usarla
+  if (translationKey) {
+    try {
+      const translation = t(translationKey as any);
+      if (translation && translation !== translationKey) {
+        return translation;
+      }
+    } catch (error) {
+      // Continuar con otros métodos
+    }
+  }
+
+  // Mapeo directo de traducciones comunes como fallback
+  const translationMap: Record<string, Record<string, string>> = {
+    'masaje_relajante': {
+      'en': 'Relaxing Massage',
+      'fr': 'Massage Relaxant',
+      'de': 'Entspannungsmassage',
+      'it': 'Massaggio Rilassante',
+      'pt': 'Massagem Relaxante',
+      'zh': '放松按摩',
+      'ar': 'تدليك الاسترخاء'
+    },
+    'masaje_descontracturante': {
+      'en': 'Therapeutic Massage',
+      'fr': 'Massage Thérapeutique',
+      'de': 'Therapeutische Massage',
+      'it': 'Massaggio Terapeutico',
+      'pt': 'Massagem Terapêutica',
+      'zh': '治疗按摩',
+      'ar': 'تدليك علاجي'
+    },
+    'reflexologia_podal': {
+      'en': 'Foot Reflexology',
+      'fr': 'Réflexologie Plantaire',
+      'de': 'Fußreflexzonenmassage',
+      'it': 'Riflessologia Plantare',
+      'pt': 'Reflexologia Plantar',
+      'zh': '足部反射疗法',
+      'ar': 'العلاج بالضغط على القدم'
+    },
+    'masaje_deportivo': {
+      'en': 'Sports Massage',
+      'fr': 'Massage Sportif',
+      'de': 'Sportmassage',
+      'it': 'Massaggio Sportivo',
+      'pt': 'Massagem Desportiva',
+      'zh': '运动按摩',
+      'ar': 'تدليك رياضي'
+    },
+    'masaje_para_embarazada': {
+      'en': 'Pregnancy Massage',
+      'fr': 'Massage Prénatal',
+      'de': 'Schwangerschaftsmassage',
+      'it': 'Massaggio Prenatale',
+      'pt': 'Massagem Pré-natal',
+      'zh': '孕期按摩',
+      'ar': 'تدليك الحمل'
+    },
+    'ritual_sakura': {
+      'en': 'Sakura Ritual',
+      'fr': 'Rituel Sakura',
+      'de': 'Sakura-Ritual',
+      'it': 'Rituale Sakura',
+      'pt': 'Ritual Sakura',
+      'zh': '樱花仪式',
+      'ar': 'طقوس الساكورا'
+    },
+    'ritual_romantico': {
+      'en': 'Romantic Ritual',
+      'fr': 'Rituel Romantique',
+      'de': 'Romantisches Ritual',
+      'it': 'Rituale Romantico',
+      'pt': 'Ritual Romântico',
+      'zh': '浪漫仪式',
+      'ar': 'طقوس رومانسية'
+    },
+    'masaje_cuatro_manos': {
+      'en': 'Four Hands Massage',
+      'fr': 'Massage à Quatre Mains',
+      'de': 'Vier-Hände-Massage',
+      'it': 'Massaggio a Quattro Mani',
+      'pt': 'Massagem de Quatro Mãos',
+      'zh': '四手按摩',
+      'ar': 'تدليك بأربع أيدي'
+    }
+  };
+
+  // Buscar en el mapeo
+  const mapping = translationMap[normalizedKey];
+  if (mapping && mapping[language as keyof typeof mapping]) {
+    return mapping[language as keyof typeof mapping];
+  }
+
+  // Si no hay traducción, devolver el nombre original
+  return serviceName;
+};
+
 export const useTranslation = () => {
   const context = useContext(TranslationContext);
   if (!context) {
@@ -1501,12 +1880,35 @@ export const useTranslation = () => {
 // Hook implementation for when used outside context
 export const useTranslationHook = () => {
   const [language, setLanguage] = useState<Language>(() => {
+    // Si estamos en el cliente (navegador)
+    if (typeof window === 'undefined') {
+      return 'es';
+    }
+    
+    // Intentar obtener el idioma guardado
     const saved = localStorage.getItem('language');
-    return (saved as Language) || 'es';
+    // Validar que el idioma guardado sea uno de los idiomas soportados
+    const validLanguages: Language[] = ['es', 'en', 'fr', 'de', 'it', 'pt', 'zh', 'ar'];
+    
+    if (saved && validLanguages.includes(saved as Language)) {
+      return saved as Language;
+    }
+    
+    // Si no hay idioma guardado o no es válido, usar español por defecto
+    // y guardarlo en localStorage inmediatamente
+    localStorage.setItem('language', 'es');
+    return 'es';
   });
 
   useEffect(() => {
-    localStorage.setItem('language', language);
+    // Asegurar que siempre haya un idioma válido guardado
+    const validLanguages: Language[] = ['es', 'en', 'fr', 'de', 'it', 'pt', 'zh', 'ar'];
+    if (validLanguages.includes(language)) {
+      localStorage.setItem('language', language);
+    } else {
+      // Si el idioma no es válido, resetear a español
+      localStorage.setItem('language', 'es');
+    }
   }, [language]);
 
   const t = (key: TranslationKey): string => {

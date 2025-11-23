@@ -91,6 +91,7 @@ async function sendBookingConfirmationEmail(args: {
       payment_status,
       email_status,
       stripe_session_id,
+      status,
       profiles!client_id ( first_name, last_name, email ),
       services ( name ),
       centers ( name, address_concha_espina, address_zurbaran )
@@ -104,6 +105,12 @@ async function sendBookingConfirmationEmail(args: {
   }
   if (!booking) {
     console.warn("[stripe-webhook] Booking not found for id:", bookingId);
+    return;
+  }
+
+  // No enviar correo si el booking es un no_show
+  if (booking.status === 'no_show') {
+    console.log("[stripe-webhook] Skipping email for no_show booking:", bookingId);
     return;
   }
 

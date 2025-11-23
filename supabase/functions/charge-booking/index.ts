@@ -26,8 +26,8 @@ serve(async (req) => {
     
     console.log('[CHARGE-BOOKING] User authenticated:', user.id);
 
-    const { booking_id, amount_cents } = await req.json();
-    console.log('[CHARGE-BOOKING] Params received:', { booking_id, amount_cents });
+    const { booking_id, amount_cents, skip_email } = await req.json();
+    console.log('[CHARGE-BOOKING] Params received:', { booking_id, amount_cents, skip_email });
     if (!booking_id) {
       console.log('[CHARGE-BOOKING] Error: booking_id is required');
       return new Response(JSON.stringify({ ok: false, error: 'booking_id is required' }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -105,14 +105,18 @@ serve(async (req) => {
               metadata: { booking_id, action: 'capture', payment_intent: pi.id, amount_cents: amount, admin_user_id: user.id }
             });
             
-            // Enviar email de cobro exitoso
-            try {
-              await supabase.functions.invoke('send-booking-with-payment', { 
-                body: { booking_id } 
-              });
-              console.log('[CHARGE-BOOKING] Payment confirmation email sent');
-            } catch (emailErr) {
-              console.warn('[CHARGE-BOOKING] Email failed but payment succeeded:', emailErr);
+            // Enviar email de cobro exitoso (solo si no es no_show)
+            if (!skip_email) {
+              try {
+                await supabase.functions.invoke('send-booking-with-payment', { 
+                  body: { booking_id } 
+                });
+                console.log('[CHARGE-BOOKING] Payment confirmation email sent');
+              } catch (emailErr) {
+                console.warn('[CHARGE-BOOKING] Email failed but payment succeeded:', emailErr);
+              }
+            } else {
+              console.log('[CHARGE-BOOKING] Skipping email (no_show booking)');
             }
             
             console.log('[CHARGE-BOOKING] Capture successful');
@@ -210,14 +214,18 @@ serve(async (req) => {
         metadata: { booking_id, action: 'off_session_charge', payment_intent: intent.id, amount_cents: amount, admin_user_id: user.id }
       });
 
-      // Enviar email de cobro exitoso
-      try {
-        await supabase.functions.invoke('send-booking-with-payment', { 
-          body: { booking_id } 
-        });
-        console.log('[CHARGE-BOOKING] Payment confirmation email sent');
-      } catch (emailErr) {
-        console.warn('[CHARGE-BOOKING] Email failed but payment succeeded:', emailErr);
+      // Enviar email de cobro exitoso (solo si no es no_show)
+      if (!skip_email) {
+        try {
+          await supabase.functions.invoke('send-booking-with-payment', { 
+            body: { booking_id } 
+          });
+          console.log('[CHARGE-BOOKING] Payment confirmation email sent');
+        } catch (emailErr) {
+          console.warn('[CHARGE-BOOKING] Email failed but payment succeeded:', emailErr);
+        }
+      } else {
+        console.log('[CHARGE-BOOKING] Skipping email (no_show booking)');
       }
 
       console.log('[CHARGE-BOOKING] Off-session charge successful');

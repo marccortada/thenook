@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Service, Package } from "@/hooks/useDatabase";
 import { usePromotions } from "@/hooks/usePromotions";
+import { useTranslation, translateServiceName } from "@/hooks/useTranslation";
 import { cn } from "@/lib/utils";
 import { Clock, Percent, Tag, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,6 +27,8 @@ const ServiceCard: React.FC<{
   centerId?: string;
 }> = ({ service, active, onClick, centerId }) => {
   const { calculatePriceWithPromotions } = usePromotions();
+  const { language, t } = useTranslation();
+  const translatedServiceName = translateServiceName(service.name, language, t);
   
   let basePrice = service.price_cents;
   let serviceDiscount = 0;
@@ -63,7 +66,7 @@ const ServiceCard: React.FC<{
             "font-semibold text-sm truncate",
             active && "text-primary"
           )}>
-            {service.name}
+            {translatedServiceName}
           </h4>
           
           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
@@ -110,15 +113,16 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
   onSelect,
   useDropdown = true,
 }) => {
+  const { t } = useTranslation();
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   const groupedServices = useMemo(() => {
     const groups: Record<string, { name: string; services: Service[]; packages: Package[] }> = {
-      'masajes-individuales': { name: 'Masajes Individuales', services: [], packages: [] },
-      'masajes-pareja': { name: 'Masajes para Dos', services: [], packages: [] },
-      'masajes-cuatro-manos': { name: 'Masajes a Cuatro Manos', services: [], packages: [] },
-      'rituales': { name: 'Rituales Individuales', services: [], packages: [] },
-      'rituales-pareja': { name: 'Rituales para Dos', services: [], packages: [] },
+      'masajes-individuales': { name: t('individual_massages'), services: [], packages: [] },
+      'masajes-pareja': { name: t('couples_massages'), services: [], packages: [] },
+      'masajes-cuatro-manos': { name: t('four_hands_massages'), services: [], packages: [] },
+      'rituales': { name: t('rituals'), services: [], packages: [] },
+      'rituales-pareja': { name: t('rituals_for_two'), services: [], packages: [] },
     };
 
     services.forEach((service) => {

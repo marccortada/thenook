@@ -161,7 +161,7 @@ export default function BuyVoucherPage() {
                           <div>
                             <p className="text-sm font-medium leading-tight">{item.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {currency(item.priceCents)} · {item.sessionsCount} sesiones
+                              {currency(item.priceCents)} · {item.sessionsCount} {t('sessions')}
                             </p>
                           </div>
                           <Button size="sm" variant="ghost" onClick={() => remove(item.id)}>
@@ -270,13 +270,13 @@ export default function BuyVoucherPage() {
                               return;
                             }
                             if (isGift && !recipientName.trim()) {
-                              toast.error("Por favor, indica el nombre del beneficiario");
+                              toast.error(t('recipient_name_error'));
                               return;
                             }
                             try {
                               const checkoutItems = items.map((item) => {
                                 if (!item.packageId) {
-                                  throw new Error("No se encontró el bono seleccionado. Actualiza la página e inténtalo nuevamente.");
+                                  throw new Error(t('package_not_found'));
                                 }
                                 return {
                                   package_id: item.packageId,
@@ -307,7 +307,7 @@ export default function BuyVoucherPage() {
                               if (!checkoutUrl) throw new Error("No se pudo iniciar el pago.");
 
                               window.location.href = checkoutUrl;
-                              toast.success('Redirigiendo a Stripe...');
+                              toast.success(t('redirecting_to_stripe'));
 
                               clear();
                               setPurchasedByName("");
@@ -318,7 +318,7 @@ export default function BuyVoucherPage() {
                               setGiftMessage("");
                             } catch (e: any) {
                               console.error('Error al iniciar checkout:', e);
-                              toast.error(e?.message || "No se pudo iniciar el pago");
+                              toast.error(e?.message || t('payment_init_error'));
                             }
                           }}
                         >
@@ -335,10 +335,10 @@ export default function BuyVoucherPage() {
           <section aria-label="Listado de bonos">
             <Accordion type="multiple" defaultValue={[]} className="w-full">
               {([
-                ["masajes-individuales", "🧘 Masajes Individuales", categorized.individuales],
-                ["masajes-cuatro-manos", "✋ Masajes a Cuatro Manos", categorized.cuatro],
-                ["rituales", "🌸 Rituales", categorized.rituales],
-                ["para-dos-personas", "💑 Para Dos Personas", categorized.paraDos],
+                ["masajes-individuales", t('individual_massages_label'), categorized.individuales],
+                ["masajes-cuatro-manos", t('four_hands_massages_label'), categorized.cuatro],
+                ["rituales", t('rituals_label'), categorized.rituales],
+                ["para-dos-personas", t('for_two_people_label'), categorized.paraDos],
               ] as [string, string, any[]][])
                 .filter(([, , list]) => list.length > 0)
                 .map(([key, label, list]) => (
@@ -357,7 +357,7 @@ export default function BuyVoucherPage() {
                             </CardHeader>
                             <CardContent className="flex-1 flex flex-col gap-3">
                               <p className="text-xs text-muted-foreground min-h-8">
-                                {item.sessions_count} sesiones
+                                {item.sessions_count} {t('sessions')}
                               </p>
                               <p className="font-semibold">{currency(item.price_cents)}</p>
                             </CardContent>
