@@ -23,6 +23,22 @@ serve(async (req) => {
     const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'The Nook Madrid <reservas@thenookmadrid.com>';
     const internalNotificationEmail = (Deno.env.get('THENOOK_NOTIFICATION_EMAIL') ?? 'reservas@thenookmadrid.com').trim();
 
+    // Utility to extract the email address from the configured FROM string and build a sender name
+    const buildSender = (centerName?: string) => {
+      const emailMatch = fromEmail.match(/<([^>]+)>/);
+      const senderEmail = emailMatch?.[1] || fromEmail;
+
+      // Try to keep only the specific center name, removing "The Nook" and "Madrid" noise
+      const cleanedCenter = (centerName || '')
+        .replace(/The Nook/gi, '')
+        .replace(/Madrid/gi, '')
+        .replace(/-\s*/g, ' ')
+        .trim();
+
+      const senderName = cleanedCenter ? `The Nook ${cleanedCenter}` : 'The Nook';
+      return `${senderName} <${senderEmail}>`;
+    };
+
     // Parse request body to check if a specific booking_id was provided
     let requestBody: any = {};
     try {
@@ -211,9 +227,11 @@ serve(async (req) => {
 </html>
         `;
 
+        const sender = buildSender(center?.name);
+
         const sendPromises = [
           resend.emails.send({
-            from: fromEmail,
+            from: sender,
             to: [client.email],
             subject: emailSubject,
             html: emailHtml,
@@ -226,7 +244,7 @@ serve(async (req) => {
           if (internalLower !== clientLower) {
             sendPromises.push(
               resend.emails.send({
-                from: fromEmail,
+                from: sender,
                 to: [internalNotificationEmail],
                 subject: emailSubject,
                 html: emailHtml,

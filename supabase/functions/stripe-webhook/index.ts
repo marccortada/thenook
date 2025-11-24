@@ -43,6 +43,22 @@ const sendWithInternalCopy = async (payload: any) => {
   await Promise.all(sendPromises);
 };
 
+// Build a sender string keeping the email from env but cleaning the display name.
+const buildSender = (centerName?: string) => {
+  const fromEnv = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
+  const emailMatch = fromEnv.match(/<([^>]+)>/);
+  const senderEmail = emailMatch?.[1] || fromEnv;
+
+  const cleanedCenter = (centerName || "")
+    .replace(/The Nook/gi, "")
+    .replace(/Madrid/gi, "")
+    .replace(/-\s*/g, " ")
+    .trim();
+
+  const senderName = cleanedCenter ? `The Nook ${cleanedCenter}` : "The Nook";
+  return `${senderName} <${senderEmail}>`;
+};
+
 const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -306,7 +322,7 @@ async function sendBookingConfirmationEmail(args: {
 `;
 
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
+  const sender = buildSender(centerName);
 
   const deliveryToken = session?.id ?? paymentIntent?.id ?? null;
   const alreadyProcessed = !isManualCapture &&
@@ -317,7 +333,7 @@ async function sendBookingConfirmationEmail(args: {
     console.log("[stripe-webhook] Booking email already sent, skipping:", bookingId);
   } else {
     await sendWithInternalCopy({
-      from: fromEmail,
+      from: sender,
       to: [clientEmail],
       subject,
       html: emailHtml,
@@ -325,7 +341,7 @@ async function sendBookingConfirmationEmail(args: {
 
     if (adminEmail) {
       await sendWithInternalCopy({
-        from: fromEmail,
+        from: sender,
         to: [adminEmail],
         subject: `${subject} · Reserva ${bookingId}`,
         html: emailHtml,
@@ -534,13 +550,15 @@ async function processPackageVoucher(args: {
 
   const year = new Date().getFullYear();
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
+  const summaryCenterName = createdVouchers[0]?.package?.centers?.name;
+  const summarySender = buildSender(summaryCenterName);
 
   for (const voucher of createdVouchers) {
     const pkg = voucher.package;
     const centerName = pkg.centers?.name || "";
     const isZurbaran = centerName.toLowerCase().includes("zurbar");
     const location = isZurbaran ? "ZURBARÁN" : "CONCHA ESPINA";
+    const sender = buildSender(centerName);
     const mapLink = isZurbaran
       ? "https://maps.app.goo.gl/fEWyBibeEFcQ3isN6"
       : "https://goo.gl/maps/zHuPpdHATcJf6QWX8";
@@ -624,7 +642,7 @@ async function processPackageVoucher(args: {
 `;
 
     await sendWithInternalCopy({
-      from: fromEmail,
+      from: sender,
       to: [voucher.recipientEmail],
       subject: `Tu bono ${pkg.name} en THE NOOK`,
       html: emailHtml,
@@ -632,7 +650,7 @@ async function processPackageVoucher(args: {
 
     if (voucher.purchaserEmail && voucher.purchaserEmail !== voucher.recipientEmail) {
       await sendWithInternalCopy({
-        from: fromEmail,
+        from: sender,
         to: [voucher.purchaserEmail],
         subject: `Confirmación de compra · ${pkg.name}`,
         html: emailHtml,
@@ -659,7 +677,7 @@ async function processPackageVoucher(args: {
     `;
 
     await sendWithInternalCopy({
-      from: fromEmail,
+      from: summarySender,
       to: [adminEmail],
       subject: `Nueva compra de bono · ${createdVouchers[0].package.name}`,
       html: summaryHtml,
@@ -913,7 +931,7 @@ async function processGiftCards(args: {
   console.log(`[stripe-webhook] 📧 Preparing ${createdGiftCards.length} gift card emails...`);
   const year = new Date().getFullYear();
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
-  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "The Nook Madrid <reservas@thenookmadrid.com>";
+  const sender = buildSender();
 
   for (const card of createdGiftCards) {
     const amountFormatted = new Intl.NumberFormat("es-ES", {
@@ -994,7 +1012,7 @@ async function processGiftCards(args: {
     const isGift = card.isGift;
     const introLine = isGift
       ? sendToBuyer
-        ? "Aquí tienes tu tarjeta regalo lista para que la compartas cuando quieras."
+        ? "Aquí tienes tu tarjeta regalo."
         : `Has recibido una tarjeta regalo de <strong>${card.purchaserName || "alguien especial"}</strong>.`
       : "Gracias por tu compra de tarjeta regalo.";
 
@@ -1054,7 +1072,7 @@ async function processGiftCards(args: {
       : `Tu ${card.giftCardName} de The Nook Madrid`;
 
     const recipientEmailPayload: any = {
-      from: fromEmail,
+      from: sender,
       to: [primaryEmail],
       subject: recipientSubject,
       html: recipientHtml,
@@ -1128,7 +1146,7 @@ async function processGiftCards(args: {
       `;
 
       const purchaserPayload: any = {
-        from: fromEmail,
+        from: sender,
         to: [purchaserEmail],
         subject: "Confirmación: Tarjeta regalo enviada",
         html: purchaserHtml,
@@ -1175,7 +1193,7 @@ async function processGiftCards(args: {
 
     console.log(`[stripe-webhook] Sending admin summary to: ${adminEmail}`);
     await sendWithInternalCopy({
-      from: fromEmail,
+      from: sender,
       to: [adminEmail],
       subject: `Nueva compra Tarjeta Regalo · ${createdGiftCards[0].purchaserName}`,
       html: summaryHtml,

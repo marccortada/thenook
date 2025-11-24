@@ -253,16 +253,32 @@ const GiftCardsPage = () => {
 
   // Hook para manejo del carrito local
   const useLocalCart = () => {
+    const CART_TTL_MS = 1000 * 60 * 5; // 5 minutos
+
     const [items, setItems] = useState<CartItem[]>(() => {
       try {
         const raw = localStorage.getItem("cart:giftcards");
-        return raw ? (JSON.parse(raw) as CartItem[]) : [];
+        if (!raw) return [];
+
+        const parsed = JSON.parse(raw);
+        const savedAt = typeof parsed?.savedAt === "number" ? parsed.savedAt : Date.now();
+        const storedItems = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.items) ? parsed.items : [];
+
+        if (Date.now() - savedAt > CART_TTL_MS) {
+          localStorage.removeItem("cart:giftcards");
+          return [];
+        }
+        return storedItems as CartItem[];
       } catch {
         return [];
       }
     });
     useEffect(() => {
-      localStorage.setItem("cart:giftcards", JSON.stringify(items));
+      if (items.length === 0) {
+        localStorage.removeItem("cart:giftcards");
+        return;
+      }
+      localStorage.setItem("cart:giftcards", JSON.stringify({ items, savedAt: Date.now() }));
     }, [items]);
 
     const add = (item: Omit<CartItem, "quantity" | "id"> & { quantity?: number }) => {

@@ -387,7 +387,26 @@ onClick={handlePaymentSetup}
         <div className="text-center text-sm text-muted-foreground space-y-2">
           <div>
             <p>Si tienes alguna pregunta, contáctanos en</p>
-            <p className="font-medium">reservas@thenookmadrid.com</p>
+            <p className="font-medium">
+              <a href="mailto:reservas@thenookmadrid.com" className="hover:underline">
+                reservas@thenookmadrid.com
+              </a>
+            </p>
+            <p className="font-medium">
+              <a href="tel:911481474" className="hover:underline">
+                Tel: 911 481 474
+              </a>
+            </p>
+            <p className="font-medium">
+              <a
+                href="https://wa.me/34622360922"
+                className="hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                WhatsApp: +34 622 36 09 22
+              </a>
+            </p>
           </div>
           <p className="text-xs border-t pt-2">
             © THE NOOK Madrid 2025 · Todos los derechos reservados

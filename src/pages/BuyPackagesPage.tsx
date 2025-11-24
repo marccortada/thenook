@@ -75,16 +75,32 @@ const BuyPackagesPage = () => {
 
   // Hook para manejo del carrito local
   const useLocalCart = () => {
+    const CART_TTL_MS = 1000 * 60 * 5; // 5 minutos
+
     const [items, setItems] = useState<CartItem[]>(() => {
       try {
         const raw = localStorage.getItem("cart:packages");
-        return raw ? (JSON.parse(raw) as CartItem[]) : [];
+        if (!raw) return [];
+
+        const parsed = JSON.parse(raw);
+        const savedAt = typeof parsed?.savedAt === "number" ? parsed.savedAt : Date.now();
+        const storedItems = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.items) ? parsed.items : [];
+
+        if (Date.now() - savedAt > CART_TTL_MS) {
+          localStorage.removeItem("cart:packages");
+          return [];
+        }
+        return storedItems as CartItem[];
       } catch {
         return [];
       }
     });
     useEffect(() => {
-      localStorage.setItem("cart:packages", JSON.stringify(items));
+      if (items.length === 0) {
+        localStorage.removeItem("cart:packages");
+        return;
+      }
+      localStorage.setItem("cart:packages", JSON.stringify({ items, savedAt: Date.now() }));
     }, [items]);
 
     const add = (item: Omit<CartItem, "quantity" | "id"> & { quantity?: number }) => {
