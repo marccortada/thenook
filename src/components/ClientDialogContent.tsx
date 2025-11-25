@@ -429,7 +429,15 @@ export const ClientDialogContent = ({
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <MapPin className="h-3 w-3" />
-                            {booking.center_name}
+                            {(() => {
+                              const centerName = booking.center_name || '';
+                              // Si el nombre ya incluye "The Nook", mostrarlo tal cual
+                              if (centerName.includes('The Nook')) {
+                                return centerName;
+                              }
+                              // Si no incluye "The Nook", agregarlo
+                              return centerName ? `The Nook - ${centerName}` : 'The Nook';
+                            })()}
                           </div>
                         </div>
                         <div className="text-right">

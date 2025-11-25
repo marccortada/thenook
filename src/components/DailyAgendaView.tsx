@@ -80,13 +80,17 @@ const DailyAgendaView = () => {
 
   const timeSlots = generateTimeSlots();
 
-  // Filter bookings for selected date and center
+  // Filter bookings for selected date and center - STRICT filtering
   const filteredBookings = bookings.filter(booking => {
     if (!booking.booking_datetime) return false;
     
     const bookingDate = parseISO(booking.booking_datetime);
     const matchesDate = isSameDay(bookingDate, selectedDate);
-    const matchesCenter = selectedCenter === 'all' || booking.center_id === selectedCenter;
+    // STRICT: If a specific center is selected, center_id must match exactly
+    // If 'all' is selected, show all centers
+    const matchesCenter = selectedCenter === 'all' 
+      ? true 
+      : (booking.center_id && booking.center_id === selectedCenter);
     const matchesSearch = searchTerm === '' || 
       booking.profiles?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.profiles?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

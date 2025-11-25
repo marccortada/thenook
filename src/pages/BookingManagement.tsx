@@ -21,7 +21,12 @@ interface Booking {
   notes?: string;
   booking_codes?: string[];
   services?: { name: string };
-  centers?: { name: string };
+  centers?: { 
+    name: string;
+    address?: string | null;
+    address_zurbaran?: string | null;
+    address_concha_espina?: string | null;
+  };
   profiles?: { 
     id: string;
     first_name: string; 
@@ -49,7 +54,7 @@ export default function BookingManagement() {
         .select(`
           *,
           services (name),
-          centers (name),
+          centers (name, address, address_zurbaran, address_concha_espina),
           profiles (id, first_name, last_name, email, phone)
         `)
         .order('booking_datetime', { ascending: false });

@@ -601,10 +601,12 @@ const AdvancedCalendarView = () => {
 
   // Check if a lane is at full capacity for a given slot (con +5 min de margen)
   const isLaneAtTimeFull = (centerId: string, laneId: string, timeSlot: Date) => {
+    if (!centerId) return false;
     const lane = lanes.find(l => l.id === laneId);
     const capacity = (lane as any)?.capacity ?? 1;
     const count = bookings.filter(b => {
-      if (b.center_id !== centerId || b.lane_id !== laneId || !b.booking_datetime) return false;
+      // STRICT: Must have center_id and match exactly
+      if (!b.center_id || b.center_id !== centerId || b.lane_id !== laneId || !b.booking_datetime) return false;
       const start = parseISO(b.booking_datetime);
       const end = addMinutes(start, (b.duration_minutes || 60) + 5);
       return timeSlot >= start && timeSlot < end; // overlaps that 5-min slot
@@ -629,11 +631,13 @@ const AdvancedCalendarView = () => {
     return slot.getTime() < now.getTime();
   };
 
-  // Get booking for specific slot - now with filtering
+  // Get booking for specific slot - now with strict filtering by center
   const getBookingForSlot = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
+    if (!centerId) return undefined;
     
     const booking = bookings.find(booking => {
-      if (!booking.booking_datetime || booking.center_id !== centerId) {
+      // STRICT: Must have center_id and it must match exactly
+      if (!booking.booking_datetime || !booking.center_id || booking.center_id !== centerId) {
         return false;
       }
       
@@ -926,6 +930,19 @@ const AdvancedCalendarView = () => {
       }
       if (!bookingForm.isWalkIn && !createClientId && !bookingForm.clientEmail) {
         toast({ title: 'Error', description: 'Selecciona un cliente o introduce email', variant: 'destructive' });
+        return;
+      }
+      // CRITICAL: Ensure center_id matches selected center
+      if (!bookingForm.centerId || bookingForm.centerId !== selectedCenter) {
+        console.error('❌ Center ID mismatch:', { 
+          bookingFormCenterId: bookingForm.centerId, 
+          selectedCenter 
+        });
+        toast({ 
+          title: 'Error de centro', 
+          description: 'El centro seleccionado no coincide. Por favor, intenta de nuevo.', 
+          variant: 'destructive' 
+        });
         return;
       }
       // If WALK IN without a name, use a sensible default so it can be saved
@@ -1268,7 +1285,28 @@ const AdvancedCalendarView = () => {
       newDateTime.setHours(editTime.getHours(), editTime.getMinutes(), 0, 0);
 
       const paymentStatusToSave = overrides?.paymentStatus ?? editPaymentStatus;
-      const bookingStatusToSave = overrides?.bookingStatus ?? editBookingStatus;
+      let bookingStatusToSave = overrides?.bookingStatus ?? editBookingStatus;
+
+      // CRITICAL: Si el pago está marcado como 'paid', el estado NO puede ser 'pending'
+      // Automáticamente cambiar a 'confirmed' (excepto si es 'no_show')
+      if (paymentStatusToSave === 'paid' && bookingStatusToSave === 'pending') {
+        // Si es no_show, mantener no_show. Si no, cambiar a confirmed
+        if (editBookingStatus !== 'no_show' && editingBooking.status !== 'no_show') {
+          bookingStatusToSave = 'confirmed';
+          setEditBookingStatus('confirmed');
+        }
+      }
+
+      // Validación: No permitir estados inconsistentes
+      if (paymentStatusToSave === 'paid' && bookingStatusToSave === 'pending') {
+        toast({ 
+          title: 'Estado inconsistente', 
+          description: 'No se puede tener una reserva pagada con estado pendiente. Se cambiará automáticamente a confirmada.', 
+          variant: 'destructive' 
+        });
+        bookingStatusToSave = editBookingStatus === 'no_show' ? 'no_show' : 'confirmed';
+        setEditBookingStatus(bookingStatusToSave);
+      }
 
       if (editingBooking.payment_status === 'paid' && paymentStatusToSave === 'paid') {
         toast({ title: 'Pago ya registrado', description: 'Esta reserva ya fue marcada como cobrada.', variant: 'destructive' });
@@ -1288,6 +1326,10 @@ const AdvancedCalendarView = () => {
       const allowPaymentUpdate = paymentEditUnlocked || overrides?.paymentStatus !== undefined;
       if (allowPaymentUpdate) {
         updates.payment_status = paymentStatusToSave;
+        // Si se marca como pagado, automáticamente actualizar el estado de reserva
+        if (paymentStatusToSave === 'paid' && bookingStatusToSave === 'pending') {
+          updates.status = editBookingStatus === 'no_show' ? 'no_show' : 'confirmed';
+        }
       }
       if (editClientId) updates.client_id = editClientId;
 
@@ -1408,11 +1450,13 @@ const AdvancedCalendarView = () => {
         }
       }
 
-      try { await navigator.clipboard.writeText(checkoutUrl); } catch {}
-
+      // Only copy to clipboard if user explicitly requested it (for online payment method)
+      // Don't copy automatically to avoid browser permission pop-ups
+      // The link is sent via email, which is sufficient
+      
       toast({
         title: 'Link de pago generado',
-        description: `${to ? `Enviado a ${to}. ` : ''}También se copió al portapapeles.`
+        description: to ? `Enlace de pago enviado a ${to}.` : 'Enlace de pago generado. Puedes enviarlo manualmente al cliente.'
       });
 
       setShowPaymentModal(false);
@@ -1458,6 +1502,7 @@ const AdvancedCalendarView = () => {
   };
 
   const processManualPayment = async () => {
+    setPaymentLoading(true);
     try {
       if (!editingBooking) {
         toast({ title: 'Error', description: 'No hay reserva seleccionada.', variant: 'destructive' });
@@ -1490,7 +1535,7 @@ const AdvancedCalendarView = () => {
         return;
       }
 
-      // If staff selects tarjeta, try to charge saved card
+      // If staff selects tarjeta, try to charge saved card directly
       if (paymentMethod === 'tarjeta') {
         // Check if booking has reserva_id (for capture-payment) or use charge-booking
         if ((editingBooking as any).reserva_id) {
@@ -1499,16 +1544,12 @@ const AdvancedCalendarView = () => {
             body: { reserva_id: (editingBooking as any).reserva_id, amount_to_capture: desiredAmountCents }
           });
           if (fnErr || !data?.ok) {
-            const reason = (fnErr as any)?.message || data?.error || '';
-            if (data?.requires_action) {
-              await sendPaymentLinkFallback(desiredAmountCents);
-            } else {
-              toast({ 
-                title: 'Cobro no realizado', 
-                description: reason || 'No se pudo procesar el cobro.', 
-                variant: 'destructive' 
-              });
-            }
+            const reason = (fnErr as any)?.message || data?.error || 'No se pudo procesar el cobro con la tarjeta guardada.';
+            toast({ 
+              title: 'Cobro no realizado', 
+              description: reason, 
+              variant: 'destructive' 
+            });
             return;
           }
         } else {
@@ -1523,13 +1564,12 @@ const AdvancedCalendarView = () => {
             }
           });
           if (fnErr || !data?.ok) {
-            const reason = (fnErr as any)?.message || data?.error || '';
-            if (data?.requires_action) {
-              await sendPaymentLinkFallback(desiredAmountCents);
-            } else {
-              // Fallback: send payment link with the same amount
-              await sendPaymentLinkFallback(desiredAmountCents);
-            }
+            const reason = (fnErr as any)?.message || data?.error || 'No se pudo procesar el cobro con la tarjeta guardada.';
+            toast({ 
+              title: 'Cobro no realizado', 
+              description: reason, 
+              variant: 'destructive' 
+            });
             return;
           }
         }
@@ -1539,9 +1579,12 @@ const AdvancedCalendarView = () => {
           payment_method: 'tarjeta', 
           payment_notes: paymentNotes || 'Cobro automático Stripe' 
         };
-        // If status is no_show, keep it as no_show after payment
-        if (editBookingStatus === 'no_show') {
+        // CRITICAL: Si es no_show, mantener no_show. Si no, cambiar automáticamente a confirmed
+        if (editBookingStatus === 'no_show' || editingBooking.status === 'no_show') {
           updateData.status = 'no_show';
+        } else {
+          // Si estaba pendiente, cambiar a confirmed cuando se marca como pagado
+          updateData.status = editingBooking.status === 'pending' ? 'confirmed' : editingBooking.status;
         }
         const { error } = await supabase
           .from('bookings')
@@ -1555,10 +1598,12 @@ const AdvancedCalendarView = () => {
           payment_method: paymentMethod,
           payment_notes: paymentNotes || null
         };
-        // If status is no_show, keep it as no_show after payment, otherwise confirm
-        if (editBookingStatus === 'no_show') {
+        // CRITICAL: Si es no_show, mantener no_show. Si no, cambiar automáticamente a confirmed
+        // Nunca dejar como 'pending' si está pagado
+        if (editBookingStatus === 'no_show' || editingBooking.status === 'no_show') {
           updateData.status = 'no_show';
         } else {
+          // Si estaba pendiente o cualquier otro estado, cambiar a confirmed cuando se marca como pagado
           updateData.status = 'confirmed';
         }
         const { error } = await supabase
@@ -1842,9 +1887,11 @@ const AdvancedCalendarView = () => {
                    {centerLanes.slice(0, 4).map((lane) => {
                      const slotTime = timeSlot.time;
                      let booking = getBookingForSlot(selectedCenter, lane.id, selectedDate, slotTime);
+                     // Fallback only for bookings without lane_id, but STRICT center_id check
                      if (!booking && lane.id === centerLanes[0].id) {
                         const fallback = bookings.find(b => {
-                          if (!b.booking_datetime || b.center_id !== selectedCenter || b.lane_id) return false;
+                          // STRICT: Must match center_id exactly and have no lane_id
+                          if (!b.booking_datetime || !b.center_id || b.center_id !== selectedCenter || b.lane_id) return false;
                           const start = parseISO(b.booking_datetime);
                           const end = addMinutes(start, b.duration_minutes || 60);
                           const sameDay = isSameDay(start, selectedDate);
@@ -3055,7 +3102,26 @@ const AdvancedCalendarView = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="payment">Estado de pago</Label>
-                <Select value={editPaymentStatus} onValueChange={(v) => setEditPaymentStatus(v as any)}>
+                <Select 
+                  value={editPaymentStatus} 
+                  onValueChange={(v) => {
+                    const newPaymentStatus = v as any;
+                    setEditPaymentStatus(newPaymentStatus);
+                    
+                    // CRITICAL: Si se marca como pagado, automáticamente cambiar estado de reserva
+                    // (excepto si es no_show, que se mantiene como no_show)
+                    if (newPaymentStatus === 'paid' && editBookingStatus === 'pending') {
+                      // Si es no_show, mantener no_show. Si no, cambiar a confirmed
+                      if (editBookingStatus !== 'no_show' && editingBooking?.status !== 'no_show') {
+                        setEditBookingStatus('confirmed');
+                      }
+                    }
+                    // Si se cambia de pagado a pendiente, también cambiar estado de reserva a pendiente
+                    if (newPaymentStatus === 'pending' && editBookingStatus === 'confirmed') {
+                      setEditBookingStatus('pending');
+                    }
+                  }}
+                >
                   <SelectTrigger disabled={!paymentEditUnlocked} className={!paymentEditUnlocked ? 'opacity-70 cursor-not-allowed' : ''}>
                     <SelectValue />
                   </SelectTrigger>

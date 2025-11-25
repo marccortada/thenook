@@ -16,6 +16,7 @@ import AppModal from "@/components/ui/app-modal";
 import { useInternalCodes } from "@/hooks/useInternalCodes";
 import MessageGeneratorModal from "@/components/MessageGeneratorModal";
 import { useTranslation, translateServiceName } from "@/hooks/useTranslation";
+import { getFriendlyCenterName } from "@/lib/utils";
 
 interface Booking {
   id: string;
@@ -31,7 +32,12 @@ interface Booking {
   booking_codes?: string[];
   center_id?: string;
   services?: { name: string };
-  centers?: { name: string };
+  centers?: { 
+    name: string;
+    address?: string | null;
+    address_zurbaran?: string | null;
+    address_concha_espina?: string | null;
+  };
   profiles?: { 
     id: string;
     first_name: string; 
@@ -379,25 +385,59 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
         }
       }
 
-      const { error: updErr } = await supabase
-        .from('bookings')
-        .update({ 
+      // Si no es 'paid', actualizar solo el estado de pago
+      if (status !== 'paid') {
+        const { error: updErr } = await supabase
+          .from('bookings')
+          .update({ 
+            payment_status: status as any,
+            payment_method: null,
+            payment_notes: null
+          } as any)
+          .eq('id', booking.id);
+
+        if (updErr) throw updErr;
+      }
+
+      if (status === 'paid') {
+        // CRITICAL: Cuando se marca como pagado, actualizar el estado de reserva automáticamente
+        // Si es no_show, mantener no_show. Si no, cambiar a confirmed (nunca dejar como pending)
+        const statusUpdate: any = {
           payment_status: status as any,
           payment_method: status === 'paid' ? 'tarjeta' : null,
           payment_notes: status === 'paid' ? `Cobro automático Stripe` : null
-        } as any)
-        .eq('id', booking.id);
-
-      if (updErr) throw updErr;
-
-      if (status === 'paid') {
-        // Confirmar y enviar email cuando se marca pagada desde el selector (solo si no es no_show)
-        if (bookingStatus !== 'no_show') {
-          try { await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id); setBookingStatus('confirmed'); } catch {}
-          try { await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } }); } catch (e) { console.warn('send-booking-with-payment fallo (updatePaymentStatus):', e); }
-        } else {
+        };
+        
+        if (bookingStatus === 'no_show') {
           // Para no_show, mantener el status como no_show
-          try { await supabase.from('bookings').update({ status: 'no_show' as any }).eq('id', booking.id); } catch {}
+          statusUpdate.status = 'no_show';
+        } else {
+          // Si estaba pendiente o cualquier otro estado, cambiar a confirmed cuando se marca como pagado
+          statusUpdate.status = bookingStatus === 'pending' ? 'confirmed' : bookingStatus;
+        }
+        
+        // Actualizar ambos estados en una sola operación
+        const { error: statusErr } = await supabase
+          .from('bookings')
+          .update(statusUpdate)
+          .eq('id', booking.id);
+        
+        if (statusErr) throw statusErr;
+        
+        // Actualizar estado local
+        if (bookingStatus === 'no_show') {
+          setBookingStatus('no_show');
+        } else {
+          setBookingStatus(statusUpdate.status);
+        }
+        
+        // Enviar email de confirmación (solo si no es no_show)
+        if (bookingStatus !== 'no_show') {
+          try { 
+            await (supabase as any).functions.invoke('send-booking-with-payment', { body: { booking_id: booking.id } }); 
+          } catch (e) { 
+            console.warn('send-booking-with-payment fallo (updatePaymentStatus):', e); 
+          }
         }
       }
 
@@ -638,14 +678,37 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
   const markCashPaid = async () => {
     try {
       setIsProcessingPayment(true);
+      
+      // CRITICAL: Cuando se marca como pagado, actualizar el estado de reserva automáticamente
+      // Si es no_show, mantener no_show. Si no, cambiar a confirmed (nunca dejar como pending)
+      const updateData: any = {
+        payment_status: 'paid',
+        payment_method: 'efectivo',
+        payment_notes: `Cobrado en efectivo el ${new Date().toLocaleString()}`
+      };
+      
+      if (bookingStatus === 'no_show') {
+        // Para no_show, mantener el status como no_show
+        updateData.status = 'no_show';
+      } else {
+        // Si estaba pendiente o cualquier otro estado, cambiar a confirmed cuando se marca como pagado
+        updateData.status = bookingStatus === 'pending' ? 'confirmed' : bookingStatus;
+      }
+      
       const { error } = await supabase
         .from('bookings')
-        .update({ payment_status: 'paid', payment_method: 'efectivo', payment_notes: `Cobrado en efectivo el ${new Date().toLocaleString()}` })
+        .update(updateData)
         .eq('id', booking.id);
       if (error) throw error;
+      
       setPaymentStatus('paid');
-      // Confirmar sin enviar email de tarjeta
-      try { await supabase.from('bookings').update({ status: 'confirmed' as any }).eq('id', booking.id); setBookingStatus('confirmed'); } catch {}
+      // Actualizar estado local de reserva
+      if (bookingStatus === 'no_show') {
+        setBookingStatus('no_show');
+      } else {
+        setBookingStatus(updateData.status);
+      }
+      
       toast({ title: 'Pago registrado', description: 'Marcado como cobrado en efectivo' });
       onBookingUpdated();
       setShowChargeOptions(false);
@@ -765,7 +828,10 @@ export default function BookingCardWithModal({ booking, onBookingUpdated }: Book
           <div>
             <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Centro</Label>
             <p className="font-medium text-sm sm:text-base truncate">
-              {booking.centers?.name || 'Sin centro'}
+              {getFriendlyCenterName(
+                booking.centers?.name, 
+                booking.centers?.address || booking.centers?.address_zurbaran || booking.centers?.address_concha_espina
+              )}
             </p>
           </div>
           <div>

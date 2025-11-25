@@ -192,17 +192,22 @@ serve(async (req) => {
 
     if (intent.status === 'succeeded') {
       console.log('[CHARGE-BOOKING] Payment succeeded, updating database');
+      
+      // CRITICAL: Automatically change status to 'confirmed' when payment is successful
+      // But only if the booking is not 'no_show' (no_show bookings should remain no_show even if paid)
+      const statusUpdate = booking.status !== 'no_show' ? { status: 'confirmed' as const } : {};
+      
       await supabase
         .from('bookings')
         .update({ 
           payment_status: 'paid', 
           payment_method: 'tarjeta',
           payment_notes: `Cobro automático Stripe PI ${intent.id}`,
-      payment_intent_id: intent.id,
-      stripe_customer_id: customerId,
-      updated_at: new Date().toISOString(),
-      status: 'confirmed'
-    })
+          payment_intent_id: intent.id,
+          stripe_customer_id: customerId,
+          updated_at: new Date().toISOString(),
+          ...statusUpdate
+        })
         .eq('id', booking_id);
 
       await supabase.from('business_metrics').insert({

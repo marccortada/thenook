@@ -123,13 +123,15 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
   // Get lanes for the active center
   const centerLanes = lanes?.filter(lane => lane.center_id === activeCenter) || [];
 
-  // Filter bookings for current date and center
+  // Filter bookings for current date and center - STRICT filtering
   const filteredBookings = bookings?.filter(booking => {
-    if (!booking.booking_datetime || !booking.center_id) return false;
+    // STRICT: Must have center_id and match exactly
+    if (!booking.booking_datetime || !booking.center_id || !activeCenter) return false;
     
     try {
       const bookingDate = parseISO(booking.booking_datetime);
       const isToday = format(bookingDate, 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd');
+      // STRICT: center_id must match exactly
       const isSameCenter = booking.center_id === activeCenter;
       
       return isToday && isSameCenter;

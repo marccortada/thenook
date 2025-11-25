@@ -196,6 +196,10 @@ async function sendBookingConfirmationEmail(args: {
 
   try {
     if (paymentMethodId || stripeCustomerId) {
+      // CRITICAL: Automatically change status to 'confirmed' when payment is successful
+      // But only if the booking is not 'no_show'
+      const statusUpdate = booking.status !== 'no_show' ? { status: "confirmed" as const } : {};
+      
       await supabaseAdmin
         .from("bookings")
         .update({
@@ -203,6 +207,7 @@ async function sendBookingConfirmationEmail(args: {
           stripe_customer_id: stripeCustomerId || booking.stripe_customer_id,
           payment_status: "paid",
           updated_at: new Date().toISOString(),
+          ...statusUpdate,
         })
         .eq("id", bookingId);
 
@@ -357,6 +362,12 @@ async function sendBookingConfirmationEmail(args: {
     stripe_payment_method_id: paymentMethodId || booking.stripe_payment_method_id,
     stripe_customer_id: stripeCustomerId || booking.stripe_customer_id,
   };
+
+  // CRITICAL: Automatically change status to 'confirmed' when payment is successful
+  // But only if the booking is not 'no_show' (no_show bookings should remain no_show even if paid)
+  if (booking.status !== 'no_show') {
+    updates.status = "confirmed";
+  }
 
   if (deliveryToken) {
     updates.stripe_session_id = deliveryToken;

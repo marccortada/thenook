@@ -611,10 +611,34 @@ const ClientReservation = () => {
       
       const randomEmployee = availableEmployees.length > 0 ? availableEmployees[Math.floor(Math.random() * availableEmployees.length)] : null;
 
+      // CRITICAL: Validate center_id before creating booking
+      if (!formData.center) {
+        toast({
+          title: t('error'),
+          description: 'No se ha seleccionado un centro. Por favor, selecciona un centro.',
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Verify that the selected center is valid
+      const selectedCenterExists = centers.some(c => c.id === formData.center);
+      if (!selectedCenterExists) {
+        console.error('❌ Invalid center selected:', formData.center);
+        toast({
+          title: t('error'),
+          description: 'El centro seleccionado no es válido. Por favor, selecciona otro centro.',
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       const bookingData = {
         client_id: profileToUse?.id,
         service_id,
-        center_id: formData.center,
+        center_id: formData.center, // This should match the selected center
         lane_id: assignedLaneId,
         employee_id: randomEmployee?.id || null,
         booking_datetime: bookingDate.toISOString(),

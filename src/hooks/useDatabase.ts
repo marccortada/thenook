@@ -324,11 +324,18 @@ export const useBookings = () => {
 
   const createBooking = async (bookingData: Omit<Booking, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log('Creating booking with data:', bookingData);
+      // CRITICAL: Always ensure status is 'pending' for new bookings
+      const bookingDataWithPending = {
+        ...bookingData,
+        status: 'pending' as const, // Force pending status for all new bookings
+        payment_status: bookingData.payment_status || 'pending' as const
+      };
+      
+      console.log('Creating booking with data:', bookingDataWithPending);
       
       const { data, error } = await supabase
         .from('bookings')
-        .insert([bookingData])
+        .insert([bookingDataWithPending])
         .select()
         .single();
 

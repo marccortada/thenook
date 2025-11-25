@@ -61,7 +61,8 @@ const SimpleCenterCalendar = () => {
     employeeId: '',
     time: '',
     duration: 60,
-    notes: ''
+    notes: '',
+    centerId: '' // Will be set when creating booking
   });
   
   const { bookings, loading: bookingsLoading, refetch: refetchBookings } = useBookings();
@@ -105,16 +106,18 @@ const SimpleCenterCalendar = () => {
     return opts;
   }, []);
 
-  // Filter bookings for selected date and center
+  // Filter bookings for selected date and center - STRICT filtering
   const getBookingsForDate = (centerId: string) => {
-    if (!Array.isArray(bookings)) return [];
+    if (!Array.isArray(bookings) || !centerId) return [];
     
     const filtered = bookings.filter(booking => {
-      if (!booking.booking_datetime || !booking.center_id) return false;
+      // STRICT: Must have center_id and match exactly
+      if (!booking.booking_datetime || !booking.center_id || booking.center_id !== centerId) return false;
       
       try {
         const bookingDate = parseISO(booking.booking_datetime);
         const isSameDayResult = isSameDay(bookingDate, selectedDate);
+        // Double check center_id match (already checked above, but explicit for clarity)
         const isSameCenterResult = booking.center_id === centerId;
         const matchesStatusFilter = statusFilter === 'all' || booking.status === statusFilter;
         
@@ -168,6 +171,7 @@ const SimpleCenterCalendar = () => {
 
   // Handle new booking
   const handleNewBooking = (centerId: string) => {
+    // CRITICAL: Set centerId in form to match the selected center
     setNewBookingForm({
       clientName: '',
       clientEmail: '',
@@ -176,7 +180,8 @@ const SimpleCenterCalendar = () => {
       employeeId: '',
       time: '',
       duration: 60,
-      notes: ''
+      notes: '',
+      centerId: centerId // Ensure centerId is set from the start
     });
     setShowNewBookingModal(true);
   };
@@ -195,6 +200,20 @@ const SimpleCenterCalendar = () => {
   // Create new booking
   const createBooking = async () => {
     try {
+      // CRITICAL: Ensure center_id matches activeTab (selected center)
+      if (!activeTab || newBookingForm.centerId !== activeTab) {
+        console.error('❌ Center ID mismatch:', { 
+          formCenterId: newBookingForm.centerId, 
+          activeTab 
+        });
+        toast({
+          title: "Error de centro",
+          description: "El centro seleccionado no coincide. Por favor, intenta de nuevo.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // First create or get client profile
       let clientProfile;
       if (newBookingForm.clientEmail) {
@@ -235,12 +254,26 @@ const SimpleCenterCalendar = () => {
       const [hours, minutes] = newBookingForm.time.split(':');
       bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
+      // Final validation: ensure activeTab is set and matches form
+      if (!activeTab) {
+        toast({
+          title: "Error",
+          description: "No se ha seleccionado un centro. Por favor, selecciona un centro.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // CRITICAL: Use activeTab (the selected center tab) as the center_id
+      // This ensures the booking is created for the correct center
+      const finalCenterId = activeTab;
+      
       const { error: bookingError } = await supabase
         .from('bookings')
         .insert({
           client_id: clientProfile?.id,
           service_id: newBookingForm.serviceId,
-          center_id: activeTab,
+          center_id: finalCenterId, // Use activeTab which is the selected center tab
           employee_id: newBookingForm.employeeId === 'auto' ? null : newBookingForm.employeeId,
           booking_datetime: bookingDate.toISOString(),
           duration_minutes: newBookingForm.duration,
@@ -447,13 +480,24 @@ const SimpleCenterCalendar = () => {
           }
         }
         // Mark as paid by card
+        // CRITICAL: Cuando se marca como pagado, actualizar el estado de reserva automáticamente
+        // Si es no_show, mantener no_show. Si no, cambiar a confirmed (nunca dejar como pending)
+        const updateData: any = {
+          payment_status: 'paid',
+          payment_method: 'tarjeta',
+          payment_notes: paymentNotes || 'Cobro automático Stripe'
+        };
+        
+        if (selectedBooking.status === 'no_show') {
+          updateData.status = 'no_show';
+        } else {
+          // Si estaba pendiente, cambiar a confirmed cuando se marca como pagado
+          updateData.status = selectedBooking.status === 'pending' ? 'confirmed' : selectedBooking.status;
+        }
+        
         const { error } = await supabase
           .from('bookings')
-          .update({ 
-            payment_status: 'paid', 
-            payment_method: 'tarjeta', 
-            payment_notes: paymentNotes || 'Cobro automático Stripe' 
-          })
+          .update(updateData)
           .eq('id', selectedBooking.id);
         if (error) throw error;
       } else if (paymentMethod === 'online') {
@@ -462,13 +506,24 @@ const SimpleCenterCalendar = () => {
         return;
       } else {
         // Manual methods: efectivo/bizum/transferencia
+        // CRITICAL: Cuando se marca como pagado, actualizar el estado de reserva automáticamente
+        // Si es no_show, mantener no_show. Si no, cambiar a confirmed (nunca dejar como pending)
+        const updateData: any = {
+          payment_status: 'paid',
+          payment_method: paymentMethod,
+          payment_notes: paymentNotes || null
+        };
+        
+        if (selectedBooking.status === 'no_show') {
+          updateData.status = 'no_show';
+        } else {
+          // Si estaba pendiente, cambiar a confirmed cuando se marca como pagado
+          updateData.status = selectedBooking.status === 'pending' ? 'confirmed' : selectedBooking.status;
+        }
+        
         const { error } = await supabase
           .from('bookings')
-          .update({ 
-            payment_status: 'paid', 
-            payment_method: paymentMethod, 
-            payment_notes: paymentNotes || null 
-          })
+          .update(updateData)
           .eq('id', selectedBooking.id);
         if (error) throw error;
       }
