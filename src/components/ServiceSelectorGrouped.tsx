@@ -117,17 +117,60 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   const groupedServices = useMemo(() => {
-    const groups: Record<string, { name: string; services: Service[]; packages: Package[] }> = {
-      'masajes-individuales': { name: t('individual_massages'), services: [], packages: [] },
-      'masajes-pareja': { name: t('couples_massages'), services: [], packages: [] },
-      'masajes-cuatro-manos': { name: t('four_hands_massages'), services: [], packages: [] },
-      'rituales': { name: t('rituals'), services: [], packages: [] },
-      'rituales-pareja': { name: t('rituals_for_two'), services: [], packages: [] },
+    // Definimos grupos especiales de promociones y luego los grupos estándar
+    const groups: Record<string, { name: string; order: number; services: Service[]; packages: Package[] }> = {
+      // Promociones visibles primero si tienen servicios
+      'promo-ultimo-minuto': { 
+        name: 'Promociones reservas último minuto', 
+        order: 0, 
+        services: [], 
+        packages: [] 
+      },
+      'promo-vigentes': { 
+        name: 'Promociones vigentes', 
+        order: 1, 
+        services: [], 
+        packages: [] 
+      },
+      // Grupos estándar
+      'masajes-individuales': { name: t('individual_massages'), order: 10, services: [], packages: [] },
+      'masajes-pareja': { name: t('couples_massages'), order: 20, services: [], packages: [] },
+      'masajes-cuatro-manos': { name: t('four_hands_massages'), order: 30, services: [], packages: [] },
+      'rituales': { name: t('rituals'), order: 40, services: [], packages: [] },
+      'rituales-pareja': { name: t('rituals_for_two'), order: 50, services: [], packages: [] },
     };
 
     services.forEach((service) => {
-      // Prioridad absoluta: si el servicio tiene group_id y coincide con grupos conocidos, usarlo
+      // 1) Prioridad absoluta: grupos especiales de promociones según el nombre del grupo en BD
       const groupId = (service as any).group_id as string | undefined;
+      const rawGroupName = (
+        // Nombre del grupo traído desde la relación treatment_groups
+        (service as any).treatment_groups?.name ||
+        // Compatibilidad por si en algún momento se añade group_name en el select
+        (service as any).group_name ||
+        ''
+      ).toLowerCase();
+
+      if (groupId && rawGroupName) {
+        // Promociones reservas último minuto
+        if (
+          rawGroupName.includes('promociones reservas último minuto') ||
+          (rawGroupName.includes('último minuto') && rawGroupName.includes('promocion'))
+        ) {
+          groups['promo-ultimo-minuto'].services.push(service);
+          return;
+        }
+        // Promociones vigentes
+        if (
+          rawGroupName.includes('promociones vigentes') ||
+          (rawGroupName.includes('promociones') && rawGroupName.includes('vigentes'))
+        ) {
+          groups['promo-vigentes'].services.push(service);
+          return;
+        }
+      }
+
+      // 2) Si el servicio tiene group_id y coincide con grupos estándar conocidos, usarlo
       const groupFromId = groupId &&
         (service as any).group_name &&
         ((service as any).group_name.toLowerCase().includes('rituales para dos') ? 'rituales-pareja'
@@ -157,8 +200,15 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
     });
 
     return Object.entries(groups)
-      .filter(([, group]) => group.services.length > 0)
-      .map(([key, group]) => ({ key, ...group }));
+      // Mostrar siempre los grupos de promociones aunque no tengan servicios,
+      // y solo mostrar los grupos estándar si tienen tratamientos asignados.
+      .filter(([key, group]) => 
+        group.services.length > 0 ||
+        key === 'promo-ultimo-minuto' ||
+        key === 'promo-vigentes'
+      )
+      .map(([key, group]) => ({ key, ...group }))
+      .sort((a, b) => a.order - b.order);
   }, [services]);
 
   const toggleGroup = (groupKey: string) => {
@@ -177,6 +227,9 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
         </SelectTrigger>
         <SelectContent>
           {groupedServices.map((group) => (
+            group.services.length === 0
+              ? null
+              : (
             <React.Fragment key={group.key}>
               <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
                 {group.name}
@@ -187,6 +240,7 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
                 </SelectItem>
               ))}
             </React.Fragment>
+            )
           ))}
         </SelectContent>
       </Select>
@@ -224,14 +278,20 @@ const ServiceSelectorGrouped: React.FC<Props> = ({
             
             {isExpanded && (
               <div className="grid gap-2 pl-2">
-                {group.services.map((service) => (
-                  <ServiceCard
-                    key={service.id}
-                    service={service}
-                    active={selectedId === service.id}
-                    onClick={() => onSelect(service.id, "service")}
-                  />
-                ))}
+                {group.services.length === 0 && (group.key === 'promo-ultimo-minuto' || group.key === 'promo-vigentes') ? (
+                  <div className="text-sm text-muted-foreground italic px-1 py-2">
+                    No hay promociones activas en estos momentos.
+                  </div>
+                ) : (
+                  group.services.map((service) => (
+                    <ServiceCard
+                      key={service.id}
+                      service={service}
+                      active={selectedId === service.id}
+                      onClick={() => onSelect(service.id, "service")}
+                    />
+                  ))
+                )}
               </div>
             )}
           </div>

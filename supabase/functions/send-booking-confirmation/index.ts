@@ -72,7 +72,12 @@ serve(async (req) => {
         type,
         scheduled_for,
         profiles!client_id(email, first_name, last_name),
-        bookings(booking_datetime, total_price_cents, services(name), centers(name, address_concha_espina, address_zurbaran))
+        bookings(
+          booking_datetime,
+          total_price_cents,
+          services(name),
+          centers(name, address, address_concha_espina, address_zurbaran)
+        )
       `)
       .eq('status', 'pending')
       .in('type', ['appointment_confirmation', 'booking_reminder', 'booking_confirmation_with_payment'])
@@ -144,17 +149,30 @@ serve(async (req) => {
           continue;
         }
 
-        // Determine center location
+        // Determine center location as reliably as possible
         const center = booking?.centers;
-        const isZurbaran = center?.name?.toLowerCase().includes('zurbaran') || center?.name?.toLowerCase().includes('zurbarán') || center?.address_zurbaran;
+        const centerNameLower = center?.name?.toLowerCase() || '';
+        const addrZurLower = (center?.address_zurbaran || '').toLowerCase();
+        const addrConchaLower = (center?.address_concha_espina || '').toLowerCase();
+
+        // Consider it Zurbarán if the name or any address field clearly points to Zurbarán / 28010
+        const isZurbaran =
+          center?.address_zurbaran ||
+          centerNameLower.includes('zurbaran') ||
+          centerNameLower.includes('zurbarán') ||
+          addrZurLower.includes('zurbar') ||
+          addrZurLower.includes('28010');
+
         const centerLocation = isZurbaran ? 'ZURBARÁN' : 'CONCHA ESPINA';
         
         // Formatear dirección según el centro
         let formattedAddress = '';
         if (isZurbaran) {
-          formattedAddress = 'C/ Zurbarán 10 (Metro Alonso Martínez / Rubén Darío)';
+          formattedAddress = center?.address_zurbaran ||
+            'C/ Zurbarán 10 (Metro Alonso Martínez / Rubén Darío)';
         } else {
-          formattedAddress = 'C/ Príncipe de Vergara 204 posterior (Metro Concha Espina, salida Plaza de Cataluña)';
+          formattedAddress = center?.address_concha_espina ||
+            'C/ Príncipe de Vergara 204 posterior (Metro Concha Espina, salida Plaza de Cataluña)';
         }
         
         const mapsLink = isZurbaran

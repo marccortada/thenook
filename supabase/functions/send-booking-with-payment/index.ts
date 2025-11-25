@@ -46,7 +46,9 @@ serve(async (req) => {
         const { data: bookingRow, error: bookingErr } = await supabaseClient
           .from('bookings')
           .select(`
-            id, booking_datetime, total_price_cents, services(name), centers(name, address_concha_espina, address_zurbaran),
+            id, booking_datetime, total_price_cents,
+            services(name),
+            centers(name, address, address_concha_espina, address_zurbaran),
             profiles!client_id(email, first_name, last_name)
           `)
           .eq('id', bookingId)
@@ -69,14 +71,30 @@ serve(async (req) => {
         }
 
         const center = bookingRow.centers;
-        const isZurbaran = center?.name?.toLowerCase().includes('zurbaran') || center?.name?.toLowerCase().includes('zurbarán');
+        // Determinar correctamente el centro usando tanto el nombre como los campos de dirección específicos
+        const centerNameLower = center?.name?.toLowerCase() || '';
+        const addrBaseLower = (center?.address || '').toLowerCase();
+        const addrZurLower = (center?.address_zurbaran || '').toLowerCase();
+
+        const isZurbaran =
+          center?.address_zurbaran ||
+          centerNameLower.includes('zurbaran') ||
+          centerNameLower.includes('zurbarán') ||
+          addrZurLower.includes('zurbar') ||
+          addrZurLower.includes('28010') ||
+          addrBaseLower.includes('zurbar') ||
+          addrBaseLower.includes('28010');
+
         const centerLocation = isZurbaran ? 'ZURBARÁN' : 'CONCHA ESPINA';
+
         const centerAddress = isZurbaran 
           ? (center?.address_zurbaran || 'C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid')
           : (center?.address_concha_espina || 'C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante \"La Ancha\"');
+
         const centerMetroInfo = isZurbaran
           ? '(Metro Iglesia, salida C. de Zurbarán)'
           : '(Metro Concha Espina, salida Plaza de Cataluña)';
+
         const mapsLink = isZurbaran
           ? 'https://maps.app.goo.gl/your-zurbaran-link'
           : 'https://goo.gl/maps/zHuPpdHATcJf6QWX8';

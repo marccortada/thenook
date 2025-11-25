@@ -69,8 +69,8 @@ const STATUS_BORDER_CLASSES: Record<string, string> = {
 
 const PAYMENT_STATUSES = [
   { value: 'pending', label: 'Pendiente de Pago', color: 'bg-orange-100 text-orange-800' },
+  // Únicamente un estado de pago exitoso: 'paid'
   { value: 'paid', label: 'Pagada', color: 'bg-green-100 text-green-800' },
-  { value: 'completed', label: 'Pagada', color: 'bg-green-100 text-green-800' },
 ];
 
 const PAYMENT_METHODS = [

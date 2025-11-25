@@ -70,6 +70,18 @@ const PREDEFINED_GROUPS = [
     name: 'Rituales para Dos',
     color: '#EC4899',
     description: 'Rituales para dos personas'
+  },
+  {
+    id: 'promos-ultimo-minuto',
+    name: 'Promociones reservas último minuto',
+    color: '#F97316',
+    description: 'Promociones especiales de último minuto'
+  },
+  {
+    id: 'promos-vigentes',
+    name: 'Promociones vigentes',
+    color: '#22C55E',
+    description: 'Promociones activas actualmente'
   }
 ];
 
@@ -215,7 +227,11 @@ const TreatmentGroupsManagement: React.FC = () => {
       'masajes-pareja': [] as any[],
       'masajes-cuatro-manos': [] as any[],
       'rituales': [] as any[],
-      'rituales-pareja': [] as any[]
+      'rituales-pareja': [] as any[],
+      // Los grupos de promociones no clasifican nada automáticamente;
+      // el admin decide qué servicios van dentro.
+      'promos-ultimo-minuto': [] as any[],
+      'promos-vigentes': [] as any[]
     };
 
     services.forEach(service => {
@@ -604,7 +620,21 @@ const TreatmentGroupsManagement: React.FC = () => {
 
       <Accordion type="multiple" className="space-y-4">
         {combinedGroups.map((group) => {
-          const groupServices = classifyServices[group.id as keyof typeof classifyServices] || [];
+          // Por defecto, usamos la clasificación automática por tipo
+          let groupServices = classifyServices[group.id as keyof typeof classifyServices] || [];
+
+          // EXCEPCIÓN: para los grupos de promociones usamos SIEMPRE los servicios
+          // cuyo group_id apunte a ese grupo en la base de datos
+          if (group.id === 'promos-ultimo-minuto' || group.id === 'promos-vigentes') {
+            if (group.dbGroup?.id) {
+              groupServices = services.filter(
+                (service: any) => service.group_id === group.dbGroup.id
+              );
+            } else {
+              groupServices = [];
+            }
+          }
+
           const assignedLane = lanes.find(l => l.id === group.lane_id);
           const assignedCenter = centers.find(c => c.id === group.center_id);
           
@@ -1041,7 +1071,7 @@ const TreatmentGroupsManagement: React.FC = () => {
                       .filter(center => center.id && center.id.trim() !== '')
                       .map(center => (
                         <option key={center.id} value={center.id}>
-                          {center.name}
+                          {computeFriendlyCenterName(center, centers)}
                         </option>
                       ))}
                   </select>

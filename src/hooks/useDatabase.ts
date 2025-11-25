@@ -161,7 +161,9 @@ export const useServices = (centerId?: string) => {
       setLoading(true);
       let query = (supabase as any)
         .from('services')
-        .select('*, color, lane_ids') // Específicamente incluir las nuevas columnas
+        // Incluir también el nombre del grupo de tratamiento vinculado (treatment_groups)
+        // para poder agrupar promociones en el frontal.
+        .select('*, treatment_groups(name)') 
         .eq('active', true);
 
       if (centerId) {
