@@ -98,22 +98,24 @@ async function sendBookingConfirmationEmail(args: {
   const paymentIntent = source.type === "payment_intent" ? source.paymentIntent : null;
   const isManualCapture = source.type === "payment_intent";
   const { data: booking, error } = await supabaseAdmin
-    .from("bookings")
-    .select(`
-      id,
-      booking_datetime,
-      duration_minutes,
-      total_price_cents,
-      payment_status,
-      email_status,
-      stripe_session_id,
-      status,
-      profiles!client_id ( first_name, last_name, email ),
-      services ( name ),
-      centers ( name, address_concha_espina, address_zurbaran )
-    `)
-    .eq("id", bookingId)
-    .maybeSingle();
+  .from("bookings")
+  .select(`
+    id,
+    booking_datetime,
+    duration_minutes,
+    total_price_cents,
+    payment_status,
+    email_status,
+    stripe_session_id,
+    status,
+    stripe_customer_id,
+    stripe_payment_method_id,
+    profiles!client_id ( first_name, last_name, email ),
+    services ( name ),
+    centers ( name, address_concha_espina, address_zurbaran )
+  `)
+  .eq("id", bookingId)
+  .maybeSingle();
 
   if (error) {
     console.error("[stripe-webhook] Error fetching booking:", error);
@@ -230,20 +232,84 @@ async function sendBookingConfirmationEmail(args: {
     console.warn("[stripe-webhook] Failed to persist payment method/customer:", pmErr);
   }
 
-  const center = booking.centers;
-  const centerName = center?.name || "";
-  const isZurbaran = centerName.toLowerCase().includes("zurbar");
-  const centerHeading = isZurbaran ? "THE NOOK ZURBARÁN" : "THE NOOK CONCHA ESPINA";
-  const mapLink = isZurbaran
-    ? "https://maps.app.goo.gl/fEWyBibeEFcQ3isN6"
-    : "https://goo.gl/maps/zHuPpdHATcJf6QWX8";
-  const addressLineEs = isZurbaran
-    ? "C/ Zurbarán 10 (Metro Alonso Martínez / Rubén Darío)"
-    : "C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante 'La Ancha' (Metro Concha Espina salida Plaza de Cataluña)";
-  const addressLineEn = isZurbaran
-    ? "C/ Zurbarán 10 (Metro Alonso Martínez / Rubén Darío)"
-    : "C/ Príncipe de Vergara 204 back building (At the back of #204 - walking around the restaurant 'La Ancha') Subway: Concha Espina exit Plaza de Cataluña";
+    // --- RESOLUCIÓN CORRECTA DE CENTRO ---
 
+    const center = booking.centers as any;
+
+    // Datos crudos del centro desde Supabase
+    const nameFromDb = (center?.name || "").toString().toLowerCase();
+    const slugFromDb = (center?.slug || center?.code || "")
+      .toString()
+      .toLowerCase();
+  
+    // Datos que vengan desde Stripe metadata (si existen)
+    const metaCenter =
+      (
+        session?.metadata?.center ||
+        session?.metadata?.center_name ||
+        session?.metadata?.center_slug ||
+        ""
+      )
+        .toString()
+        .toLowerCase();
+  
+    // Dirección que llega desde metadata (si la pasas por checkout)
+    const metaAddressEs =
+      (session?.metadata?.center_address_es as string | undefined) || undefined;
+    const metaAddressEn =
+      (session?.metadata?.center_address_en as string | undefined) || undefined;
+  
+    // REGLA DE DECISIÓN FIABLE
+    let isZurbaran = false;
+  
+    // 1) Si en la BBDD solo existe dirección de Zurbarán → es Zurbarán
+    if (center?.address_zurbaran && !center?.address_concha_espina) {
+      isZurbaran = true;
+    }
+    // 2) Si slug / código contienen "zurbar"
+    else if (slugFromDb.includes("zurbar")) {
+      isZurbaran = true;
+    }
+    // 3) Si metadata contiene “zurbar”
+    else if (metaCenter.includes("zurbar")) {
+      isZurbaran = true;
+    }
+    // 4) Si el nombre contiene claramente “zurbar”
+    else if (nameFromDb.includes("zurbar")) {
+      isZurbaran = true;
+    }
+  
+    console.log("[stripe-webhook] Center resolved as:", {
+      isZurbaran,
+      nameFromDb,
+      slugFromDb,
+      metaCenter,
+      centerFromDb: center,
+    });
+  
+    const centerHeading = isZurbaran
+      ? "THE NOOK ZURBARÁN"
+      : "THE NOOK CONCHA ESPINA";
+  
+    const mapLink = isZurbaran
+      ? "https://maps.app.goo.gl/fEWyBibeEFcQ3isN6"
+      : "https://goo.gl/maps/zHuPpdHATcJf6QWX8";
+  
+    const addressLineEs = isZurbaran
+      ? metaAddressEs ||
+        center?.address_zurbaran ||
+        "C/ Zurbarán 10 (Metro Alonso Martínez / Rubén Darío)"
+      : metaAddressEs ||
+        center?.address_concha_espina ||
+        "C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante 'La Ancha' (Metro Concha Espina salida Plaza de Cataluña)";
+  
+    const addressLineEn = isZurbaran
+      ? metaAddressEn ||
+        center?.address_zurbaran ||
+        "C/ Zurbarán 10 (Metro Alonso Martínez / Rubén Darío)"
+      : metaAddressEn ||
+        center?.address_concha_espina ||
+        "C/ Príncipe de Vergara 204 back building (At the back of #204 - walking around the restaurant 'La Ancha') Subway: Concha Espina exit Plaza de Cataluña";
   const subject = isSpanish
     ? "Reserva confirmada en THE NOOK"
     : "Booking confirmed at THE NOOK";
@@ -251,7 +317,7 @@ async function sendBookingConfirmationEmail(args: {
   const cancellationLink = "https://www.thenookmadrid.com/politica-de-cancelaciones/";
   const year = new Date().getFullYear();
 
-  const spanishBody = `
+  const spanishBody = 
   <p>Hola ${clientName}!</p>
   <p>Has reservado correctamente tu tratamiento en <strong>${centerHeading}</strong>.</p>
   <p><strong>Estos son los detalles de la reserva:</strong></p>
@@ -268,9 +334,9 @@ async function sendBookingConfirmationEmail(args: {
   <p><strong>${centerHeading}</strong><br>
   911 481 474 / 622 360 922<br>
   <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a></p>
-`;
+;
 
-  const englishBody = `
+  const englishBody = 
   <p>Hi ${clientName}!</p>
   <p>Your appointment at <strong>${centerHeading}</strong> has been confirmed.</p>
   <p><strong>Booking details:</strong></p>
@@ -287,7 +353,7 @@ async function sendBookingConfirmationEmail(args: {
   <p><strong>${centerHeading}</strong><br>
   911 481 474 / 622 360 922<br>
   <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a></p>
-`;
+;
 
   const contentBody = isSpanish ? spanishBody : englishBody;
 
@@ -348,7 +414,7 @@ async function sendBookingConfirmationEmail(args: {
       await sendWithInternalCopy({
         from: sender,
         to: [adminEmail],
-        subject: `${subject} · Reserva ${bookingId}`,
+        subject: ${subject} · Reserva ${bookingId},
         html: emailHtml,
       });
     }
@@ -409,7 +475,7 @@ async function processPackageVoucher(args: {
   const { data: existingMatch } = await supabaseAdmin
     .from("client_packages")
     .select("id")
-    .ilike("notes", `%${session.id}%`)
+    .ilike("notes", %${session.id}%)
     .maybeSingle();
   if (existingMatch) {
     console.log("[stripe-webhook] vouchers already processed for session", session.id);
@@ -517,10 +583,10 @@ async function processPackageVoucher(args: {
 
         const notesPieces = [
           noteBase,
-          giftMessage ? `Mensaje: ${giftMessage}` : "",
-          itemIsGift ? `Regalo para: ${recipientName} <${recipientEmail}>` : "Uso personal",
-          `Comprador: ${purchaserName} <${purchaserEmail}>`,
-          `Stripe session: ${session.id}`,
+          giftMessage ? Mensaje: ${giftMessage} : "",
+          itemIsGift ? Regalo para: ${recipientName} <${recipientEmail}> : "Uso personal",
+          Comprador: ${purchaserName} <${purchaserEmail}>,
+          Stripe session: ${session.id},
         ].filter(Boolean);
 
         const { data: createdPackage, error: createPkgErr } = await supabaseAdmin
@@ -579,7 +645,7 @@ async function processPackageVoucher(args: {
         "C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante 'La Ancha' (Metro Concha Espina salida Plaza de Cataluña)";
 
     const giftBlock = voucher.giftMessage
-      ? `<p style="margin:0 0 16px 0; color:#0f172a;"><strong>Mensaje:</strong> ${voucher.giftMessage}</p>`
+      ? <p style="margin:0 0 16px 0; color:#0f172a;"><strong>Mensaje:</strong> ${voucher.giftMessage}</p>
       : "";
 
     const emailHtml = `
@@ -655,7 +721,7 @@ async function processPackageVoucher(args: {
     await sendWithInternalCopy({
       from: sender,
       to: [voucher.recipientEmail],
-      subject: `Tu bono ${pkg.name} en THE NOOK`,
+      subject: Tu bono ${pkg.name} en THE NOOK,
       html: emailHtml,
     });
 
@@ -663,14 +729,14 @@ async function processPackageVoucher(args: {
       await sendWithInternalCopy({
         from: sender,
         to: [voucher.purchaserEmail],
-        subject: `Confirmación de compra · ${pkg.name}`,
+        subject: Confirmación de compra · ${pkg.name},
         html: emailHtml,
       });
     }
   }
 
   if (adminEmail) {
-    const summaryHtml = `
+    const summaryHtml = 
       <div style="font-family: Arial, sans-serif;">
         <h3>🎁 Nueva compra de bonos</h3>
         <p><strong>Comprador:</strong> ${createdVouchers[0].purchaserName} &lt;${createdVouchers[0].purchaserEmail}&gt;</p>
@@ -679,18 +745,18 @@ async function processPackageVoucher(args: {
           ${createdVouchers
             .map(
               (v) =>
-                `<li>${v.package.name} — Código: <code>${v.code}</code> — Para: ${v.recipientName} (${v.recipientEmail})</li>`
+                <li>${v.package.name} — Código: <code>${v.code}</code> — Para: ${v.recipientName} (${v.recipientEmail})</li>
             )
             .join("")}
         </ul>
         <p>Sesión Stripe: ${session.id}</p>
       </div>
-    `;
+    ;
 
     await sendWithInternalCopy({
       from: summarySender,
       to: [adminEmail],
-      subject: `Nueva compra de bono · ${createdVouchers[0].package.name}`,
+      subject: Nueva compra de bono · ${createdVouchers[0].package.name},
       html: summaryHtml,
     });
   }
@@ -712,7 +778,7 @@ async function processGiftCards(args: {
   const { data: existingMatch } = await supabaseAdmin
     .from("gift_cards")
     .select("id")
-    .ilike("purchased_by_email", `%${session.customer_details?.email || ""}%`)
+    .ilike("purchased_by_email", %${session.customer_details?.email || ""}%)
     .eq("initial_balance_cents", items[0].amount_cents)
     .gte("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString()) // últimos 5 minutos
     .maybeSingle();
@@ -755,9 +821,9 @@ async function processGiftCards(args: {
     if (!cloudinaryCloudName) return null;
 
     const amountSuffix = card.showPrice
-      ? ` · ${(card.amountCents / 100).toFixed(2)}€`
+      ?  · ${(card.amountCents / 100).toFixed(2)}€
       : "";
-    const overlayTitle = encodeCloudinaryText(`${card.title}${amountSuffix}`);
+    const overlayTitle = encodeCloudinaryText(${card.title}${amountSuffix});
     const overlayCode = encodeCloudinaryText(card.code);
     const overlayDate = encodeCloudinaryText(purchaseDate.replace(/\//g, "-"));
     const giftMessageRaw = (card.giftMessage ?? "").trim();
@@ -765,26 +831,26 @@ async function processGiftCards(args: {
 
     const transforms = [
       "f_auto,q_auto",
-      `l_text:Helvetica_35_bold:${overlayTitle},co_rgb:4a4a4a,g_center,y_-210`,
+      l_text:Helvetica_35_bold:${overlayTitle},co_rgb:4a4a4a,g_center,y_-210,
     ];
 
     if (overlayGiftMessage) {
-      transforms.push(`l_text:Helvetica_28:${overlayGiftMessage},co_rgb:4a4a4a,g_center,y_-160`);
+      transforms.push(l_text:Helvetica_28:${overlayGiftMessage},co_rgb:4a4a4a,g_center,y_-160);
     }
 
     transforms.push(
-      `l_text:Helvetica_30_bold:${overlayCode},co_rgb:4a4a4a,g_center,y_210`,
-      `l_text:Helvetica_28_bold:${overlayDate},co_rgb:4a4a4a,g_center,y_135`,
+      l_text:Helvetica_30_bold:${overlayCode},co_rgb:4a4a4a,g_center,y_210,
+      l_text:Helvetica_28_bold:${overlayDate},co_rgb:4a4a4a,g_center,y_135,
     );
 
     const baseTransform = transforms.join("/");
     const nameCandidate =
       sanitizeAttachmentPart(card.recipientName || card.title || card.code) || card.code;
-    const attachmentLabel = encodeURIComponent(`TarjetaRegalo${nameCandidate}`);
+    const attachmentLabel = encodeURIComponent(TarjetaRegalo${nameCandidate});
 
     return {
-      imageUrl: `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/${cloudinaryTemplateId}`,
-      downloadUrl: `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/fl_attachment:${attachmentLabel}/${cloudinaryTemplateId}`,
+      imageUrl: https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/${cloudinaryTemplateId},
+      downloadUrl: https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${baseTransform}/fl_attachment:${attachmentLabel}/${cloudinaryTemplateId},
     };
   };
 
@@ -802,9 +868,9 @@ async function processGiftCards(args: {
       const contentType = response.headers.get("content-type") || "image/jpeg";
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
       return {
-        dataUrl: `data:${contentType};base64,${base64}`,
+        dataUrl: data:${contentType};base64,${base64},
         attachment: {
-          filename: `gift-card-${code}.${contentType.includes("png") ? "png" : "jpg"}`,
+          filename: gift-card-${code}.${contentType.includes("png") ? "png" : "jpg"},
           content: base64,
           contentType,
         },
@@ -891,9 +957,9 @@ async function processGiftCards(args: {
         if (codeErr) throw codeErr;
 
         const notes = [
-          isGift ? `Regalo de: ${purchaserName} <${purchaserEmail}>` : "Compra personal",
-          isGift && giftMessage ? `Mensaje: ${giftMessage}` : "",
-          `Stripe session: ${session.id}`,
+          isGift ? Regalo de: ${purchaserName} <${purchaserEmail}> : "Compra personal",
+          isGift && giftMessage ? Mensaje: ${giftMessage} : "",
+          Stripe session: ${session.id},
         ]
           .filter(Boolean)
           .join(" | ");
@@ -939,7 +1005,7 @@ async function processGiftCards(args: {
     return;
   }
 
-  console.log(`[stripe-webhook] 📧 Preparing ${createdGiftCards.length} gift card emails...`);
+  console.log([stripe-webhook] 📧 Preparing ${createdGiftCards.length} gift card emails...);
   const year = new Date().getFullYear();
   const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL") || "reservas@thenookmadrid.com";
   const sender = buildSender();
@@ -1004,30 +1070,30 @@ async function processGiftCards(args: {
     const safePrimaryName = (primaryName || "Cliente").trim();
     const amountLineVisible = card.showPrice !== false;
     const cardTitleLine = card.giftCardName
-      ? `<p style="font-size:18px;font-weight:600;margin:16px 0 8px;color:#4a4a4a;">${card.giftCardName}</p>`
+      ? <p style="font-size:18px;font-weight:600;margin:16px 0 8px;color:#4a4a4a;">${card.giftCardName}</p>
       : "";
     const priceLine = amountLineVisible
-      ? `<p style="margin:10px 0 0;font-size:16px;font-weight:600;color:#4a4a4a;">Valor: ${amountFormatted}</p>`
+      ? <p style="margin:10px 0 0;font-size:16px;font-weight:600;color:#4a4a4a;">Valor: ${amountFormatted}</p>
       : "";
     const buyerInfoLine =
       card.isGift && !sendToBuyer && card.showBuyerData
-        ? `<p style="font-size:14px;color:#4a4a4a;margin:8px 0;">De parte de: <strong>${card.purchaserName}</strong></p>`
+        ? <p style="font-size:14px;color:#4a4a4a;margin:8px 0;">De parte de: <strong>${card.purchaserName}</strong></p>
         : "";
     const imageBlock = imageSrc
-      ? `<div style="margin:24px 0;text-align:center;"><img src="${imageSrc}" alt="Tarjeta regalo The Nook Madrid" style="max-width:100%;border-radius:12px;box-shadow:0 10px 30px rgba(26,106,255,0.1);" /></div>`
+      ? <div style="margin:24px 0;text-align:center;"><img src="${imageSrc}" alt="Tarjeta regalo The Nook Madrid" style="max-width:100%;border-radius:12px;box-shadow:0 10px 30px rgba(26,106,255,0.1);" /></div>
       : "";
     const downloadBlock = downloadUrl
-      ? `<div style="margin:24px 0;text-align:center;"><a href="${downloadUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;">Descargar tarjeta</a></div>`
+      ? <div style="margin:24px 0;text-align:center;"><a href="${downloadUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;">Descargar tarjeta</a></div>
       : "";
 
     const isGift = card.isGift;
     const introLine = isGift
       ? sendToBuyer
         ? "Aquí tienes tu tarjeta regalo."
-        : `Has recibido una tarjeta regalo de <strong>${card.purchaserName || "alguien especial"}</strong>.`
+        : Has recibido una tarjeta regalo de <strong>${card.purchaserName || "alguien especial"}</strong>.
       : "Gracias por tu compra de tarjeta regalo.";
 
-    const recipientHtml = `
+    const recipientHtml = 
 <!doctype html>
 <html lang="es">
   <head>
@@ -1074,13 +1140,13 @@ async function processGiftCards(args: {
     </center>
   </body>
 </html>
-    `;
+    ;
 
     const recipientSubject = isGift
       ? sendToBuyer
-        ? `🎁 Tu tarjeta regalo de The Nook Madrid (para ${card.recipientName || "regalar"})`
-        : `🎁 ¡Has recibido ${card.giftCardName} de ${card.purchaserName || "alguien especial"}!`
-      : `Tu ${card.giftCardName} de The Nook Madrid`;
+        ? 🎁 Tu tarjeta regalo de The Nook Madrid (para ${card.recipientName || "regalar"})
+        : 🎁 ¡Has recibido ${card.giftCardName} de ${card.purchaserName || "alguien especial"}!
+      : Tu ${card.giftCardName} de The Nook Madrid;
 
     const recipientEmailPayload: any = {
       from: sender,
@@ -1114,8 +1180,8 @@ async function processGiftCards(args: {
 
     if (shouldSendBuyerCopy) {
       const recipientDisplayName = (card.recipientName || "la persona destinataria").trim();
-      const recipientEmailLabel = recipientEmail ? ` (${recipientEmail})` : "";
-      const purchaserHtml = `
+      const recipientEmailLabel = recipientEmail ?  (${recipientEmail}) : "";
+      const purchaserHtml = 
 <!doctype html>
 <html lang="es">
   <head>
@@ -1139,7 +1205,7 @@ async function processGiftCards(args: {
             <div style="background:#f0fdf4;border-radius:12px;padding:20px;margin:24px 0;">
               <h3 style="margin-top:0;color:#4a4a4a;font-size:16px;">Resumen del regalo</h3>
               <p style="margin:6px 0;color:#4a4a4a;"><strong>Código:</strong> ${card.code}</p>
-              ${amountLineVisible ? `<p style="margin:6px 0;color:#4a4a4a;"><strong>Valor:</strong> ${amountFormatted}</p>` : ""}
+              ${amountLineVisible ? <p style="margin:6px 0;color:#4a4a4a;"><strong>Valor:</strong> ${amountFormatted}</p> : ""}
               <p style="margin:6px 0;color:#4a4a4a;"><strong>Fecha de compra:</strong> ${purchaseDate}</p>
               <p style="margin:6px 0;color:#4a4a4a;"><strong>Destinatario:</strong> ${recipientDisplayName}${recipientEmailLabel}</p>
             </div>
@@ -1154,7 +1220,7 @@ async function processGiftCards(args: {
     </center>
   </body>
 </html>
-      `;
+      ;
 
       const purchaserPayload: any = {
         from: sender,
@@ -1182,7 +1248,7 @@ async function processGiftCards(args: {
   }
 
   if (adminEmail) {
-    const summaryHtml = `
+    const summaryHtml = 
       <div style="font-family: Arial, sans-serif;">
         <h3>🎁 Nueva compra de Tarjeta(s) Regalo</h3>
         <p><strong>Comprador:</strong> ${createdGiftCards[0].purchaserName} &lt;${createdGiftCards[0].purchaserEmail}&gt;</p>
@@ -1194,19 +1260,19 @@ async function processGiftCards(args: {
                 style: "currency",
                 currency: "EUR",
               }).format(c.amount_cents / 100);
-              return `<li>${c.giftCardName} — ${amt} — Código: <code>${c.code}</code> — ${c.isGift ? `Para: ${c.recipientName} (${c.recipientEmail})` : "Compra personal"}</li>`;
+              return <li>${c.giftCardName} — ${amt} — Código: <code>${c.code}</code> — ${c.isGift ? Para: ${c.recipientName} (${c.recipientEmail}) : "Compra personal"}</li>;
             })
             .join("")}
         </ul>
         <p>Sesión Stripe: ${session.id}</p>
       </div>
-    `;
+    ;
 
-    console.log(`[stripe-webhook] Sending admin summary to: ${adminEmail}`);
+    console.log([stripe-webhook] Sending admin summary to: ${adminEmail});
     await sendWithInternalCopy({
       from: sender,
       to: [adminEmail],
-      subject: `Nueva compra Tarjeta Regalo · ${createdGiftCards[0].purchaserName}`,
+      subject: Nueva compra Tarjeta Regalo · ${createdGiftCards[0].purchaserName},
       html: summaryHtml,
     });
   }
@@ -1244,19 +1310,19 @@ serve(async (req) => {
     );
   } catch (err: any) {
     console.error("[stripe-webhook] Signature verification failed:", err);
-    return new Response(`Webhook Error: ${err.message}`, {
+    return new Response(Webhook Error: ${err.message}, {
       status: 400,
       headers: corsHeaders,
     });
   }
 
   try {
-    console.log(`[stripe-webhook] Received event: ${event.type}`);
+    console.log([stripe-webhook] Received event: ${event.type});
     
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      console.log(`[stripe-webhook] Session ID: ${session.id}`);
-      console.log(`[stripe-webhook] Session metadata:`, JSON.stringify(session.metadata, null, 2));
+      console.log([stripe-webhook] Session ID: ${session.id});
+      console.log([stripe-webhook] Session metadata:, JSON.stringify(session.metadata, null, 2));
       
       const intent =
         session.metadata?.intent ||
@@ -1264,7 +1330,7 @@ serve(async (req) => {
           ? (session.payment_intent as Stripe.PaymentIntent).metadata?.intent
           : undefined);
 
-      console.log(`[stripe-webhook] Detected intent: ${intent}`);
+      console.log([stripe-webhook] Detected intent: ${intent});
 
       if (intent === "booking_payment") {
         const payload = session.metadata?.bp_payload;
@@ -1394,13 +1460,13 @@ serve(async (req) => {
               // Ensure notification exists in automated_notifications
               const { data: bookingData } = await supabaseAdmin
                 .from("bookings")
-                .select(`
+                .select(
                   id,
                   client_id,
                   booking_datetime,
                   services(name),
                   centers(name, address_zurbaran, address_concha_espina)
-                `)
+                )
                 .eq("id", bookingIdFromMeta)
                 .single();
 
@@ -1434,7 +1500,7 @@ serve(async (req) => {
                       booking_id: bookingIdFromMeta,
                       scheduled_for: new Date().toISOString(),
                       subject: "Reserva asegurada en THE NOOK",
-                      message: `Tu cita para ${selectedService} el ${formattedDate} ha quedado registrada. Recuerda revisar nuestra política de cancelación en https://www.thenookmadrid.com/politica-de-cancelaciones/.`,
+                      message: Tu cita para ${selectedService} el ${formattedDate} ha quedado registrada. Recuerda revisar nuestra política de cancelación en https://www.thenookmadrid.com/politica-de-cancelaciones/.,
                       metadata: {
                         channels: ["email"],
                         booking_id: bookingIdFromMeta,
@@ -1550,13 +1616,13 @@ serve(async (req) => {
             // Ensure notification exists
             const { data: bookingData } = await supabaseAdmin
               .from("bookings")
-              .select(`
+              .select(
                 id,
                 client_id,
                 booking_datetime,
                 services(name),
                 centers(name, address_zurbaran, address_concha_espina)
-              `)
+              )
               .eq("id", bookingId)
               .single();
 
@@ -1588,7 +1654,7 @@ serve(async (req) => {
                     booking_id: bookingId,
                     scheduled_for: new Date().toISOString(),
                     subject: "Reserva asegurada en THE NOOK",
-                    message: `Tu cita para ${selectedService} el ${formattedDate} ha quedado registrada. Recuerda revisar nuestra política de cancelación en https://www.thenookmadrid.com/politica-de-cancelaciones/.`,
+                    message: Tu cita para ${selectedService} el ${formattedDate} ha quedado registrada. Recuerda revisar nuestra política de cancelación en https://www.thenookmadrid.com/politica-de-cancelaciones/.,
                     metadata: {
                       channels: ["email"],
                       booking_id: bookingId,
