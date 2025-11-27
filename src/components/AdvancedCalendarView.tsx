@@ -1698,6 +1698,10 @@ const AdvancedCalendarView = () => {
     }
   };
 
+  // Accent color for status borders (falls back to lane/service color)
+  const getStatusAccent = (booking: Booking) =>
+    getStatusHex(booking.status) || getServiceLaneColor(booking.service_id);
+
   // Navigation functions
   const goToPrevious = () => {
     if (viewMode === 'day') {
@@ -2046,7 +2050,11 @@ const AdvancedCalendarView = () => {
                                 )}
                                  style={{ 
                                    backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
-                                   borderLeftColor: getServiceLaneColor(booking.service_id),
+                                   borderColor: getStatusAccent(booking),
+                                   borderLeftColor: getStatusAccent(booking),
+                                   borderStyle: 'solid',
+                                   borderWidth: '2px',
+                                   borderLeftWidth: '6px',
                                    color: getServiceLaneColor(booking.service_id),
                                    height: `${((booking.duration_minutes || 60) / 5) * 24}px`,
                                    zIndex: 2
@@ -2389,9 +2397,13 @@ const AdvancedCalendarView = () => {
                                   "cursor-move"
                                 )}
                                  style={{ 
-                                   backgroundColor: `${(getStatusHex(booking.status) || getServiceLaneColor(booking.service_id))}40`,
-                                   borderLeftColor: getStatusHex(booking.status) || getServiceLaneColor(booking.service_id),
-                                   color: getStatusHex(booking.status) || getServiceLaneColor(booking.service_id),
+                                   backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
+                                   borderColor: getStatusAccent(booking),
+                                   borderLeftColor: getStatusAccent(booking),
+                                   borderStyle: 'solid',
+                                   borderWidth: '2px',
+                                   borderLeftWidth: '6px',
+                                   color: getServiceLaneColor(booking.service_id),
                                    height: `${(booking.duration_minutes || 60) / 5 * 24}px`,
                                    minHeight: '24px'
                                  }}

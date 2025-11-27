@@ -385,13 +385,7 @@ onClick={handlePaymentSetup}
 
         {/* Footer */}
         <div className="text-center text-sm text-muted-foreground space-y-2">
-          <div>
-            <p>Si tienes alguna pregunta, contáctanos en</p>
-            <p className="font-medium">
-              <a href="mailto:reservas@thenookmadrid.com" className="hover:underline">
-                reservas@thenookmadrid.com
-              </a>
-            </p>
+          <div className="space-y-1">
             <p className="font-medium">
               <a href="tel:911481474" className="hover:underline">
                 Tel: 911 481 474
