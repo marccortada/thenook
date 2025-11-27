@@ -2046,7 +2046,9 @@ const AdvancedCalendarView = () => {
                              <div
                                 className={cn(
                                   "absolute top-1 left-1 right-1 rounded border-l-4 p-2 transition-all hover:shadow-md",
-                                  "cursor-move"
+                                  "cursor-move",
+                                  // Pequeño realce visual mientras se arrastra para dar más sensación de fluidez
+                                  isDraggingRef.current && "shadow-lg scale-[1.01] bg-background/80"
                                 )}
                                  style={{ 
                                    backgroundColor: `${getServiceLaneColor(booking.service_id)}20`,
@@ -2062,6 +2064,8 @@ const AdvancedCalendarView = () => {
                                 draggable={true}
                                 onDragStart={(e) => {
                                   e.stopPropagation(); // Prevent parent handlers from interfering
+                                  // Marcar que estamos en un arrastre real para que los clics posteriores no abran modales por error
+                                  isDraggingRef.current = true;
                                   // Store both booking data and the original time slot for reference
                                   const dragData = {
                                     ...booking,
@@ -2070,12 +2074,27 @@ const AdvancedCalendarView = () => {
                                   e.dataTransfer.setData('booking', JSON.stringify(dragData));
                                   e.dataTransfer.setData('text/plain', booking.id);
                                   e.dataTransfer.effectAllowed = 'move';
-                                  // Set drag image to be the booking card itself for better visual feedback
-                                  e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 10, 10);
+                                  // Usar como imagen de arrastre la propia tarjeta, anclada al punto donde el usuario hizo clic
+                                  const target = e.currentTarget as HTMLElement;
+                                  const rect = target.getBoundingClientRect();
+                                  const offsetX = e.clientX - rect.left;
+                                  // Siempre anclar verticalmente a la parte superior del bloque para que la referencia visual
+                                  // sea el inicio del bloqueo/cita, no el punto medio donde se hizo clic.
+                                  const offsetY = 4;
+                                  e.dataTransfer.setDragImage(target, offsetX, offsetY);
+                                }}
+                                onDragEnd={() => {
+                                  // Pequeño retraso para que el navegador complete el drop antes de resetear
+                                  setTimeout(() => {
+                                    isDraggingRef.current = false;
+                                  }, 0);
                                 }}
                                 onClick={(e) => {
-                                  // Only open edit modal if it wasn't a drag
-                                  if (e.defaultPrevented) return;
+                                  // Solo abrir el modal si NO venimos de un drag
+                                  if (isDraggingRef.current) {
+                                    isDraggingRef.current = false;
+                                    return;
+                                  }
                                   e.stopPropagation();
                                   handleSlotClick(selectedCenter, lane.id, selectedDate, slotTime);
                                 }}
@@ -2114,6 +2133,7 @@ const AdvancedCalendarView = () => {
                               draggable={true}
                               onDragStart={(e) => {
                                 e.stopPropagation(); // Prevent parent handlers from interfering
+                                isDraggingRef.current = true;
                                 const dragData = {
                                   id: block.id,
                                   lane_id: block.lane_id,
@@ -2125,7 +2145,16 @@ const AdvancedCalendarView = () => {
                                 e.dataTransfer.setData('block', JSON.stringify(dragData));
                                 e.dataTransfer.setData('text/plain', block.id);
                                 e.dataTransfer.effectAllowed = 'move';
-                                e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 10, 10);
+                                const target = e.currentTarget as HTMLElement;
+                                const rect = target.getBoundingClientRect();
+                                const offsetX = e.clientX - rect.left;
+                                const offsetY = 4;
+                                e.dataTransfer.setDragImage(target, offsetX, offsetY);
+                              }}
+                              onDragEnd={() => {
+                                setTimeout(() => {
+                                  isDraggingRef.current = false;
+                                }, 0);
                               }}
                               onMouseDown={(e) => {
                                 // Only stop propagation if not starting a drag
