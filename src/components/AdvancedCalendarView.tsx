@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileCalendarView from '@/components/MobileCalendarView';
 import { Button } from '@/components/ui/button';
@@ -95,6 +95,8 @@ interface Booking {
     phone: string;
   };
 }
+
+type PreparedBooking = Booking & { _start: Date; _end: Date };
 
 const BLOCK_SLOT_MINUTES = 5;
 const BLOCK_SLOT_MS = BLOCK_SLOT_MINUTES * 60 * 1000;
@@ -224,6 +226,36 @@ const AdvancedCalendarView = () => {
   const { laneBlocks, createLaneBlock, deleteLaneBlock, updateLaneBlock, isLaneBlocked } = useLaneBlocks();
   const { treatmentGroups, updateTreatmentGroup, fetchTreatmentGroups } = useTreatmentGroups();
   const { codes, assignments, getAssignmentsByEntity } = useInternalCodes();
+  const centerLaneMap = useMemo(() => {
+    const map = new Map<string, any[]>();
+    lanes
+      .filter((lane) => lane.active)
+      .forEach((lane) => {
+        const list = map.get(lane.center_id) || [];
+        list.push(lane);
+        map.set(lane.center_id, list);
+      });
+    map.forEach((list) => list.sort((a, b) => a.name.localeCompare(b.name)));
+    return map;
+  }, [lanes]);
+  const bookingsByCenterDate = useMemo(() => {
+    const map = new Map<string, PreparedBooking[]>();
+    bookings.forEach((booking) => {
+      if (!booking.booking_datetime || !booking.center_id) return;
+      try {
+        const start = parseISO(booking.booking_datetime);
+        const end = addMinutes(start, booking.duration_minutes || 60);
+        const key = `${booking.center_id}|${format(start, 'yyyy-MM-dd')}`;
+        const list = map.get(key) || [];
+        list.push({ ...booking, _start: start, _end: end });
+        map.set(key, list);
+      } catch (error) {
+        console.error('Error parsing booking for cache', booking.id, error);
+      }
+    });
+    map.forEach((list) => list.sort((a, b) => a._start.getTime() - b._start.getTime()));
+    return map;
+  }, [bookings]);
 
   const friendlyCenterNames = React.useMemo(() => {
     const entries = centers.map((center) => ({
@@ -595,9 +627,13 @@ const AdvancedCalendarView = () => {
 
   // Get lanes for selected center (show all active lanes for better view)
   const getCenterLanes = (centerId: string) => {
-    return lanes
-      .filter(lane => lane.center_id === centerId && lane.active)
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return centerLaneMap.get(centerId) || [];
+  };
+
+  const getDayBookings = (centerId: string, date: Date) => {
+    if (!centerId) return [];
+    const key = `${centerId}|${format(date, 'yyyy-MM-dd')}`;
+    return bookingsByCenterDate.get(key) || [];
   };
 
   // Check if a lane is at full capacity for a given slot (con +5 min de margen)
@@ -605,12 +641,11 @@ const AdvancedCalendarView = () => {
     if (!centerId) return false;
     const lane = lanes.find(l => l.id === laneId);
     const capacity = (lane as any)?.capacity ?? 1;
-    const count = bookings.filter(b => {
-      // STRICT: Must have center_id and match exactly
-      if (!b.center_id || b.center_id !== centerId || b.lane_id !== laneId || !b.booking_datetime) return false;
-      const start = parseISO(b.booking_datetime);
-      const end = addMinutes(start, (b.duration_minutes || 60) + 5);
-      return timeSlot >= start && timeSlot < end; // overlaps that 5-min slot
+    const dayBookings = getDayBookings(centerId, timeSlot);
+    const count = dayBookings.filter(b => {
+      if (b.lane_id !== laneId) return false;
+      const end = addMinutes(b._end, 5);
+      return timeSlot >= b._start && timeSlot < end; // overlaps that 5-min slot
     }).length;
     return count >= capacity;
   };
@@ -635,64 +670,36 @@ const AdvancedCalendarView = () => {
   // Get booking for specific slot - now with strict filtering by center
   const getBookingForSlot = (centerId: string, laneId: string, date: Date, timeSlot: Date) => {
     if (!centerId) return undefined;
-    
-    const booking = bookings.find(booking => {
-      // STRICT: Must have center_id and it must match exactly
-      if (!booking.booking_datetime || !booking.center_id || booking.center_id !== centerId) {
-        return false;
-      }
-      
-      const bookingDateTime = parseISO(booking.booking_datetime);
-      const bookingDate = new Date(bookingDateTime.getFullYear(), bookingDateTime.getMonth(), bookingDateTime.getDate());
-      const selectedDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      
-      if (!isSameDay(bookingDate, selectedDateOnly)) {
-        return false;
-      }
-      
-      const bookingStart = bookingDateTime;
-      const bookingEnd = addMinutes(bookingStart, booking.duration_minutes || 60);
-      
-      // Para 55 minutos: ocupar las 11 slots correctas (10:00 hasta 10:50)
-      // Pero visualmente llegar hasta 10:55 con la altura
-      const isTimeMatch = timeSlot >= bookingStart && timeSlot < bookingEnd;
-      if (!isTimeMatch) return false;
-      
-      // Check if booking is specifically assigned to this lane (if lane_id exists)
+    const dayBookings = getDayBookings(centerId, date);
+    if (!dayBookings.length) return undefined;
+
+    const centerLanes = getCenterLanes(centerId);
+
+    return dayBookings.find((booking) => {
+      if (timeSlot < booking._start || timeSlot >= booking._end) return false;
+
       if (booking.lane_id) {
         return booking.lane_id === laneId;
       }
-      
-      // If no lane_id, show in the lane based on treatment group (legacy behavior)
+
       const service = services.find(s => s.id === booking.service_id);
       const serviceGroup = service?.group_id ? treatmentGroups.find(tg => tg.id === service.group_id) : null;
-      
-      // Get the expected lane index for this service's group
       let expectedLaneIndex = 0;
       if (serviceGroup?.name) {
         if (serviceGroup.name.includes('Masajes') && !serviceGroup.name.includes('Cuatro Manos')) {
-          expectedLaneIndex = 0; // Carril 1 - Masajes (Azul)
+          expectedLaneIndex = 0;
         } else if (serviceGroup.name.includes('Tratamientos')) {
-          expectedLaneIndex = 1; // Carril 2 - Tratamientos (Verde)
+          expectedLaneIndex = 1;
         } else if (serviceGroup.name.includes('Rituales')) {
-          expectedLaneIndex = 2; // Carril 3 - Rituales (Lila)
+          expectedLaneIndex = 2;
         } else if (serviceGroup.name.includes('Cuatro Manos')) {
-          expectedLaneIndex = 3; // Carril 4 - Masajes a Cuatro Manos (Amarillo)
+          expectedLaneIndex = 3;
         }
       }
-      
-      // Get the current lane index
-      const centerLanes = lanes.filter(l => l.center_id === centerId && l.active);
+
       const currentLaneIndex = centerLanes.findIndex(l => l.id === laneId);
-      
-      // Show booking in the expected lane for its service group only if no specific lane assigned
       return currentLaneIndex === expectedLaneIndex;
     });
-
-    // Removed debug log for performance
-
-    // Always show all bookings
-    return booking;
   };
 
   // Calculate availability for a time slot considering both bookings and blocks
