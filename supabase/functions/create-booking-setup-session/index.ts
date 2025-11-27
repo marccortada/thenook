@@ -40,7 +40,7 @@ serve(async (req) => {
     // Get booking and client email
     const { data: booking, error: bErr } = await supabase
       .from("bookings")
-      .select("id, client_id")
+      .select("id, client_id, center_id, centers(name,address,address_zurbaran,address_concha_espina)")
       .eq("id", booking_id)
       .single();
     if (bErr || !booking) throw new Error("Reserva no encontrada");
@@ -63,6 +63,16 @@ serve(async (req) => {
       customerId = customer.id;
     }
 
+    const centerMeta = {
+      center_id: booking.center_id || undefined,
+      center_name: booking.centers?.name || undefined,
+      center_address:
+        booking.centers?.address_zurbaran ||
+        booking.centers?.address ||
+        booking.centers?.address_concha_espina ||
+        undefined,
+    };
+
     // Create Checkout session in setup mode
     const session = await stripe.checkout.sessions.create({
       mode: "setup",
@@ -71,9 +81,9 @@ serve(async (req) => {
       success_url: `${origin}/pago-configurado`,
       cancel_url: `${origin}/asegurar-reserva?booking_id=${booking_id}`,
       setup_intent_data: {
-        metadata: { booking_id },
+        metadata: { booking_id, ...centerMeta },
       },
-      metadata: { intent: "booking_setup", booking_id },
+      metadata: { intent: "booking_setup", booking_id, ...centerMeta },
     });
 
     log("Session created", { id: session.id });

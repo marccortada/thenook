@@ -192,7 +192,15 @@ serve(async (req) => {
       if (!bp?.booking_id) throw new Error("Falta booking_id");
       const { data: bkg, error } = await supabaseAdmin
         .from("bookings")
-        .select("id,total_price_cents,status, services(name), profiles!client_id(email, first_name, last_name)")
+        .select(`
+          id,
+          total_price_cents,
+          status,
+          center_id,
+          services(name, center_id),
+          centers(name, address, address_zurbaran, address_concha_espina),
+          profiles!client_id(email, first_name, last_name)
+        `)
         .eq("id", bp.booking_id)
         .single();
       if (error || !bkg) throw new Error("Reserva no encontrada");
@@ -212,6 +220,16 @@ serve(async (req) => {
       });
       metadata.intent = "booking_payment";
       metadata.bp_payload = JSON.stringify({ booking_id: bp.booking_id });
+      const centerMeta = {
+        center_id: bkg.center_id || bkg.services?.center_id || undefined,
+        center_name: bkg.centers?.name || undefined,
+        center_address:
+          bkg.centers?.address_zurbaran ||
+          bkg.centers?.address ||
+          bkg.centers?.address_concha_espina ||
+          undefined,
+      };
+      Object.assign(metadata, centerMeta);
 
       if (bkg?.profiles?.email) {
         customerEmail = bkg.profiles.email.toLowerCase();

@@ -42,7 +42,14 @@ serve(async (req) => {
     // Load booking and client profile
     const { data: bkg, error } = await supabase
       .from('bookings')
-      .select('id, total_price_cents, services(name), profiles!client_id(email, first_name, last_name, phone)')
+      .select(`
+        id,
+        total_price_cents,
+        center_id,
+        services(name, center_id),
+        centers(name, address, address_zurbaran, address_concha_espina),
+        profiles!client_id(email, first_name, last_name, phone)
+      `)
       .eq('id', booking_id)
       .maybeSingle();
     if (error) {
@@ -54,6 +61,16 @@ serve(async (req) => {
 
     const amount = minAmount(typeof amount_cents === 'number' ? amount_cents : (bkg.total_price_cents || 0));
     const currency = 'eur';
+
+    const centerMeta = {
+      center_id: bkg.center_id || bkg.services?.center_id || undefined,
+      center_name: bkg.centers?.name || undefined,
+      center_address:
+        bkg.centers?.address_zurbaran ||
+        bkg.centers?.address ||
+        bkg.centers?.address_concha_espina ||
+        undefined,
+    };
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
@@ -67,8 +84,8 @@ serve(async (req) => {
       }],
       mode: 'payment',
       customer_email: bkg.profiles?.email || undefined,
-      payment_intent_data: { metadata: { intent: 'booking_payment', booking_id } },
-      metadata: { intent: 'booking_payment', booking_id },
+      payment_intent_data: { metadata: { intent: 'booking_payment', booking_id, ...centerMeta } },
+      metadata: { intent: 'booking_payment', booking_id, ...centerMeta },
       success_url: (Deno.env.get('PUBLIC_SITE_URL') || 'https://www.thenookmadrid.com') + '/pago-exitoso?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: Deno.env.get('PUBLIC_SITE_URL') || 'https://www.thenookmadrid.com',
     }).catch((err) => {
@@ -110,4 +127,3 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: (e as Error).message }), { headers: { ...cors, 'Content-Type': 'application/json' } });
   }
 });
-
