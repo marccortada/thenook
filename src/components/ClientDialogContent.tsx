@@ -191,16 +191,10 @@ export const ClientDialogContent = ({
             <CardTitle className="text-base sm:text-lg">Estadísticas</CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-center">
               <div className="p-3 bg-primary/5 rounded-lg">
                 <p className="text-xl sm:text-2xl font-bold text-primary">{client.total_bookings}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground">Total Reservas</p>
-              </div>
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-xl sm:text-2xl font-bold text-green-600">
-                  €{((client.total_spent || 0) / 100).toFixed(2)}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total Gastado</p>
               </div>
               <div className="p-3 bg-blue-50 rounded-lg">
                 <p className="text-xl sm:text-2xl font-bold text-blue-600">

@@ -127,13 +127,28 @@ export const useLaneBlocks = () => {
     newEndDateTime: Date
   ) => {
     try {
+      // Actualización optimista: mover el bloqueo en memoria inmediatamente
+      setLaneBlocks((prev) =>
+        prev.map((block) =>
+          block.id === blockId
+            ? {
+                ...block,
+                center_id: newCenterId,
+                lane_id: newLaneId,
+                start_datetime: newStartDateTime.toISOString(),
+                end_datetime: newEndDateTime.toISOString(),
+              }
+            : block
+        )
+      );
+
       const { error } = await (supabase as any)
         .from('lane_blocks')
         .update({
           center_id: newCenterId,
           lane_id: newLaneId,
           start_datetime: newStartDateTime.toISOString(),
-          end_datetime: newEndDateTime.toISOString()
+          end_datetime: newEndDateTime.toISOString(),
         })
         .eq('id', blockId);
 
@@ -141,17 +156,17 @@ export const useLaneBlocks = () => {
 
       toast({
         title: '✅ Bloqueo movido',
-        description: 'El bloqueo se ha movido correctamente'
+        description: 'El bloqueo se ha movido correctamente',
       });
-
-      await fetchLaneBlocks();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error moviendo bloqueo';
       toast({
         title: 'Error',
         description: message,
-        variant: 'destructive'
+        variant: 'destructive',
       });
+      // Si algo falla, recargamos desde el servidor para no dejar el estado inconsistente
+      await fetchLaneBlocks();
       throw err;
     }
   };

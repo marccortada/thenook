@@ -427,41 +427,56 @@ const PackageManagement = () => {
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <Button variant="outline" onClick={() => setConfirmUseFor(null)}>Cancelar</Button>
-                  <Button disabled={!confirmChecked || processingUse || !confirmNote.trim()} onClick={async () => {
-                    if (!confirmUseFor) return;
-                    try {
-                      setProcessingUse(true);
-                      let ok = false; let remaining = 0; let total = 0; let errMsg: string | null = null;
-                      const { data, error } = await (supabase as any).functions.invoke('use-voucher-session', {
-                        body: { voucher_id: confirmUseFor, note: confirmNote }
-                      });
-                      if (!error && data?.ok) { ok = true; remaining = data.remaining; total = data.total; }
-                      if (!ok) {
-                        const rpc = await (supabase as any).rpc('use_client_package_session', { package_id: confirmUseFor });
-                        if (!rpc.error && rpc.data) {
-                          // Anexar nota manual manteniendo lo existente
-                          const { data: existing } = await (supabase as any)
-                            .from('client_packages')
-                            .select('notes')
-                            .eq('id', confirmUseFor)
-                            .single();
-                          const newNotes = ((existing?.notes ?? '') + (existing?.notes ? ' | ' : '') + `Uso manual: ${confirmNote}`).slice(0, 2000);
-                          await (supabase as any).from('client_packages').update({ notes: newNotes }).eq('id', confirmUseFor);
-                          ok = true;
-                        } else {
-                          errMsg = rpc.error?.message || data?.error || error?.message || 'No se pudo usar la sesión';
+                  <Button
+                    disabled={!confirmChecked || processingUse || !confirmNote.trim()}
+                    onClick={async () => {
+                      if (!confirmUseFor) return;
+                      try {
+                        setProcessingUse(true);
+
+                        // Usar la función estable de base de datos directamente, sin pasar por la edge function
+                        const rpc = await (supabase as any).rpc('use_client_package_session', {
+                          package_id: confirmUseFor,
+                        });
+
+                        if (rpc.error || !rpc.data) {
+                          throw new Error(rpc.error?.message || 'No se pudo usar la sesión');
                         }
+
+                        // Anexar nota manual manteniendo lo existente
+                        const { data: existing } = await (supabase as any)
+                          .from('client_packages')
+                          .select('notes')
+                          .eq('id', confirmUseFor)
+                          .single();
+
+                        const newNotes = (
+                          (existing?.notes ?? '') +
+                          (existing?.notes ? ' | ' : '') +
+                          `Uso manual: ${confirmNote}`
+                        ).slice(0, 2000);
+
+                        await (supabase as any)
+                          .from('client_packages')
+                          .update({ notes: newNotes })
+                          .eq('id', confirmUseFor);
+
+                        setConfirmUseFor(null);
+                        toast({ title: 'Sesión registrada' });
+                        await refetch();
+                      } catch (e: any) {
+                        toast({
+                          title: 'Error',
+                          description: e.message || 'No se pudo usar la sesión',
+                          variant: 'destructive',
+                        });
+                      } finally {
+                        setProcessingUse(false);
                       }
-                      if (!ok) throw new Error(errMsg || 'No se pudo usar la sesión');
-                      setConfirmUseFor(null);
-                      toast({ title: 'Sesión registrada' });
-                      await refetch();
-                    } catch (e: any) {
-                      toast({ title: 'Error', description: e.message || 'No se pudo usar la sesión', variant: 'destructive' });
-                    } finally {
-                      setProcessingUse(false);
-                    }
-                  }}>Confirmar</Button>
+                    }}
+                  >
+                    Confirmar
+                  </Button>
                 </div>
               </div>
             );

@@ -271,13 +271,11 @@ export const useBookings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  const fetchBookings = async () => {
+  const fetchBookings = async (options?: { silent?: boolean }) => {
     try {
-      setLoading(true);
+      if (!options?.silent) {
+        setLoading(true);
+      }
       // Optimize: Only fetch bookings from the last 30 days and next 60 days
       const now = new Date();
       const startDate = new Date(now);
@@ -320,9 +318,15 @@ export const useBookings = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching bookings');
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
 
   const createBooking = async (bookingData: Omit<Booking, 'id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -374,9 +378,13 @@ export const useBookings = () => {
     bookings, 
     loading, 
     error, 
-    refetch: fetchBookings, 
+    refetch: () => fetchBookings(), 
+    // Refresco silencioso (sin spinner) para cambios en tiempo real
+    silentRefetch: () => fetchBookings({ silent: true }),
     createBooking, 
-    updateBookingStatus 
+    updateBookingStatus,
+    // Exponer setBookings para poder hacer actualizaciones optimistas en vistas como el calendario
+    setBookings,
   };
 };
 

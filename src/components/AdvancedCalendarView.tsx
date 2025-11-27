@@ -214,7 +214,7 @@ const AdvancedCalendarView = () => {
   const [redeemNotes, setRedeemNotes] = useState('');
   const [redeemOnCreate, setRedeemOnCreate] = useState(false);
 
-  const { bookings, loading: bookingsLoading, refetch: refetchBookings } = useBookings();
+  const { bookings, loading: bookingsLoading, refetch: refetchBookings, silentRefetch, setBookings } = useBookings();
   
   // Removed debug console.logs for performance
   const { centers } = useCenters();
@@ -427,7 +427,8 @@ const AdvancedCalendarView = () => {
         },
         (payload) => {
           console.log('Calendar: Booking change detected:', payload);
-          refetchBookings(); // Refetch bookings when changes occur
+          // Refresco silencioso para evitar parpadeos de loading en el calendario
+          silentRefetch();
         }
       )
       .subscribe();
@@ -435,7 +436,7 @@ const AdvancedCalendarView = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetchBookings]);
+  }, [silentRefetch]);
 
   // Set initial center when centers load
   useEffect(() => {
@@ -1205,6 +1206,20 @@ const AdvancedCalendarView = () => {
         return;
       }
 
+      // Actualización optimista en memoria: movemos la reserva en el estado local
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId
+            ? {
+                ...b,
+                center_id: newCenterId,
+                lane_id: newLaneId,
+                booking_datetime: newDateTime.toISOString(),
+              }
+            : b
+        )
+      );
+
       const { error } = await supabase
         .from('bookings')
         .update({
@@ -1217,9 +1232,10 @@ const AdvancedCalendarView = () => {
       if (error) throw error;
 
       toast({ title: 'Reserva movida', description: 'La reserva se ha movido correctamente.' });
-      await refetchBookings();
     } catch (error) {
       console.error('Error moving booking:', error);
+      // Si algo falla, recargamos desde servidor para no dejar el estado inconsistente
+      await refetchBookings();
       toast({ title: 'Error', description: 'No se pudo mover la reserva.', variant: 'destructive' });
     }
   };
@@ -2547,15 +2563,6 @@ const AdvancedCalendarView = () => {
       </Card>
     );
   };
-
-  if (bookingsLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-3">Cargando calendario...</span>
-      </div>
-    );
-  }
 
   // Debug info
   console.log('📅 Calendar render - Mobile:', isMobile, 'Selected center:', selectedCenter, 'Centers:', centers.length);

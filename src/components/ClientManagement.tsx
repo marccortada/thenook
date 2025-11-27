@@ -231,13 +231,8 @@ export default function ClientManagement() {
                         return null;
                       })()}
                     </div>
-                    <div className={`${isMobile ? 'flex justify-between items-center' : 'text-right'} space-y-2`}>
+                    <div className={`${isMobile ? 'flex justify-end items-center' : 'text-right'} space-y-2`}>
                       <div className="space-y-1">
-                        <div className={`font-bold text-primary ${
-                          isMobile ? 'text-base' : 'text-lg'
-                        }`}>
-                          {(client.total_spent || 0) / 100}€ gastados
-                        </div>
                         <div className="text-xs sm:text-sm text-muted-foreground">
                           {client.total_bookings || 0} citas
                         </div>

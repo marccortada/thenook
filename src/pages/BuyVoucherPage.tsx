@@ -67,18 +67,8 @@ export default function BuyVoucherPage() {
   };
 
   const categorized = useMemo(() => {
-    // Deduplicar por nombre manteniendo el menor precio
-    const pmap = new Map<string, any>();
-    for (const p of packages as any[]) {
-      const key = (p?.name || "").trim().toLowerCase();
-      const existing = pmap.get(key);
-      const price = typeof p?.price_cents === 'number' ? p.price_cents : Number.MAX_SAFE_INTEGER;
-      const existingPrice = typeof existing?.price_cents === 'number' ? existing.price_cents : Number.MAX_SAFE_INTEGER;
-      if (!existing || price < existingPrice) {
-        pmap.set(key, p);
-      }
-    }
-    const list = Array.from(pmap.values());
+    // Usar la lista de paquetes tal cual viene de la BBDD para respetar precios actualizados
+    const list = (packages as any[]) || [];
 
     const grupos = {
       individuales: [] as any[],
