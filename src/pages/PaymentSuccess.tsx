@@ -10,6 +10,18 @@ const PaymentSuccess = () => {
   const sessionId = search.get("session_id");
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<any>(null);
+  const [clearedCarts, setClearedCarts] = useState(false);
+
+  const clearLocalCarts = () => {
+    if (typeof window === "undefined") return;
+    ["cart:giftcards", "cart:packages"].forEach((key) => {
+      try {
+        window.localStorage.removeItem(key);
+      } catch (_e) {
+        // ignore storage errors
+      }
+    });
+  };
 
   useEffect(() => {
     document.title = "Pago realizado | The Nook Madrid";
@@ -33,6 +45,13 @@ const PaymentSuccess = () => {
       }
     })();
   }, [sessionId]);
+
+  useEffect(() => {
+    if (result?.paid && !clearedCarts) {
+      clearLocalCarts();
+      setClearedCarts(true);
+    }
+  }, [clearedCarts, result?.paid]);
 
   return (
     <main className="container mx-auto px-4 py-10">

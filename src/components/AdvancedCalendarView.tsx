@@ -196,6 +196,7 @@ const AdvancedCalendarView = () => {
   const [captureAmountInput, setCaptureAmountInput] = useState<string>('');
   const [penaltyPercentage, setPenaltyPercentage] = useState<number>(100);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [restoringPaymentMethod, setRestoringPaymentMethod] = useState(false);
   
   // Form state
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
@@ -290,6 +291,67 @@ const AdvancedCalendarView = () => {
     // This function should no longer be used - use getServiceLaneColor with actual service data
     return '#3B82F6'; // Default blue
   };
+
+  // Si la reserva seleccionada no tiene tarjeta, intenta restaurar una guardada del cliente
+  useEffect(() => {
+    const restorePaymentMethod = async () => {
+      if (!editingBooking || editingBooking.stripe_payment_method_id) return;
+      if (!editingBooking.client_id) return;
+      setRestoringPaymentMethod(true);
+      try {
+        // Prefer RPC (SQL func); fallback to Edge if RPC not present
+        let paymentMethodId: string | null | undefined;
+        let customerId: string | null | undefined;
+
+        try {
+          const { data, error } = await supabase.rpc('get_latest_payment_method', {
+            p_booking_id: editingBooking.id,
+          });
+          if (error) throw error;
+          paymentMethodId = (data as any)?.payment_method_id as string | null | undefined;
+          customerId = (data as any)?.customer_id as string | null | undefined;
+        } catch (rpcErr) {
+          console.warn('RPC get_latest_payment_method falló, probando Edge', rpcErr);
+          const { data, error } = await supabase.functions.invoke('get-latest-payment-method', {
+            body: { booking_id: editingBooking.id },
+          });
+          if (error) throw error;
+          paymentMethodId = (data as any)?.payment_method_id as string | null | undefined;
+          customerId = (data as any)?.customer_id as string | null | undefined;
+        }
+
+        if (paymentMethodId) {
+          setEditingBooking((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  stripe_payment_method_id: paymentMethodId,
+                  stripe_customer_id: customerId || prev.stripe_customer_id,
+                  payment_method_status: 'succeeded',
+                }
+              : prev
+          );
+          setBookings((prev) =>
+            prev.map((b) =>
+              b.id === editingBooking.id
+                ? {
+                    ...b,
+                    stripe_payment_method_id: paymentMethodId,
+                    stripe_customer_id: customerId || b.stripe_customer_id,
+                    payment_method_status: 'succeeded',
+                  }
+                : b
+            )
+          );
+        }
+      } catch (restoreErr) {
+        console.warn('No se pudo restaurar la tarjeta de la reserva', restoreErr);
+      } finally {
+        setRestoringPaymentMethod(false);
+      }
+    };
+    restorePaymentMethod();
+  }, [editingBooking, setBookings]);
 
   // Iconos por carril: colores según especificación del cliente
   // Carriles 1 y 2: verde
@@ -877,8 +939,14 @@ const AdvancedCalendarView = () => {
       setEditingBooking(existingBooking);
       setEditClientId(existingBooking.client_id || null);
       setEditNotes(existingBooking.notes || '');
-      setEditPaymentStatus(existingBooking.payment_status || 'pending');
-      setEditBookingStatus(existingBooking.status || 'pending');
+      const safePaymentStatus = ['paid','failed','refunded','partial_refund'].includes((existingBooking.payment_status || '').toLowerCase())
+        ? (existingBooking.payment_status as any)
+        : 'pending';
+      const safeBookingStatus = ['confirmed','cancelled','completed','requested','new','online','no_show'].includes((existingBooking.status || '').toLowerCase())
+        ? existingBooking.status
+        : 'pending';
+      setEditPaymentStatus(safePaymentStatus);
+      setEditBookingStatus(safeBookingStatus);
       setEditServiceId(existingBooking.service_id || '');
       setEditDuration(existingBooking.duration_minutes || 60);
       const dt = parseISO(existingBooking.booking_datetime);
@@ -1105,21 +1173,53 @@ const AdvancedCalendarView = () => {
         }
       }
 
+      // Reutilizar la última tarjeta guardada del cliente (evita pedirla en cada reserva)
+      let inheritedPaymentMethod: string | null = null;
+      let inheritedCustomerId: string | null = null;
+      if (clientIdToUse) {
+        try {
+          const { data: lastPm } = await supabase
+            .from('bookings')
+            .select('stripe_payment_method_id, stripe_customer_id, payment_method_status, updated_at, created_at')
+            .eq('client_id', clientIdToUse)
+            .not('stripe_payment_method_id', 'is', null)
+            .order('updated_at', { ascending: false, nullsLast: true })
+            .order('created_at', { ascending: false, nullsLast: true })
+            .limit(1)
+            .maybeSingle();
+          if (lastPm?.stripe_payment_method_id && (lastPm as any).payment_method_status === 'succeeded') {
+            inheritedPaymentMethod = lastPm.stripe_payment_method_id as string;
+            inheritedCustomerId = (lastPm as any).stripe_customer_id || null;
+          }
+        } catch (pmErr) {
+          console.warn('No se pudo recuperar la tarjeta guardada del cliente', pmErr);
+        }
+      }
+
+      const bookingPayload: any = {
+        client_id: clientIdToUse,
+        service_id: bookingForm.serviceId,
+        center_id: bookingForm.centerId,
+        lane_id: assignedLaneId,
+        booking_datetime: bookingDateTime.toISOString(),
+        duration_minutes: selectedService.duration_minutes,
+        total_price_cents: selectedService.price_cents,
+        status: 'pending' as const,
+        channel: 'web' as const,
+        notes: bookingForm.notes || null,
+        payment_status: 'pending' as const,
+      };
+      if (inheritedPaymentMethod) {
+        bookingPayload.stripe_payment_method_id = inheritedPaymentMethod;
+        bookingPayload.payment_method_status = 'succeeded';
+      }
+      if (inheritedCustomerId) {
+        bookingPayload.stripe_customer_id = inheritedCustomerId;
+      }
+
       const { data: created, error: bookingError } = await supabase
         .from('bookings')
-        .insert({
-          client_id: clientIdToUse,
-          service_id: bookingForm.serviceId,
-          center_id: bookingForm.centerId,
-          lane_id: assignedLaneId,
-          booking_datetime: bookingDateTime.toISOString(),
-          duration_minutes: selectedService.duration_minutes,
-          total_price_cents: selectedService.price_cents,
-          status: 'pending' as const,
-          channel: 'web' as const,
-          notes: bookingForm.notes || null,
-          payment_status: 'pending' as const
-        })
+        .insert(bookingPayload)
         .select('id')
         .single();
 
@@ -1333,6 +1433,27 @@ const AdvancedCalendarView = () => {
 
       if (editingBooking.payment_status === 'paid' && paymentStatusToSave === 'paid') {
         toast({ title: 'Pago ya registrado', description: 'Esta reserva ya fue marcada como cobrada.', variant: 'destructive' });
+        return;
+      }
+
+      // No permitir confirmar si no hay tarjeta guardada
+      const hasCard =
+        !!editingBooking.stripe_payment_method_id ||
+        paymentStatusToSave === 'paid'; // al cobrar con éxito, habrá tarjeta
+      if (bookingStatusToSave === 'confirmed' && !hasCard) {
+        if (restoringPaymentMethod) {
+          toast({
+            title: 'Esperando tarjeta',
+            description: 'Estamos recuperando la tarjeta del cliente. Intenta confirmar de nuevo en unos segundos.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'Falta tarjeta',
+            description: 'No puedes confirmar la reserva sin una tarjeta guardada o un cobro realizado.',
+            variant: 'destructive'
+          });
+        }
         return;
       }
 
@@ -2895,9 +3016,14 @@ const AdvancedCalendarView = () => {
           <p className="text-sm text-muted-foreground mt-1">
             Reserva del {format(parseISO(editingBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
           </p>
-          {!editingBooking.stripe_payment_method_id && (
+          {!editingBooking.stripe_payment_method_id && !restoringPaymentMethod && (
             <p className="text-xs text-amber-600 mt-2">
               No hay tarjeta guardada para esta reserva. Genera un enlace o registra el cobro manualmente.
+            </p>
+          )}
+          {restoringPaymentMethod && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Buscando la tarjeta guardada del cliente...
             </p>
           )}
         </div>

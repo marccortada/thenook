@@ -82,9 +82,16 @@ if (!findError && paymentIntent) {
   }, { onConflict: 'stripe_setup_intent_id' });
 }
 
+    const paymentMethodId = setupIntent.payment_method as string | null;
+    const customerId =
+      typeof setupIntent.customer === "string"
+        ? (setupIntent.customer as string)
+        : null;
+
     // Update booking and payment intent with confirmed payment method
     const updates = {
-      stripe_payment_method_id: setupIntent.payment_method as string,
+      stripe_payment_method_id: paymentMethodId,
+      stripe_customer_id: customerId,
       payment_method_status: setupIntent.status,
       updated_at: new Date().toISOString()
     };
@@ -100,7 +107,8 @@ if (!findError && paymentIntent) {
       supabaseClient
         .from('booking_payment_intents')
         .update({
-          stripe_payment_method_id: setupIntent.payment_method as string,
+          stripe_payment_method_id: paymentMethodId,
+          stripe_customer_id: customerId,
           status: setupIntent.status,
           updated_at: new Date().toISOString()
         })
@@ -197,7 +205,8 @@ if (!findError && paymentIntent) {
       JSON.stringify({ 
         success: true,
         booking_id: bookingId,
-        payment_method_id: setupIntent.payment_method,
+        payment_method_id: paymentMethodId,
+        customer_id: customerId,
         status: setupIntent.status
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

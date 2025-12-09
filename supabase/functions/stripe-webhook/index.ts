@@ -473,6 +473,10 @@ async function sendBookingConfirmationEmail(args: {
   const alreadyProcessed = !isManualCapture &&
     booking.email_status === "sent" &&
     (deliveryToken ? booking.stripe_session_id === deliveryToken : true);
+  const isPaid =
+    paymentIntent?.status === "succeeded" ||
+    session?.payment_status === "paid" ||
+    false;
 
   if (alreadyProcessed) {
     console.log("[stripe-webhook] Booking email already sent, skipping:", bookingId);
@@ -495,7 +499,7 @@ async function sendBookingConfirmationEmail(args: {
   }
 
   const updates: Record<string, unknown> = {
-    payment_status: "paid",
+    payment_status: isPaid ? "paid" : booking.payment_status || "pending",
     email_status: "sent",
     email_sent_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -505,7 +509,7 @@ async function sendBookingConfirmationEmail(args: {
 
   // CRITICAL: Automatically change status to 'confirmed' when payment is successful
   // But only if the booking is not 'no_show' (no_show bookings should remain no_show even if paid)
-  if (booking.status !== 'no_show') {
+  if (isPaid && booking.status !== 'no_show') {
     updates.status = "confirmed";
   }
 
@@ -1410,37 +1414,7 @@ serve(async (req) => {
 
       console.log(`[stripe-webhook] Detected intent: ${intent}`);
 
-      if (intent === "booking_payment") {
-        const payload = session.metadata?.bp_payload;
-        const bookingIdMeta = session.metadata?.booking_id as string | undefined;
-        let bookingId = bookingIdMeta;
-        if (!bookingId && payload) {
-          try {
-            bookingId = (JSON.parse(payload) as { booking_id?: string })?.booking_id;
-          } catch (e) {
-            console.warn("[stripe-webhook] Error parsing bp_payload:", e);
-          }
-        }
-
-        if (bookingId) {
-          await sendBookingConfirmationEmail({
-            bookingId,
-            source: { type: "session", session },
-          });
-        } else {
-          console.warn("[stripe-webhook] booking_id not found (intent booking_payment)");
-        }
-      }
-      // Fallback: si hay booking_id pero no intent, enviar confirmación igual
-      else if (session.metadata?.booking_id) {
-        const bookingId = session.metadata.booking_id as string;
-        console.log("[stripe-webhook] booking_id presente sin intent; enviando confirmación", bookingId);
-        await sendBookingConfirmationEmail({
-          bookingId,
-          source: { type: "session", session },
-        });
-      }
-      else if (intent === "booking_setup") {
+      if (intent === "booking_setup") {
         // Flow: setup mode to only save payment method (no immediate charge)
         // booking_id can come in metadata or inside the SetupIntent
         let bookingIdFromMeta = session.metadata?.booking_id as string | undefined;
@@ -1663,6 +1637,10 @@ serve(async (req) => {
           typeof setupIntent.payment_method === "string"
             ? setupIntent.payment_method
             : (setupIntent.payment_method as Stripe.PaymentMethod | undefined)?.id || null;
+        const customerId =
+          typeof setupIntent.customer === "string"
+            ? (setupIntent.customer as string)
+            : null;
 
         if (paymentMethodId) {
           // Update booking with payment method
@@ -1671,6 +1649,7 @@ serve(async (req) => {
               .from("bookings")
               .update({
                 stripe_payment_method_id: paymentMethodId,
+                stripe_customer_id: customerId,
                 payment_method_status: "succeeded",
                 updated_at: new Date().toISOString(),
               })
@@ -1681,6 +1660,7 @@ serve(async (req) => {
               .from("booking_payment_intents")
               .update({
                 stripe_payment_method_id: paymentMethodId,
+                stripe_customer_id: customerId,
                 status: "succeeded",
                 updated_at: new Date().toISOString(),
               })
@@ -1768,6 +1748,36 @@ serve(async (req) => {
             console.error("[stripe-webhook] Failed to send email from setup_intent.succeeded:", emailErr);
           }
         }
+      }
+      else if (intent === "booking_payment") {
+        const payload = session.metadata?.bp_payload;
+        const bookingIdMeta = session.metadata?.booking_id as string | undefined;
+        let bookingId = bookingIdMeta;
+        if (!bookingId && payload) {
+          try {
+            bookingId = (JSON.parse(payload) as { booking_id?: string })?.booking_id;
+          } catch (e) {
+            console.warn("[stripe-webhook] Error parsing bp_payload:", e);
+          }
+        }
+
+        if (bookingId) {
+          await sendBookingConfirmationEmail({
+            bookingId,
+            source: { type: "session", session },
+          });
+        } else {
+          console.warn("[stripe-webhook] booking_id not found (intent booking_payment)");
+        }
+      }
+      // Fallback: si hay booking_id pero no intent, enviar confirmación igual (solo si fue pago real)
+      else if (session.metadata?.booking_id && session.payment_status === "paid") {
+        const bookingId = session.metadata.booking_id as string;
+        console.log("[stripe-webhook] booking_id presente sin intent; enviando confirmación (paid)", bookingId);
+        await sendBookingConfirmationEmail({
+          bookingId,
+          source: { type: "session", session },
+        });
       }
     } else if (event.type === "payment_intent.succeeded") {
       const intent = event.data.object as Stripe.PaymentIntent;

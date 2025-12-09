@@ -301,6 +301,8 @@ export const useBookings = () => {
             name
           )
         `)
+        // Mostrar solo reservas con tarjeta confirmada o ya cobradas
+        .or('and(stripe_payment_method_id.not.is.null,payment_method_status.eq.succeeded),payment_status.eq.paid')
         .gte('booking_datetime', startDate.toISOString())
         .lte('booking_datetime', endDate.toISOString())
         .order('booking_datetime', { ascending: true });
@@ -309,8 +311,23 @@ export const useBookings = () => {
 
       // Optimize: Load client notes only when needed (lazy loading)
       // For now, set empty array - notes will be loaded on-demand
+      const normalizePaymentStatus = (status?: string) => {
+        const allowed = ['pending', 'paid', 'failed', 'refunded', 'partial_refund'];
+        return allowed.includes((status || '').toLowerCase())
+          ? (status as any)
+          : 'pending';
+      };
+      const normalizeBookingStatus = (status?: string) => {
+        const allowed = ['pending', 'confirmed', 'cancelled', 'completed', 'requested', 'new', 'online', 'no_show'];
+        return allowed.includes((status || '').toLowerCase())
+          ? status
+          : 'pending';
+      };
+
       const bookingsWithNotes = (data || []).map((booking: any) => ({
         ...booking,
+        payment_status: normalizePaymentStatus(booking.payment_status),
+        status: normalizeBookingStatus(booking.status),
         client_notes: [] // Will be loaded on-demand when viewing booking details
       }));
 

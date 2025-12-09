@@ -63,6 +63,16 @@ serve(async (req) => {
       customerId = customer.id;
     }
 
+    // Persist Stripe customer on the booking for futuras operaciones
+    try {
+      await supabase
+        .from("bookings")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", booking_id);
+    } catch (persistErr) {
+      log("WARN: no se pudo guardar stripe_customer_id en booking", persistErr);
+    }
+
     const centerMeta = {
       center_id: booking.center_id || undefined,
       center_name: booking.centers?.name || undefined,

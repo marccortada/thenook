@@ -75,7 +75,7 @@ const BuyPackagesPage = () => {
 
   // Hook para manejo del carrito local
   const useLocalCart = () => {
-    const CART_TTL_MS = 1000 * 60 * 5; // 5 minutos
+    const CART_TTL_MS = 1000 * 60 * 10; // 10 minutos
 
     const [items, setItems] = useState<CartItem[]>(() => {
       try {
@@ -95,13 +95,35 @@ const BuyPackagesPage = () => {
         return [];
       }
     });
+    const [lastUpdated, setLastUpdated] = useState<number>(() => {
+      try {
+        const raw = localStorage.getItem("cart:packages");
+        if (!raw) return Date.now();
+        const parsed = JSON.parse(raw);
+        return typeof parsed?.savedAt === "number" ? parsed.savedAt : Date.now();
+      } catch {
+        return Date.now();
+      }
+    });
+
     useEffect(() => {
       if (items.length === 0) {
         localStorage.removeItem("cart:packages");
         return;
       }
-      localStorage.setItem("cart:packages", JSON.stringify({ items, savedAt: Date.now() }));
-    }, [items]);
+      localStorage.setItem("cart:packages", JSON.stringify({ items, savedAt: lastUpdated }));
+    }, [items, lastUpdated]);
+
+    useEffect(() => {
+      if (items.length === 0) return;
+      const remaining = lastUpdated + CART_TTL_MS - Date.now();
+      if (remaining <= 0) {
+        setItems([]);
+        return;
+      }
+      const timer = window.setTimeout(() => setItems([]), remaining);
+      return () => window.clearTimeout(timer);
+    }, [items.length, lastUpdated]);
 
     const add = (item: Omit<CartItem, "quantity" | "id"> & { quantity?: number }) => {
       setItems((prev) => {
@@ -127,11 +149,18 @@ const BuyPackagesPage = () => {
           },
         ];
       });
+      setLastUpdated(Date.now());
       toast.success(t('added_to_cart'));
     };
 
-    const remove = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
-    const clear = () => setItems([]);
+    const remove = (id: string) => {
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      setLastUpdated(Date.now());
+    };
+    const clear = () => {
+      setItems([]);
+      setLastUpdated(Date.now());
+    };
     const totalCents = useMemo(
       () => items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0),
       [items]

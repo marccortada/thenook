@@ -11,6 +11,7 @@ const PagoExitoso = () => {
   const sessionId = search.get("session_id");
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<any>(null);
+  const [clearedCarts, setClearedCarts] = useState(false);
   const intent = result?.intent;
   const storedIntent = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -68,6 +69,17 @@ const PagoExitoso = () => {
         }).format(cents / 100)
       : null;
 
+  const clearLocalCarts = () => {
+    if (typeof window === "undefined") return;
+    ["cart:giftcards", "cart:packages"].forEach((key) => {
+      try {
+        window.localStorage.removeItem(key);
+      } catch (_e) {
+        // ignore storage errors
+      }
+    });
+  };
+
   useEffect(() => {
     document.title = "Pago Exitoso | The Nook Madrid";
     if (!sessionId) {
@@ -100,6 +112,13 @@ const PagoExitoso = () => {
       }
     })();
   }, [sessionId]);
+
+  useEffect(() => {
+    if (result?.paid && !clearedCarts) {
+      clearLocalCarts();
+      setClearedCarts(true);
+    }
+  }, [clearedCarts, result?.paid]);
 
   return (
     <div className="min-h-screen bg-background">

@@ -29,7 +29,14 @@ interface CartItem {
 
 // Simple local cart
 const useLocalCart = (t: (key: string) => string) => {
+  const CART_TTL_MS = 1000 * 60 * 10; // 10 minutos
   const [items, setItems] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    const timer = window.setTimeout(() => setItems([]), CART_TTL_MS);
+    return () => window.clearTimeout(timer);
+  }, [items]);
 
   const add = (item: Omit<CartItem, "id">) => {
     setItems(prev => [...prev, { id: crypto.randomUUID(), ...item }]);
