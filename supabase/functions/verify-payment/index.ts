@@ -694,18 +694,15 @@ async function ensureGiftCardTemplate(client: ReturnType<typeof createClient>): 
           .eq("id", bp.booking_id)
           .single();
         
-        // CRITICAL: Automatically change status to 'confirmed' when payment is successful
-        // But only if the booking is not 'no_show' (no_show bookings should remain no_show even if paid)
-        const statusUpdate = booking?.status !== 'no_show' ? { status: "confirmed" as const } : {};
-        
         const { error } = await supabaseAdmin
           .from("bookings")
           .update({ 
-            payment_status: "paid", 
+            // Forzar pendiente hasta acción de admin (aunque Stripe haya cobrado)
+            payment_status: "pending",
+            status: booking?.status === 'no_show' ? 'no_show' : 'pending',
             payment_method: 'tarjeta', 
-            payment_notes: `Pago vía Checkout ${session.id}`, 
-            stripe_session_id: session.id,
-            ...statusUpdate
+            payment_notes: `Pago vía Checkout ${session.id} (pendiente de confirmar)`, 
+            stripe_session_id: session.id
           })
           .eq("id", bp.booking_id);
         if (error) throw error;

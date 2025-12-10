@@ -199,18 +199,16 @@ async function sendBookingConfirmationEmail(args: {
 
   try {
     if (paymentMethodId || stripeCustomerId) {
-      // CRITICAL: Automatically change status to 'confirmed' when payment is successful
-      // But only if the booking is not 'no_show'
-      const statusUpdate = booking.status !== 'no_show' ? { status: "confirmed" as const } : {};
-      
+      // Solo guardar la tarjeta/cliente. Forzar siempre PENDING al guardar tarjeta.
+      const safePaymentStatus = "pending";
+
       await supabaseAdmin
         .from("bookings")
         .update({
           stripe_payment_method_id: paymentMethodId || booking.stripe_payment_method_id,
           stripe_customer_id: stripeCustomerId || booking.stripe_customer_id,
-          payment_status: "paid",
+          payment_status: safePaymentStatus,
           updated_at: new Date().toISOString(),
-          ...statusUpdate,
         })
         .eq("id", bookingId);
 
@@ -223,7 +221,7 @@ async function sendBookingConfirmationEmail(args: {
             stripe_setup_intent_id: session?.setup_intent && typeof session.setup_intent === "string"
               ? session.setup_intent
               : undefined,
-            status: "paid",
+            status: safePaymentStatus,
             updated_at: new Date().toISOString(),
           },
           { onConflict: "booking_id" }
@@ -499,19 +497,16 @@ async function sendBookingConfirmationEmail(args: {
   }
 
   const updates: Record<string, unknown> = {
-    payment_status: isPaid ? "paid" : booking.payment_status || "pending",
+    // Forzar a pending hasta que un admin cobre manualmente.
+    payment_status: "pending",
+    // Mantener el estado de reserva como estaba, pero nunca escalarlo aquí.
+    status: booking.status === "no_show" ? "no_show" : (booking.status || "pending"),
     email_status: "sent",
     email_sent_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     stripe_payment_method_id: paymentMethodId || booking.stripe_payment_method_id,
     stripe_customer_id: stripeCustomerId || booking.stripe_customer_id,
   };
-
-  // CRITICAL: Automatically change status to 'confirmed' when payment is successful
-  // But only if the booking is not 'no_show' (no_show bookings should remain no_show even if paid)
-  if (isPaid && booking.status !== 'no_show') {
-    updates.status = "confirmed";
-  }
 
   if (deliveryToken) {
     updates.stripe_session_id = deliveryToken;
@@ -523,7 +518,7 @@ async function sendBookingConfirmationEmail(args: {
     await supabaseAdmin
       .from("booking_payment_intents")
       .update({
-        status: "paid",
+        status: "pending",
         updated_at: new Date().toISOString(),
       })
       .eq("booking_id", bookingId);

@@ -301,8 +301,7 @@ export const useBookings = () => {
             name
           )
         `)
-        // Mostrar solo reservas con tarjeta confirmada o ya cobradas
-        .or('and(stripe_payment_method_id.not.is.null,payment_method_status.eq.succeeded),payment_status.eq.paid')
+        // Traer TODO: siempre queremos ver las reservas, incluso si no hay tarjeta o cobro aún.
         .gte('booking_datetime', startDate.toISOString())
         .lte('booking_datetime', endDate.toISOString())
         .order('booking_datetime', { ascending: true });
