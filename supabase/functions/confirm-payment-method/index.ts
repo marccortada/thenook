@@ -21,10 +21,48 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const { setup_intent_id } = await req.json();
+    let requestBody: any;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      logStep('ERROR parsing request body', { error: parseError });
+      throw new Error('Invalid request body. Expected JSON.');
+    }
 
-    if (!setup_intent_id) {
-      throw new Error('setup_intent_id is required');
+    const { setup_intent_id, session_id } = requestBody;
+
+    // Initialize Stripe first to get setup intent
+    if (!Deno.env.get('STRIPE_SECRET_KEY')) {
+      throw new Error('STRIPE_SECRET_KEY is not configured');
+    }
+
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || "", { 
+      apiVersion: "2023-10-16" 
+    });
+
+    let setupIntentId: string;
+
+    // If session_id is provided, get setup_intent from the session
+    if (session_id) {
+      logStep('Retrieving checkout session', { session_id });
+      try {
+        const session = await stripe.checkout.sessions.retrieve(session_id);
+        if (!session.setup_intent) {
+          throw new Error('No setup_intent found in checkout session');
+        }
+        setupIntentId = typeof session.setup_intent === 'string' 
+          ? session.setup_intent 
+          : session.setup_intent.id;
+        logStep('Setup intent ID retrieved from session', { setupIntentId });
+      } catch (sessionError: any) {
+        logStep('ERROR retrieving checkout session', { error: sessionError.message });
+        throw new Error(`No se pudo obtener la sesión de Stripe: ${sessionError.message || 'Error desconocido'}`);
+      }
+    } else if (setup_intent_id && typeof setup_intent_id === 'string') {
+      setupIntentId = setup_intent_id;
+    } else {
+      logStep('ERROR missing setup_intent_id or session_id', { received: { setup_intent_id, session_id } });
+      throw new Error('Either setup_intent_id or session_id is required');
     }
 
     // Initialize services
@@ -35,17 +73,24 @@ serve(async (req) => {
 
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
     const internalNotificationEmail = (Deno.env.get('THENOOK_NOTIFICATION_EMAIL') ?? 'reservas@thenookmadrid.com').trim();
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || "", { 
-      apiVersion: "2023-10-16" 
-    });
 
-    logStep('Retrieving setup intent', { setup_intent_id });
+    logStep('Retrieving setup intent', { setupIntentId });
 
     // Get setup intent from Stripe
-    const setupIntent = await stripe.setupIntents.retrieve(setup_intent_id);
+    let setupIntent: Stripe.SetupIntent;
+    try {
+      setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+    } catch (stripeError: any) {
+      logStep('ERROR retrieving setup intent from Stripe', { 
+        error: stripeError.message, 
+        code: stripeError.code,
+        type: stripeError.type
+      });
+      throw new Error(`No se pudo recuperar el setup intent de Stripe: ${stripeError.message || 'Error desconocido'}`);
+    }
     
     if (!setupIntent) {
-      throw new Error('Setup Intent not found');
+      throw new Error('Setup Intent not found in Stripe');
     }
 
     logStep('Setup intent retrieved', { 
@@ -212,10 +257,14 @@ if (!findError && paymentIntent) {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    logStep('ERROR in confirm-payment-method', { error: error.message });
+  } catch (error: any) {
+    const errorMessage = error?.message || error?.toString() || 'Error desconocido';
+    logStep('ERROR in confirm-payment-method', { error: errorMessage, stack: error?.stack });
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false,
+        error: errorMessage 
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

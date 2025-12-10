@@ -60,7 +60,38 @@ export default function BookingManagement() {
         .order('booking_datetime', { ascending: false });
 
       if (error) throw error;
-      setBookings(data as any || []);
+
+      const mapPaymentStatus = (booking: any) => {
+        const status = (booking?.payment_status || '').toLowerCase();
+        const allowed = ['pending', 'paid', 'failed', 'refunded', 'partial_refund'];
+        const hasEvidence = Boolean(
+          booking?.payment_intent_id ||
+          booking?.stripe_session_id ||
+          booking?.stripe_payment_method_id ||
+          booking?.payment_method ||
+          booking?.payment_notes
+        );
+        if (status === 'paid' && !hasEvidence) return 'pending';
+        return allowed.includes(status) ? status : 'pending';
+      };
+
+      const normalized = (data || []).map((b: any) => {
+        const payment_status = mapPaymentStatus(b);
+
+        // Si no hay evidencia de pago y el estado está en confirmado, mostrar como pendiente
+        const hasEvidence = Boolean(
+          b?.payment_intent_id ||
+          b?.stripe_session_id ||
+          b?.stripe_payment_method_id ||
+          b?.payment_method ||
+          b?.payment_notes
+        );
+        const status = (!hasEvidence && b?.status === 'confirmed') ? 'pending' : b?.status;
+
+        return { ...b, payment_status, status };
+      });
+
+      setBookings(normalized as any);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast({

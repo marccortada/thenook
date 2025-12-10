@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 export default function PaymentSetupSuccess() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [confirmed, setConfirmed] = useState(false);
+  const [success, setSuccess] = useState<boolean | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [centerData, setCenterData] = useState({
     name: 'The Nook Madrid',
     phone: '911 481 474',
@@ -19,16 +18,23 @@ export default function PaymentSetupSuccess() {
   });
   const [bookingCenter, setBookingCenter] = useState<{ name?: string; address?: string } | null>(null);
 
-  const setupIntentId = searchParams.get('setup_intent');
+  // Stripe pasa el session_id en la URL, necesitamos obtener el setup_intent desde la sesión
+  const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    if (setupIntentId) {
-      fetchBookingCenter(setupIntentId).finally(() => confirmPaymentMethod());
+    console.log('PaymentSetupSuccess - sessionId:', sessionId);
+    console.log('PaymentSetupSuccess - all search params:', Object.fromEntries(searchParams.entries()));
+    
+    if (sessionId) {
+      confirmPaymentMethod();
     } else {
-      loadCenterData();
+      // Si no hay session_id en la URL, mostrar error
       setLoading(false);
+      setSuccess(false);
+      setErrorMessage('No se encontró información de la sesión en la URL. Por favor, intenta de nuevo.');
+      loadCenterData();
     }
-  }, [setupIntentId]);
+  }, [sessionId]);
 
   const fetchBookingCenter = async (intentId: string) => {
     try {
@@ -107,24 +113,108 @@ export default function PaymentSetupSuccess() {
 
   const confirmPaymentMethod = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('confirm-payment-method', {
-        body: { setup_intent_id: setupIntentId }
-      });
+      console.log('confirmPaymentMethod - sessionId:', sessionId);
+      
+      if (!sessionId) {
+        setSuccess(false);
+        setErrorMessage('No se encontró el identificador de la sesión en la URL.');
+        setLoading(false);
+        return;
+      }
 
-      if (error) throw error;
+      let data: any = null;
+      let error: any = null;
 
-      setConfirmed(true);
-      toast({
-        title: "¡Éxito!",
-        description: "",
-      });
+      try {
+        // Pasar session_id directamente, la función lo manejará
+        const result = await supabase.functions.invoke('confirm-payment-method', {
+          body: { session_id: sessionId }
+        });
+        data = result.data;
+        error = result.error;
+      } catch (invokeError: any) {
+        console.error('Exception invoking confirm-payment-method:', invokeError);
+        console.error('Error details:', {
+          message: invokeError.message,
+          context: invokeError.context,
+          stack: invokeError.stack,
+          name: invokeError.name
+        });
+        
+        // Try to extract error message from various possible locations
+        let errorMsg = 'Error al confirmar el método de pago. Por favor, intenta de nuevo.';
+        
+        // Try to get error from context
+        if (invokeError?.context) {
+          // Try to parse error from context.body
+          if (invokeError.context.body) {
+            try {
+              const parsed = typeof invokeError.context.body === 'string' 
+                ? JSON.parse(invokeError.context.body) 
+                : invokeError.context.body;
+              if (parsed?.error) {
+                errorMsg = typeof parsed.error === 'string' ? parsed.error : parsed.error.message || errorMsg;
+              } else if (parsed?.message) {
+                errorMsg = parsed.message;
+              }
+            } catch {
+              // If parsing fails, try to use the body as string
+              if (typeof invokeError.context.body === 'string' && invokeError.context.body.length < 500) {
+                errorMsg = invokeError.context.body;
+              }
+            }
+          }
+          
+          // Try to get error from context.data
+          if (invokeError.context.data) {
+            try {
+              const parsed = typeof invokeError.context.data === 'string' 
+                ? JSON.parse(invokeError.context.data) 
+                : invokeError.context.data;
+              if (parsed?.error) {
+                errorMsg = typeof parsed.error === 'string' ? parsed.error : parsed.error.message || errorMsg;
+              }
+            } catch {
+              // Ignore
+            }
+          }
+        }
+        
+        // Try to get error from message
+        if (invokeError?.message && errorMsg === 'Error al confirmar el método de pago. Por favor, intenta de nuevo.') {
+          errorMsg = invokeError.message;
+        }
+        
+        error = { message: errorMsg };
+      }
+
+      if (error) {
+        console.error('Error from confirm-payment-method:', error);
+        let errorMsg = 'Error al confirmar el método de pago. Por favor, intenta de nuevo.';
+        if (error.message) {
+          errorMsg = error.message;
+        } else if (error.error) {
+          errorMsg = typeof error.error === 'string' ? error.error : error.error.message || errorMsg;
+        } else if (typeof error === 'string') {
+          errorMsg = error;
+        }
+        setSuccess(false);
+        setErrorMessage(errorMsg);
+        setLoading(false);
+        return;
+      }
+
+      // Verificar que el status sea "succeeded"
+      if (data?.success && data?.status === 'succeeded') {
+        setSuccess(true);
+      } else {
+        setSuccess(false);
+        setErrorMessage(data?.error || 'La tarjeta no se pudo guardar correctamente. Por favor, intenta de nuevo.');
+      }
     } catch (error: any) {
       console.error('Error confirming payment method:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Error al confirmar el método de pago",
-        variant: "destructive",
-      });
+      setSuccess(false);
+      setErrorMessage(error?.message || "Error al confirmar el método de pago. Por favor, intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -138,7 +228,7 @@ export default function PaymentSetupSuccess() {
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-            <p className="text-center mt-4 text-muted-foreground">Confirmando método de pago...</p>
+            <p className="text-center mt-4 text-muted-foreground">Verificando tarjeta...</p>
           </CardContent>
         </Card>
       </div>
@@ -146,8 +236,8 @@ export default function PaymentSetupSuccess() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center p-4">
+      <div className="max-w-md w-full space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-4">
@@ -158,37 +248,57 @@ export default function PaymentSetupSuccess() {
               loading="lazy"
             />
           </div>
-          <p className="text-muted-foreground">Reserva confirmada</p>
         </div>
 
-        {/* Success Card minimal */}
-        <Card className="border-green-200 bg-green-50">
-          <div className="text-center p-6">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3">
-              <Check className="h-8 w-8 text-green-600" />
-            </div>
-            <p className="text-green-800 text-lg font-semibold">¡Reserva confirmada!</p>
-          </div>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          <Button 
-            onClick={() => navigate('/')}
-            className="w-full h-12 text-lg"
-            size="lg"
-          >
-            Volver al inicio
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            onClick={() => window.print()}
-            className="w-full"
-          >
-            Imprimir confirmación
-          </Button>
-        </div>
+        {/* Result Card */}
+        {success === true ? (
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-8">
+              <div className="text-center">
+                <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <Check className="h-10 w-10 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-green-800 mb-2">
+                  Tarjeta guardada correctamente
+                </h2>
+                <p className="text-green-700 mb-6">
+                  Tu tarjeta ha sido registrada con éxito. El administrador realizará el cobro posteriormente.
+                </p>
+                <Button 
+                  onClick={() => window.location.href = 'https://thenook.gnerai.com'}
+                  className="w-full h-12 text-lg"
+                  size="lg"
+                >
+                  Ir a la página
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : success === false ? (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-8">
+              <div className="text-center">
+                <div className="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <X className="h-10 w-10 text-red-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-red-800 mb-2">
+                  Error al guardar la tarjeta
+                </h2>
+                <p className="text-red-700 mb-6">
+                  {errorMessage || 'No se pudo guardar la tarjeta. Por favor, intenta de nuevo.'}
+                </p>
+                <Button 
+                  onClick={() => window.location.href = 'https://thenook.gnerai.com'}
+                  className="w-full h-12 text-lg"
+                  size="lg"
+                  variant="outline"
+                >
+                  Ir a la página
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {/* Contact Info */}
         <Card className="bg-muted/50">

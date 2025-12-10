@@ -644,7 +644,7 @@ const ClientReservation = () => {
         booking_datetime: bookingDate.toISOString(),
         duration_minutes,
         total_price_cents: price_cents,
-        status: 'pending' as const,
+        status: 'pending_payment' as const,
         channel: 'web' as const,
         notes: notesText,
         stripe_session_id: null,

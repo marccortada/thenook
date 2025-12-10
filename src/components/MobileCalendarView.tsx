@@ -14,7 +14,8 @@ import {
   Calendar,
   Settings,
   Lock,
-  Move
+  Move,
+  CreditCard
 } from 'lucide-react';
 import { format, addDays, subDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -815,25 +816,41 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                               }
                             }}
                           >
-                            <div className="text-xs font-semibold truncate">
-                              {booking.profiles?.first_name || 'Cliente'}
+                            <div className="flex items-start justify-between w-full">
+                              <div className="flex-1">
+                                <div className="text-xs font-semibold truncate">
+                                  {booking.profiles?.first_name || 'Cliente'}
+                                </div>
+                                <div className="text-xs text-gray-600 truncate">
+                                  {booking.services?.name || 'Servicio'}
+                                </div>
+                                <div className="text-xs text-gray-600 mt-1">
+                                  €{((booking.total_price_cents || 0) / 100).toFixed(0)}
+                                </div>
+                                {booking.notes && (
+                                  <div className="text-xs text-gray-500 mt-1 truncate italic">
+                                    "📝 {booking.notes}"
+                                  </div>
+                                )}
+                                {booking.client_notes && booking.client_notes.length > 0 && (
+                                  <div className="text-xs text-orange-600 mt-1 truncate italic">
+                                    "🔔 {booking.client_notes[0].content}"
+                                  </div>
+                                )}
+                              </div>
+                              {/* Botón de tarjeta: rojo si no tiene, azul si tiene */}
+                              <div
+                                className={cn(
+                                  "p-1 rounded flex items-center justify-center ml-1 flex-shrink-0",
+                                  booking.stripe_payment_method_id 
+                                    ? "bg-blue-500 text-white" 
+                                    : "bg-red-500 text-white"
+                                )}
+                                title={booking.stripe_payment_method_id ? "Tarjeta guardada" : "Sin tarjeta guardada"}
+                              >
+                                <CreditCard className="h-3 w-3" />
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-600 truncate">
-                              {booking.services?.name || 'Servicio'}
-                            </div>
-                            <div className="text-xs text-gray-600 mt-1">
-                              €{((booking.total_price_cents || 0) / 100).toFixed(0)}
-                            </div>
-                             {booking.notes && (
-                               <div className="text-xs text-gray-500 mt-1 truncate italic">
-                                 "📝 {booking.notes}"
-                               </div>
-                             )}
-                             {booking.client_notes && booking.client_notes.length > 0 && (
-                               <div className="text-xs text-orange-600 mt-1 truncate italic">
-                                 "🔔 {booking.client_notes[0].content}"
-                               </div>
-                             )}
                           </div>
                         )}
                         {isOccupied && !isStartOfBooking && (

@@ -35,7 +35,9 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("Falta STRIPE_SECRET_KEY en Supabase Secrets");
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    const origin = req.headers.get("origin") || "https://example.com";
+    const originHeader = req.headers.get("origin");
+    const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://www.thenookmadrid.com";
+    const origin = originHeader && /^https?:\/\//.test(originHeader) ? originHeader : publicSiteUrl;
 
     // Get booking and client email
     const { data: booking, error: bErr } = await supabase
@@ -88,7 +90,7 @@ serve(async (req) => {
       mode: "setup",
       customer: customerId,
       payment_method_types: ["card"],
-      success_url: `${origin}/pago-configurado`,
+      success_url: `${origin}/pago-configurado?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/asegurar-reserva?booking_id=${booking_id}`,
       setup_intent_data: {
         metadata: { booking_id, ...centerMeta },

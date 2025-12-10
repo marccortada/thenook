@@ -32,7 +32,9 @@ import {
   Trash2,
   Move,
   CreditCard,
-  DollarSign
+  DollarSign,
+  Send,
+  MessageSquare
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -48,6 +50,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslation, translateServiceName } from '@/hooks/useTranslation';
 import { supabase } from '@/integrations/supabase/client';
 import RepeatClientSelector from './RepeatClientSelector';
+import { buildWhatsAppUrl, buildMailtoUrl } from '@/lib/messageTemplates';
 import { useLaneBlocks, type LaneBlock } from '@/hooks/useLaneBlocks';
 import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { useInternalCodes } from '@/hooks/useInternalCodes';
@@ -177,7 +180,7 @@ const AdvancedCalendarView = () => {
   const [editClientId, setEditClientId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [editPaymentStatus, setEditPaymentStatus] = useState<'pending' | 'paid' | 'failed' | 'refunded' | 'partial_refund'>('pending');
-  const [editBookingStatus, setEditBookingStatus] = useState<'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'requested' | 'new' | 'online'>('pending');
+  const [editBookingStatus, setEditBookingStatus] = useState<'pending_payment' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'>('pending_payment');
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
@@ -299,26 +302,16 @@ const AdvancedCalendarView = () => {
       if (!editingBooking.client_id) return;
       setRestoringPaymentMethod(true);
       try {
-        // Prefer RPC (SQL func); fallback to Edge if RPC not present
+        // Use Edge Function directly (RPC function doesn't exist)
         let paymentMethodId: string | null | undefined;
         let customerId: string | null | undefined;
 
-        try {
-          const { data, error } = await supabase.rpc('get_latest_payment_method', {
-            p_booking_id: editingBooking.id,
-          });
-          if (error) throw error;
-          paymentMethodId = (data as any)?.payment_method_id as string | null | undefined;
-          customerId = (data as any)?.customer_id as string | null | undefined;
-        } catch (rpcErr) {
-          console.warn('RPC get_latest_payment_method falló, probando Edge', rpcErr);
-          const { data, error } = await supabase.functions.invoke('get-latest-payment-method', {
-            body: { booking_id: editingBooking.id },
-          });
-          if (error) throw error;
-          paymentMethodId = (data as any)?.payment_method_id as string | null | undefined;
-          customerId = (data as any)?.customer_id as string | null | undefined;
-        }
+        const { data, error } = await supabase.functions.invoke('get-latest-payment-method', {
+          body: { booking_id: editingBooking.id },
+        });
+        if (error) throw error;
+        paymentMethodId = (data as any)?.payment_method_id as string | null | undefined;
+        customerId = (data as any)?.customer_id as string | null | undefined;
 
         if (paymentMethodId) {
           setEditingBooking((prev) =>
@@ -743,7 +736,7 @@ const AdvancedCalendarView = () => {
       if (booking.lane_id) {
         return booking.lane_id === laneId;
       }
-
+      
       const service = services.find(s => s.id === booking.service_id);
       const serviceGroup = service?.group_id ? treatmentGroups.find(tg => tg.id === service.group_id) : null;
       let expectedLaneIndex = 0;
@@ -758,7 +751,7 @@ const AdvancedCalendarView = () => {
           expectedLaneIndex = 3;
         }
       }
-
+      
       const currentLaneIndex = centerLanes.findIndex(l => l.id === laneId);
       return currentLaneIndex === expectedLaneIndex;
     });
@@ -939,12 +932,10 @@ const AdvancedCalendarView = () => {
       setEditingBooking(existingBooking);
       setEditClientId(existingBooking.client_id || null);
       setEditNotes(existingBooking.notes || '');
-      const safePaymentStatus = ['paid','failed','refunded','partial_refund'].includes((existingBooking.payment_status || '').toLowerCase())
-        ? (existingBooking.payment_status as any)
-        : 'pending';
-      const safeBookingStatus = ['confirmed','cancelled','completed','requested','new','online','no_show'].includes((existingBooking.status || '').toLowerCase())
-        ? existingBooking.status
-        : 'pending';
+      const safePaymentStatus = computeSafePaymentStatus(existingBooking);
+      const safeBookingStatus = ['pending_payment','confirmed','cancelled','completed','no_show'].includes((existingBooking.status || '').toLowerCase())
+        ? (existingBooking.status as any)
+        : 'pending_payment';
       setEditPaymentStatus(safePaymentStatus);
       setEditBookingStatus(safeBookingStatus);
       setEditServiceId(existingBooking.service_id || '');
@@ -1126,6 +1117,16 @@ const AdvancedCalendarView = () => {
         console.log('Using user-selected lane from slot click:', { laneId: assignedLaneId, timeSlot: bookingForm.timeSlot });
       }
 
+      // Validate that we have a lane assigned
+      if (!assignedLaneId) {
+        toast({ 
+          title: 'Error', 
+          description: 'No se pudo asignar un carril para esta reserva. Por favor, selecciona un horario disponible.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
       // Create booking datetime
       const bookingDateTime = new Date(bookingForm.date);
       const timeSlotHours = bookingForm.timeSlot.getHours();
@@ -1179,7 +1180,7 @@ const AdvancedCalendarView = () => {
       if (clientIdToUse) {
         try {
           const { data: lastPm } = await supabase
-            .from('bookings')
+        .from('bookings')
             .select('stripe_payment_method_id, stripe_customer_id, payment_method_status, updated_at, created_at')
             .eq('client_id', clientIdToUse)
             .not('stripe_payment_method_id', 'is', null)
@@ -1197,16 +1198,16 @@ const AdvancedCalendarView = () => {
       }
 
       const bookingPayload: any = {
-        client_id: clientIdToUse,
-        service_id: bookingForm.serviceId,
-        center_id: bookingForm.centerId,
-        lane_id: assignedLaneId,
-        booking_datetime: bookingDateTime.toISOString(),
-        duration_minutes: selectedService.duration_minutes,
-        total_price_cents: selectedService.price_cents,
-        status: 'pending' as const,
-        channel: 'web' as const,
-        notes: bookingForm.notes || null,
+          client_id: clientIdToUse,
+          service_id: bookingForm.serviceId,
+          center_id: bookingForm.centerId,
+          lane_id: assignedLaneId,
+          booking_datetime: bookingDateTime.toISOString(),
+          duration_minutes: selectedService.duration_minutes,
+          total_price_cents: selectedService.price_cents,
+        status: 'pending' as const, // Usar 'pending' ya que 'pending_payment' no existe en el enum
+        channel: 'phone' as const, // Reservas creadas manualmente desde admin usan 'phone'
+          notes: bookingForm.notes || null,
         payment_status: 'pending' as const,
       };
       if (inheritedPaymentMethod) {
@@ -1223,7 +1224,24 @@ const AdvancedCalendarView = () => {
         .select('id')
         .single();
 
-      if (bookingError) throw bookingError;
+      if (bookingError) {
+        console.error('❌ Error creating booking:', bookingError);
+        console.error('Booking payload:', bookingPayload);
+        throw new Error(bookingError.message || 'Error al crear la reserva');
+      }
+
+      // Enviar correo de confirmación automáticamente para reservas creadas manualmente
+      // Usar la función send-manual-booking-confirmation que tiene el formato establecido
+      if (created?.id && clientIdToUse) {
+        try {
+          await (supabase as any).functions.invoke('send-manual-booking-confirmation', {
+            body: { booking_id: created.id }
+          });
+        } catch (emailErr) {
+          // No bloquear la creación de la reserva si falla el envío del correo
+          console.warn('No se pudo enviar el correo de confirmación automático:', emailErr);
+        }
+      }
 
       // Canjear código si procede
       if (redeemOnCreate && redeemCode) {
@@ -1282,7 +1300,12 @@ const AdvancedCalendarView = () => {
       await refetchBookings();
     } catch (error) {
       console.error('Error creating booking:', error);
-      toast({ title: 'Error', description: 'No se pudo crear la reserva.', variant: 'destructive' });
+      const errorMessage = error instanceof Error ? error.message : 'No se pudo crear la reserva.';
+      toast({ 
+        title: 'Error al crear reserva', 
+        description: errorMessage, 
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -1410,25 +1433,26 @@ const AdvancedCalendarView = () => {
       const paymentStatusToSave = overrides?.paymentStatus ?? editPaymentStatus;
       let bookingStatusToSave = overrides?.bookingStatus ?? editBookingStatus;
 
-      // CRITICAL: Si el pago está marcado como 'paid', el estado NO puede ser 'pending'
-      // Automáticamente cambiar a 'confirmed' (excepto si es 'no_show')
-      if (paymentStatusToSave === 'paid' && bookingStatusToSave === 'pending') {
-        // Si es no_show, mantener no_show. Si no, cambiar a confirmed
-        if (editBookingStatus !== 'no_show' && editingBooking.status !== 'no_show') {
+      // Si el estado es "no_show", mantenerlo siempre como "no_show"
+      if (bookingStatusToSave === 'no_show') {
+        // No cambiar el estado, mantener "no_show"
+      } else {
+        // Si se marca como pagado, el estado de reserva no debe quedar pendiente de pago
+        if (paymentStatusToSave === 'paid' && bookingStatusToSave === 'pending_payment') {
           bookingStatusToSave = 'confirmed';
           setEditBookingStatus('confirmed');
-        }
       }
 
       // Validación: No permitir estados inconsistentes
-      if (paymentStatusToSave === 'paid' && bookingStatusToSave === 'pending') {
+        if (paymentStatusToSave === 'paid' && bookingStatusToSave === 'pending_payment') {
         toast({ 
           title: 'Estado inconsistente', 
-          description: 'No se puede tener una reserva pagada con estado pendiente. Se cambiará automáticamente a confirmada.', 
+            description: 'No se puede tener una reserva pagada con estado pendiente de pago. Se cambiará automáticamente a confirmada.', 
           variant: 'destructive' 
         });
-        bookingStatusToSave = editBookingStatus === 'no_show' ? 'no_show' : 'confirmed';
+          bookingStatusToSave = 'confirmed';
         setEditBookingStatus(bookingStatusToSave);
+        }
       }
 
       if (editingBooking.payment_status === 'paid' && paymentStatusToSave === 'paid') {
@@ -1471,8 +1495,9 @@ const AdvancedCalendarView = () => {
       if (allowPaymentUpdate) {
         updates.payment_status = paymentStatusToSave;
         // Si se marca como pagado, automáticamente actualizar el estado de reserva
-        if (paymentStatusToSave === 'paid' && bookingStatusToSave === 'pending') {
-          updates.status = editBookingStatus === 'no_show' ? 'no_show' : 'confirmed';
+        // PERO no cambiar si el estado es "no_show" (ya protegido arriba)
+        if (paymentStatusToSave === 'paid' && bookingStatusToSave === 'pending_payment') {
+          updates.status = 'confirmed';
         }
       }
       if (editClientId) updates.client_id = editClientId;
@@ -1543,11 +1568,15 @@ const AdvancedCalendarView = () => {
         return false;
       }
 
+      // Si el estado es "no_show", mantenerlo; si no, cambiar a "confirmed"
+      const newBookingStatus = editBookingStatus === 'no_show' ? 'no_show' : 'confirmed';
       await saveBookingEdits(
-        { paymentStatus: 'paid', bookingStatus: 'confirmed' },
+        { paymentStatus: 'paid', bookingStatus: newBookingStatus },
         {
           successMessage: 'Pago registrado',
-          successDescription: 'El cobro se ha capturado y la reserva se ha confirmado.'
+          successDescription: newBookingStatus === 'no_show' 
+            ? 'El cobro se ha capturado. La reserva permanece como No Show.'
+            : 'El cobro se ha capturado y la reserva se ha confirmado.'
         }
       );
       // Emails se envían desde backend con cobro exitoso; no disparar desde frontend
@@ -1723,18 +1752,28 @@ const AdvancedCalendarView = () => {
           payment_method: 'tarjeta', 
           payment_notes: paymentNotes || 'Cobro automático Stripe' 
         };
-        // CRITICAL: Si es no_show, mantener no_show. Si no, cambiar automáticamente a confirmed
+        // Si el estado es "no_show", mantenerlo; si estaba pendiente de pago, cambiar a confirmed
         if (editBookingStatus === 'no_show' || editingBooking.status === 'no_show') {
           updateData.status = 'no_show';
         } else {
-          // Si estaba pendiente, cambiar a confirmed cuando se marca como pagado
-          updateData.status = editingBooking.status === 'pending' ? 'confirmed' : editingBooking.status;
+          updateData.status = editingBooking.status === 'pending_payment' ? 'confirmed' : editingBooking.status;
         }
         const { error } = await supabase
           .from('bookings')
           .update(updateData)
           .eq('id', editingBooking.id);
         if (error) throw error;
+        
+        // Enviar correo de confirmación y pago si no es no_show
+        if (editBookingStatus !== 'no_show' && editingBooking.status !== 'no_show') {
+          try {
+            await (supabase as any).functions.invoke('send-booking-with-payment', {
+              body: { booking_id: editingBooking.id }
+            });
+          } catch (emailErr) {
+            console.warn('No se pudo enviar el correo de confirmación y pago:', emailErr);
+          }
+        }
       } else {
         // Manual methods: efectivo/bizum/transferencia
         const updateData: any = {
@@ -1742,13 +1781,11 @@ const AdvancedCalendarView = () => {
           payment_method: paymentMethod,
           payment_notes: paymentNotes || null
         };
-        // CRITICAL: Si es no_show, mantener no_show. Si no, cambiar automáticamente a confirmed
-        // Nunca dejar como 'pending' si está pagado
+        // Si el estado es "no_show", mantenerlo; si estaba pendiente de pago, cambiar a confirmed
         if (editBookingStatus === 'no_show' || editingBooking.status === 'no_show') {
           updateData.status = 'no_show';
         } else {
-          // Si estaba pendiente o cualquier otro estado, cambiar a confirmed cuando se marca como pagado
-          updateData.status = 'confirmed';
+          updateData.status = editingBooking.status === 'pending_payment' ? 'confirmed' : editingBooking.status;
         }
         const { error } = await supabase
           .from('bookings')
@@ -1756,6 +1793,17 @@ const AdvancedCalendarView = () => {
           .eq('id', editingBooking.id);
 
         if (error) throw error;
+        
+        // Enviar correo de confirmación y pago si no es no_show
+        if (editBookingStatus !== 'no_show' && editingBooking.status !== 'no_show') {
+          try {
+            await (supabase as any).functions.invoke('send-booking-with-payment', {
+              body: { booking_id: editingBooking.id }
+            });
+          } catch (emailErr) {
+            console.warn('No se pudo enviar el correo de confirmación y pago:', emailErr);
+          }
+        }
       }
 
       toast({
@@ -1816,6 +1864,273 @@ const AdvancedCalendarView = () => {
     }
   };
 
+  // Send booking confirmation (when client has card saved)
+  const sendBookingConfirmation = async (via: 'email' | 'whatsapp') => {
+    if (!editingBooking) return;
+
+    try {
+      // Get booking details with center info
+      const { data: bookingData, error: bookingError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          booking_datetime,
+          total_price_cents,
+          services(name),
+          centers(name, address, address_concha_espina, address_zurbaran),
+          profiles!client_id(email, first_name, last_name, phone)
+        `)
+        .eq('id', editingBooking.id)
+        .single();
+
+      if (bookingError || !bookingData) {
+        throw new Error('No se pudo obtener los datos de la reserva');
+      }
+
+      const client = bookingData.profiles;
+      const service = bookingData.services;
+      const center = bookingData.centers;
+
+      // Determine center location
+      const centerNameLower = center?.name?.toLowerCase() || '';
+      const addrBaseLower = (center?.address || '').toLowerCase();
+      const addrZurLower = (center?.address_zurbaran || '').toLowerCase();
+
+      const isZurbaran =
+        center?.address_zurbaran ||
+        centerNameLower.includes('zurbaran') ||
+        centerNameLower.includes('zurbarán') ||
+        addrZurLower.includes('zurbar') ||
+        addrZurLower.includes('28010') ||
+        addrBaseLower.includes('zurbar') ||
+        addrBaseLower.includes('28010');
+
+      const centerLocation = isZurbaran ? 'ZURBARÁN' : 'CONCHA ESPINA';
+      const centerAddress = isZurbaran 
+        ? (center?.address_zurbaran || 'C. de Zurbarán, 10, bajo dcha, Chamberí, 28010 Madrid')
+        : (center?.address_concha_espina || 'C/ Príncipe de Vergara 204 posterior (A la espalda del 204) - Bordeando el Restaurante "La Ancha"');
+      const centerMetroInfo = isZurbaran
+        ? '(Metro Iglesia, salida C. de Zurbarán)'
+        : '(Metro Concha Espina, salida Plaza de Cataluña)';
+      const mapsLink = isZurbaran
+        ? 'https://maps.app.goo.gl/your-zurbaran-link'
+        : 'https://goo.gl/maps/zHuPpdHATcJf6QWX8';
+
+      const bookingDate = new Date(bookingData.booking_datetime);
+      const formattedDate = format(bookingDate, "EEEE d 'de' MMMM yyyy", { locale: es });
+      const formattedTime = format(bookingDate, 'HH:mm', { locale: es });
+
+      const message = `Hola ${client?.first_name || ''} ${client?.last_name || ''}!
+
+Has reservado correctamente tu tratamiento en THE NOOK ${centerLocation}.
+
+Estos son los detalles de la reserva:
+
+Tratamiento: ${service?.name || 'Tratamiento'}
+
+Fecha: ${formattedDate} a las ${formattedTime}
+
+Dirección:
+
+${centerAddress} ${centerMetroInfo}
+
+Estamos aquí 👉 ${mapsLink}
+
+Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de reserva y nuestra Política de Cancelación.
+
+Es aconsejable llegar al centro cinco minutos antes de la cita. Rogamos máxima puntualidad, al haber otras citas después de la vuestra, si llegáis tarde, quizás no podamos realizar el tratamiento completo.
+
+En caso de estar embarazada, por favor háznoslo saber con antelación a la cita.
+
+En este email tienes la dirección del centro reservado, la hora de la cita y el tratamiento elegido. Revisa bien esta información, The Nook no se hace responsable si acudes al centro equivocado o a una hora distinta.
+
+Te recomendamos leer nuestras condiciones de reserva, compra y cancelación en la Política de Cancelación completa aquí:
+
+https://www.thenookmadrid.com/politica-de-cancelaciones/
+
+THE NOOK ${centerLocation}
+
+911 481 474 / 622 360 922
+
+reservas@thenookmadrid.com`;
+
+      if (via === 'email') {
+        if (!client?.email) {
+          toast({ title: 'Error', description: 'El cliente no tiene email registrado.', variant: 'destructive' });
+          return;
+        }
+
+        // Try to send via edge function first
+        try {
+          const { data, error: fnError } = await (supabase as any).functions.invoke('send-booking-with-payment', {
+            body: { booking_id: editingBooking.id }
+          });
+
+          if (!fnError && data?.ok) {
+            toast({ title: '✅ Confirmación enviada', description: `Email enviado a ${client.email}` });
+            return;
+          }
+        } catch (fnErr) {
+          console.warn('Edge function failed, using mailto fallback:', fnErr);
+        }
+
+        // Fallback to mailto
+        const subject = 'Confirmación de reserva - THE NOOK';
+        const mailtoUrl = buildMailtoUrl(client.email, subject, message);
+        window.open(mailtoUrl, '_blank');
+        toast({ title: 'Email listo', description: 'Se abrió tu cliente de email con el mensaje.' });
+      } else {
+        // WhatsApp
+        if (!client?.phone) {
+          toast({ title: 'Error', description: 'El cliente no tiene teléfono registrado.', variant: 'destructive' });
+          return;
+        }
+
+        const whatsappUrl = buildWhatsAppUrl(client.phone, message);
+        window.open(whatsappUrl, '_blank');
+        toast({ title: 'WhatsApp abierto', description: 'Se abrió WhatsApp con el mensaje de confirmación.' });
+      }
+    } catch (error) {
+      console.error('Error sending confirmation:', error);
+      toast({ 
+        title: 'Error', 
+        description: error instanceof Error ? error.message : 'No se pudo enviar la confirmación.', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  // Send card request (when client doesn't have card saved)
+  const sendCardRequest = async (via: 'email' | 'whatsapp') => {
+    if (!editingBooking) return;
+
+    try {
+      // Generate setup link (only to save card, no charge)
+      if (!editingBooking.id) {
+        throw new Error('No se encontró el ID de la reserva');
+      }
+
+      if (!editingBooking.profiles?.email) {
+        throw new Error('El cliente no tiene email registrado. Por favor, añade un email al cliente primero.');
+      }
+
+      let data: any = null;
+      let error: any = null;
+
+      try {
+        const result = await (supabase as any).functions.invoke('create-booking-setup-session', {
+          body: { booking_id: editingBooking.id }
+        });
+        data = result.data;
+        error = result.error;
+      } catch (invokeError: any) {
+        console.error('Exception invoking create-booking-setup-session:', invokeError);
+        // Try to parse error from response if available
+        if (invokeError?.context?.body) {
+          try {
+            const parsed = JSON.parse(invokeError.context.body);
+            error = { message: parsed.error || invokeError.message };
+          } catch {
+            error = { message: invokeError.message || 'Error al invocar la función' };
+          }
+        } else {
+          error = { message: invokeError.message || 'Error al invocar la función' };
+        }
+      }
+
+      if (error) {
+        console.error('Error from create-booking-setup-session:', error);
+        // Try to extract error message from response
+        let errorMsg = 'No se pudo generar el enlace para guardar la tarjeta';
+        if (error.message) {
+          errorMsg = error.message;
+        } else if (error.error) {
+          errorMsg = typeof error.error === 'string' ? error.error : error.error.message || errorMsg;
+        } else if (typeof error === 'string') {
+          errorMsg = error;
+        }
+        throw new Error(errorMsg);
+      }
+
+      // Check if data contains an error
+      if (data?.error) {
+        console.error('Error in response data:', data.error);
+        throw new Error(typeof data.error === 'string' ? data.error : data.error.message || 'No se pudo generar el enlace para guardar la tarjeta');
+      }
+
+      const paymentUrl = data?.url || null;
+      if (!paymentUrl) {
+        console.error('No URL returned from create-booking-setup-session:', data);
+        throw new Error('No se recibió el enlace de Stripe. Por favor, intenta de nuevo.');
+      }
+
+      const client = editingBooking.profiles;
+
+      const message = `Hola ${client?.first_name || ''} ${client?.last_name || ''},
+
+Para confirmar tu reserva en The Nook Madrid, necesitamos que nos proporciones los datos de tu tarjeta.
+
+Importe: 0,00€ (solo para guardar la tarjeta)
+
+El cobro se realizará posteriormente por el administrador.
+
+Por favor, completa el registro de tu tarjeta aquí: ${paymentUrl}
+
+Una vez completado, recibirás la confirmación de tu reserva.
+
+Gracias.`;
+
+      if (via === 'email') {
+        if (!client?.email) {
+          toast({ title: 'Error', description: 'El cliente no tiene email registrado.', variant: 'destructive' });
+          return;
+        }
+
+        // Try to send via edge function
+        try {
+          const { data: emailData, error: emailError } = await (supabase as any).functions.invoke('send-email', {
+            body: { 
+              to: client.email, 
+              subject: 'Solicitud de tarjeta para confirmar tu reserva - The Nook Madrid', 
+              message 
+            }
+          });
+
+          if (!emailError && emailData?.success) {
+            toast({ title: '✅ Solicitud enviada', description: `Email enviado a ${client.email}` });
+            return;
+          }
+        } catch (emailErr) {
+          console.warn('Edge function failed, using mailto fallback:', emailErr);
+        }
+
+        // Fallback to mailto
+        const subject = 'Solicitud de tarjeta para confirmar tu reserva - The Nook Madrid';
+        const mailtoUrl = buildMailtoUrl(client.email, subject, message);
+        window.open(mailtoUrl, '_blank');
+        toast({ title: 'Email listo', description: 'Se abrió tu cliente de email con el mensaje.' });
+      } else {
+        // WhatsApp
+        if (!client?.phone) {
+          toast({ title: 'Error', description: 'El cliente no tiene teléfono registrado.', variant: 'destructive' });
+          return;
+        }
+
+        const whatsappUrl = buildWhatsAppUrl(client.phone, message);
+        window.open(whatsappUrl, '_blank');
+        toast({ title: 'WhatsApp abierto', description: 'Se abrió WhatsApp con el mensaje de solicitud de tarjeta.' });
+      }
+    } catch (error: any) {
+      console.error('Error sending card request:', error);
+      const errorMessage = error?.message || error?.error || error?.toString() || 'No se pudo enviar la solicitud de tarjeta.';
+      toast({ 
+        title: 'Error al solicitar tarjeta', 
+        description: errorMessage, 
+        variant: 'destructive' 
+      });
+    }
+  };
+
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -1825,6 +2140,22 @@ const AdvancedCalendarView = () => {
       case 'completed': return 'bg-blue-500/20 border-l-blue-500 text-blue-700';
       default: return 'bg-gray-500/20 border-l-gray-500 text-gray-700';
     }
+  };
+
+  const computeSafePaymentStatus = (booking: any) => {
+    const status = (booking?.payment_status || '').toLowerCase();
+    const allowed = ['pending', 'paid', 'failed', 'refunded', 'partial_refund'];
+    const hasPaymentEvidence = Boolean(
+      booking?.payment_intent_id ||
+      booking?.stripe_session_id ||
+      booking?.stripe_payment_method_id ||
+      booking?.payment_method ||
+      booking?.payment_notes ||
+      booking?.reserva_id
+    );
+
+    if (status === 'paid' && !hasPaymentEvidence) return 'pending';
+    return allowed.includes(status) ? status as any : 'pending';
   };
 
   // Hex color by status (para inline styles)
@@ -2263,9 +2594,23 @@ const AdvancedCalendarView = () => {
                                      </div>
                                    )}
                                  </div>
+                                 <div className="flex items-center gap-1 ml-2">
+                                   {/* Botón de tarjeta: rojo si no tiene, azul si tiene */}
+                                   <div
+                                     className={cn(
+                                       "p-1 rounded flex items-center justify-center",
+                                       booking.stripe_payment_method_id 
+                                         ? "bg-blue-500 text-white" 
+                                         : "bg-red-500 text-white"
+                                     )}
+                                     title={booking.stripe_payment_method_id ? "Tarjeta guardada" : "Sin tarjeta guardada"}
+                                   >
+                                     <CreditCard className="h-3 w-3" />
+                                 </div>
                                  {booking.payment_status === 'paid' && (
                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
                                 )}
+                                 </div>
                               </div>
                           </div>
                         )}
@@ -3289,17 +3634,13 @@ const AdvancedCalendarView = () => {
                     const newPaymentStatus = v as any;
                     setEditPaymentStatus(newPaymentStatus);
                     
-                    // CRITICAL: Si se marca como pagado, automáticamente cambiar estado de reserva
-                    // (excepto si es no_show, que se mantiene como no_show)
-                    if (newPaymentStatus === 'paid' && editBookingStatus === 'pending') {
-                      // Si es no_show, mantener no_show. Si no, cambiar a confirmed
-                      if (editBookingStatus !== 'no_show' && editingBooking?.status !== 'no_show') {
+                    // Si se marca como pagado, automáticamente cambiar estado de reserva a confirmado
+                    if (newPaymentStatus === 'paid' && editBookingStatus === 'pending_payment') {
                         setEditBookingStatus('confirmed');
                       }
-                    }
-                    // Si se cambia de pagado a pendiente, también cambiar estado de reserva a pendiente
+                    // Si se cambia de pagado a pendiente, también cambiar estado de reserva a pendiente de pago
                     if (newPaymentStatus === 'pending' && editBookingStatus === 'confirmed') {
-                      setEditBookingStatus('pending');
+                      setEditBookingStatus('pending_payment');
                     }
                   }}
                 >
@@ -3397,21 +3738,13 @@ const AdvancedCalendarView = () => {
                     collisionPadding={8}
                     sticky="always"
                   >
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="requested">Solicitada</SelectItem>
+                    <SelectItem value="pending_payment">Pendiente de pago</SelectItem>
                     <SelectItem value="confirmed">Confirmada</SelectItem>
-                    <SelectItem value="new">Nueva</SelectItem>
-                    <SelectItem value="online">Online</SelectItem>
                     <SelectItem value="completed">Completada</SelectItem>
                     <SelectItem value="cancelled">Cancelada</SelectItem>
                     <SelectItem value="no_show">No Show</SelectItem>
                   </SelectContent>
                 </Select>
-                {editBookingStatus === 'no_show' && editPaymentStatus !== 'paid' && (
-                  <p className="text-xs text-amber-600 mt-1">
-                    💡 Puedes cobrar una penalización parcial usando el botón "Cobrar Cita"
-                  </p>
-                )}
               </div>
             </div>
 
@@ -3534,6 +3867,85 @@ const AdvancedCalendarView = () => {
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
+              
+              {/* Send confirmation or card request buttons */}
+              {editingBooking && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {editingBooking.stripe_payment_method_id ? (
+                    // Client has card - show confirmation button
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant="outline" className="flex-1">
+                          <Send className="h-4 w-4 mr-2" />
+                          Enviar Confirmación
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-2">
+                        <div className="space-y-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              sendBookingConfirmation('email');
+                            }}
+                          >
+                            <Mail className="h-4 w-4 mr-2" />
+                            Por Email
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              sendBookingConfirmation('whatsapp');
+                            }}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Por WhatsApp
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    // Client doesn't have card - show card request button
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant="outline" className="flex-1">
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Solicitar Tarjeta
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-2">
+                        <div className="space-y-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              sendCardRequest('email');
+                            }}
+                          >
+                            <Mail className="h-4 w-4 mr-2" />
+                            Por Email
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              sendCardRequest('whatsapp');
+                            }}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Por WhatsApp
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+              )}
               
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button 

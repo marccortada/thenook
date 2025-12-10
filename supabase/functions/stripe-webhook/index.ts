@@ -97,6 +97,12 @@ async function sendBookingConfirmationEmail(args: {
   const session = source.type === "session" ? source.session : null;
   const paymentIntent = source.type === "payment_intent" ? source.paymentIntent : null;
   const isManualCapture = source.type === "payment_intent";
+  
+  // CRITICAL: Detectar si es solo setup (asegurar tarjeta sin cobro)
+  // Si hay setup_intent pero NO payment_intent, es solo setup → SIEMPRE mantener como "pending"
+  const hasSetupIntent = !!session?.setup_intent;
+  const hasPaymentIntent = !!paymentIntent || (session?.payment_intent && typeof session.payment_intent !== "string");
+  const isOnlySetup = hasSetupIntent && !hasPaymentIntent;
   const { data: booking, error } = await supabaseAdmin
   .from("bookings")
   .select(`
@@ -199,8 +205,12 @@ async function sendBookingConfirmationEmail(args: {
 
   try {
     if (paymentMethodId || stripeCustomerId) {
-      // Solo guardar la tarjeta/cliente. Forzar siempre PENDING al guardar tarjeta.
-      const safePaymentStatus = "pending";
+      // CRITICAL: Usar la variable isOnlySetup ya calculada arriba
+      const hasRealPayment = paymentIntent?.status === "succeeded";
+      
+      // SIEMPRE mantener como "pending" si es solo setup (asegurar tarjeta sin cobro)
+      // Solo marcar como "paid" si hay un payment_intent real con status succeeded
+      const safePaymentStatus = isOnlySetup ? "pending" : (hasRealPayment ? "paid" : booking.payment_status || "pending");
 
       await supabaseAdmin
         .from("bookings")
@@ -471,9 +481,14 @@ async function sendBookingConfirmationEmail(args: {
   const alreadyProcessed = !isManualCapture &&
     booking.email_status === "sent" &&
     (deliveryToken ? booking.stripe_session_id === deliveryToken : true);
+  
+  // CRITICAL: Solo considerar "paid" si hay un payment_intent real con status succeeded
+  // NO confiar en session.payment_status porque puede ser "paid" incluso en setup-only flows
+  const hasPaymentIntent = !!paymentIntent || (session?.payment_intent && typeof session.payment_intent !== "string");
+  const hasSetupIntentOnly = !!session?.setup_intent && !hasPaymentIntent;
   const isPaid =
-    paymentIntent?.status === "succeeded" ||
-    session?.payment_status === "paid" ||
+    (paymentIntent?.status === "succeeded") ||
+    (hasPaymentIntent && session?.payment_status === "paid" && !hasSetupIntentOnly) ||
     false;
 
   if (alreadyProcessed) {
@@ -496,9 +511,14 @@ async function sendBookingConfirmationEmail(args: {
     }
   }
 
+  // CRITICAL: Usar la variable isOnlySetup ya calculada arriba
+  const hasRealPayment = paymentIntent?.status === "succeeded";
+  
   const updates: Record<string, unknown> = {
-    // Forzar a pending hasta que un admin cobre manualmente.
-    payment_status: "pending",
+    // CRITICAL: Si es solo setup (asegurar tarjeta sin cobro), SIEMPRE mantener como "pending"
+    // NO confiar en session.payment_status porque puede ser "paid" incluso en setup-only flows
+    // Solo marcar como "paid" si hay un payment_intent real con status succeeded
+    payment_status: isOnlySetup ? "pending" : (hasRealPayment ? "paid" : booking.payment_status || "pending"),
     // Mantener el estado de reserva como estaba, pero nunca escalarlo aquí.
     status: booking.status === "no_show" ? "no_show" : (booking.status || "pending"),
     email_status: "sent",
@@ -1466,6 +1486,7 @@ serve(async (req) => {
 
           const updates: Record<string, unknown> = {
             payment_method_status: setupStatus,
+            payment_status: "pending", // CRITICAL: booking_setup es solo asegurar tarjeta, NO pago. SIEMPRE mantener como pending
             updated_at: currentTimestamp,
           };
           if (finalPaymentMethodId) {
@@ -1586,6 +1607,26 @@ serve(async (req) => {
             }
           }
         }
+      } else if (intent === "booking_payment") {
+        const payload = session.metadata?.bp_payload;
+        const bookingIdMeta = session.metadata?.booking_id as string | undefined;
+        let bookingId = bookingIdMeta;
+        if (!bookingId && payload) {
+          try {
+            bookingId = (JSON.parse(payload) as { booking_id?: string })?.booking_id;
+          } catch (e) {
+            console.warn("[stripe-webhook] Error parsing bp_payload:", e);
+          }
+        }
+
+        if (bookingId) {
+          await sendBookingConfirmationEmail({
+            bookingId,
+            source: { type: "session", session },
+          });
+        } else {
+          console.warn("[stripe-webhook] booking_id not found (intent booking_payment)");
+        }
       } else if (intent === "package_voucher") {
         const payloadRaw = session.metadata?.pv_payload;
         if (!payloadRaw) {
@@ -1610,6 +1651,22 @@ serve(async (req) => {
             items: parsed.items || [],
           });
           console.log("[stripe-webhook] ✅ Gift cards processed successfully");
+        }
+      }
+      // Fallback: si hay booking_id pero no intent, enviar confirmación SOLO si hay payment_intent real
+      // NO confiar en session.payment_status porque puede ser "paid" incluso en setup-only flows
+      else if (session.metadata?.booking_id) {
+        const hasPaymentIntent = session?.payment_intent && typeof session.payment_intent !== "string";
+        const hasSetupIntentOnly = !!session?.setup_intent && !hasPaymentIntent;
+        
+        // Solo procesar si NO es solo setup (si es setup, ya se procesó arriba)
+        if (!hasSetupIntentOnly) {
+          const bookingId = session.metadata.booking_id as string;
+          console.log("[stripe-webhook] booking_id presente sin intent; enviando confirmación", bookingId);
+          await sendBookingConfirmationEmail({
+            bookingId,
+            source: { type: "session", session },
+          });
         }
       } else {
         console.log("[stripe-webhook] checkout.session.completed ignored for intent:", intent);
@@ -1639,6 +1696,8 @@ serve(async (req) => {
 
         if (paymentMethodId) {
           // Update booking with payment method
+          // CRITICAL: setup_intent.succeeded significa solo asegurar tarjeta, NO pago
+          // SIEMPRE mantener payment_status como "pending" en este flujo
           try {
             await supabaseAdmin
               .from("bookings")
@@ -1646,6 +1705,7 @@ serve(async (req) => {
                 stripe_payment_method_id: paymentMethodId,
                 stripe_customer_id: customerId,
                 payment_method_status: "succeeded",
+                payment_status: "pending", // CRITICAL: setup intent NO es pago, mantener pending
                 updated_at: new Date().toISOString(),
               })
               .eq("id", bookingId);
@@ -1743,36 +1803,6 @@ serve(async (req) => {
             console.error("[stripe-webhook] Failed to send email from setup_intent.succeeded:", emailErr);
           }
         }
-      }
-      else if (intent === "booking_payment") {
-        const payload = session.metadata?.bp_payload;
-        const bookingIdMeta = session.metadata?.booking_id as string | undefined;
-        let bookingId = bookingIdMeta;
-        if (!bookingId && payload) {
-          try {
-            bookingId = (JSON.parse(payload) as { booking_id?: string })?.booking_id;
-          } catch (e) {
-            console.warn("[stripe-webhook] Error parsing bp_payload:", e);
-          }
-        }
-
-        if (bookingId) {
-          await sendBookingConfirmationEmail({
-            bookingId,
-            source: { type: "session", session },
-          });
-        } else {
-          console.warn("[stripe-webhook] booking_id not found (intent booking_payment)");
-        }
-      }
-      // Fallback: si hay booking_id pero no intent, enviar confirmación igual (solo si fue pago real)
-      else if (session.metadata?.booking_id && session.payment_status === "paid") {
-        const bookingId = session.metadata.booking_id as string;
-        console.log("[stripe-webhook] booking_id presente sin intent; enviando confirmación (paid)", bookingId);
-        await sendBookingConfirmationEmail({
-          bookingId,
-          source: { type: "session", session },
-        });
       }
     } else if (event.type === "payment_intent.succeeded") {
       const intent = event.data.object as Stripe.PaymentIntent;

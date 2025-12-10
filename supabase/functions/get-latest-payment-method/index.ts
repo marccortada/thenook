@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface Body {
@@ -63,12 +64,15 @@ serve(async (req) => {
     }
 
     if (paymentMethodId) {
+      // CRITICAL: Solo actualizar payment_method_status, NO tocar payment_status
+      // Esta función solo recupera/guarda la tarjeta, no significa que se haya cobrado
       await supabase
         .from("bookings")
         .update({
           stripe_payment_method_id: paymentMethodId,
           stripe_customer_id: customerId || null,
           payment_method_status: "succeeded",
+          // NO actualizar payment_status aquí - solo se actualiza cuando realmente se cobra
           updated_at: new Date().toISOString(),
         })
         .eq("id", booking_id);

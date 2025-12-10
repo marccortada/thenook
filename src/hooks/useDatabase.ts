@@ -310,11 +310,22 @@ export const useBookings = () => {
 
       // Optimize: Load client notes only when needed (lazy loading)
       // For now, set empty array - notes will be loaded on-demand
-      const normalizePaymentStatus = (status?: string) => {
+      const normalizePaymentStatus = (booking: any) => {
+        const status = (booking.payment_status || '').toLowerCase();
         const allowed = ['pending', 'paid', 'failed', 'refunded', 'partial_refund'];
-        return allowed.includes((status || '').toLowerCase())
-          ? (status as any)
-          : 'pending';
+        const hasPaymentEvidence = Boolean(
+          booking.payment_intent_id ||
+          booking.stripe_session_id ||
+          booking.stripe_payment_method_id ||
+          booking.payment_method ||
+          booking.payment_notes ||
+          booking.reserva_id
+        );
+
+        // Si no hay evidencia de cobro, forzar a pendiente aunque venga "paid"
+        if (status === 'paid' && !hasPaymentEvidence) return 'pending';
+
+        return allowed.includes(status) ? (status as any) : 'pending';
       };
       const normalizeBookingStatus = (status?: string) => {
         const allowed = ['pending', 'confirmed', 'cancelled', 'completed', 'requested', 'new', 'online', 'no_show'];
@@ -325,7 +336,7 @@ export const useBookings = () => {
 
       const bookingsWithNotes = (data || []).map((booking: any) => ({
         ...booking,
-        payment_status: normalizePaymentStatus(booking.payment_status),
+        payment_status: normalizePaymentStatus(booking),
         status: normalizeBookingStatus(booking.status),
         client_notes: [] // Will be loaded on-demand when viewing booking details
       }));

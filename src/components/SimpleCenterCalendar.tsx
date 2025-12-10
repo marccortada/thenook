@@ -154,7 +154,9 @@ const SimpleCenterCalendar = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return 'bg-green-100 border-green-500 text-green-700';
-      case 'pending': return 'bg-yellow-100 border-yellow-500 text-yellow-700';
+      case 'pending_payment': 
+      case 'pending':
+        return 'bg-yellow-100 border-yellow-500 text-yellow-700';
       case 'cancelled': return 'bg-red-100 border-red-500 text-red-700';
       case 'completed': return 'bg-blue-100 border-blue-500 text-blue-700';
       case 'requested': return 'bg-purple-100 border-purple-500 text-purple-700';
@@ -278,8 +280,8 @@ const SimpleCenterCalendar = () => {
           booking_datetime: bookingDate.toISOString(),
           duration_minutes: newBookingForm.duration,
           total_price_cents: selectedService.price_cents,
-          // Crear siempre como 'pending' (confirmación sólo tras cobro)
-          status: 'pending' as const,
+          // Crear siempre como 'pending_payment' (confirmación sólo tras cobro)
+          status: 'pending_payment' as const,
           channel: 'web' as const,
           notes: newBookingForm.notes || null,
           payment_status: 'pending' as const
@@ -333,7 +335,7 @@ const SimpleCenterCalendar = () => {
   };
 
   // Update booking status
-  const updateBookingStatus = async (bookingId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'requested' | 'new' | 'online') => {
+  const updateBookingStatus = async (bookingId: string, status: 'pending_payment' | 'confirmed' | 'completed' | 'cancelled') => {
     try {
       const { error } = await supabase
         .from('bookings')
@@ -488,12 +490,8 @@ const SimpleCenterCalendar = () => {
           payment_notes: paymentNotes || 'Cobro automático Stripe'
         };
         
-        if (selectedBooking.status === 'no_show') {
-          updateData.status = 'no_show';
-        } else {
-          // Si estaba pendiente, cambiar a confirmed cuando se marca como pagado
-          updateData.status = selectedBooking.status === 'pending' ? 'confirmed' : selectedBooking.status;
-        }
+        // Si estaba pendiente de pago, pasar a confirmed al marcar pagado
+        updateData.status = selectedBooking.status === 'pending_payment' ? 'confirmed' : selectedBooking.status;
         
         const { error } = await supabase
           .from('bookings')
@@ -514,12 +512,8 @@ const SimpleCenterCalendar = () => {
           payment_notes: paymentNotes || null
         };
         
-        if (selectedBooking.status === 'no_show') {
-          updateData.status = 'no_show';
-        } else {
-          // Si estaba pendiente, cambiar a confirmed cuando se marca como pagado
-          updateData.status = selectedBooking.status === 'pending' ? 'confirmed' : selectedBooking.status;
-        }
+        // Si estaba pendiente de pago, pasar a confirmed al marcar pagado
+        updateData.status = selectedBooking.status === 'pending_payment' ? 'confirmed' : selectedBooking.status;
         
         const { error } = await supabase
           .from('bookings')
@@ -673,7 +667,7 @@ const SimpleCenterCalendar = () => {
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="confirmed">✅ Confirmadas</SelectItem>
-                  <SelectItem value="pending">⏳ Pendientes</SelectItem>
+                  <SelectItem value="pending_payment">⏳ Pendientes de pago</SelectItem>
                   <SelectItem value="requested">📋 Solicitadas</SelectItem>
                   <SelectItem value="new">🆕 Nuevas</SelectItem>
                   <SelectItem value="online">🌐 Online</SelectItem>
@@ -746,21 +740,37 @@ const SimpleCenterCalendar = () => {
                               }}
                               onClick={() => handleBookingClick(booking)}
                             >
-                              <div className="text-xs sm:text-sm font-semibold truncate">
-                                {booking.profiles?.first_name} {booking.profiles?.last_name}
-                              </div>
-                              <div className="text-xs text-muted-foreground truncate hidden sm:block">
-                                {booking.services?.name ? translateServiceName(booking.services.name, language, t) : ''}
-                              </div>
-                              <div className="flex items-center gap-1 sm:gap-2 mt-1">
-                                <Badge variant="secondary" className="text-xs px-1 py-0">
-                                  {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
-                                </Badge>
-                                {booking.employee_id && (
-                                  <div className="text-xs text-muted-foreground truncate hidden sm:block">
-                                    {employees.find(e => e.id === booking.employee_id)?.profiles?.first_name}
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="text-xs sm:text-sm font-semibold truncate">
+                                    {booking.profiles?.first_name} {booking.profiles?.last_name}
                                   </div>
-                                )}
+                                  <div className="text-xs text-muted-foreground truncate hidden sm:block">
+                                    {booking.services?.name ? translateServiceName(booking.services.name, language, t) : ''}
+                                  </div>
+                                  <div className="flex items-center gap-1 sm:gap-2 mt-1">
+                                    <Badge variant="secondary" className="text-xs px-1 py-0">
+                                      {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(((booking.total_price_cents || 0) / 100))}
+                                    </Badge>
+                                    {booking.employee_id && (
+                                      <div className="text-xs text-muted-foreground truncate hidden sm:block">
+                                        {employees.find(e => e.id === booking.employee_id)?.profiles?.first_name}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                {/* Botón de tarjeta: rojo si no tiene, azul si tiene */}
+                                <div
+                                  className={cn(
+                                    "p-1 rounded flex items-center justify-center ml-1 flex-shrink-0",
+                                    booking.stripe_payment_method_id 
+                                      ? "bg-blue-500 text-white" 
+                                      : "bg-red-500 text-white"
+                                  )}
+                                  title={booking.stripe_payment_method_id ? "Tarjeta guardada" : "Sin tarjeta guardada"}
+                                >
+                                  <CreditCard className="h-3 w-3" />
+                                </div>
                               </div>
                               <div className="text-xs text-primary font-medium mt-1">
                                 Click para gestionar
@@ -996,27 +1006,18 @@ const SimpleCenterCalendar = () => {
                 <Label htmlFor="editStatus">Cambiar Estado</Label>
                 <Select 
                   value={selectedBooking.status} 
-                  onValueChange={(value: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'requested' | 'new' | 'online') => updateBookingStatus(selectedBooking.id, value)}
+                  onValueChange={(value: 'pending_payment' | 'confirmed' | 'completed' | 'cancelled') => updateBookingStatus(selectedBooking.id, value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="new">🆕 Nueva</SelectItem>
-                    <SelectItem value="requested">📋 Solicitada</SelectItem>
                     <SelectItem value="confirmed">✅ Confirmada</SelectItem>
-                    <SelectItem value="pending">⏳ Pendiente</SelectItem>
-                    <SelectItem value="online">🌐 Online</SelectItem>
+                    <SelectItem value="pending_payment">⏳ Pendiente de pago</SelectItem>
                     <SelectItem value="completed">✔️ Completada</SelectItem>
                     <SelectItem value="cancelled">❌ Cancelada</SelectItem>
-                    <SelectItem value="no_show">❌ No Show</SelectItem>
                   </SelectContent>
                 </Select>
-                {selectedBooking.status === 'no_show' && selectedBooking.payment_status !== 'paid' && (
-                  <p className="text-xs text-amber-600 mt-2">
-                    💡 Puedes cobrar una penalización parcial usando el botón "Cobrar Cita"
-                  </p>
-                )}
               </div>
 
               {/* Employee Assignment */}

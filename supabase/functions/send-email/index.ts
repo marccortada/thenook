@@ -13,6 +13,7 @@ interface SendEmailRequest {
   to: string;
   subject: string;
   message: string;
+  html?: boolean; // Si es true, message ya contiene HTML completo
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -22,15 +23,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, subject, message }: SendEmailRequest = await req.json();
+    const { to, subject, message, html }: SendEmailRequest = await req.json();
 
     console.log("Sending email to:", to, "with subject:", subject);
 
-    const emailResponse = await resend.emails.send({
-      from: "The Nook Madrid <reservas@gnerai.com>",
-      to: [to],
-      subject: subject,
-      html: `
+    // Si html es true, usar el mensaje directamente como HTML
+    // Si no, envolverlo en el formato genérico
+    const emailHtml = html 
+      ? message 
+      : `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
             The Nook Madrid
@@ -43,7 +44,13 @@ const handler = async (req: Request): Promise<Response> => {
             <p>Email: reservas@thenookmadrid.com</p>
           </div>
         </div>
-      `,
+      `;
+
+    const emailResponse = await resend.emails.send({
+      from: "The Nook Madrid <reservas@gnerai.com>",
+      to: [to],
+      subject: subject,
+      html: emailHtml,
     });
 
     console.log("Email sent successfully:", emailResponse);

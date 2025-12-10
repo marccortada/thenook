@@ -2570,6 +2570,7 @@ export type Database = {
     Enums: {
       booking_channel: "web" | "whatsapp" | "email" | "phone"
       booking_status:
+        | "pending_payment"
         | "pending"
         | "confirmed"
         | "completed"
@@ -2715,6 +2716,7 @@ export const Constants = {
     Enums: {
       booking_channel: ["web", "whatsapp", "email", "phone"],
       booking_status: [
+        "pending_payment",
         "pending",
         "confirmed",
         "completed",
