@@ -89,7 +89,9 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       mode: "setup",
       customer: customerId,
+      // Forzar solo tarjeta para evitar opciones adicionales (p.ej. Link)
       payment_method_types: ["card"],
+      locale: "es",
       success_url: `${origin}/pago-configurado?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/asegurar-reserva?booking_id=${booking_id}`,
       setup_intent_data: {

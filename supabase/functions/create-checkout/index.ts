@@ -242,6 +242,9 @@ serve(async (req) => {
       line_items,
       mode: "payment",
       metadata,
+      // Forzar solo tarjeta y evitar selector de divisa / captcha de Link
+      payment_method_types: ["card"],
+      locale: "es",
       payment_intent_data: {
         metadata,
       },
