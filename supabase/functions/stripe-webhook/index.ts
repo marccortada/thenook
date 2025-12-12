@@ -490,7 +490,6 @@ async function sendBookingConfirmationEmail(args: {
   
   // CRITICAL: Solo considerar "paid" si hay un payment_intent real con status succeeded
   // NO confiar en session.payment_status porque puede ser "paid" incluso en setup-only flows
-  const hasPaymentIntent = !!paymentIntent || (session?.payment_intent && typeof session.payment_intent !== "string");
   const hasSetupIntentOnly = !!session?.setup_intent && !hasPaymentIntent;
   const isPaid =
     (paymentIntent?.status === "succeeded") ||

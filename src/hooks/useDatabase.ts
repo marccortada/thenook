@@ -347,6 +347,101 @@ export const useBookings = () => {
         (b: any) => !b.stripe_payment_method_id && b.client_id
       );
       
+      // Primero, intentar recuperar el método de pago directamente desde booking_payment_intents
+      // Esto cubre el caso donde Stripe guardó la tarjeta pero la tabla de bookings no se actualizó
+      const bookingPaymentMethods = new Map<string, { payment_method_id: string; customer_id: string | null; status?: string }>();
+      if (bookingsWithoutPaymentMethod.length > 0) {
+        const bookingIds = bookingsWithoutPaymentMethod
+          .map((b: any) => b.id)
+          .filter(Boolean);
+
+        if (bookingIds.length > 0) {
+          try {
+            const { data: intentRows, error: intentsError } = await (supabase as any)
+              .from('booking_payment_intents')
+              .select('booking_id, stripe_payment_method_id, stripe_customer_id, status, updated_at')
+              .in('booking_id', bookingIds)
+              .not('stripe_payment_method_id', 'is', null)
+              .order('updated_at', { ascending: false, nullsLast: true });
+
+            if (intentsError) {
+              console.warn('Error fetching booking payment intents:', intentsError);
+            } else {
+              (intentRows || []).forEach((row: any) => {
+                const status = (row.status || '').toLowerCase();
+                const isSucceeded = !status || status === 'succeeded';
+                if (isSucceeded && row.booking_id && row.stripe_payment_method_id) {
+                  if (!bookingPaymentMethods.has(row.booking_id)) {
+                    bookingPaymentMethods.set(row.booking_id, {
+                      payment_method_id: row.stripe_payment_method_id,
+                      customer_id: row.stripe_customer_id || null,
+                      status: row.status || 'succeeded'
+                    });
+                  }
+                }
+              });
+            }
+          } catch (err) {
+            console.warn('Error resolving payment methods from intents:', err);
+          }
+        }
+
+        // Persist en base de datos los métodos encontrados en intents para que el icono se actualice en todas las vistas
+        if (bookingPaymentMethods.size > 0) {
+          const bookingsNeedingPersist = bookingsWithNotes.filter(
+            (b: any) =>
+              (!b.stripe_payment_method_id || b.stripe_payment_method_id.trim() === '') &&
+              bookingPaymentMethods.has(b.id)
+          );
+
+          await Promise.all(
+            bookingsNeedingPersist.map(async (b: any) => {
+              const intentData = bookingPaymentMethods.get(b.id);
+              if (!intentData) return;
+              try {
+                await (supabase as any)
+                  .from('bookings')
+                  .update({
+                    stripe_payment_method_id: intentData.payment_method_id,
+                    stripe_customer_id: intentData.customer_id || null,
+                    payment_method_status: intentData.status || 'succeeded',
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', b.id);
+              } catch (persistErr) {
+                console.warn(`No se pudo persistir método de pago para booking ${b.id}:`, persistErr);
+              }
+            })
+          );
+        }
+
+        // Intento extra: llamar a la edge function get-latest-payment-method para bookings que sigan sin tarjeta
+        const bookingsNeedingFunction = bookingsWithoutPaymentMethod
+          .filter((b: any) => !bookingPaymentMethods.has(b.id))
+          .slice(0, 20); // limitar para evitar excesivas invocaciones
+
+        if (bookingsNeedingFunction.length > 0) {
+          await Promise.all(
+            bookingsNeedingFunction.map(async (b: any) => {
+              try {
+                const { data: fnData, error: fnError } = await (supabase as any).functions.invoke('get-latest-payment-method', {
+                  body: { booking_id: b.id }
+                });
+                if (!fnError && fnData?.payment_method_id) {
+                  bookingPaymentMethods.set(b.id, {
+                    payment_method_id: fnData.payment_method_id,
+                    customer_id: fnData.customer_id || null,
+                    status: 'succeeded'
+                  });
+                }
+              } catch (fnErr) {
+                console.warn(`Error invoking get-latest-payment-method for booking ${b.id}:`, fnErr);
+              }
+            })
+          );
+        }
+      }
+      
       if (bookingsWithoutPaymentMethod.length > 0) {
         // Agrupar por client_id para evitar queries duplicadas
         const uniqueClientIds = Array.from(
@@ -385,14 +480,27 @@ export const useBookings = () => {
         // Asignar el método de pago a las reservas que no lo tienen
         const enrichedBookings = bookingsWithNotes.map((booking: any) => {
           // Solo asignar si la reserva NO tiene método de pago (o está vacío/null)
-          if ((!booking.stripe_payment_method_id || booking.stripe_payment_method_id.trim() === '') && booking.client_id) {
-            const clientPaymentMethod = clientPaymentMethods.get(booking.client_id);
-            if (clientPaymentMethod && clientPaymentMethod.payment_method_id) {
+          if (!booking.stripe_payment_method_id || booking.stripe_payment_method_id.trim() === '') {
+            const bookingIntent = bookingPaymentMethods.get(booking.id);
+            if (bookingIntent && bookingIntent.payment_method_id) {
               return {
                 ...booking,
-                stripe_payment_method_id: clientPaymentMethod.payment_method_id,
-                stripe_customer_id: clientPaymentMethod.customer_id || booking.stripe_customer_id
+                stripe_payment_method_id: bookingIntent.payment_method_id,
+                stripe_customer_id: bookingIntent.customer_id || booking.stripe_customer_id,
+                payment_method_status: bookingIntent.status || booking.payment_method_status || 'succeeded'
               };
+            }
+
+            if (booking.client_id) {
+              const clientPaymentMethod = clientPaymentMethods.get(booking.client_id);
+              if (clientPaymentMethod && clientPaymentMethod.payment_method_id) {
+                return {
+                  ...booking,
+                  stripe_payment_method_id: clientPaymentMethod.payment_method_id,
+                  stripe_customer_id: clientPaymentMethod.customer_id || booking.stripe_customer_id,
+                  payment_method_status: booking.payment_method_status || 'succeeded'
+                };
+              }
             }
           }
           return booking;
@@ -413,6 +521,27 @@ export const useBookings = () => {
 
   useEffect(() => {
     fetchBookings();
+
+    // Suscribirse a cambios en booking_payment_intents para refrescar métodos de pago guardados
+    const channel = supabase
+      .channel('booking-payment-intents-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'booking_payment_intents'
+        },
+        () => {
+          // Refresco silencioso para actualizar iconos de tarjeta cuando Stripe devuelve el método
+          fetchBookings({ silent: true });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const createBooking = async (bookingData: Omit<Booking, 'id' | 'created_at' | 'updated_at'>) => {
