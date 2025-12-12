@@ -341,7 +341,66 @@ export const useBookings = () => {
         client_notes: [] // Will be loaded on-demand when viewing booking details
       }));
 
-      setBookings(bookingsWithNotes);
+      // CRITICAL: Para reservas sin stripe_payment_method_id, buscar si el cliente tiene una tarjeta guardada
+      // Esto asegura que el icono muestre el color correcto desde el inicio
+      const bookingsWithoutPaymentMethod = bookingsWithNotes.filter(
+        (b: any) => !b.stripe_payment_method_id && b.client_id
+      );
+      
+      if (bookingsWithoutPaymentMethod.length > 0) {
+        // Agrupar por client_id para evitar queries duplicadas
+        const uniqueClientIds = Array.from(
+          new Set(bookingsWithoutPaymentMethod.map((b: any) => b.client_id).filter(Boolean))
+        );
+
+        // Para cada cliente, buscar su último método de pago guardado
+        const clientPaymentMethods = new Map<string, { payment_method_id: string; customer_id: string | null }>();
+        
+        await Promise.all(
+          uniqueClientIds.map(async (clientId: string) => {
+            try {
+              // Buscar la última reserva del cliente con método de pago guardado
+              const { data: lastBooking } = await (supabase as any)
+                .from('bookings')
+                .select('stripe_payment_method_id, stripe_customer_id, payment_method_status')
+                .eq('client_id', clientId)
+                .not('stripe_payment_method_id', 'is', null)
+                .eq('payment_method_status', 'succeeded')
+                .order('updated_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+              if (lastBooking?.stripe_payment_method_id) {
+                clientPaymentMethods.set(clientId, {
+                  payment_method_id: lastBooking.stripe_payment_method_id,
+                  customer_id: lastBooking.stripe_customer_id || null
+                });
+              }
+            } catch (err) {
+              console.warn(`Error fetching payment method for client ${clientId}:`, err);
+            }
+          })
+        );
+
+        // Asignar el método de pago a las reservas que no lo tienen
+        const enrichedBookings = bookingsWithNotes.map((booking: any) => {
+          if (!booking.stripe_payment_method_id && booking.client_id) {
+            const clientPaymentMethod = clientPaymentMethods.get(booking.client_id);
+            if (clientPaymentMethod) {
+              return {
+                ...booking,
+                stripe_payment_method_id: clientPaymentMethod.payment_method_id,
+                stripe_customer_id: clientPaymentMethod.customer_id || booking.stripe_customer_id
+              };
+            }
+          }
+          return booking;
+        });
+
+        setBookings(enrichedBookings);
+      } else {
+        setBookings(bookingsWithNotes);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching bookings');
     } finally {

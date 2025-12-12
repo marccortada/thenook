@@ -199,7 +199,6 @@ const AdvancedCalendarView = () => {
   const [captureAmountInput, setCaptureAmountInput] = useState<string>('');
   const [penaltyPercentage, setPenaltyPercentage] = useState<number>(100);
   const [paymentLoading, setPaymentLoading] = useState(false);
-  const [restoringPaymentMethod, setRestoringPaymentMethod] = useState(false);
   
   // Form state
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
@@ -295,56 +294,9 @@ const AdvancedCalendarView = () => {
     return '#3B82F6'; // Default blue
   };
 
-  // Si la reserva seleccionada no tiene tarjeta, intenta restaurar una guardada del cliente
-  useEffect(() => {
-    const restorePaymentMethod = async () => {
-      if (!editingBooking || editingBooking.stripe_payment_method_id) return;
-      if (!editingBooking.client_id) return;
-      setRestoringPaymentMethod(true);
-      try {
-        // Use Edge Function directly (RPC function doesn't exist)
-        let paymentMethodId: string | null | undefined;
-        let customerId: string | null | undefined;
-
-        const { data, error } = await supabase.functions.invoke('get-latest-payment-method', {
-          body: { booking_id: editingBooking.id },
-        });
-        if (error) throw error;
-        paymentMethodId = (data as any)?.payment_method_id as string | null | undefined;
-        customerId = (data as any)?.customer_id as string | null | undefined;
-
-        if (paymentMethodId) {
-          setEditingBooking((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  stripe_payment_method_id: paymentMethodId,
-                  stripe_customer_id: customerId || prev.stripe_customer_id,
-                  payment_method_status: 'succeeded',
-                }
-              : prev
-          );
-          setBookings((prev) =>
-            prev.map((b) =>
-              b.id === editingBooking.id
-                ? {
-                    ...b,
-                    stripe_payment_method_id: paymentMethodId,
-                    stripe_customer_id: customerId || b.stripe_customer_id,
-                    payment_method_status: 'succeeded',
-                  }
-                : b
-            )
-          );
-        }
-      } catch (restoreErr) {
-        console.warn('No se pudo restaurar la tarjeta de la reserva', restoreErr);
-      } finally {
-        setRestoringPaymentMethod(false);
-      }
-    };
-    restorePaymentMethod();
-  }, [editingBooking, setBookings]);
+  // NOTA: Ya no necesitamos restaurar el método de pago aquí porque ahora se carga
+  // automáticamente cuando se cargan las reservas en useDatabase.ts
+  // El método de pago del cliente se asigna a todas sus reservas desde el inicio
 
   // Iconos por carril: colores según especificación del cliente
   // Carriles 1 y 2: verde
@@ -1465,19 +1417,11 @@ const AdvancedCalendarView = () => {
         !!editingBooking.stripe_payment_method_id ||
         paymentStatusToSave === 'paid'; // al cobrar con éxito, habrá tarjeta
       if (bookingStatusToSave === 'confirmed' && !hasCard) {
-        if (restoringPaymentMethod) {
-          toast({
-            title: 'Esperando tarjeta',
-            description: 'Estamos recuperando la tarjeta del cliente. Intenta confirmar de nuevo en unos segundos.',
-            variant: 'destructive'
-          });
-        } else {
-          toast({
-            title: 'Falta tarjeta',
-            description: 'No puedes confirmar la reserva sin una tarjeta guardada o un cobro realizado.',
-            variant: 'destructive'
-          });
-        }
+        toast({
+          title: 'Falta tarjeta',
+          description: 'No puedes confirmar la reserva sin una tarjeta guardada o un cobro realizado.',
+          variant: 'destructive'
+        });
         return;
       }
 
@@ -2575,8 +2519,8 @@ Gracias.`;
                                 }}
                              >
                                <div className="flex items-start">
-                                 <div className="flex-1">
-                                   <div className="text-sm font-semibold truncate">{booking.profiles?.first_name} {booking.profiles?.last_name}</div>
+                                 <div className="flex-1 min-w-0">
+                                   <div className="text-sm font-semibold truncate mb-1">{booking.profiles?.first_name} {booking.profiles?.last_name}</div>
                                    <div className="text-xs text-muted-foreground truncate">
                                      {booking.services?.name ? translateServiceName(booking.services.name, language, t) : ''}
                                    </div>
@@ -2594,22 +2538,34 @@ Gracias.`;
                                      </div>
                                    )}
                                  </div>
-                                 <div className="flex items-center gap-1 ml-2">
-                                   {/* Botón de tarjeta: rojo si no tiene, azul si tiene */}
-                                   <div
-                                     className={cn(
-                                       "p-1 rounded flex items-center justify-center",
-                                       booking.stripe_payment_method_id 
-                                         ? "bg-blue-500 text-white" 
-                                         : "bg-red-500 text-white"
-                                     )}
-                                     title={booking.stripe_payment_method_id ? "Tarjeta guardada" : "Sin tarjeta guardada"}
-                                   >
-                                     <CreditCard className="h-3 w-3" />
-                                 </div>
-                                 {booking.payment_status === 'paid' && (
-                                   <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                )}
+                                 <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
+                                   {/* Botón de tarjeta: rojo si no tiene, azul si tiene - A la derecha */}
+                                   {/* Usar verificación estricta para evitar cambios visuales después de renderizar */}
+                                   {(() => {
+                                     const hasCard = Boolean(booking.stripe_payment_method_id && booking.stripe_payment_method_id.trim() !== '');
+                                     return (
+                                       <button
+                                         type="button"
+                                         onClick={(e) => {
+                                           e.stopPropagation();
+                                           handleSlotClick(selectedCenter, lane.id, selectedDate, slotTime);
+                                         }}
+                                         className={cn(
+                                           "p-1.5 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95",
+                                           "border-2 backdrop-blur-sm",
+                                           hasCard
+                                             ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white border-blue-400/50 hover:from-blue-600 hover:to-blue-700"
+                                             : "bg-gradient-to-br from-red-500 to-red-600 text-white border-red-400/50 hover:from-red-600 hover:to-red-700"
+                                         )}
+                                         title={hasCard ? "✓ Tarjeta guardada - Click para gestionar" : "⚠ Sin tarjeta - Click para solicitar"}
+                                       >
+                                         <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} />
+                                       </button>
+                                     );
+                                   })()}
+                                   {booking.payment_status === 'paid' && (
+                                     <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                  )}
                                  </div>
                               </div>
                           </div>
@@ -2940,19 +2896,43 @@ Gracias.`;
                                }}
                              >
                                <div className="flex justify-between items-start h-full">
-                                 <div className="flex-1">
+                                 <div className="flex-1 min-w-0">
                                    <div className="font-medium truncate">
                                      {booking.profiles?.first_name?.[0]}{booking.profiles?.last_name?.[0]}
                                    </div>
                                  </div>
-                                 <div className="flex items-center">
+                                 <div className="flex items-center gap-0.5 flex-shrink-0">
+                                   {/* Botón de tarjeta: rojo si no tiene, azul si tiene - Vista semanal */}
+                                   {/* Usar verificación estricta para evitar cambios visuales después de renderizar */}
+                                   {(() => {
+                                     const hasCard = Boolean(booking.stripe_payment_method_id && booking.stripe_payment_method_id.trim() !== '');
+                                     return (
+                                       <button
+                                         type="button"
+                                         onClick={(e) => {
+                                           e.stopPropagation();
+                                           handleSlotClick(selectedCenter, lane.id, date, slotDateTime);
+                                         }}
+                                         className={cn(
+                                           "p-0.5 rounded flex items-center justify-center flex-shrink-0 transition-all duration-200 hover:scale-110",
+                                           "border",
+                                           hasCard
+                                             ? "bg-blue-500 text-white border-blue-600"
+                                             : "bg-red-500 text-white border-red-600"
+                                         )}
+                                         title={hasCard ? "✓ Tarjeta guardada" : "⚠ Sin tarjeta"}
+                                       >
+                                         <CreditCard className="h-2 w-2" strokeWidth={2.5} />
+                                       </button>
+                                     );
+                                   })()}
                                    {booking.payment_status === 'paid' && (
-                                     <CheckCircle2 className="h-2 w-2 text-green-600" />
+                                     <CheckCircle2 className="h-2 w-2 text-green-600 flex-shrink-0" />
                                    )}
                                    <Button
                                      variant="ghost"
                                      size="sm"
-                                     className="h-3 w-3 p-0 hover:bg-red-500 hover:text-white ml-1"
+                                     className="h-3 w-3 p-0 hover:bg-red-500 hover:text-white ml-0.5"
                                      onClick={(e) => {
                                        e.stopPropagation();
                                        deleteBooking(booking.id);
@@ -3361,14 +3341,9 @@ Gracias.`;
           <p className="text-sm text-muted-foreground mt-1">
             Reserva del {format(parseISO(editingBooking.booking_datetime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
           </p>
-          {!editingBooking.stripe_payment_method_id && !restoringPaymentMethod && (
+          {!editingBooking.stripe_payment_method_id && (
             <p className="text-xs text-amber-600 mt-2">
               No hay tarjeta guardada para esta reserva. Genera un enlace o registra el cobro manualmente.
-            </p>
-          )}
-          {restoringPaymentMethod && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Buscando la tarjeta guardada del cliente...
             </p>
           )}
         </div>

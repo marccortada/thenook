@@ -838,17 +838,18 @@ const MobileCalendarView: React.FC<MobileCalendarViewProps> = ({
                                   </div>
                                 )}
                               </div>
-                              {/* Botón de tarjeta: rojo si no tiene, azul si tiene */}
+                              {/* Botón de tarjeta: rojo si no tiene, azul si tiene - Diseño mejorado */}
                               <div
                                 className={cn(
-                                  "p-1 rounded flex items-center justify-center ml-1 flex-shrink-0",
-                                  booking.stripe_payment_method_id 
-                                    ? "bg-blue-500 text-white" 
-                                    : "bg-red-500 text-white"
+                                  "p-1.5 rounded-lg flex items-center justify-center ml-1 flex-shrink-0 min-w-[28px] min-h-[28px] shadow-sm border-2 backdrop-blur-sm",
+                                  "bg-gradient-to-br",
+                                  booking.stripe_payment_method_id
+                                    ? "from-blue-500 to-blue-600 text-white border-blue-400/50"
+                                    : "from-red-500 to-red-600 text-white border-red-400/50"
                                 )}
-                                title={booking.stripe_payment_method_id ? "Tarjeta guardada" : "Sin tarjeta guardada"}
+                                title={booking.stripe_payment_method_id ? "✓ Tarjeta guardada" : "⚠ Sin tarjeta guardada"}
                               >
-                                <CreditCard className="h-3 w-3" />
+                                <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} />
                               </div>
                             </div>
                           </div>
