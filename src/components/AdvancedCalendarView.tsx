@@ -34,7 +34,8 @@ import {
   CreditCard,
   DollarSign,
   Send,
-  MessageSquare
+  MessageSquare,
+  ExternalLink
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -1368,13 +1369,24 @@ const AdvancedCalendarView = () => {
 
       // Update client profile if requested
       if (editClientId) {
-        const [first, ...rest] = editName.trim().split(' ');
-        await updateClient(editClientId, {
-          first_name: first || undefined,
-          last_name: rest.join(' ') || undefined,
-          phone: editPhone || undefined,
-          email: editEmail || undefined,
-        });
+        try {
+          const [first, ...rest] = editName.trim().split(' ');
+          await updateClient(editClientId, {
+            first_name: first || undefined,
+            last_name: rest.join(' ') || undefined,
+            phone: editPhone || undefined,
+            email: editEmail || undefined,
+          });
+        } catch (clientError: any) {
+          // Si hay error al actualizar el cliente, mostrar el error y no continuar
+          const errorMessage = clientError?.message || 'No se pudo actualizar los datos del cliente';
+          toast({
+            title: 'Error al actualizar cliente',
+            description: errorMessage,
+            variant: 'destructive'
+          });
+          return; // No continuar con la actualización de la reserva si falla la actualización del cliente
+        }
       }
 
       // Build booking updates
@@ -1425,9 +1437,41 @@ const AdvancedCalendarView = () => {
         return;
       }
 
+      // Normalizar el estado de reserva para asegurar que sea válido
+      // Nota: Si pending_payment no existe en el enum de la BD, se usará 'pending'
+      const normalizeBookingStatus = (status: string): string => {
+        const normalized = status.toLowerCase();
+        // Mapear pending_payment a pending si es necesario (por compatibilidad)
+        // Los estados válidos según las migraciones son:
+        // 'pending', 'confirmed', 'completed', 'cancelled', 'no_show', 'requested', 'new', 'online'
+        // Y posiblemente 'pending_payment' si la migración se aplicó
+        const statusMap: Record<string, string> = {
+          'pending_payment': 'pending', // Mapear a pending por defecto si no existe en BD
+          'pending': 'pending',
+          'confirmed': 'confirmed',
+          'completed': 'completed',
+          'cancelled': 'cancelled',
+          'no_show': 'no_show',
+          'requested': 'requested',
+          'new': 'new',
+          'online': 'online'
+        };
+        return statusMap[normalized] || 'pending';
+      };
+
+      // Normalizar el estado de pago
+      const normalizePaymentStatus = (status: string): string => {
+        const validStatuses = ['pending', 'paid', 'failed', 'refunded', 'partial_refund'];
+        const normalized = status.toLowerCase();
+        return validStatuses.includes(normalized) ? normalized : 'pending';
+      };
+
+      const normalizedBookingStatus = normalizeBookingStatus(bookingStatusToSave);
+      const normalizedPaymentStatus = normalizePaymentStatus(paymentStatusToSave);
+
       const updates: any = {
         notes: editNotes || null,
-        status: bookingStatusToSave,
+        status: normalizedBookingStatus,
         service_id: editServiceId || editingBooking.service_id,
         duration_minutes: editDuration || editingBooking.duration_minutes,
         booking_datetime: newDateTime.toISOString(),
@@ -1437,20 +1481,42 @@ const AdvancedCalendarView = () => {
       // o si viene como override (por ejemplo, al pulsar "Cobrar").
       const allowPaymentUpdate = paymentEditUnlocked || overrides?.paymentStatus !== undefined;
       if (allowPaymentUpdate) {
-        updates.payment_status = paymentStatusToSave;
+        updates.payment_status = normalizedPaymentStatus;
         // Si se marca como pagado, automáticamente actualizar el estado de reserva
         // PERO no cambiar si el estado es "no_show" (ya protegido arriba)
-        if (paymentStatusToSave === 'paid' && bookingStatusToSave === 'pending_payment') {
+        if (normalizedPaymentStatus === 'paid' && normalizedBookingStatus === 'pending_payment') {
+          updates.status = 'confirmed';
+        } else if (normalizedPaymentStatus === 'paid' && normalizedBookingStatus === 'pending') {
           updates.status = 'confirmed';
         }
       }
       if (editClientId) updates.client_id = editClientId;
 
-      const { error } = await supabase
+      // Limpiar campos undefined o null innecesarios
+      Object.keys(updates).forEach(key => {
+        if (updates[key] === undefined) {
+          delete updates[key];
+        }
+      });
+
+      console.log('Updating booking with:', { id: editingBooking.id, updates });
+
+      const { error, data } = await supabase
         .from('bookings')
         .update(updates)
-        .eq('id', editingBooking.id);
-      if (error) throw error;
+        .eq('id', editingBooking.id)
+        .select();
+      
+      if (error) {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          updates
+        });
+        throw error;
+      }
 
       if (overrides?.paymentStatus) setEditPaymentStatus(overrides.paymentStatus);
       if (overrides?.bookingStatus) setEditBookingStatus(overrides.bookingStatus);
@@ -1557,10 +1623,79 @@ const AdvancedCalendarView = () => {
 
       const to = editingBooking.profiles?.email;
       if (to) {
-        const message = `Hola,\n\nHemos generado un enlace de pago para tu cita en The Nook Madrid.\nImporte: ${(minCents / 100).toFixed(2)}€.\n\nPor favor completa el pago aquí: ${checkoutUrl}\n\nGracias.`;
+        // Obtener información para el correo
+        const clientName = [
+          editingBooking.profiles?.first_name,
+          editingBooking.profiles?.last_name,
+        ].filter(Boolean).join(' ') || 'Cliente';
+        
+        const serviceName = editingBooking.services?.name || 'Tratamiento';
+        const amountFormatted = (minCents / 100).toFixed(2);
+        
+        // Formatear fecha si está disponible
+        let formattedDate = '';
+        if (editingBooking.booking_datetime) {
+          const bookingDate = parseISO(editingBooking.booking_datetime);
+          formattedDate = format(bookingDate, "EEEE d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
+        }
+        
+        // Crear HTML del correo con el mismo estilo que el de confirmación
+        const spanishBody = `<p>Hola ${clientName}!</p>
+<p>Hemos generado un enlace de pago para tu cita en <strong>THE NOOK Madrid</strong>.</p>
+${formattedDate ? `<p><strong>Fecha de la cita:</strong> ${formattedDate}</p>` : ''}
+${serviceName !== 'Tratamiento' ? `<p><strong>Tratamiento:</strong> ${serviceName}</p>` : ''}
+<p><strong>Importe a pagar:</strong> ${amountFormatted}€</p>
+<p style="margin:24px 0;">
+<a href="${checkoutUrl}" target="_blank" style="color:#fff !important; text-decoration:none; background:#424CB8; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-block; font-size:16px;">Completar el pago</a>
+</p>
+<p style="color:#666; font-size:14px; margin-top:24px;">
+O copia y pega este enlace en tu navegador:<br>
+<a href="${checkoutUrl}" style="color:#1A6AFF; word-break:break-all;">${checkoutUrl}</a>
+</p>
+<hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
+<p style="font-size:13px; color:#666;">
+<strong>THE NOOK Madrid</strong><br>
+911 481 474 / 622 360 922<br>
+<a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a>
+</p>`;
+
+        const emailHtml = `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Enlace de pago de tu cita - The Nook Madrid</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background:#f8f9fb; color:#111;">
+<center style="width:100%; background:#f8f9fb;">
+<table role="presentation" width="100%" style="max-width:600px; margin:auto; background:#ffffff; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.08); border-collapse:separate;">
+<tr>
+<td style="background:linear-gradient(135deg,#424CB8,#1A6AFF); color:#fff; text-align:center; padding:24px; border-radius:12px 12px 0 0;">
+<h1 style="margin:0; font-size:22px;">Enlace de pago de tu cita</h1>
+</td>
+</tr>
+<tr>
+<td style="padding:24px;">
+${spanishBody}
+</td>
+</tr>
+</table>
+<p style="font-size:11px; color:#9ca3af; margin:20px auto; max-width:600px;">
+© ${new Date().getFullYear()} THE NOOK Madrid — Este correo se ha generado automáticamente.<br>
+Si no solicitaste este enlace de pago, por favor contáctanos.
+</p>
+</center>
+</body>
+</html>`;
+        
         try {
           await (supabase as any).functions.invoke('send-email', {
-            body: { to, subject: 'Enlace de pago de tu cita - The Nook Madrid', message }
+            body: { 
+              to, 
+              subject: 'Enlace de pago de tu cita - The Nook Madrid', 
+              message: emailHtml,
+              html: true
+            }
           });
         } catch (mailErr) {
           console.warn('No se pudo enviar el email con el link de pago:', mailErr);
@@ -3919,6 +4054,22 @@ Gracias.`;
                       </PopoverContent>
                     </Popover>
                   )}
+                </div>
+              )}
+              
+              {/* Send payment link button */}
+              {editingBooking && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => sendPaymentLinkFallback()}
+                    disabled={paymentLoading || !editingBooking}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    {paymentLoading ? 'Generando...' : 'Enviar Enlace de Pago'}
+                  </Button>
                 </div>
               )}
               

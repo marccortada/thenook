@@ -20,21 +20,39 @@ export default function PaymentSetupSuccess() {
 
   // Stripe pasa el session_id en la URL, necesitamos obtener el setup_intent desde la sesión
   const sessionId = searchParams.get('session_id');
+  const errorParam = searchParams.get('error');
+  const errorDescription = searchParams.get('error_description');
 
   useEffect(() => {
-    console.log('PaymentSetupSuccess - sessionId:', sessionId);
-    console.log('PaymentSetupSuccess - all search params:', Object.fromEntries(searchParams.entries()));
+    console.log('[PaymentSetupSuccess] Component mounted/updated');
+    console.log('[PaymentSetupSuccess] sessionId:', sessionId);
+    console.log('[PaymentSetupSuccess] errorParam:', errorParam);
+    console.log('[PaymentSetupSuccess] errorDescription:', errorDescription);
+    console.log('[PaymentSetupSuccess] all search params:', Object.fromEntries(searchParams.entries()));
+    
+    // Si hay un parámetro de error en la URL, mostrar error directamente
+    if (errorParam || errorDescription) {
+      console.log('[PaymentSetupSuccess] Error detected in URL, showing error message');
+      setLoading(false);
+      setSuccess(false);
+      const errorMsg = errorDescription || errorParam || 'Hubo un error al procesar tu tarjeta. Por favor, intenta de nuevo o contáctanos.';
+      setErrorMessage(errorMsg);
+      loadCenterData();
+      return;
+    }
     
     if (sessionId) {
+      console.log('[PaymentSetupSuccess] sessionId found, calling confirmPaymentMethod');
       confirmPaymentMethod();
     } else {
+      console.log('[PaymentSetupSuccess] No sessionId found in URL');
       // Si no hay session_id en la URL, mostrar error
       setLoading(false);
       setSuccess(false);
-      setErrorMessage('No se encontró información de la sesión en la URL. Por favor, intenta de nuevo.');
+      setErrorMessage('No se encontró información de la sesión en la URL. Si cancelaste el proceso, puedes intentar de nuevo. Si el problema persiste, por favor contáctanos.');
       loadCenterData();
     }
-  }, [sessionId]);
+  }, [sessionId, errorParam, errorDescription]);
 
   const fetchBookingCenter = async (intentId: string) => {
     try {
@@ -113,9 +131,11 @@ export default function PaymentSetupSuccess() {
 
   const confirmPaymentMethod = async () => {
     try {
-      console.log('confirmPaymentMethod - sessionId:', sessionId);
+      console.log('[confirmPaymentMethod] Starting...');
+      console.log('[confirmPaymentMethod] sessionId:', sessionId);
       
       if (!sessionId) {
+        console.error('[confirmPaymentMethod] No sessionId provided');
         setSuccess(false);
         setErrorMessage('No se encontró el identificador de la sesión en la URL.');
         setLoading(false);
@@ -126,12 +146,20 @@ export default function PaymentSetupSuccess() {
       let error: any = null;
 
       try {
+        console.log('[confirmPaymentMethod] Invoking confirm-payment-method function...');
+        console.log('[confirmPaymentMethod] Request body:', { session_id: sessionId });
+        
         // Pasar session_id directamente, la función lo manejará
         const result = await supabase.functions.invoke('confirm-payment-method', {
           body: { session_id: sessionId }
         });
+        
         data = result.data;
         error = result.error;
+        
+        console.log('[confirmPaymentMethod] Function response received');
+        console.log('[confirmPaymentMethod] Response data:', JSON.stringify(data, null, 2));
+        console.log('[confirmPaymentMethod] Response error:', JSON.stringify(error, null, 2));
       } catch (invokeError: any) {
         console.error('Exception invoking confirm-payment-method:', invokeError);
         console.error('Error details:', {
@@ -204,10 +232,39 @@ export default function PaymentSetupSuccess() {
         return;
       }
 
-      // Verificar que el status sea "succeeded"
-      if (data?.success && data?.status === 'succeeded') {
+      // Verificar que se haya guardado correctamente
+      // Si hay payment_method_id, significa que la tarjeta se guardó, incluso si el status no es 'succeeded' todavía
+      console.log('[confirmPaymentMethod] Checking response:', {
+        success: data?.success,
+        status: data?.status,
+        payment_method_id: data?.payment_method_id,
+        error: data?.error
+      });
+      
+      if (data?.success && (data?.status === 'succeeded' || data?.payment_method_id)) {
+        console.log('[confirmPaymentMethod] SUCCESS - Payment method confirmed');
         setSuccess(true);
+        
+        // Verificar en la base de datos que realmente se guardó
+        try {
+          const { data: bookingCheck } = await supabase
+            .from('bookings')
+            .select('id, stripe_payment_method_id, payment_method_status')
+            .eq('id', data?.booking_id || '')
+            .single();
+          
+          console.log('[confirmPaymentMethod] Database verification:', bookingCheck);
+          
+          if (bookingCheck?.stripe_payment_method_id) {
+            console.log('[confirmPaymentMethod] Confirmed: Payment method saved in database');
+          } else {
+            console.warn('[confirmPaymentMethod] WARNING: Payment method not found in database yet');
+          }
+        } catch (verifyError) {
+          console.error('[confirmPaymentMethod] Error verifying in database:', verifyError);
+        }
       } else {
+        console.error('[confirmPaymentMethod] FAILED - Response indicates failure:', data);
         setSuccess(false);
         setErrorMessage(data?.error || 'La tarjeta no se pudo guardar correctamente. Por favor, intenta de nuevo.');
       }
@@ -265,11 +322,11 @@ export default function PaymentSetupSuccess() {
                   Tu tarjeta ha sido registrada con éxito. El administrador realizará el cobro posteriormente.
                 </p>
                 <Button 
-                  onClick={() => window.location.href = 'https://thenook.gnerai.com'}
+                  onClick={() => window.location.href = 'https://www.thenookmadrid.com/'}
                   className="w-full h-12 text-lg"
                   size="lg"
                 >
-                  Ir a la página
+                  Ir a la página de inicio
                 </Button>
               </div>
             </CardContent>
@@ -284,17 +341,61 @@ export default function PaymentSetupSuccess() {
                 <h2 className="text-2xl font-bold text-red-800 mb-2">
                   Error al guardar la tarjeta
                 </h2>
-                <p className="text-red-700 mb-6">
-                  {errorMessage || 'No se pudo guardar la tarjeta. Por favor, intenta de nuevo.'}
-                </p>
-                <Button 
-                  onClick={() => window.location.href = 'https://thenook.gnerai.com'}
-                  className="w-full h-12 text-lg"
-                  size="lg"
-                  variant="outline"
-                >
-                  Ir a la página
-                </Button>
+                <div className="text-red-700 mb-6 space-y-3">
+                  <p className="font-medium">
+                    {errorMessage || 'No se pudo guardar la tarjeta. Por favor, intenta de nuevo.'}
+                  </p>
+                  <div className="bg-white/50 rounded-lg p-4 mt-4">
+                    <p className="text-sm font-semibold text-red-900 mb-2">¿Necesitas ayuda?</p>
+                    <p className="text-sm text-red-800 mb-3">
+                      Si el problema persiste, por favor contáctanos y te ayudaremos a resolverlo:
+                    </p>
+                    <div className="text-sm text-red-800 space-y-1">
+                      <p>
+                        <strong>📧 Email:</strong>{' '}
+                        <a href="mailto:reservas@thenookmadrid.com" className="underline hover:text-red-900">
+                          reservas@thenookmadrid.com
+                        </a>
+                      </p>
+                      <p>
+                        <strong>📞 Teléfono:</strong>{' '}
+                        <a href="tel:911481474" className="underline hover:text-red-900">
+                          911 481 474
+                        </a>
+                      </p>
+                      <p>
+                        <strong>💬 WhatsApp:</strong>{' '}
+                        <a href="https://wa.me/34622360922" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-900">
+                          +34 622 360 922
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Button 
+                    onClick={() => window.location.href = 'https://www.thenookmadrid.com/'}
+                    className="w-full h-12 text-lg"
+                    size="lg"
+                    variant="outline"
+                  >
+                    Ir a la página de inicio
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      const bookingId = searchParams.get('booking_id');
+                      if (bookingId) {
+                        window.location.href = `/asegurar-reserva?booking_id=${bookingId}`;
+                      } else {
+                        window.location.href = 'https://www.thenookmadrid.com/';
+                      }
+                    }}
+                    className="w-full h-12 text-lg"
+                    size="lg"
+                  >
+                    Intentar de nuevo
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

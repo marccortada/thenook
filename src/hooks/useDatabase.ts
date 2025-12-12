@@ -384,9 +384,10 @@ export const useBookings = () => {
 
         // Asignar el método de pago a las reservas que no lo tienen
         const enrichedBookings = bookingsWithNotes.map((booking: any) => {
-          if (!booking.stripe_payment_method_id && booking.client_id) {
+          // Solo asignar si la reserva NO tiene método de pago (o está vacío/null)
+          if ((!booking.stripe_payment_method_id || booking.stripe_payment_method_id.trim() === '') && booking.client_id) {
             const clientPaymentMethod = clientPaymentMethods.get(booking.client_id);
-            if (clientPaymentMethod) {
+            if (clientPaymentMethod && clientPaymentMethod.payment_method_id) {
               return {
                 ...booking,
                 stripe_payment_method_id: clientPaymentMethod.payment_method_id,

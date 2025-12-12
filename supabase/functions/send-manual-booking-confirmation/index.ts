@@ -153,59 +153,51 @@ serve(async (req) => {
     const cancellationLink = 'https://www.thenookmadrid.com/politica-de-cancelaciones/';
     const year = new Date().getFullYear();
 
-    const spanishBody = `
-  <p>Hola ${clientName}!</p>
-  <p>Has reservado correctamente tu tratamiento en <strong>${centerHeading}</strong>.</p>
-  <p><strong>Estos son los detalles de la reserva:</strong></p>
-  <p><strong>Tratamiento:</strong> ${serviceName}<br/>
-     <strong>Fecha:</strong> ${formattedDate}</p>
-  <p><strong>Dirección:</strong><br>${addressLineEs}</p>
-  <p>Estamos aquí 👉 <a href="${mapLink}" target="_blank" style="color:#fff !important; text-decoration:none; background:#424CB8; padding:10px 16px; border-radius:8px; font-weight:700; display:inline-block;">Ver ubicación en el mapa</a></p>
-  <p>Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de reserva y nuestra Política de Cancelación.</p>
-  <p>Es aconsejable llegar al centro cinco minutos antes de la cita. Rogamos máxima puntualidad, al haber otras citas después de la vuestra, si llegáis tarde, quizás no podamos realizar el tratamiento completo.</p>
-  <p>En caso de estar embarazada, por favor háznoslo saber con antelación a la cita.</p>
-  <p>En este email tienes la dirección del centro reservado, la hora de la cita y el tratamiento elegido. Revisa bien esta información, The Nook no se hace responsable si acudes al centro equivocado o a una hora distinta.</p>
-  <p>Te recomendamos leer nuestras condiciones de reserva, compra y cancelación en la Política de Cancelación completa aquí:<br><a href="${cancellationLink}" style="color:#1A6AFF;">${cancellationLink}</a></p>
-  <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
-  <p><strong>${centerHeading}</strong><br>
-  911 481 474 / 622 360 922<br>
-  <a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a></p>
-  `;
+    const spanishBody = `<p>Hola ${clientName}!</p>
+<p>Has reservado correctamente tu tratamiento en <strong>${centerHeading}</strong>.</p>
+<p><strong>Estos son los detalles de la reserva:</strong></p>
+<p><strong>Tratamiento:</strong> ${serviceName}<br/>
+<strong>Fecha:</strong> ${formattedDate}</p>
+<p><strong>Dirección:</strong><br>${addressLineEs}</p>
+<p>Estamos aquí 👉 <a href="${mapLink}" target="_blank" style="color:#fff !important; text-decoration:none; background:#424CB8; padding:10px 16px; border-radius:8px; font-weight:700; display:inline-block;">Ver ubicación en el mapa</a></p>
+<p>Este email es una confirmación de tu reserva. Al efectuar esta reserva aceptas nuestras condiciones de reserva y nuestra Política de Cancelación.</p>
+<p>Es aconsejable llegar al centro cinco minutos antes de la cita. Rogamos máxima puntualidad, al haber otras citas después de la vuestra, si llegáis tarde, quizás no podamos realizar el tratamiento completo.</p>
+<p>En caso de estar embarazada, por favor háznoslo saber con antelación a la cita.</p>
+<p>En este email tienes la dirección del centro reservado, la hora de la cita y el tratamiento elegido. Revisa bien esta información, The Nook no se hace responsable si acudes al centro equivocado o a una hora distinta.</p>
+<p>Te recomendamos leer nuestras condiciones de reserva, compra y cancelación en la Política de Cancelación completa aquí:<br><a href="${cancellationLink}" style="color:#1A6AFF;">${cancellationLink}</a></p>
+<hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
+<p><strong>${centerHeading}</strong><br>
+911 481 474 / 622 360 922<br>
+<a href="mailto:reservas@thenookmadrid.com" style="color:#1A6AFF;">reservas@thenookmadrid.com</a></p>`;
 
-    const emailHtml = `
-<!doctype html>
+    const emailHtml = `<!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8">
-    <title>${subject}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-  </head>
-
-  <body style="margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background:#f8f9fb; color:#111;">
-    <center style="width:100%; background:#f8f9fb;">
-      <table role="presentation" width="100%" style="max-width:600px; margin:auto; background:#ffffff; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.08); border-collapse:separate;">
-        <tr>
-          <td style="background:linear-gradient(135deg,#424CB8,#1A6AFF); color:#fff; text-align:center; padding:24px; border-radius:12px 12px 0 0;">
-            <h1 style="margin:0; font-size:22px;">
-              Reserva confirmada en THE NOOK
-            </h1>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:24px;">
-            ${spanishBody}
-          </td>
-        </tr>
-      </table>
-
-      <p style="font-size:11px; color:#9ca3af; margin:20px auto; max-width:600px;">
-        © ${year} THE NOOK Madrid — Este correo se ha generado automáticamente.<br>
-        Si no hiciste esta reserva, por favor contáctanos.
-      </p>
-    </center>
-  </body>
-</html>
-`;
+<head>
+<meta charset="utf-8">
+<title>${subject}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background:#f8f9fb; color:#111;">
+<center style="width:100%; background:#f8f9fb;">
+<table role="presentation" width="100%" style="max-width:600px; margin:auto; background:#ffffff; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.08); border-collapse:separate;">
+<tr>
+<td style="background:linear-gradient(135deg,#424CB8,#1A6AFF); color:#fff; text-align:center; padding:24px; border-radius:12px 12px 0 0;">
+<h1 style="margin:0; font-size:22px;">Reserva confirmada en THE NOOK</h1>
+</td>
+</tr>
+<tr>
+<td style="padding:24px;">
+${spanishBody}
+</td>
+</tr>
+</table>
+<p style="font-size:11px; color:#9ca3af; margin:20px auto; max-width:600px;">
+© ${year} THE NOOK Madrid — Este correo se ha generado automáticamente.<br>
+Si no hiciste esta reserva, por favor contáctanos.
+</p>
+</center>
+</body>
+</html>`;
 
     const sender = buildSender(centerHeading);
 

@@ -98,30 +98,56 @@ export const useClients = () => {
 
   const updateClient = async (clientId: string, updates: Partial<Client>) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: updates.first_name,
-          last_name: updates.last_name,
-          email: updates.email,
-          phone: updates.phone,
-        })
-        .eq('id', clientId);
+      // Si se está actualizando el email, verificar que no exista en otro perfil
+      if (updates.email) {
+        const { data: existingProfile, error: checkError } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .eq('email', updates.email)
+          .maybeSingle();
 
-      if (error) throw error;
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+          throw checkError;
+        }
+
+        // Si el email existe y pertenece a otro cliente, mostrar error
+        if (existingProfile && existingProfile.id !== clientId) {
+          throw new Error(`El email ${updates.email} ya está registrado en otro cliente. Por favor, usa un email diferente.`);
+        }
+      }
+
+      // Preparar los campos a actualizar (solo incluir los que tienen valor)
+      const updateData: any = {};
+      if (updates.first_name !== undefined) updateData.first_name = updates.first_name;
+      if (updates.last_name !== undefined) updateData.last_name = updates.last_name;
+      if (updates.email !== undefined) updateData.email = updates.email;
+      if (updates.phone !== undefined) updateData.phone = updates.phone;
+
+      // Solo actualizar si hay campos para actualizar
+      if (Object.keys(updateData).length > 0) {
+        const { error } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', clientId);
+
+        if (error) throw error;
+      }
 
       await fetchClients(); // Refresh the list
       toast({
         title: "Éxito",
         description: "Cliente actualizado correctamente",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating client:', error);
+      const errorMessage = error?.message || 'No se pudo actualizar el cliente';
       toast({
         title: "Error",
-        description: "No se pudo actualizar el cliente",
+        description: errorMessage,
         variant: "destructive",
       });
+      // Re-throw para que el código que llama pueda manejar el error
+      throw error;
     }
   };
 

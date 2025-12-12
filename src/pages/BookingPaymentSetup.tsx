@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Check, CreditCard, Calendar, Clock, User, MapPin, Shield } from "lucide-react";
+import { Check, CreditCard, Calendar, Clock, User, MapPin, Shield, X } from "lucide-react";
 
 interface BookingDetails {
   id: string;
@@ -33,16 +33,28 @@ export default function BookingPaymentSetup() {
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const setupIntentId = searchParams.get('setup_intent');
   const clientSecret = searchParams.get('client_secret');
   const bookingIdParam = searchParams.get('booking_id');
+  const cancelled = searchParams.get('cancelled');
+  const errorParam = searchParams.get('error');
 
 useEffect(() => {
+  // Si hay un error o cancelación, mostrar mensaje
+  if (cancelled === 'true' || errorParam) {
+    setErrorMessage(
+      cancelled === 'true' 
+        ? 'Has cancelado el proceso de guardar la tarjeta. Puedes intentar de nuevo cuando estés listo.'
+        : `Error al procesar la tarjeta: ${errorParam || 'Error desconocido'}. Por favor, intenta de nuevo o contáctanos.`
+    );
+  }
+  
   if (setupIntentId || bookingIdParam) {
     fetchBookingDetails();
   }
-}, [setupIntentId, bookingIdParam]);
+}, [setupIntentId, bookingIdParam, cancelled, errorParam]);
 
 const fetchBookingDetails = async () => {
   try {
@@ -210,6 +222,49 @@ const handlePaymentSetup = async () => {
                 <Check className="h-6 w-6" />
                 <div>
                   <h3 className="font-semibold">¡Reserva asegurada!</h3>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error Message */}
+        {errorMessage && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 text-red-700">
+                  <X className="h-6 w-6 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-2">Error al guardar la tarjeta</h3>
+                    <p className="text-sm mb-4">{errorMessage}</p>
+                    <div className="bg-white/50 rounded-lg p-4">
+                      <p className="text-sm font-semibold text-red-900 mb-2">¿Necesitas ayuda?</p>
+                      <p className="text-sm text-red-800 mb-3">
+                        Si el problema persiste, contáctanos y te ayudaremos:
+                      </p>
+                      <div className="text-sm text-red-800 space-y-1">
+                        <p>
+                          <strong>📧 Email:</strong>{' '}
+                          <a href="mailto:reservas@thenookmadrid.com" className="underline hover:text-red-900">
+                            reservas@thenookmadrid.com
+                          </a>
+                        </p>
+                        <p>
+                          <strong>📞 Teléfono:</strong>{' '}
+                          <a href="tel:911481474" className="underline hover:text-red-900">
+                            911 481 474
+                          </a>
+                        </p>
+                        <p>
+                          <strong>💬 WhatsApp:</strong>{' '}
+                          <a href="https://wa.me/34622360922" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-900">
+                            +34 622 360 922
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>

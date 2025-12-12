@@ -35,9 +35,10 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("Falta STRIPE_SECRET_KEY en Supabase Secrets");
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    const originHeader = req.headers.get("origin");
+    // CRITICAL: Always use production URL for redirects, not the origin header
+    // This ensures redirects work from any device, not just localhost
     const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://www.thenookmadrid.com";
-    const origin = originHeader && /^https?:\/\//.test(originHeader) ? originHeader : publicSiteUrl;
+    const origin = publicSiteUrl;
 
     // Get booking and client email
     const { data: booking, error: bErr } = await supabase
@@ -49,7 +50,7 @@ serve(async (req) => {
 
     const { data: profile, error: pErr } = await supabase
       .from("profiles")
-      .select("email, first_name, last_name")
+      .select("email, first_name, last_name, phone")
       .eq("id", booking.client_id)
       .single();
     if (pErr || !profile?.email) throw new Error("Email del cliente no disponible");
@@ -61,8 +62,20 @@ serve(async (req) => {
       const customer = await stripe.customers.create({
         email: profile.email,
         name: `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() || undefined,
+        phone: profile.phone || undefined,
       });
       customerId = customer.id;
+    } else {
+      // Update existing customer with phone if available
+      if (profile.phone) {
+        try {
+          await stripe.customers.update(customerId, {
+            phone: profile.phone,
+          });
+        } catch (updateErr) {
+          log("WARN: no se pudo actualizar el teléfono del customer", updateErr);
+        }
+      }
     }
 
     // Persist Stripe customer on the booking for futuras operaciones
@@ -85,19 +98,53 @@ serve(async (req) => {
         undefined,
     };
 
-    // Create Checkout session in setup mode
+    // Include phone in metadata for association
+    const clientPhone = profile.phone || undefined;
+
+    // Create Checkout session in setup mode (0€ - solo para guardar tarjeta)
+    // Habilitar tarjeta, Apple Pay y Google Pay
+    // En modo "setup", el monto es automáticamente 0€ - no se cobra nada
+    // NOTA: Google Pay aparece automáticamente si:
+    // - El navegador es compatible (Chrome, Safari, Edge)
+    // - El dispositivo tiene Google Wallet configurado
+    // - La cuenta de Stripe tiene Google Pay habilitado
+    // - El dominio está verificado en Stripe
     const session = await stripe.checkout.sessions.create({
       mode: "setup",
       customer: customerId,
-      // Forzar solo tarjeta para evitar opciones adicionales (p.ej. Link)
+      // Habilitar tarjeta - Apple Pay y Google Pay se muestran automáticamente si están disponibles
       payment_method_types: ["card"],
       locale: "es",
-      success_url: `${origin}/pago-configurado?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/asegurar-reserva?booking_id=${booking_id}`,
-      setup_intent_data: {
-        metadata: { booking_id, ...centerMeta },
+      // Configuración para requerir 3D Secure (confirmación del banco)
+      // Esto asegura que la tarjeta solo se guarde después de que el banco confirme
+      payment_method_options: {
+        card: {
+          // Requerir 3D Secure para confirmar con el banco antes de guardar la tarjeta
+          request_three_d_secure: 'any', // 'any' = siempre requerir 3D Secure si está disponible
+        }
       },
-      metadata: { intent: "booking_setup", booking_id, ...centerMeta },
+      success_url: `${origin}/pago-configurado?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/asegurar-reserva?booking_id=${booking_id}&cancelled=true`,
+      setup_intent_data: {
+        metadata: { 
+          booking_id, 
+          ...centerMeta,
+          client_phone: clientPhone || '',
+        },
+      },
+      metadata: { 
+        intent: "booking_setup", 
+        booking_id, 
+        ...centerMeta,
+        client_phone: clientPhone || '',
+        amount: "0", // Explícitamente indicar que es 0€
+      },
+    });
+
+    log("Session created with payment methods", { 
+      session_id: session.id,
+      payment_method_types: session.payment_method_types,
+      url: session.url 
     });
 
     log("Session created", { id: session.id });

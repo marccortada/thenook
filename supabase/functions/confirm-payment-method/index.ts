@@ -14,12 +14,19 @@ const logStep = (step: string, details?: any) => {
 };
 
 serve(async (req) => {
+  // Log immediately when function is called
+  console.log('[CONFIRM-PAYMENT-METHOD] Function invoked');
+  console.log('[CONFIRM-PAYMENT-METHOD] Method:', req.method);
+  console.log('[CONFIRM-PAYMENT-METHOD] URL:', req.url);
+  
   if (req.method === 'OPTIONS') {
+    console.log('[CONFIRM-PAYMENT-METHOD] OPTIONS request, returning CORS headers');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     logStep("Function started");
+    console.log('[CONFIRM-PAYMENT-METHOD] Processing request...');
 
     let requestBody: any;
     try {
@@ -95,14 +102,16 @@ serve(async (req) => {
 
     logStep('Setup intent retrieved', { 
       status: setupIntent.status, 
-      payment_method: setupIntent.payment_method 
+      payment_method: setupIntent.payment_method,
+      last_setup_error: setupIntent.last_setup_error,
+      next_action: setupIntent.next_action
     });
 
     // Find booking by setup intent
     const { data: paymentIntent, error: findError } = await supabaseClient
       .from('booking_payment_intents')
       .select('booking_id')
-      .eq('stripe_setup_intent_id', setup_intent_id)
+      .eq('stripe_setup_intent_id', setupIntentId)
       .single();
 
 let bookingId: string | null = null;
@@ -120,11 +129,11 @@ if (!findError && paymentIntent) {
   // Ensure payment intent row exists for future lookups
   await supabaseClient.from('booking_payment_intents').upsert({
     booking_id: bookingId,
-    stripe_setup_intent_id: setup_intent_id,
+    stripe_setup_intent_id: setupIntentId,
     client_secret: '',
     status: setupIntent.status || 'requires_payment_method',
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'stripe_setup_intent_id' });
+  }, { onConflict: 'booking_id,stripe_setup_intent_id' });
 }
 
     const paymentMethodId = setupIntent.payment_method as string | null;
@@ -133,41 +142,157 @@ if (!findError && paymentIntent) {
         ? (setupIntent.customer as string)
         : null;
 
-    // Update booking and payment intent with confirmed payment method
+    // CRITICAL: Verificar el status del setup intent
+    // Con 3D Secure, el status puede ser 'requires_action' si necesita confirmación adicional
+    // o 'succeeded' si ya está confirmado
+    logStep('Setup intent status check', { 
+      status: setupIntent.status,
+      payment_method: paymentMethodId,
+      requires_action: setupIntent.status === 'requires_action',
+      succeeded: setupIntent.status === 'succeeded'
+    });
+
+    // Si el status es 'requires_action', significa que necesita confirmación adicional (3D Secure)
+    if (setupIntent.status === 'requires_action') {
+      logStep('Setup intent requires action', { 
+        next_action: setupIntent.next_action,
+        client_secret: setupIntent.client_secret 
+      });
+      // En Checkout, esto debería manejarse automáticamente, pero verificamos
+      throw new Error('El setup intent requiere acción adicional. Por favor, completa la autenticación 3D Secure.');
+    }
+
+    // Si el status no es 'succeeded' y no es 'requires_action', hay un error
+    if (setupIntent.status !== 'succeeded') {
+      const errorMsg = setupIntent.last_setup_error?.message || `El setup intent tiene status: ${setupIntent.status}`;
+      logStep('Setup intent not succeeded', { 
+        status: setupIntent.status,
+        error: setupIntent.last_setup_error 
+      });
+      throw new Error(`La tarjeta no se pudo guardar: ${errorMsg}`);
+    }
+
+    // CRITICAL: Si el setupIntent tiene un payment_method y status 'succeeded', la tarjeta está guardada
+    if (!paymentMethodId) {
+      logStep('ERROR: No payment method found', { setupIntent });
+      throw new Error('No se encontró un método de pago en el setup intent. La tarjeta no se pudo guardar.');
+    }
+
+    // CRITICAL: Si hay payment_method_id, significa que Stripe confirmó que la tarjeta se guardó
+    // Siempre usar 'succeeded' para payment_method_status cuando hay payment_method_id
+    // Esto asegura que el icono se muestre en azul en el calendario
+    const paymentMethodStatus = 'succeeded';
+    
     const updates = {
       stripe_payment_method_id: paymentMethodId,
       stripe_customer_id: customerId,
-      payment_method_status: setupIntent.status,
+      payment_method_status: paymentMethodStatus,
       updated_at: new Date().toISOString()
     };
 
-    await Promise.all([
-      // Update booking
-      supabaseClient
-        .from('bookings')
-        .update(updates)
-        .eq('id', bookingId),
+    // Get client_id from booking to update all their bookings
+    const { data: bookingData } = await supabaseClient
+      .from('bookings')
+      .select('client_id')
+      .eq('id', bookingId)
+      .single();
+
+    // Update the specific booking
+    logStep('Updating booking', { bookingId, updates });
+    const { data: updatedBooking, error: bookingUpdateError } = await supabaseClient
+      .from('bookings')
+      .update(updates)
+      .eq('id', bookingId)
+      .select('id, stripe_payment_method_id, payment_method_status')
+      .single();
+    
+    if (bookingUpdateError) {
+      logStep('ERROR updating booking', { 
+        error: bookingUpdateError.message,
+        code: bookingUpdateError.code,
+        details: bookingUpdateError.details,
+        hint: bookingUpdateError.hint
+      });
+      throw new Error(`Error al actualizar la reserva: ${bookingUpdateError.message}`);
+    }
+    
+    logStep('Booking updated successfully', { 
+      booking_id: updatedBooking?.id,
+      stripe_payment_method_id: updatedBooking?.stripe_payment_method_id,
+      payment_method_status: updatedBooking?.payment_method_status
+    });
+    
+    // Update payment intent record
+    logStep('Updating payment intent record', { setupIntentId });
+    const { data: updatedPaymentIntent, error: paymentIntentUpdateError } = await supabaseClient
+      .from('booking_payment_intents')
+      .update({
+        stripe_payment_method_id: paymentMethodId,
+        stripe_customer_id: customerId,
+        status: paymentMethodStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_setup_intent_id', setupIntentId)
+      .select('id, stripe_payment_method_id, status')
+      .single();
+    
+    if (paymentIntentUpdateError) {
+      logStep('ERROR updating payment intent', { 
+        error: paymentIntentUpdateError.message,
+        code: paymentIntentUpdateError.code
+      });
+      // No lanzar error aquí, solo loguear, ya que la reserva ya se actualizó
+    } else {
+      logStep('Payment intent updated successfully', { 
+        payment_intent_id: updatedPaymentIntent?.id,
+        stripe_payment_method_id: updatedPaymentIntent?.stripe_payment_method_id,
+        status: updatedPaymentIntent?.status
+      });
+    }
+
+    // CRITICAL: Update ALL bookings for this client that don't have a payment method or have an empty one
+    // This ensures the card icon shows correctly for all their bookings
+    if (bookingData?.client_id && paymentMethodId) {
+      logStep('Updating all bookings for client without payment method', {
+        client_id: bookingData.client_id,
+        payment_method_id: paymentMethodId
+      });
       
-      // Update payment intent record
-      supabaseClient
-        .from('booking_payment_intents')
+      // Update bookings that have null or empty payment_method_id
+      // Using .or() to match both null and empty string cases
+      const { data: updatedBookings, error: updateAllError } = await supabaseClient
+        .from('bookings')
         .update({
           stripe_payment_method_id: paymentMethodId,
           stripe_customer_id: customerId,
-          status: setupIntent.status,
+          payment_method_status: paymentMethodStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('stripe_setup_intent_id', setup_intent_id)
-    ]);
+        .eq('client_id', bookingData.client_id)
+        .or('stripe_payment_method_id.is.null,stripe_payment_method_id.eq.')
+        .select('id');
+      
+      if (updateAllError) {
+        logStep('ERROR updating all client bookings', { error: updateAllError.message });
+      } else {
+        logStep('Successfully updated all client bookings', { 
+          updated_count: updatedBookings?.length || 0,
+          booking_ids: updatedBookings?.map((b: any) => b.id) || []
+        });
+      }
+    }
 
-    logStep('Booking and payment intent updated successfully', {
+    logStep('All updates completed', {
       bookingId,
       paymentMethodId: setupIntent.payment_method,
-      status: setupIntent.status
+      status: setupIntent.status,
+      paymentMethodStatus: paymentMethodStatus,
+      booking_updated: !!updatedBooking,
+      payment_intent_updated: !!updatedPaymentIntent
     });
 
-    // Send confirmation email if payment method is confirmed
-    if (setupIntent.status === 'succeeded') {
+    // Send confirmation email if payment method is confirmed (si hay payment_method_id, está confirmado)
+    if (paymentMethodId) {
       logStep('Payment method confirmed, sending booking confirmation email');
       
       try {
@@ -252,7 +377,8 @@ if (!findError && paymentIntent) {
         booking_id: bookingId,
         payment_method_id: paymentMethodId,
         customer_id: customerId,
-        status: setupIntent.status
+        status: paymentMethodStatus, // Usar paymentMethodStatus ('succeeded') en lugar de setupIntent.status
+        setup_intent_status: setupIntent.status // Mantener el status original del setupIntent para referencia
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

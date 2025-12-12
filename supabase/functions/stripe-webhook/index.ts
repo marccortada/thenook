@@ -222,20 +222,26 @@ async function sendBookingConfirmationEmail(args: {
         })
         .eq("id", bookingId);
 
-      await supabaseAdmin
-        .from("booking_payment_intents")
-        .upsert(
-          {
-            booking_id: bookingId,
-            stripe_payment_method_id: paymentMethodId || booking.stripe_payment_method_id,
-            stripe_setup_intent_id: session?.setup_intent && typeof session.setup_intent === "string"
-              ? session.setup_intent
-              : undefined,
-            status: safePaymentStatus,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "booking_id" }
-        );
+      const setupIntentIdForUpsert =
+        session?.setup_intent && typeof session.setup_intent === "string"
+          ? session.setup_intent
+          : null;
+
+      if (setupIntentIdForUpsert) {
+        await supabaseAdmin
+          .from("booking_payment_intents")
+          .upsert(
+            {
+              booking_id: bookingId,
+              stripe_payment_method_id: paymentMethodId || booking.stripe_payment_method_id,
+              stripe_setup_intent_id: setupIntentIdForUpsert,
+              client_secret: "",
+              status: safePaymentStatus,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "booking_id,stripe_setup_intent_id" },
+          );
+      }
     }
   } catch (pmErr) {
     console.warn("[stripe-webhook] Failed to persist payment method/customer:", pmErr);
@@ -1511,10 +1517,11 @@ serve(async (req) => {
                     booking_id: bookingIdFromMeta,
                     stripe_setup_intent_id: setupIntentId,
                     stripe_payment_method_id: finalPaymentMethodId,
+                    client_secret: (finalSetupIntent as Stripe.SetupIntent | null)?.client_secret || "",
                     status: setupStatus,
                     updated_at: currentTimestamp,
                   },
-                  { onConflict: "stripe_setup_intent_id" },
+                  { onConflict: "booking_id,stripe_setup_intent_id" },
                 );
             } catch (upiErr) {
               console.error("[stripe-webhook] Failed to upsert booking_payment_intents for setup intent:", upiErr);
@@ -1528,13 +1535,13 @@ serve(async (req) => {
               // Ensure notification exists in automated_notifications
               const { data: bookingData } = await supabaseAdmin
                 .from("bookings")
-                .select(
+                .select(`
                   id,
                   client_id,
                   booking_datetime,
                   services(name),
                   centers(name, address_zurbaran, address_concha_espina)
-                )
+                `)
                 .eq("id", bookingIdFromMeta)
                 .single();
 
@@ -1713,13 +1720,18 @@ serve(async (req) => {
             // Update payment intent record
             await supabaseAdmin
               .from("booking_payment_intents")
-              .update({
-                stripe_payment_method_id: paymentMethodId,
-                stripe_customer_id: customerId,
-                status: "succeeded",
-                updated_at: new Date().toISOString(),
-              })
-              .eq("stripe_setup_intent_id", setupIntent.id);
+              .upsert(
+                {
+                  booking_id: bookingId,
+                  stripe_setup_intent_id: setupIntent.id,
+                  stripe_payment_method_id: paymentMethodId,
+                  stripe_customer_id: customerId,
+                  client_secret: setupIntent.client_secret || "",
+                  status: "succeeded",
+                  updated_at: new Date().toISOString(),
+                },
+                { onConflict: "booking_id,stripe_setup_intent_id" },
+              );
           } catch (updateErr) {
             console.error("[stripe-webhook] Failed to update booking for setup_intent.succeeded:", updateErr);
           }
@@ -1729,13 +1741,13 @@ serve(async (req) => {
             // Ensure notification exists
             const { data: bookingData } = await supabaseAdmin
               .from("bookings")
-              .select(
+              .select(`
                 id,
                 client_id,
                 booking_datetime,
                 services(name),
                 centers(name, address_zurbaran, address_concha_espina)
-              )
+              `)
               .eq("id", bookingId)
               .single();
 
