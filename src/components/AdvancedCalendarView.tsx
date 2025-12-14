@@ -1367,26 +1367,78 @@ const AdvancedCalendarView = () => {
     try {
       if (!editingBooking) return;
 
-      // Update client profile if requested
-      if (editClientId) {
-        try {
-          const [first, ...rest] = editName.trim().split(' ');
-          await updateClient(editClientId, {
-            first_name: first || undefined,
-            last_name: rest.join(' ') || undefined,
-            phone: editPhone || undefined,
-            email: editEmail || undefined,
+      const normalizedEmail = (editEmail || '').trim();
+      const normalizedPhone = (editPhone || '').trim();
+      const [first, ...rest] = (editName || '').trim().split(' ');
+      const firstName = first || undefined;
+      const lastName = rest.join(' ') || undefined;
+      let resolvedClientId = editClientId || editingBooking.client_id || editingBooking.profiles?.id || null;
+
+      // Update or create client profile when editing contact data
+      try {
+        if (resolvedClientId) {
+          await updateClient(resolvedClientId, {
+            first_name: firstName,
+            last_name: lastName,
+            phone: normalizedPhone || undefined,
+            email: normalizedEmail || undefined,
           });
-        } catch (clientError: any) {
-          // Si hay error al actualizar el cliente, mostrar el error y no continuar
-          const errorMessage = clientError?.message || 'No se pudo actualizar los datos del cliente';
-          toast({
-            title: 'Error al actualizar cliente',
-            description: errorMessage,
-            variant: 'destructive'
-          });
-          return; // No continuar con la actualización de la reserva si falla la actualización del cliente
+        } else if (normalizedEmail || normalizedPhone || firstName || lastName) {
+          if (!normalizedEmail) {
+            toast({
+              title: 'Falta email',
+              description: 'Añade un email para guardar los datos del cliente.',
+              variant: 'destructive'
+            });
+            return;
+          }
+
+          const { data: existingProfile, error: lookupError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', normalizedEmail)
+            .maybeSingle();
+
+          if (lookupError) throw lookupError;
+
+          if (existingProfile?.id) {
+            resolvedClientId = existingProfile.id as string;
+            await updateClient(resolvedClientId, {
+              first_name: firstName,
+              last_name: lastName,
+              phone: normalizedPhone || undefined,
+              email: normalizedEmail,
+            });
+          } else {
+            const { data: newProfile, error: profileError } = await supabase
+              .from('profiles')
+              .insert([{
+                email: normalizedEmail,
+                first_name: firstName || null,
+                last_name: lastName || null,
+                phone: normalizedPhone || null,
+                role: 'client'
+              }])
+              .select('id')
+              .single();
+
+            if (profileError) throw profileError;
+            resolvedClientId = (newProfile as any)?.id || null;
+          }
+
+          if (resolvedClientId) {
+            setEditClientId(resolvedClientId);
+          }
         }
+      } catch (clientError: any) {
+        // Si hay error al actualizar el cliente, mostrar el error y no continuar
+        const errorMessage = clientError?.message || 'No se pudo actualizar los datos del cliente';
+        toast({
+          title: 'Error al actualizar cliente',
+          description: errorMessage,
+          variant: 'destructive'
+        });
+        return; // No continuar con la actualización de la reserva si falla la actualización del cliente
       }
 
       // Build booking updates
@@ -1490,7 +1542,7 @@ const AdvancedCalendarView = () => {
           updates.status = 'confirmed';
         }
       }
-      if (editClientId) updates.client_id = editClientId;
+      if (resolvedClientId) updates.client_id = resolvedClientId;
 
       // Limpiar campos undefined o null innecesarios
       Object.keys(updates).forEach(key => {
