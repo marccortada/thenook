@@ -948,6 +948,15 @@ const AdvancedCalendarView = () => {
         toast({ title: 'Error', description: 'Selecciona un servicio', variant: 'destructive' });
         return;
       }
+      // Siempre requerir teléfono para poder contactar al cliente
+      if (!bookingForm.clientPhone?.trim()) {
+        toast({
+          title: 'Falta el teléfono',
+          description: 'Introduce el número de teléfono del cliente para guardar la reserva.',
+          variant: 'destructive',
+        });
+        return;
+      }
       if (!bookingForm.isWalkIn && !createClientId && !bookingForm.clientEmail) {
         toast({ title: 'Error', description: 'Selecciona un cliente o introduce email', variant: 'destructive' });
         return;

@@ -50,12 +50,9 @@ serve(async (req) => {
     }
 
     const specificBookingId = requestBody?.booking_id;
-    console.log('📧 Processing booking confirmation emails...', specificBookingId ? `(for booking ${specificBookingId})` : '');
-
-    // Email delivery is ahora gestionado desde stripe-webhook tras el cobro.
-    return new Response(
-      JSON.stringify({ message: 'Email handling moved to stripe-webhook (no-op here)' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    console.log(
+      '📧 Processing booking confirmation emails...',
+      specificBookingId ? `(for booking ${specificBookingId})` : ''
     );
 
     const nowIso = new Date().toISOString();
@@ -183,19 +180,25 @@ serve(async (req) => {
         const emailSubject = 'Reserva asegurada en THE NOOK';
         
         // Formatear fecha: "viernes 24 de octubre 2025 a las 12:55"
-        const formattedDateTime = booking?.booking_datetime
-          ? new Date(booking.booking_datetime).toLocaleDateString('es-ES', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            }) +
-            ' a las ' +
-            new Date(booking.booking_datetime).toLocaleTimeString('es-ES', {
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          : 'Por confirmar';
+        // Ajuste horario: la fecha en BD está en UTC; sumamos 1h para horario de Madrid (evita que aparezca 1h antes en el email)
+        let formattedDateTime = 'Por confirmar';
+        if (booking?.booking_datetime) {
+          const bookingDate = new Date(booking.booking_datetime);
+          // Ajustar explícitamente +1h (UTC -> Madrid) para que coincida con lo que ve el cliente en la web
+          bookingDate.setHours(bookingDate.getHours() + 1);
+          
+          const datePart = bookingDate.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+          const timePart = bookingDate.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          formattedDateTime = `${datePart} a las ${timePart}`;
+        }
         
         // Usar solo el primer nombre del cliente
         const clientFirstName = client.first_name || '';
@@ -206,14 +209,15 @@ serve(async (req) => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Reserva asegurada en THE NOOK</title>
+      <title>Reserva asegurada en THE NOOK</title>
   <style>
     body { margin:0; padding:0; background:#f6f7fb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#111827; }
     .wrap { width:100%; padding:24px 12px; }
     .card { max-width:640px; margin:0 auto; background:#fff; border-radius:10px; box-shadow:0 6px 18px rgba(16,24,40,0.08); overflow:hidden; }
-    .header { padding:18px 24px; background:#f3735f; color:#fff; font-weight:700; font-size:18px; letter-spacing:0.3px; }
+        /* Encabezado en azul corporativo (no salmón) */
+        .header { padding:18px 24px; background:#424CB8; color:#fff; font-weight:700; font-size:18px; letter-spacing:0.3px; }
     .content { padding:22px 24px; line-height:1.6; font-size:15px; }
-    a { color:#f3735f; }
+        a { color:#424CB8; }
   </style>
 </head>
 <body>

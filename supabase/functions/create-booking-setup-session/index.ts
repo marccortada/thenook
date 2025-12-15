@@ -35,10 +35,11 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("Falta STRIPE_SECRET_KEY en Supabase Secrets");
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    // CRITICAL: Always use production URL for redirects, not the origin header
-    // This ensures redirects work from any device, not just localhost
+    // URLs de redirección
+    // - PUBLIC_SITE_URL: web principal (thenookmadrid.com)
+    // - PUBLIC_APP_URL: app de reservas (thenook.gnerai.com)
     const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://www.thenookmadrid.com";
-    const origin = publicSiteUrl;
+    const publicAppUrl = Deno.env.get("PUBLIC_APP_URL") || "https://thenook.gnerai.com";
 
     // Get booking and client email
     const { data: booking, error: bErr } = await supabase
@@ -123,8 +124,11 @@ serve(async (req) => {
           request_three_d_secure: 'any', // 'any' = siempre requerir 3D Secure si está disponible
         }
       },
-      success_url: `${origin}/pago-configurado?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/asegurar-reserva?booking_id=${booking_id}&cancelled=true`,
+      // REDIRECCIONES:
+      // - Éxito: volver a la app de reservas (thenook.gnerai.com) donde se muestra el resultado
+      // - Cancelación: volver a la pantalla de asegurar reserva en la app
+      success_url: `${publicAppUrl}/pago-configurado?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${publicAppUrl}/asegurar-reserva?booking_id=${booking_id}&cancelled=true`,
       setup_intent_data: {
         metadata: { 
           booking_id, 

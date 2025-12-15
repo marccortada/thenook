@@ -322,11 +322,11 @@ export default function PaymentSetupSuccess() {
                   Tu tarjeta ha sido registrada con éxito. El administrador realizará el cobro posteriormente.
                 </p>
                 <Button 
-                  onClick={() => window.location.href = 'https://www.thenookmadrid.com/'}
+                  onClick={() => window.location.href = 'https://thenook.gnerai.com'}
                   className="w-full h-12 text-lg"
                   size="lg"
                 >
-                  Ir a la página de inicio
+                  Ir a la página de reservas
                 </Button>
               </div>
             </CardContent>
